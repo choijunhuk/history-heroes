@@ -310,10 +310,15 @@ namespace HistoryHeroes.EditorTools
             TMP_Text roomLabel = Label("RoomLabel", hudRect, "방 1/10", 38, TextAlignmentOptions.Top);
             Place(roomLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(520f, 60f));
 
+            // 별 ★2 도전 중일 때만 보이는 맞은 횟수 (Modes 3-2)
+            TMP_Text hitsLabel = Label("HitsLabel", hudRect, "맞음 0/15", 30, TextAlignmentOptions.TopRight, new Color(1f, 1f, 1f, 0.8f));
+            Place(hitsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -160f), new Vector2(300f, 46f));
+            hitsLabel.gameObject.SetActive(false);
+
             using (var props = new Props(ui.Hud))
             {
                 props.Ref("hpFill", hpFill).Ref("hpLabel", hpLabel).Ref("expFill", expFill)
-                    .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel);
+                    .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel).Ref("hitsLabel", hitsLabel);
             }
 
             // ----- 조이스틱 (화면 아래쪽 어디든 누르면 그 자리에 생김) -----
@@ -433,9 +438,12 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text title = Label("Title", panel, "클리어!", 100, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 640f), new Vector2(900f, 130f));
-            TMP_Text body = Label("Body", panel, "", 40, TextAlignmentOptions.TopLeft);
-            body.lineSpacing = 28f;
-            Place(body.rectTransform, Center, Center, new Vector2(0f, 40f), new Vector2(820f, 1000f));
+            TMP_Text body = Label("Body", panel, "", 38, TextAlignmentOptions.TopLeft);
+            body.lineSpacing = 18f;
+            body.enableAutoSizing = true; // 보상 줄이 많으면 글씨를 줄여서 버튼 위에 다 들어가게
+            body.fontSizeMin = 24f;
+            body.fontSizeMax = 38f;
+            Place(body.rectTransform, Center, Center, new Vector2(0f, 20f), new Vector2(880f, 1060f));
 
             Button primary = Btn("Primary", panel, "기록 남기기", new Vector2(0f, -640f), new Vector2(600f, 140f), new Color(0.2f, 0.55f, 0.32f), out TMP_Text primaryLabel);
             Button secondary = Btn("Secondary", panel, "로비로", new Vector2(0f, -800f), new Vector2(440f, 110f), new Color(0.3f, 0.32f, 0.38f), out TMP_Text secondaryLabel);

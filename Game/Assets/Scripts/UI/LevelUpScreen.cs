@@ -56,8 +56,13 @@ namespace HistoryHeroes.UI
             if (!IsOpen) Open();
         }
 
+        private bool _legendaryWarning;
+
         private void Open()
         {
+            // 던전 ★3 "전설 없이 클리어"를 아직 안 땄고 이번 판에 전설을 안 골랐으면 경고한다
+            _legendaryWarning = GameSession.Mode == BattleMode.Dungeon && !skills.ChoseLegendary
+                && !Economy.Stars.Has(Records.SaveSystem.Data, GameSession.Chapter, Economy.Stars.Dungeon, 3);
             GamePause.Pause(this);
             root.SetActive(true);
             _current = skills.CreateOffer(Floor);
@@ -73,7 +78,7 @@ namespace HistoryHeroes.UI
                 if (!visible) continue;
 
                 SkillCard card = _current[i];
-                cards[i].Show(card, skills, () => Choose(card));
+                cards[i].Show(card, skills, () => Choose(card), _legendaryWarning);
             }
 
             bool hasFusion = _current.Exists(c => c.Type == CardType.Fusion);
@@ -109,6 +114,7 @@ namespace HistoryHeroes.UI
         {
             if (_waitingForAd) return;
             skills.Choose(card);
+            _legendaryWarning &= !skills.ChoseLegendary; // 전설을 골랐으면 이번 판 ★3은 이미 실패
             Records.SaveSystem.SaveIfDirty(); // 스킬 선택 확정 = 안전한 저장 시점 (조합 도감 발견, 12-2)
             _pending--;
 

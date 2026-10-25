@@ -160,8 +160,13 @@ namespace HistoryHeroes.Skills
             }
         }
 
+        /// <summary>이번 판에 전설 스킬 카드를 골랐는가 (던전 ★3 "전설 없이 클리어", Modes 3-2)</summary>
+        public bool ChoseLegendary { get; private set; }
+
         public void Choose(SkillCard card)
         {
+            if (card.Skill != null && card.Skill.rarity == Rarity.Legendary && card.Type != CardType.Fallback) ChoseLegendary = true;
+
             switch (card.Type)
             {
                 case CardType.NewSkill:

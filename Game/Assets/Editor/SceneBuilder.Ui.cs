@@ -20,7 +20,7 @@ namespace HistoryHeroes.EditorTools
             // 컴포넌트는 늘 켜져 있는 부모에 둔다 (막대 묶음 root를 끄고 켜고, 소개 코루틴도 여기서 돈다)
             RectTransform controller = Rect("BossHud", hudRect, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             var hud = controller.gameObject.AddComponent<BossHud>();
-            RectTransform holder = Rect("Bar", controller, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -186f), new Vector2(-80f, 90f));
+            RectTransform holder = Rect("Bar", controller, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -214f), new Vector2(-80f, 90f));
 
             RectTransform bar = Rect("Bar", holder, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 34f));
             Fill(bar, new Color(0.1f, 0.1f, 0.12f, 0.9f), new Color(0.65f, 0.35f, 0.9f), out Image fill);

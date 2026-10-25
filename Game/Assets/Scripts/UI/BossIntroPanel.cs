@@ -31,6 +31,7 @@ namespace HistoryHeroes.UI
 
         [SerializeField] private SkillDatabase database;
         [SerializeField] private RecordSaveScreen reselect;
+        [SerializeField] private HeartPanel hearts;
 
         private static readonly Color Normal = new Color(0.16f, 0.18f, 0.24f);
         private static readonly Color Selected = new Color(0.25f, 0.42f, 0.7f);
@@ -123,7 +124,7 @@ namespace HistoryHeroes.UI
                 return;
             }
 
-            GameSession.StartBoss(_chapter, record.id);
+            if (!GameSession.TryStartBoss(_chapter, record.id) && hearts != null) hearts.Open(Render);
         }
 
         private RecordDraft DraftFrom(RunRecord record, RecordValidator.Result build)

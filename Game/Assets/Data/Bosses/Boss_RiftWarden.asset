@@ -20,5 +20,5 @@ MonoBehaviour:
   recommend: "\uAE30\uBCF8 \uACF5\uACA9\uC774 \uAC15\uD55C \uBE4C\uB4DC (\uACF5\uACA9\uC18D\uB3C4\xB7\uBA40\uD2F0\uC0F7\xB7\uD761\uD608)"
   prefab: {fileID: 2731093488286354877, guid: 678d204cfb7b39249969c09984c3b3b9, type: 3}
   hpMultiplier: 300
-  attackMultiplier: 1
+  attackMultiplier: 1.5
   star2MaxHits: 8

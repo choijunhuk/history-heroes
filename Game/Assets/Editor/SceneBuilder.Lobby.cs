@@ -29,6 +29,14 @@ namespace HistoryHeroes.EditorTools
             RectTransform main = Rect("Main", safe, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             var lobby = main.gameObject.AddComponent<LobbyScreen>();
 
+            RectTransform topBar = Rect("TopBar", main, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(-40f, 70f));
+            Img(topBar, new Color(0f, 0f, 0f, 0.35f), null);
+            TMP_Text wallet = Label("Wallet", topBar, "골드 0   보석 0   하트 5/5   Lv 1", 28, TextAlignmentOptions.Center);
+            Stretch(wallet.rectTransform);
+            TMP_Text notice = Label("Notice", main, "", 28, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.4f));
+            Place(notice.rectTransform, Center, Center, new Vector2(0f, 530f), new Vector2(1000f, 80f));
+            notice.gameObject.SetActive(false);
+
             TMP_Text title = Label("Title", main, "역사 영웅", 96, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(900f, 130f));
             TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v0.2", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
@@ -41,7 +49,7 @@ namespace HistoryHeroes.EditorTools
             TMP_Text chapter = Label("Chapter", main, "1구간 · 균열의 초원", 50, TextAlignmentOptions.Center);
             Place(chapter.rectTransform, Center, Center, new Vector2(0f, 400f), new Vector2(680f, 110f));
             TMP_Text chapterInfo = Label("ChapterInfo", main, "", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.75f));
-            Place(chapterInfo.rectTransform, Center, Center, new Vector2(0f, 280f), new Vector2(940f, 110f));
+            Place(chapterInfo.rectTransform, Center, Center, new Vector2(0f, 265f), new Vector2(940f, 140f));
 
             Button dungeon = Btn("Dungeon", main, "던전 시작", new Vector2(0f, 50f), new Vector2(820f, 210f), ButtonGreen, out TMP_Text dungeonLabel);
             dungeonLabel.fontSize = 64;
@@ -57,7 +65,8 @@ namespace HistoryHeroes.EditorTools
             RecordArchivePanel archivePanel = BuildArchivePanel(safe, database);
             CodexPanel codexPanel = BuildCodexPanel(safe, database);
             RecordSaveScreen reselect = BuildRecordSave(root, database);
-            using (var props = new Props(bossIntro)) props.Ref("reselect", reselect);
+            HeartPanel heartPanel = BuildHeartPanel(root);
+            using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
 
             using (var props = new Props(lobby))
             {
@@ -66,7 +75,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("dungeonButton", dungeon).Ref("bossButton", boss).Ref("bossButtonLabel", bossLabel)
                     .Ref("archiveButton", archive).Ref("archiveButtonLabel", archiveLabel)
                     .Ref("codexButton", codex).Ref("codexButtonLabel", codexLabel)
-                    .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel);
+                    .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)
+                    .Ref("walletLabel", wallet).Ref("noticeLabel", notice);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
@@ -156,6 +166,32 @@ namespace HistoryHeroes.EditorTools
             {
                 props.Ref("root", panel.gameObject).Refs("slotTitles", titles).Refs("slotDetails", details)
                     .Refs("deleteButtons", deletes).Refs("deleteLabels", deleteLabels).Ref("backButton", back).Ref("database", database);
+            }
+
+            return screen;
+        }
+
+        private static HeartPanel BuildHeartPanel(Transform parent)
+        {
+            RectTransform holder = Rect("HeartPanel", parent, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            var screen = holder.gameObject.AddComponent<HeartPanel>();
+            RectTransform dim = Rect("Panel", holder, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            Img(dim, new Color(0f, 0f, 0f, 0.8f), null).raycastTarget = true;
+            RectTransform box = Rect("Box", dim, Center, Center, Center, Vector2.zero, new Vector2(900f, 760f));
+            Img(box, RowColor, null);
+
+            TMP_Text message = Label("Message", box, "하트가 부족해요", 40, TextAlignmentOptions.Center);
+            Place(message.rectTransform, Center, Center, new Vector2(0f, 220f), new Vector2(840f, 260f));
+            Button ad = Btn("WatchAd", box, "광고 보고 하트 +2", new Vector2(0f, -10f), new Vector2(760f, 130f), ButtonBlue, out TMP_Text adLabel);
+            adLabel.fontSize = 32;
+            Button gem = Btn("BuyHearts", box, "보석 60개로 하트 +5", new Vector2(0f, -160f), new Vector2(760f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text gemLabel);
+            gemLabel.fontSize = 32;
+            Button close = Btn("Close", box, "닫기", new Vector2(0f, -300f), new Vector2(360f, 100f), ButtonGray, out _);
+
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", dim.gameObject).Ref("messageLabel", message).Ref("adButton", ad).Ref("adLabel", adLabel)
+                    .Ref("gemButton", gem).Ref("gemLabel", gemLabel).Ref("closeButton", close);
             }
 
             return screen;

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
+using HistoryHeroes.Economy;
 using HistoryHeroes.Enemy;
 using HistoryHeroes.Player;
 using HistoryHeroes.Records;
@@ -69,6 +70,11 @@ namespace HistoryHeroes.Modes
             {
                 if (dealt > 0f && !_finished) _hitsTaken++;
             };
+            if (_info != null)
+            {
+                bool challenge = !Stars.Has(SaveSystem.Data, _info.chapter, Stars.Boss, 2);
+                hud.SetHitCounter(challenge, () => _hitsTaken, _info.star2MaxHits);
+            }
 
             StartCoroutine(Begin());
         }
@@ -105,12 +111,35 @@ namespace HistoryHeroes.Modes
             SaveData save = SaveSystem.Data;
             save.bossRuns++;
             bool firstClear = false;
+            var lines = new List<string>();
+            long now = Clock.UnixSeconds;
+            string today = Clock.Today;
+
             if (victory && _info != null)
             {
                 firstClear = !save.defeatedBosses.Contains(_info.id);
                 if (firstClear) save.defeatedBosses.Add(_info.id);
                 save.unlockedChapter = Mathf.Max(save.unlockedChapter, _info.chapter + 1);
                 if (_record != null && !_record.bossesDefeated.Contains(_info.id)) _record.bossesDefeated.Add(_info.id);
+
+                // 보상 (Economy 4장): 최초 격파는 크게, 반복은 하루 3번까지
+                Reward reward = firstClear ? RunRewards.BossFirstClear(skills.HeroId) : RunRewards.BossRepeat(save, today);
+                Wallet.Grant(save, reward);
+                lines.Add(reward.IsEmpty ? "오늘 반복 격파 보상은 다 받았어요 (하루 3번)" : reward.ToString());
+                lines.Add(RunText.Level(AccountLevel.AddExp(save, AccountLevel.BossExp, now)));
+
+                foreach (string star in Stars.EvaluateBoss(save, _info.chapter, _info.id, true, _hitsTaken, _info.star2MaxHits, _record, database))
+                {
+                    lines.Add("새 별  " + star);
+                }
+
+                Reward box = Stars.ClaimBoxes(save);
+                if (!box.IsEmpty) lines.Add("별 상자  " + box);
+            }
+            else if (!victory && _info != null && !save.defeatedBosses.Contains(_info.id) && GameSession.HeartSpent)
+            {
+                // 아직 못 깬 보스에게 지면 하트를 돌려준다 (여러 기록을 시험해보게, Economy 3-2)
+                if (Hearts.TryRefundBossLoss(save, now, today)) lines.Add("아직 못 깬 보스라 하트 1개를 돌려받았어요");
             }
 
             SaveSystem.Save();
@@ -126,6 +155,7 @@ namespace HistoryHeroes.Modes
                 UnlockedChapter = firstClear ? _info.chapter + 1 : 0,
                 BasicAttackShare = DamageLog.BasicShare,
                 RecordLabel = _record != null ? RecordFormat.Title(_record) : "기록 없음 (기본 공격만)",
+                RewardLines = lines,
             };
             StartCoroutine(ShowResultAfter(victory ? 1f : 0.6f, summary));
         }
@@ -166,5 +196,6 @@ namespace HistoryHeroes.Modes
         public int UnlockedChapter;
         public float BasicAttackShare;
         public string RecordLabel;
+        public List<string> RewardLines;
     }
 }

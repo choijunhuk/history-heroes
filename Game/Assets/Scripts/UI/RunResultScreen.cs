@@ -51,9 +51,10 @@ namespace HistoryHeroes.UI
             sb.AppendLine(s.Fusions.Count > 0 ? "  " + string.Join(", ", s.Fusions) : "  없음");
             sb.AppendLine();
             sb.AppendLine("스킬");
-            foreach (string skill in s.Skills) sb.AppendLine("  " + skill);
+            sb.AppendLine("  " + (s.Skills.Count > 0 ? string.Join(" · ", s.Skills) : "없음"));
             sb.AppendLine();
             sb.AppendLine(s.Capacity > 0 ? $"남길 수 있는 기록 용량  {s.Capacity}pt" : "너무 일찍 쓰러져서 남길 수 있는 기록이 없어요");
+            AppendRewards(sb, s.RewardLines);
             bodyLabel.text = sb.ToString();
 
             if (saveRecord != null) SetButtons("기록 남기기", saveRecord, "로비로", GameSession.ToLobby);
@@ -81,8 +82,24 @@ namespace HistoryHeroes.UI
                 sb.AppendLine($"처음 격파! {s.UnlockedChapter}구간이 열렸어요");
             }
 
+            AppendRewards(sb, s.RewardLines);
             bodyLabel.text = sb.ToString();
-            SetButtons("다시 도전", GameSession.Retry, "로비로", GameSession.ToLobby);
+            SetButtons("다시 도전 (하트 1)", Retry, "로비로", GameSession.ToLobby);
+        }
+
+        private static void AppendRewards(StringBuilder sb, System.Collections.Generic.List<string> lines)
+        {
+            if (lines == null || lines.Count == 0) return;
+            sb.AppendLine();
+            sb.AppendLine("<color=#FFD966>받은 것</color>");
+            foreach (string line in lines) sb.AppendLine("  " + line);
+        }
+
+        private void Retry()
+        {
+            if (GameSession.TryRetry()) return;
+            primaryLabel.text = "하트가 부족해요";
+            primaryButton.interactable = false;
         }
 
         private void Open()

@@ -1,3 +1,5 @@
+using HistoryHeroes.Economy;
+using HistoryHeroes.Records;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -23,6 +25,42 @@ namespace HistoryHeroes.Common
 
         /// <summary>보스전에 쓸 기록 ID</summary>
         public static string BossRecordId { get; private set; }
+
+        /// <summary>이번 판에 하트를 실제로 썼는가 (첫날 무료 판이면 false → 보스 패배 환급 대상 아님)</summary>
+        public static bool HeartSpent { get; private set; }
+
+        /// <summary>하트 1개를 쓰고 던전 시작. 모자라면 false (로비가 충전 방법을 보여준다)</summary>
+        public static bool TryStartDungeon(int chapter)
+        {
+            if (!TrySpendHeart()) return false;
+            StartDungeon(chapter);
+            return true;
+        }
+
+        /// <summary>하트 1개를 쓰고 보스 도전 (Modes 8장)</summary>
+        public static bool TryStartBoss(int chapter, string recordId)
+        {
+            if (!TrySpendHeart()) return false;
+            StartBoss(chapter, recordId);
+            return true;
+        }
+
+        /// <summary>결과 화면의 "다시 도전": 같은 설정, 하트 1개</summary>
+        public static bool TryRetry()
+        {
+            if (!TrySpendHeart()) return false;
+            Retry();
+            return true;
+        }
+
+        private static bool TrySpendHeart()
+        {
+            SaveData data = SaveSystem.Data;
+            if (!Hearts.TrySpend(data, 1, Clock.UnixSeconds, Clock.Today, out bool free)) return false;
+            HeartSpent = !free;
+            SaveSystem.Save();
+            return true;
+        }
 
         public static void StartDungeon(int chapter)
         {
@@ -57,6 +95,7 @@ namespace HistoryHeroes.Common
             Mode = BattleMode.Dungeon;
             Chapter = 1;
             BossRecordId = null;
+            HeartSpent = false;
         }
     }
 }

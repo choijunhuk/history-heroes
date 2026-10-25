@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
+using HistoryHeroes.Economy;
 using HistoryHeroes.Enemy;
 using HistoryHeroes.Player;
 using HistoryHeroes.Progress;
@@ -48,6 +49,7 @@ namespace HistoryHeroes.Dungeon
         private readonly List<string> _fusions = new List<string>();
         private int _room;
         private int _roomsCleared;
+        private int _hitsTaken;
         private int _alive;
         private bool _finished;
         private float _startTime;
@@ -62,6 +64,11 @@ namespace HistoryHeroes.Dungeon
             DamageLog.Reset();
             _startTime = Time.time;
             player.Health.Died += _ => Finish(victory: false);
+            player.Health.Damaged += (_, dealt) =>
+            {
+                if (dealt > 0f && !_finished) _hitsTaken++;
+            };
+            ShowHitCounter();
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
             door.Entered += () => StartCoroutine(GoToNextRoom());
             if (fade != null) fade.alpha = 0f;
@@ -200,12 +207,12 @@ namespace HistoryHeroes.Dungeon
             foreach (SkillInstance s in skills.Loadout.Actives) summary.Skills.Add($"{s.Data.displayName} Lv{s.Level}");
             foreach (SkillInstance s in skills.Loadout.Passives) summary.Skills.Add($"{s.Data.displayName} Lv{s.Level}");
 
-            // 판 끝: 저장 (판 수, 도감). 기록은 다음 화면에서 고른 뒤에 저장한다
-            SaveSystem.Data.dungeonRuns++;
-            SaveSystem.Save();
+            // 판 끝: 보상·계정 경험치·별 → 저장 (기록은 다음 화면에서 고른 뒤에 저장한다)
+            int roomsCleared = victory ? RoomCount : _roomsCleared;
+            summary.HitsTaken = _hitsTaken;
+            summary.RewardLines = GrantRewards(victory, roomsCleared);
 
             // 기록 용량 = 기준 × 0.8 × (깬 방 ÷ 전체 방), 클리어 = 1 (GameDesign 7-2)
-            int roomsCleared = victory ? RoomCount : _roomsCleared;
             int capacity = RecordCapacity.For(roomsCleared, RoomCount, victory);
             summary.Capacity = capacity;
             RecordDraft draft = RecordDraft.FromLoadout(skills.Loadout, database, capacity);
@@ -221,6 +228,37 @@ namespace HistoryHeroes.Dungeon
             }
 
             result.Show(summary, saveRecord);
+        }
+
+        /// <summary>골드 (Economy 4장), 계정 경험치 (Stats 7장), 별 (Modes 3-2), 별 상자</summary>
+        private List<string> GrantRewards(bool victory, int roomsCleared)
+        {
+            SaveData save = SaveSystem.Data;
+            save.dungeonRuns++;
+            int chapter = GameSession.Chapter;
+            var lines = new List<string>();
+
+            Reward gold = RunRewards.Dungeon(chapter, roomsCleared, RoomCount, victory);
+            Wallet.Grant(save, gold);
+            if (!gold.IsEmpty) lines.Add(gold.ToString());
+
+            AccountLevel.Result level = AccountLevel.AddExp(save, AccountLevel.DungeonExp(roomsCleared), Clock.UnixSeconds);
+            lines.Add(RunText.Level(level));
+
+            foreach (string star in Stars.EvaluateDungeon(save, chapter, victory, _hitsTaken, skills.ChoseLegendary)) lines.Add("새 별  " + star);
+            Reward box = Stars.ClaimBoxes(save);
+            if (!box.IsEmpty) lines.Add("별 상자  " + box);
+
+            SaveSystem.Save();
+            return lines;
+        }
+
+        /// <summary>★2를 아직 안 땄으면 HUD에 "맞은 횟수 n/한도"를 보여준다 (Modes 3-2)</summary>
+        private void ShowHitCounter()
+        {
+            int chapter = GameSession.Chapter;
+            bool challenge = !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2);
+            hud.SetHitCounter(challenge, () => _hitsTaken, Stars.DungeonHitLimit(chapter));
         }
 
         private EnemyBase GetEnemy(EnemyBase prefab)
@@ -278,5 +316,8 @@ namespace HistoryHeroes.Dungeon
         public List<string> Skills;
         /// <summary>남길 수 있는 기록 용량 (pt)</summary>
         public int Capacity;
+        public int HitsTaken;
+        /// <summary>받은 것: 골드, 계정 경험치, 새 별, 별 상자</summary>
+        public List<string> RewardLines;
     }
 }
