@@ -25,6 +25,39 @@ The developer is learning game development with this project and plans to releas
 - **Commits:** `type: description` (types: feat, fix, balance, docs, refactor, chore). See `Docs/DevRules.md`.
 - **Design reviews:** save review notes to `Docs/Reviews/YYYY-MM-DD-<topic>.md`.
 
+## Roles: Claude Code vs Codex
+
+| | **Claude Code** (lead) | **Codex** (reviewer / QA) |
+|---|---|---|
+| Model | Claude Opus 5.5 | gpt-6.1-sol |
+| Owns | Design doc, architecture, implementation, Unity Editor control (Unity CLI + official plugin skills), learning `TODO`s, commits, talking to the developer | Independent reviews of design and code, test ideas, visual QA through computer-use (watching the running game) |
+| Writes files? | Yes | **No by default** — runs `--sandbox read-only`. Writes only when explicitly delegated, on its own branch |
+
+### Effort by task
+
+| Task | Who | Effort |
+|---|---|---|
+| Architecture, big design changes, tricky bugs | Claude | `xhigh` |
+| Normal feature implementation | Claude | `high` (default) |
+| Bulk / mechanical work (data assets, renames, doc tidy-up) | Claude subagent (Sonnet) | `medium` |
+| File / docs lookup | Claude subagent (Haiku) | `low` |
+| Design review | Codex | `xhigh` |
+| Code review of a feature | Codex | `high` |
+| Quick check / single-file sanity check | Codex | `medium` |
+| Visual QA (computer-use: play the game, check UI and feel) | Codex | `medium` |
+
+Codex effort per call: `codex exec -c model_reasoning_effort=<low|medium|high|xhigh> ...` (config default is `xhigh`).
+
+### Workflow per feature
+1. Claude implements on a feature branch and checks it compiles and runs in the Editor.
+2. Codex reviews the diff read-only (`high`). Findings go to `Docs/Reviews/`.
+3. Claude decides what to adopt (the developer's explicit decisions always win over reviewer suggestions).
+4. The developer writes the marked learning `TODO`s.
+5. Codex does visual QA when the feature is visible on screen.
+6. Claude merges to `main`.
+
+**One writer at a time:** Claude and Codex never edit the same files at the same time.
+
 ## Tools
 
 - **Unity CLI** (`unity`, installed via winget) + **`com.unity.pipeline`** package in `Game/`: drive the live Editor instead of hand-editing `.unity` / `.prefab` / `.asset` YAML.
