@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8a1162d004b4454fa441b7538c6e4af, type: 3}
+  m_Name: Passive_active_dmg
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.PassiveSkillData
+  id: active_dmg
+  displayName: "\uAE30\uC220 \uC219\uB828"
+  description: "\uC561\uD2F0\uBE0C \uD53C\uD574 +15%\n(\uB808\uBCA8\uB9C8\uB2E4 +10%)"
+  warriorDescription: 
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 512
+  maxLevel: 5
+  saveCostFirstLevel: 2
+  saveCostPerLevel: 2
+  recordable: 1
+  heroOnlyId: 
+  stats:
+  - stat: 12
+    kind: 0
+    firstLevel: 0.15
+    perLevel: 0.1
+    target: 2
+  attack: []

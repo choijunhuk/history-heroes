@@ -46,6 +46,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.LightningBehaviour
   boltColor: {r: 1, g: 0.7, b: 0.3, a: 1}
   boltSize: {x: 0.25, y: 7}
+  chainTargets: 0
+  chainRadius: 3
+  chainFalloff: 0.2
+  chainColor: {r: 1, g: 0.95, b: 0.5, a: 0.9}
   leaveField: 1
   fieldDamagePerSecond: 0.3
   fieldDuration: 2

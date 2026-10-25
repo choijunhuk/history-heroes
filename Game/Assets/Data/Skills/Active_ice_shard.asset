@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_ice_shard
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: ice_shard
+  displayName: "\uC5BC\uC74C \uD30C\uD3B8"
+  description: "3\uCD08\uB9C8\uB2E4 \uAC00\uAE4C\uC6B4 \uC801\uC5D0\uAC8C \uD30C\uD3B8
+    3\uAC1C\n(\uAC01 50%, \uB454\uD654 30%)\n\uB808\uBCA8\uB9C8\uB2E4 +1\uAC1C"
+  warriorDescription: 
+  icon: {fileID: 0}
+  rarity: 0
+  tags: 68
+  maxLevel: 5
+  saveCostFirstLevel: 2
+  saveCostPerLevel: 2
+  recordable: 1
+  heroOnlyId: 
+  cooldown: 3
+  damageFirstLevel: 0.5
+  damagePerLevel: 0
+  countFirstLevel: 3
+  countPerLevel: 1
+  radius: 1.5
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 2747146120814775881, guid: 2f2621e6d79cc9449b54906f1aa50f33, type: 3}

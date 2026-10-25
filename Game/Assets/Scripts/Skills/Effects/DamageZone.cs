@@ -29,6 +29,7 @@ namespace HistoryHeroes.Skills
         private int _ticksLeft;
         private ContactFilter2D _filter;
         private Action<DamageZone> _release;
+        private Action<Vector2> _onKill;
 
         public static ComponentPool<DamageZone> CreatePool(Transform root, Color color, int sortingOrder = -1)
         {
@@ -49,8 +50,11 @@ namespace HistoryHeroes.Skills
         }
 
         /// <param name="coefficientPerSecond">초당 피해 (공격력 배수). 0.3 = 초당 30%</param>
-        public void Begin(StatSheet stats, float coefficientPerSecond, float radius, float duration, LayerMask enemies, Action<DamageZone> release)
+        /// <param name="onKill">장판 안에서 적이 죽으면 그 자리 (맹독 개화: 독이 번짐)</param>
+        public void Begin(StatSheet stats, float coefficientPerSecond, float radius, float duration, LayerMask enemies, Action<DamageZone> release,
+            Action<Vector2> onKill = null)
         {
+            _onKill = onKill;
             _stats = stats;
             _coefficientPerSecond = coefficientPerSecond;
             _radius = radius;
@@ -96,7 +100,8 @@ namespace HistoryHeroes.Skills
             {
                 if (_hits[i].TryGetComponent(out Health health))
                 {
-                    health.TryTakeDamage(DamageCalculator.Roll(_stats, _coefficientPerSecond * TickInterval, DamageKind.Active));
+                    bool hit = health.TryTakeDamage(DamageCalculator.Roll(_stats, _coefficientPerSecond * TickInterval, DamageKind.Active));
+                    if (hit && health.IsDead) _onKill?.Invoke(health.transform.position);
                 }
             }
         }

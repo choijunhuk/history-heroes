@@ -104,6 +104,8 @@ namespace HistoryHeroes.Combat
         /// <summary>보호막을 채운다. 이미 있는 것보다 크면 그만큼으로 (겹쳐서 무한히 쌓이지 않게)</summary>
         public void SetShieldAtLeast(float amount) => Shield = Mathf.Max(Shield, amount);
 
+        public void ClearShield() => Shield = 0f;
+
         /// <summary>죽지 않고 체력을 정한다 (불굴)</summary>
         public void Revive(float hp) => Current = Mathf.Clamp(hp, 1f, Max);
 

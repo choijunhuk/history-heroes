@@ -17,6 +17,9 @@ namespace HistoryHeroes.EditorTools
             public EnemyBase RiftWarden;
             public Projectile Bullet, Orb, SwordWave;
             public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower;
+            public Projectile IceShardProjectile;
+            public ActiveSkillBehaviour IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
+            public ActiveSkillBehaviour FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
             public ActiveSkillBehaviour SpinBlade, FlameField, Lightning, ArrowRain, SteelWhirl, ThunderFire;
         }
 
@@ -59,6 +62,27 @@ namespace HistoryHeroes.EditorTools
                 .Bool("leaveField", true)
                 .Color("boltColor", new Color(1f, 0.7f, 0.3f)));
             p.ArrowRain = Behaviour<ArrowRainBehaviour>("Skill_ArrowRain", null);
+
+            // v0.3 공용 액티브·조합 (Skills.md 2장·4-4)
+            p.IceShardProjectile = ProjectilePrefab("Shard_Ice", new Color(0.65f, 0.9f, 1f), new Vector2(0.4f, 0.12f), 0.13f, 2f);
+            p.IceShard = Behaviour<IceShardBehaviour>("Skill_IceShard", props => props.Ref("shardPrefab", p.IceShardProjectile));
+            p.BlizzardShard = Behaviour<IceShardBehaviour>("Skill_BlizzardShard", props => props.Ref("shardPrefab", p.IceShardProjectile)
+                .Bool("chill", true).Float("slow", 0.4f).Float("fanDegrees", 60f));
+            p.PoisonCloud = Behaviour<PoisonCloudBehaviour>("Skill_PoisonCloud", null);
+            p.ToxicBloom = Behaviour<PoisonCloudBehaviour>("Skill_ToxicBloom", props => props.Bool("bloom", true));
+            p.GuardShield = Behaviour<GuardShieldBehaviour>("Skill_GuardShield", null);
+            p.IronWall = Behaviour<GuardShieldBehaviour>("Skill_IronWall", props => props.Bool("explodeOnBreak", true)
+                .Color("shieldColor", new Color(0.75f, 0.8f, 0.95f, 0.35f)));
+            p.Boomerang = Behaviour<BoomerangBehaviour>("Skill_Boomerang", null);
+            p.TwinBoomerang = Behaviour<BoomerangBehaviour>("Skill_TwinBoomerang", props => props.Bool("split", true).Float("spreadDegrees", 18f));
+            p.Whirlwind = Behaviour<WhirlwindBehaviour>("Skill_Whirlwind", null);
+            p.Blizzard = Behaviour<WhirlwindBehaviour>("Skill_Blizzard", props => props.Bool("freezeAtEnd", true)
+                .Color("color", new Color(0.8f, 0.95f, 1f, 0.45f)));
+            p.Meteor = Behaviour<MeteorBehaviour>("Skill_Meteor", null);
+            p.FlameTrail = Behaviour<FlameFieldBehaviour>("Skill_FlameTrail", props => props.Bool("trail", true));
+            p.ThunderGod = Behaviour<LightningBehaviour>("Skill_ThunderGod", props => props.Int("chainTargets", 3)
+                .Color("boltColor", new Color(0.8f, 0.85f, 1f)));
+            p.HeavenBow = Behaviour<ArrowRainBehaviour>("Skill_HeavenBow", props => props.Float("returnCoefficient", 0.75f));
 
             // 영웅 전용 (Skills.md 3장·4-4)
             p.KhanVolley = Behaviour<VolleyBehaviour>("Skill_KhanVolley", null);

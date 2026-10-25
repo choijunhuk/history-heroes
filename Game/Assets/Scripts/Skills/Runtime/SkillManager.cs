@@ -159,6 +159,7 @@ namespace HistoryHeroes.Skills
             }
 
             _loadout = new SkillLoadout(activeSlots, passiveSlots);
+            player.Health.ClearShield(); // 수호 방패·철벽이 남긴 보호막도 같이
         }
 
         /// <summary>

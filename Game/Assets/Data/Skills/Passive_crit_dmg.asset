@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8a1162d004b4454fa441b7538c6e4af, type: 3}
+  m_Name: Passive_crit_dmg
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.PassiveSkillData
+  id: crit_dmg
+  displayName: "\uCE58\uBA85\uD0C0 \uD53C\uD574"
+  description: "\uCE58\uBA85\uD0C0 \uD53C\uD574 +25%\n(\uB808\uBCA8\uB9C8\uB2E4 +15%)"
+  warriorDescription: 
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 1
+  maxLevel: 5
+  saveCostFirstLevel: 2
+  saveCostPerLevel: 2
+  recordable: 1
+  heroOnlyId: 
+  stats:
+  - stat: 6
+    kind: 0
+    firstLevel: 0.25
+    perLevel: 0.15
+    target: 0
+  attack: []

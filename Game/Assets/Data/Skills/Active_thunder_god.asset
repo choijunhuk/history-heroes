@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_thunder_god
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: thunder_god
+  displayName: "\uB1CC\uC2E0\uC758 \uBD84\uB178"
+  description: "3\uCD08\uB9C8\uB2E4 \uBC88\uAC1C 5\uAC1C (\uAC01 120%)\n\uBC88\uAC1C\uB9C8\uB2E4
+    \uADFC\uCC98 3\uBA85\uC5D0\uAC8C \uC5F0\uC1C4\n(\uC5F0\uC1C4\uB9C8\uB2E4 -20%)"
+  warriorDescription: 
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 32
+  maxLevel: 1
+  saveCostFirstLevel: 12
+  saveCostPerLevel: 0
+  recordable: 1
+  heroOnlyId: 
+  cooldown: 3
+  damageFirstLevel: 1.2
+  damagePerLevel: 0
+  countFirstLevel: 5
+  countPerLevel: 0
+  radius: 1.5
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 2526611667929961471, guid: 72713664916bad544be9d516aaac8d15, type: 3}

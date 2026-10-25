@@ -17,6 +17,9 @@ namespace HistoryHeroes.EditorTools
             public HeroData Khan, Guan, Napoleon, Tesla;
             public HeroRoster Roster;
             public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower;
+            // v0.3 스킬 전체 목록
+            public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
+            public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
             public EnemyData Charger, Archer, Bomber;
             public RarityTable Rarity;
             public DungeonData Dungeon;
@@ -126,6 +129,56 @@ namespace HistoryHeroes.EditorTools
             multishot.warriorDescription = "베기 1회 추가\n(회당 피해 -10%)";
             d.Pool.Add(multishot);
 
+            // ----- v0.3 패시브 12개 (Skills.md 1장) -----
+            PassiveSkillData moveUp = Passive("move_up", "이동속도", Rarity.Common, SkillTag.Stat, 5, 1,
+                "이동속도 +8%\n(레벨마다 +5%)",
+                Stat(StatType.MoveSpeed, ModifierKind.Percent, 0.08f, 0.05f, StatTarget.Both));
+            d.Pool.Add(moveUp);
+            PassiveSkillData regen = Passive("regen", "체력 재생", Rarity.Common, SkillTag.Survival, 5, 1,
+                "초당 최대체력 0.5% 회복\n(레벨마다 +0.3%)",
+                Stat(StatType.HpRegen, ModifierKind.Flat, 0.005f, 0.003f, StatTarget.Both));
+            d.Pool.Add(regen);
+            PassiveSkillData critRate = Passive("crit_rate", "치명타 확률", Rarity.Common, SkillTag.Stat, 5, 1,
+                "치명타 확률 +6%\n(레벨마다 +4%)",
+                Stat(StatType.CritRate, ModifierKind.Flat, 0.06f, 0.04f, StatTarget.Both));
+            d.Pool.Add(critRate);
+            d.Pool.Add(Passive("exp_up", "배움", Rarity.Common, SkillTag.Growth, 3, 1,
+                "경험치 +15%\n(레벨마다 +10%)\n초반에 고르면 레벨업이 빨라져요",
+                Stat(StatType.ExpGain, ModifierKind.Flat, 0.15f, 0.10f, StatTarget.Both)));
+
+            PassiveSkillData pierce = Passive("pierce", "관통", Rarity.Rare, SkillTag.Projectile, 1, 2,
+                "기본 공격이 적을 뚫고 지나감\n(뚫을 때마다 피해 -20%)");
+            pierce.attack = new List<PassiveSkillData.AttackEntry> { new PassiveSkillData.AttackEntry { kind = AttackModifierKind.Pierce, firstLevel = 1, perLevel = 0 } };
+            pierce.warriorDescription = "베기 각도\n120° → 160°";
+            d.Pool.Add(pierce);
+            PassiveSkillData ricochet = Passive("ricochet", "벽 튕김", Rarity.Rare, SkillTag.Projectile, 2, 2,
+                "기본 공격이 벽에 2번 튕김\n(레벨마다 +1번)");
+            ricochet.attack = new List<PassiveSkillData.AttackEntry> { new PassiveSkillData.AttackEntry { kind = AttackModifierKind.Ricochet, firstLevel = 2, perLevel = 1 } };
+            ricochet.warriorDescription = "베기마다 검기 1발\n(공격력 40%, 벽에 튕김)";
+            d.Pool.Add(ricochet);
+            d.Pool.Add(Passive("crit_dmg", "치명타 피해", Rarity.Rare, SkillTag.Stat, 5, 2,
+                "치명타 피해 +25%\n(레벨마다 +15%)",
+                Stat(StatType.CritDamage, ModifierKind.Flat, 0.25f, 0.15f, StatTarget.Both)));
+            PassiveSkillData cdr = Passive("cdr", "쿨다운 감소", Rarity.Rare, SkillTag.ActiveBoost, 5, 2,
+                "액티브 쿨다운 -8%\n(레벨마다 -6%, 최대 40%)",
+                Stat(StatType.CooldownReduction, ModifierKind.Flat, 0.08f, 0.06f, StatTarget.Active));
+            d.Pool.Add(cdr);
+            PassiveSkillData activeDmg = Passive("active_dmg", "기술 숙련", Rarity.Rare, SkillTag.ActiveBoost, 5, 2,
+                "액티브 피해 +15%\n(레벨마다 +10%)",
+                Stat(StatType.ActiveDamage, ModifierKind.Flat, 0.15f, 0.10f, StatTarget.Active));
+            d.Pool.Add(activeDmg);
+            d.Pool.Add(Passive("dodge", "회피", Rarity.Rare, SkillTag.Survival, 3, 2,
+                "8% 확률로 피해를 피함\n(레벨마다 +5%, 최대 25%)",
+                Stat(StatType.Dodge, ModifierKind.Flat, 0.08f, 0.05f, StatTarget.Both)));
+            PassiveSkillData undying = Passive("undying", "불굴", Rarity.Legendary, SkillTag.Survival, 1, 6,
+                "판에서 한 번,\n죽는 순간 체력 50%로 부활");
+            undying.attack = new List<PassiveSkillData.AttackEntry> { new PassiveSkillData.AttackEntry { kind = AttackModifierKind.Undying, firstLevel = 1, perLevel = 0 } };
+            d.Pool.Add(undying);
+            PassiveSkillData momentum = Passive("momentum", "영웅의 기세", Rarity.Legendary, SkillTag.Stat, 1, 6,
+                "멈춘 뒤 3초간\n기본 공격 속도 +50%\n기본 공격 피해 +30%");
+            momentum.attack = new List<PassiveSkillData.AttackEntry> { new PassiveSkillData.AttackEntry { kind = AttackModifierKind.Momentum, firstLevel = 1, perLevel = 0 } };
+            d.Pool.Add(momentum);
+
             // ----- 액티브 4개 (Skills.md 2장 🅥). 동작 프리팹은 LinkData에서 넣는다 -----
             d.SpinBlade = Active("spin_blade", "회전 칼날", Rarity.Common, SkillTag.Melee | SkillTag.Defense, 5, 2,
                 "몸 주위를 도는 칼날 2개\n(닿으면 공격력 40%)\n레벨마다 칼날 +1",
@@ -156,6 +209,71 @@ namespace HistoryHeroes.EditorTools
 
             d.Recipes.Add(Recipe("steel_whirl", FusionType.Evolution, d.SpinBlade, 5, d.DefUp, 1, d.SteelWhirl));
             d.Recipes.Add(Recipe("thunder_fire", FusionType.Merge, d.Lightning, 3, d.FlameField, 3, d.ThunderFire));
+
+            // ----- v0.3 공용 액티브 6개 (Skills.md 2장) -----
+            d.IceShard = Active("ice_shard", "얼음 파편", Rarity.Common, SkillTag.Ice | SkillTag.Projectile, 5, 2,
+                "3초마다 가까운 적에게 파편 3개\n(각 50%, 둔화 30%)\n레벨마다 +1개",
+                cooldown: 3f, damage: 0.5f, damagePerLevel: 0f, count: 3, countPerLevel: 1);
+            d.PoisonCloud = Active("poison_cloud", "독 구름", Rarity.Common, SkillTag.Poison, 5, 2,
+                "5초마다 적 자리에 독 구름 4초\n(초당 25%, 겹치면 중첩)\n레벨마다 지속 +1초",
+                cooldown: 5f, damage: 0.25f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 1.4f, duration: 4f);
+            d.PoisonCloud.durationPerLevel = 1f;
+            d.GuardShield = Active("guard_shield", "수호 방패", Rarity.Common, SkillTag.Survival | SkillTag.Defense, 5, 2,
+                "8초마다 최대체력 10% 보호막\n(레벨마다 +4%)",
+                cooldown: 8f, damage: 0.10f, damagePerLevel: 0.04f, count: 1, countPerLevel: 0);
+            d.Boomerang = Active("boomerang", "부메랑", Rarity.Rare, SkillTag.Projectile, 5, 3,
+                "4초마다 왕복 부메랑 1개\n(80%, 관통)\n레벨마다 +1개",
+                cooldown: 4f, damage: 0.8f, damagePerLevel: 0f, count: 1, countPerLevel: 1);
+            d.Whirlwind = Active("whirlwind", "회오리", Rarity.Rare, SkillTag.Wind, 5, 3,
+                "6초마다 적이 많은 곳에 회오리\n2초 동안 적을 끌어모음\n레벨마다 지속 +0.5초",
+                cooldown: 6f, damage: 0f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 3f, duration: 2f);
+            d.Whirlwind.durationPerLevel = 0.5f;
+            // "Lv당 피해 +60%"는 Lv1 피해(400%)의 60% → 레벨마다 +240%p (화살비와 같은 해석)
+            d.Meteor = Active("meteor", "유성 낙하", Rarity.Legendary, SkillTag.Fire, 5, 6,
+                "10초마다 적이 많은 곳에 유성\n(400%, 범위 큼, 0.8초 예고)\n레벨마다 피해 +60%",
+                cooldown: 10f, damage: 4f, damagePerLevel: 2.4f, count: 1, countPerLevel: 0, radius: 2f);
+            foreach (ActiveSkillData s in new[] { d.IceShard, d.PoisonCloud, d.GuardShield, d.Boomerang, d.Whirlwind, d.Meteor }) d.Pool.Add(s);
+
+            // ----- v0.3 공용 조합 8개 (Skills.md 4-1·4-2·4-4). 결과는 풀에 넣지 않는다 -----
+            d.FlameTrail = Active("flame_trail", "불꽃 발자국", Rarity.Rare, SkillTag.Fire, 1, 10,
+                "움직인 자리에 불길 2초\n(초당 35%)\n원래 불꽃 장판도 계속 깔림",
+                cooldown: 4f, damage: 0.3f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 1.5f * 1.6f, duration: 3f, saveCostFirst: 10);
+            d.BlizzardShard = Active("blizzard_shard", "서리 창", Rarity.Rare, SkillTag.Ice | SkillTag.Projectile, 1, 10,
+                "3초마다 파편 7개 (각 60%, 둔화 40%)\n둔화 3번 → 1초 빙결\n빙결한 적에게 치명타 확정",
+                cooldown: 3f, damage: 0.6f, damagePerLevel: 0f, count: 7, countPerLevel: 0, saveCostFirst: 10);
+            d.ToxicBloom = Active("toxic_bloom", "맹독 개화", Rarity.Rare, SkillTag.Poison, 1, 10,
+                "5초마다 독 구름 8초 (초당 30%)\n구름 안에서 죽은 적 자리에\n작은 구름이 번짐 (3번까지)",
+                cooldown: 5f, damage: 0.3f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 1.4f, duration: 8f, saveCostFirst: 10);
+            d.IronWall = Active("iron_wall", "철벽", Rarity.Rare, SkillTag.Survival | SkillTag.Defense, 1, 10,
+                "8초마다 최대체력 26% 보호막\n깨질 때 주변 폭발 200%",
+                cooldown: 8f, damage: 0.26f, damagePerLevel: 0f, count: 1, countPerLevel: 0, saveCostFirst: 10);
+            d.ThunderGod = Active("thunder_god", "뇌신의 분노", Rarity.Rare, SkillTag.Lightning, 1, 12,
+                "3초마다 번개 5개 (각 120%)\n번개마다 근처 3명에게 연쇄\n(연쇄마다 -20%)",
+                cooldown: 3f, damage: 1.2f, damagePerLevel: 0f, count: 5, countPerLevel: 0, saveCostFirst: 12);
+            d.TwinBoomerang = Active("twin_boomerang", "쌍 부메랑", Rarity.Rare, SkillTag.Projectile, 1, 12,
+                "4초마다 부메랑 5개 (각 80%, 관통)\n돌아올 때 2개로 갈라짐 (각 50%)",
+                cooldown: 4f, damage: 0.8f, damagePerLevel: 0f, count: 5, countPerLevel: 0, saveCostFirst: 12);
+            d.Blizzard = Active("blizzard", "눈보라", Rarity.Rare, SkillTag.Ice | SkillTag.Wind, 3, 3,
+                "6초마다 2.5초 동안 끌어모으며\n초당 60%, 끝날 때 1.5초 빙결\nLv2 +25%, Lv3 +50%",
+                cooldown: 6f, damage: 0.6f, damagePerLevel: 0.15f, count: 1, countPerLevel: 0, radius: 3f, duration: 2.5f, saveCostFirst: 15);
+            d.HeavenBow = Active("heaven_bow", "천궁", Rarity.Rare, SkillTag.Projectile, 3, 5,
+                "6초마다 화면 전체 화살 (150%)\n되돌아오며 한 번 더 75%\nLv2 +25%, Lv3 +50%",
+                cooldown: 6f, damage: 1.5f, damagePerLevel: 0.375f, count: 1, countPerLevel: 0, saveCostFirst: 22);
+            foreach (ActiveSkillData s in new[] { d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang })
+            {
+                s.saveCostPerLevel = 0;
+                UnityEditor.EditorUtility.SetDirty(s);
+            }
+
+            d.Recipes.Add(Recipe("flame_trail", FusionType.Evolution, d.FlameField, 5, moveUp, 1, d.FlameTrail));
+            d.Recipes.Add(Recipe("blizzard_shard", FusionType.Evolution, d.IceShard, 5, critRate, 1, d.BlizzardShard));
+            d.Recipes.Add(Recipe("toxic_bloom", FusionType.Evolution, d.PoisonCloud, 5, regen, 1, d.ToxicBloom));
+            PassiveSkillData hpUp = (PassiveSkillData)d.Pool.Find(s => s.id == "hp_up");
+            d.Recipes.Add(Recipe("iron_wall", FusionType.Evolution, d.GuardShield, 5, hpUp, 1, d.IronWall));
+            d.Recipes.Add(Recipe("thunder_god", FusionType.Evolution, d.Lightning, 5, cdr, 1, d.ThunderGod));
+            d.Recipes.Add(Recipe("twin_boomerang", FusionType.Evolution, d.Boomerang, 5, activeDmg, 1, d.TwinBoomerang));
+            d.Recipes.Add(Recipe("blizzard", FusionType.Merge, d.Whirlwind, 3, d.IceShard, 3, d.Blizzard));
+            d.Recipes.Add(Recipe("heaven_bow", FusionType.Merge, d.ArrowRain, 3, d.Boomerang, 3, d.HeavenBow));
 
             // ----- 영웅 전용 액티브 4개 (Skills.md 3장, 희귀 비용 레벨당 3) -----
             d.KhanVolley = Active("khan_volley", "만궁 연사", Rarity.Rare, SkillTag.Projectile, 5, 3,
@@ -219,7 +337,11 @@ namespace HistoryHeroes.EditorTools
             // ----- v0.2: 스킬 전체 목록 (기록의 스킬 ID → 데이터) -----
             d.Database = AssetUtil.LoadOrCreate<SkillDatabase>($"{DataDir}/Skills/SkillDatabase.asset");
             d.Database.balanceVersion = 1;
-            d.Database.skills = new List<SkillData>(d.Pool) { d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower };
+            d.Database.skills = new List<SkillData>(d.Pool)
+            {
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower,
+                d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
+            };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
             foreach (string problem in d.Database.FindProblems()) Debug.LogError("[SkillDatabase] " + problem);
 
@@ -368,6 +490,21 @@ namespace HistoryHeroes.EditorTools
             d.NapoAusterlitz.behaviourPrefab = p.NapoAusterlitz;
             d.TeslaCoil.behaviourPrefab = p.TeslaCoil;
             d.TeslaTower.behaviourPrefab = p.TeslaTower;
+            d.IceShard.behaviourPrefab = p.IceShard;
+            d.PoisonCloud.behaviourPrefab = p.PoisonCloud;
+            d.GuardShield.behaviourPrefab = p.GuardShield;
+            d.Boomerang.behaviourPrefab = p.Boomerang;
+            d.Whirlwind.behaviourPrefab = p.Whirlwind;
+            d.Meteor.behaviourPrefab = p.Meteor;
+            d.FlameTrail.behaviourPrefab = p.FlameTrail;
+            d.BlizzardShard.behaviourPrefab = p.BlizzardShard;
+            d.ToxicBloom.behaviourPrefab = p.ToxicBloom;
+            d.IronWall.behaviourPrefab = p.IronWall;
+            d.ThunderGod.behaviourPrefab = p.ThunderGod;
+            d.TwinBoomerang.behaviourPrefab = p.TwinBoomerang;
+            d.Blizzard.behaviourPrefab = p.Blizzard;
+            d.HeavenBow.behaviourPrefab = p.HeavenBow;
+            foreach (SkillData s in d.Database.skills) UnityEditor.EditorUtility.SetDirty(s);
             foreach (HeroData h in d.Roster.heroes) UnityEditor.EditorUtility.SetDirty(h);
             UnityEditor.EditorUtility.SetDirty(d.Roster);
             UnityEditor.EditorUtility.SetDirty(d.RiftWarden);

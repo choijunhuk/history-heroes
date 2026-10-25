@@ -138,6 +138,53 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>
+        /// 스킬 하나만 들고 적 무리(돌진병 8 + 궁병 3 + 엘리트 1)를 상대해 본다 (새 스킬 점검용).
+        /// 방 흐름·레벨업 창은 끈다. 예: TrySkill("meteor", 3) / TrySkill("thunder_god", 1, fusion: true)
+        /// </summary>
+        public static string TrySkill(string skillId, int level = 3, bool fusion = false)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var player = Object.FindAnyObjectByType<PlayerController>();
+            var skills = Object.FindAnyObjectByType<SkillManager>();
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            SkillData skill = db.Find(skillId);
+            if (player == null || skills == null || skill == null) return "없음: " + skillId;
+
+            var levelUp = Object.FindAnyObjectByType<LevelUpScreen>();
+            if (levelUp != null)
+            {
+                levelUp.DevCancel();
+                levelUp.enabled = false;
+            }
+
+            var run = Object.FindAnyObjectByType<DungeonRun>();
+            if (run != null) run.gameObject.SetActive(false);
+            Dev.DevCheats.KillAll();
+            skills.ClearAll();
+            skills.DevSetLevel(skill, level, fusion);
+            player.Teleport(new Vector2(0f, -4f));
+            player.Health.Heal(1e9f);
+            player.Health.Invulnerable = true; // 스킬만 보려고: 죽어서 결과 화면이 뜨면 점검이 멈춘다
+
+            var root = new GameObject("TrySkill").transform;
+            SpawnScenario(root, "Enemy_Charger", 8, hp: 2f, elite: false, player);
+            SpawnScenario(root, "Enemy_Archer", 3, hp: 2f, elite: false, player);
+            SpawnScenario(root, "Enemy_Charger", 1, hp: 2f, elite: true, player);
+            Combat.DamageLog.Reset();
+            return $"시작: {skill.displayName} Lv{level} (적 12)";
+        }
+
+        /// <summary>TrySkill 뒤: 남은 적, 액티브 피해, 플레이어 체력</summary>
+        public static string TrySkillStatus()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            var player = Object.FindAnyObjectByType<PlayerController>();
+            player.Health.Heal(1e9f);
+            return $"남은 적 {EnemyBase.Alive.Count} · 액티브 피해 {Combat.DamageLog.Active:0} · 기본 공격 {Combat.DamageLog.BasicAttack:0} · 보호막 {player.Health.Shield:0}";
+        }
+
+        /// <summary>
         /// 화면에 보이는 버튼을 이름으로 누른다 (로비·결과·기록 화면 흐름 점검용).
         /// 예: "Dungeon", "Boss", "Primary"(결과 첫 버튼), "Save", "AutoFit", "Slot1", "Start", "Back"
         /// </summary>

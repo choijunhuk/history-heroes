@@ -45,3 +45,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.FlameFieldBehaviour
   color: {r: 1, g: 0.45, b: 0.1, a: 0.45}
+  trail: 0
+  trailInterval: 0.2
+  trailRadius: 0.6
+  trailDuration: 2
+  trailDamagePerSecond: 0.35
