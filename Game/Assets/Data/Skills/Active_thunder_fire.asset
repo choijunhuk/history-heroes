@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_thunder_fire
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: thunder_fire
+  displayName: "\uB1CC\uD654 \uD3ED\uD48D"
+  description: "3\uCD08\uB9C8\uB2E4 \uBC88\uAC1C 3\uAC1C (\uAC01 130%)\n\uB5A8\uC5B4\uC9C4
+    \uC790\uB9AC\uC5D0 \uBD88\uAE38 2\uCD08 (\uCD08\uB2F9 30%)\nLv2 +25%, Lv3 +50%"
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 48
+  maxLevel: 3
+  saveCostFirstLevel: 15
+  saveCostPerLevel: 3
+  recordable: 1
+  heroOnlyId: 
+  cooldown: 3
+  damageFirstLevel: 1.3
+  damagePerLevel: 0.325
+  countFirstLevel: 3
+  countPerLevel: 0
+  radius: 1.5
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 1036653207795123913, guid: 09bd0ce73672c7f46b23592404374bbc, type: 3}

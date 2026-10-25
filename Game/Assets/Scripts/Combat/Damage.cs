@@ -1,0 +1,62 @@
+using HistoryHeroes.Stats;
+using UnityEngine;
+
+namespace HistoryHeroes.Combat
+{
+    public enum Team
+    {
+        Player,
+        Enemy,
+    }
+
+    public enum DamageKind
+    {
+        BasicAttack,
+        Active,
+        Enemy,
+    }
+
+    /// <summary>피해 한 번의 정보. 맞는 쪽이 피해 감소를 적용한다.</summary>
+    public struct DamageInfo
+    {
+        public float Amount;
+        public bool IsCrit;
+        public DamageKind Kind;
+        public Team AttackerTeam;
+    }
+
+    /// <summary>
+    /// 피해 공식 (Docs/Design/Stats.md 2장).
+    /// 기본 피해 = 공격력 × 계수, 치명타면 × 치명타 피해, 액티브면 × (1 + 액티브 피해 증가).
+    /// 피해 감소는 맞는 쪽 Health에서 적용한다.
+    /// </summary>
+    public static class DamageCalculator
+    {
+        public static DamageInfo Roll(StatSheet attacker, float coefficient, DamageKind kind)
+        {
+            StatTarget context = kind == DamageKind.Active ? StatTarget.Active : StatTarget.BasicAttack;
+
+            float amount = attacker.Get(StatType.Attack, context) * coefficient;
+            if (kind == DamageKind.Active)
+            {
+                amount *= 1f + attacker.Get(StatType.ActiveDamage, context);
+            }
+
+            bool crit = Random.value < attacker.Get(StatType.CritRate, context);
+            if (crit) amount *= attacker.Get(StatType.CritDamage, context);
+
+            return new DamageInfo
+            {
+                Amount = amount,
+                IsCrit = crit,
+                Kind = kind,
+                AttackerTeam = Team.Player,
+            };
+        }
+
+        public static DamageInfo Enemy(float amount)
+        {
+            return new DamageInfo { Amount = amount, IsCrit = false, Kind = DamageKind.Enemy, AttackerTeam = Team.Enemy };
+        }
+    }
+}

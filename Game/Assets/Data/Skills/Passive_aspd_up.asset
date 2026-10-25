@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8a1162d004b4454fa441b7538c6e4af, type: 3}
+  m_Name: Passive_aspd_up
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.PassiveSkillData
+  id: aspd_up
+  displayName: "\uACF5\uACA9\uC18D\uB3C4"
+  description: "\uAE30\uBCF8 \uACF5\uACA9 \uC18D\uB3C4 +12%\n(\uB808\uBCA8\uB9C8\uB2E4
+    +8%)"
+  icon: {fileID: 0}
+  rarity: 0
+  tags: 1
+  maxLevel: 5
+  saveCostFirstLevel: 1
+  saveCostPerLevel: 1
+  recordable: 1
+  heroOnlyId: 
+  stats:
+  - stat: 2
+    kind: 1
+    firstLevel: 0.12
+    perLevel: 0.08
+    target: 1
+  attack: []

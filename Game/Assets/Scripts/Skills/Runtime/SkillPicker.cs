@@ -1,0 +1,133 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace HistoryHeroes.Skills
+{
+    /// <summary>레벨업 카드 3장 뽑기 (GameDesign 6-4).</summary>
+    public static class SkillPicker
+    {
+        /// <summary>
+        /// 1단계: 후보 목록 만들기 (구현 완료).
+        /// - 새 스킬: 그 종류의 빈 칸이 있을 때만
+        /// - 가진 스킬: 최대 레벨이 아닐 때만 (레벨업 카드)
+        /// - 이 영웅이 쓸 수 있고, 조합 재료로 이미 쓰이지 않은 스킬만
+        /// - 액티브와 패시브는 한 목록에 섞인다
+        /// </summary>
+        public static List<SkillCard> BuildCandidates(SkillLoadout loadout, IEnumerable<SkillData> pool, string heroId)
+        {
+            var candidates = new List<SkillCard>();
+            foreach (SkillData skill in pool)
+            {
+                if (skill == null || !skill.IsAvailableFor(heroId) || loadout.IsConsumed(skill)) continue;
+
+                SkillInstance owned = loadout.Find(skill);
+                if (owned != null)
+                {
+                    if (!owned.IsMaxLevel)
+                    {
+                        candidates.Add(new SkillCard { Type = CardType.LevelUp, Skill = skill, NextLevel = owned.Level + 1 });
+                    }
+                }
+                else if (loadout.HasFreeSlot(skill.Kind))
+                {
+                    candidates.Add(new SkillCard { Type = CardType.NewSkill, Skill = skill, NextLevel = 1 });
+                }
+            }
+
+            // 조합 결과는 풀에 없지만 레벨업은 된다 (합체 결과 Lv2 +25%, Lv3 +50% — Skills.md 4-2)
+            foreach (SkillInstance owned in loadout.Actives)
+            {
+                if (owned.IsFusionResult && !owned.IsMaxLevel)
+                {
+                    candidates.Add(new SkillCard { Type = CardType.LevelUp, Skill = owned.Data, NextLevel = owned.Level + 1 });
+                }
+            }
+
+            return candidates;
+        }
+
+        /// <summary>
+        /// 2단계: 후보에서 count장 뽑기 (GameDesign 6-4).
+        ///   1. 카드 한 장마다 층별 확률로 **등급을 먼저** 뽑는다 (RarityTable).
+        ///   2. 그 등급의 후보 중 하나를 무작위로 고른다. 뽑힌 카드는 후보에서 빠진다 (같은 스킬 두 장 금지).
+        ///   3. 그 등급에 후보가 없으면 전설 → 희귀 → 일반으로 내려가고, 일반이 비면 희귀로 올라간다.
+        ///      **전설로는 절대 올라가지 않는다.** ("전설은 귀하다")
+        ///   4. 그래도 없으면 기본 카드(체력 회복)로 채운다. 기본 카드는 중복돼도 된다.
+        /// </summary>
+        public static List<SkillCard> PickSkills(List<SkillCard> candidates, int count, int floor, RarityTable rarityTable)
+        {
+            var pool = new List<SkillCard>(candidates);
+            var picked = new List<SkillCard>(count);
+
+            for (int i = 0; i < count; i++)
+            {
+                Rarity rolled = RollRarity(floor, rarityTable);
+                SkillCard card = TakeFrom(pool, FallbackOrder(rolled));
+                picked.Add(card ?? SkillCard.Fallback());
+            }
+
+            return picked;
+        }
+
+        private static readonly Rarity[] FromLegendary = { Rarity.Legendary, Rarity.Rare, Rarity.Common };
+        private static readonly Rarity[] FromRare = { Rarity.Rare, Rarity.Common };
+        private static readonly Rarity[] FromCommon = { Rarity.Common, Rarity.Rare };
+
+        /// <summary>뽑힌 등급에 후보가 없을 때 찾아볼 순서. 어떤 경우에도 전설로는 올라가지 않는다.</summary>
+        public static Rarity[] FallbackOrder(Rarity rolled)
+        {
+            switch (rolled)
+            {
+                case Rarity.Legendary: return FromLegendary;
+                case Rarity.Rare: return FromRare;
+                default: return FromCommon;
+            }
+        }
+
+        /// <summary>가중치 합 × 0~1 난수 → 누적 가중치가 그 값을 넘는 등급.</summary>
+        public static Rarity RollRarity(int floor, RarityTable table)
+        {
+            if (table == null) return Rarity.Common;
+
+            float legendary = table.WeightOf(Rarity.Legendary, floor);
+            float rare = table.WeightOf(Rarity.Rare, floor);
+            float common = table.WeightOf(Rarity.Common, floor);
+            float total = legendary + rare + common;
+            if (total <= 0f) return Rarity.Common;
+
+            float roll = Random.value * total;
+            if (roll < legendary) return Rarity.Legendary;
+            if (roll < legendary + rare) return Rarity.Rare;
+            return Rarity.Common;
+        }
+
+        /// <summary>order 순서대로 그 등급의 후보를 찾아 하나를 무작위로 꺼낸다. 없으면 null.</summary>
+        private static SkillCard TakeFrom(List<SkillCard> pool, Rarity[] order)
+        {
+            foreach (Rarity rarity in order)
+            {
+                int matches = 0;
+                for (int i = 0; i < pool.Count; i++)
+                {
+                    if (pool[i].Skill != null && pool[i].Skill.rarity == rarity) matches++;
+                }
+
+                if (matches == 0) continue;
+
+                // 그 등급 후보 중 n번째를 고른다 (목록을 새로 만들지 않고)
+                int target = Random.Range(0, matches);
+                for (int i = 0; i < pool.Count; i++)
+                {
+                    if (pool[i].Skill == null || pool[i].Skill.rarity != rarity) continue;
+                    if (target-- > 0) continue;
+
+                    SkillCard card = pool[i];
+                    pool.RemoveAt(i);
+                    return card;
+                }
+            }
+
+            return null;
+        }
+    }
+}

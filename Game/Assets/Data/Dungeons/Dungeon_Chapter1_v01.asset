@@ -1,0 +1,114 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1c1c1ea389d1ab4290078d2106e217e, type: 3}
+  m_Name: Dungeon_Chapter1_v01
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Dungeon.DungeonData
+  id: chapter1_v01
+  displayName: "\uADE0\uC5F4\uC758 \uCD08\uC6D0 (v0.1)"
+  chapter: 1
+  rooms:
+  - kind: 0
+    spawns:
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 3
+      elite: 0
+  - kind: 0
+    spawns:
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 2
+      elite: 0
+    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
+      count: 2
+      elite: 0
+  - kind: 0
+    spawns:
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 3
+      elite: 0
+    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
+      count: 2
+      elite: 0
+  - kind: 0
+    spawns:
+    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
+      count: 3
+      elite: 0
+    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
+      count: 2
+      elite: 0
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 1
+      elite: 0
+  - kind: 1
+    spawns:
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 1
+      elite: 1
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 3
+      elite: 0
+  - kind: 0
+    spawns:
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 4
+      elite: 0
+    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
+      count: 2
+      elite: 0
+  - kind: 0
+    spawns:
+    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
+      count: 3
+      elite: 0
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 3
+      elite: 0
+    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
+      count: 1
+      elite: 0
+  - kind: 0
+    spawns:
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 4
+      elite: 0
+    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
+      count: 2
+      elite: 0
+    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
+      count: 2
+      elite: 0
+  - kind: 0
+    spawns:
+    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
+      count: 4
+      elite: 0
+    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
+      count: 3
+      elite: 0
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 2
+      elite: 0
+  - kind: 1
+    spawns:
+    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
+      count: 1
+      elite: 1
+    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
+      count: 1
+      elite: 1
+    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+      count: 2
+      elite: 0
+  hpPerRoom: 0.04
+  attackPerRoom: 0.02
+  hpPerChapter: 1.35
+  attackPerChapter: 1.2
