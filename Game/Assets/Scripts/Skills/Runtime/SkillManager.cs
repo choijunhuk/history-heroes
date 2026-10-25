@@ -29,7 +29,7 @@ namespace HistoryHeroes.Skills
         /// <summary>조합을 처음 만들었을 때 (도감 기록·연출용)</summary>
         public event Action<FusionRecipe> FusionCompleted;
 
-        private string HeroId => player.Hero != null ? player.Hero.id : string.Empty;
+        public string HeroId => player.Hero != null ? player.Hero.id : string.Empty;
 
         /// <summary>레벨업 카드 만들기 (GameDesign 6-4). 조합 조건을 채웠으면 1장은 조합 카드로 확정.</summary>
         public List<SkillCard> CreateOffer(int floor)
@@ -121,8 +121,11 @@ namespace HistoryHeroes.Skills
             return true;
         }
 
-        /// <summary>개발·테스트용: 가진 스킬을 모두 없애고 새 판처럼 비운다 (빌드 비교 시나리오를 깨끗한 상태에서 시작하려고).</summary>
-        public void DevClearAll()
+        /// <summary>
+        /// 가진 스킬을 모두 없애고 새 판처럼 비운다 (효과·이벤트·소환물 정리).
+        /// 기록 복원(ApplyRecord)과 빌드 비교 시나리오가 쓴다.
+        /// </summary>
+        public void ClearAll()
         {
             var owned = new List<SkillInstance>(Loadout.Actives);
             owned.AddRange(Loadout.Passives);
@@ -136,8 +139,34 @@ namespace HistoryHeroes.Skills
             _loadout = new SkillLoadout(activeSlots, passiveSlots);
         }
 
+        /// <summary>
+        /// 기록의 빌드로 바꾼다 (보스맵, GameDesign 12-2 "Apply 계약"):
+        /// ① 지금 상태를 다 비우고 ② 기록의 레벨 기준으로 다시 구성한다. 두 번 불러도 효과가 겹치지 않는다.
+        /// 스킬 수치는 언제나 최신 데이터에서 가져온다 (7-5 패치 정책). 검사는 RecordValidator가 먼저 한다.
+        /// </summary>
+        public void ApplyRecord(IReadOnlyList<Records.RecordSkill> recordSkills, SkillDatabase database)
+        {
+            ClearAll();
+            if (recordSkills == null || database == null) return;
+
+            foreach (Records.RecordSkill saved in recordSkills)
+            {
+                SkillData data = database.Find(saved.id);
+                if (data == null || Loadout.Find(data) != null || !Loadout.HasFreeSlot(data.Kind)) continue;
+
+                SkillInstance instance = Loadout.AddNew(data, Mathf.Clamp(saved.level, 1, data.maxLevel));
+                instance.IsFusionResult = saved.fusion;
+                Install(instance);
+            }
+        }
+
+        /// <summary>이번 판에 전설 스킬 카드를 골랐는가 (던전 ★3 "전설 없이 클리어", Modes 3-2)</summary>
+        public bool ChoseLegendary { get; private set; }
+
         public void Choose(SkillCard card)
         {
+            if (card.Skill != null && card.Skill.rarity == Rarity.Legendary && card.Type != CardType.Fallback) ChoseLegendary = true;
+
             switch (card.Type)
             {
                 case CardType.NewSkill:

@@ -2,6 +2,7 @@ using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
 using HistoryHeroes.Dungeon;
 using HistoryHeroes.Enemy;
+using HistoryHeroes.Modes;
 using HistoryHeroes.Player;
 using HistoryHeroes.Progress;
 using HistoryHeroes.Skills;
@@ -18,13 +19,16 @@ using UnityEngine.UI;
 
 namespace HistoryHeroes.EditorTools
 {
-    public static partial class V01SceneBuilder
+    public static partial class SceneBuilder
     {
         // 방 안쪽 크기 (벽 안). 세로 화면에 맞춘 8 × 14
         private const float ArenaHalfWidth = 4f;
         private const float ArenaHalfHeight = 7f;
 
-        private static void BuildScene(Scene scene, Data d, Prefabs p)
+        // 보스 경기장 (원형, Modes 2-9). 방 너비 안에 들어가게
+        private const float BossArenaRadius = 3.9f;
+
+        private static void BuildBattleScene(Scene scene, Data d, Prefabs p)
         {
             // ----- 카메라·빛 -----
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -39,16 +43,20 @@ namespace HistoryHeroes.EditorTools
             light.lightType = Light2D.LightType.Global;
             light.intensity = 1f;
 
-            // ----- 방: 바닥, 벽, 문 -----
+            // ----- 모드별 묶음: 장면이 열릴 때 BattleBootstrap이 한쪽만 켠다 -----
+            var dungeonRoot = new GameObject("DungeonMode").transform;
+            var bossRoot = new GameObject("BossMode").transform;
+
+            // ----- 방: 바닥, 벽, 문 (벽은 두 모드가 같이 쓴다) -----
             var arena = new GameObject("Arena").transform;
-            Block("Floor", arena, Vector2.zero, new Vector2(ArenaHalfWidth * 2f, ArenaHalfHeight * 2f), new Color(0.18f, 0.24f, 0.18f), -10, collider: false);
+            Block("Floor", dungeonRoot, Vector2.zero, new Vector2(ArenaHalfWidth * 2f, ArenaHalfHeight * 2f), new Color(0.18f, 0.24f, 0.18f), -10, collider: false);
             Color wall = new Color(0.36f, 0.31f, 0.26f);
             Block("Wall Left", arena, new Vector2(-ArenaHalfWidth - 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true);
             Block("Wall Right", arena, new Vector2(ArenaHalfWidth + 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true);
             Block("Wall Bottom", arena, new Vector2(0f, -ArenaHalfHeight - 0.5f), new Vector2(ArenaHalfWidth * 2f + 2f, 1f), wall, -5, collider: true);
             Block("Wall Top", arena, new Vector2(0f, ArenaHalfHeight + 0.5f), new Vector2(ArenaHalfWidth * 2f + 2f, 1f), wall, -5, collider: true);
 
-            GameObject doorObject = Block("Door", arena, new Vector2(0f, ArenaHalfHeight - 0.3f), new Vector2(1.8f, 0.6f), Color.gray, -4, collider: true);
+            GameObject doorObject = Block("Door", dungeonRoot, new Vector2(0f, ArenaHalfHeight - 0.3f), new Vector2(1.8f, 0.6f), Color.gray, -4, collider: true);
             doorObject.layer = 0;
             doorObject.GetComponent<BoxCollider2D>().isTrigger = true;
             var door = doorObject.AddComponent<Door>();
@@ -59,6 +67,7 @@ namespace HistoryHeroes.EditorTools
 
             // ----- UI (조이스틱이 플레이어에 연결돼야 해서 먼저 만든다) -----
             Ui ui = BuildUi();
+            using (var props = new Props(ui.RecordSave)) props.Ref("database", d.Database);
 
             // ----- 플레이어 -----
             var playerObject = new GameObject("Player") { layer = PlayerLayer };
@@ -101,20 +110,66 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(ui.Hud)) props.Ref("player", player).Ref("experience", experience);
             using (var props = new Props(ui.LevelUp)) props.Ref("experience", experience).Ref("skills", skills);
 
-            var run = new GameObject("DungeonRun").AddComponent<DungeonRun>();
+            var runObject = new GameObject("DungeonRun");
+            runObject.transform.SetParent(dungeonRoot, false);
+            var run = runObject.AddComponent<DungeonRun>();
             using (var props = new Props(run))
             {
-                props.Ref("dungeon", d.Dungeon).Ref("player", player).Ref("experience", experience).Ref("skills", skills)
+                props.Ref("dungeon", d.Dungeon).Ref("database", d.Database).Ref("player", player).Ref("experience", experience).Ref("skills", skills)
                     .Ref("door", door).Ref("playerStart", playerStart)
-                    .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("result", ui.Result).Ref("fade", ui.Fade);
+                    .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("result", ui.Result).Ref("recordSave", ui.RecordSave).Ref("fade", ui.Fade);
             }
+
+            // ----- 보스맵: 원형 경기장 + 보스 (Modes 2-9) -----
+            BuildBossArena(bossRoot);
+            var bossStart = new GameObject("BossPlayerStart").transform;
+            bossStart.SetParent(bossRoot, false);
+            bossStart.position = new Vector2(0f, -BossArenaRadius + 1.2f);
+            var bossSpawn = new GameObject("BossSpawn").transform;
+            bossSpawn.SetParent(bossRoot, false);
+            bossSpawn.position = new Vector2(0f, 1.6f);
+
+            var bossRunObject = new GameObject("BossRun");
+            bossRunObject.transform.SetParent(bossRoot, false);
+            var bossRun = bossRunObject.AddComponent<BossRun>();
+            using (var props = new Props(bossRun))
+            {
+                props.Refs("bosses", new[] { d.RiftWarden }).Ref("database", d.Database).Ref("player", player).Ref("skills", skills)
+                    .Ref("playerStart", bossStart).Ref("bossSpawn", bossSpawn)
+                    .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
+            }
+
+            var bootstrap = systems.AddComponent<BattleBootstrap>();
+            using (var props = new Props(bootstrap)) props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject);
 
             var cheats = systems.AddComponent<Dev.DevCheats>();
             using (var props = new Props(cheats)) props.Ref("experience", experience).Ref("levelUp", ui.LevelUp).Ref("skills", skills);
             SetPresets(cheats, d);
 
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+            EditorSceneManager.SaveScene(scene, BattleScenePath);
+        }
+
+        /// <summary>원형 바닥 + 둥근 벽(EdgeCollider2D 원). 네모 방의 바닥은 던전 모드에만 있다.</summary>
+        private static void BuildBossArena(Transform bossRoot)
+        {
+            SpriteRenderer rim = Visual(bossRoot, "BossRim", _circle, new Color(0.36f, 0.31f, 0.26f), Vector2.one * (BossArenaRadius * 2f + 0.8f), -11);
+            rim.transform.position = Vector3.zero;
+            SpriteRenderer floor = Visual(bossRoot, "BossFloor", _circle, new Color(0.2f, 0.21f, 0.27f), Vector2.one * (BossArenaRadius * 2f), -10);
+            floor.transform.position = Vector3.zero;
+
+            var wall = new GameObject("BossWall") { layer = WallLayer };
+            wall.transform.SetParent(bossRoot, false);
+            var edge = wall.AddComponent<EdgeCollider2D>();
+            const int segments = 40;
+            var points = new Vector2[segments + 1];
+            for (int i = 0; i <= segments; i++)
+            {
+                float a = i * Mathf.PI * 2f / segments;
+                points[i] = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * BossArenaRadius;
+            }
+
+            edge.points = points;
+            edge.edgeRadius = 0.05f;
         }
 
         /// <summary>
@@ -201,6 +256,8 @@ namespace HistoryHeroes.EditorTools
             public HudView Hud;
             public LevelUpScreen LevelUp;
             public RunResultScreen Result;
+            public RecordSaveScreen RecordSave;
+            public BossHud BossHud;
             public CanvasGroup Fade;
         }
 
@@ -210,10 +267,9 @@ namespace HistoryHeroes.EditorTools
         private const float CardWidth = 336f;
         private const float CardHeight = 500f;
 
-        private static Ui BuildUi()
+        /// <summary>캔버스 + 이벤트 시스템 (전투·로비 공용). 기준 1080×1920, Expand</summary>
+        private static Transform CreateCanvas()
         {
-            var ui = new Ui();
-
             var canvasObject = new GameObject("Canvas", typeof(RectTransform));
             var canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -223,10 +279,16 @@ namespace HistoryHeroes.EditorTools
             // Expand: 화면 비율이 어떻든 1080×1920 기준 영역이 통째로 보인다 (세로로 긴 폰에서 카드가 잘리지 않음)
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             canvasObject.AddComponent<GraphicRaycaster>();
-            Transform root = canvasObject.transform;
 
             var eventSystem = new GameObject("EventSystem", typeof(EventSystem));
             eventSystem.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
+            return canvasObject.transform;
+        }
+
+        private static Ui BuildUi()
+        {
+            var ui = new Ui();
+            Transform root = CreateCanvas();
 
             // ----- HUD -----
             RectTransform hudRect = Rect("HUD", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
@@ -248,10 +310,15 @@ namespace HistoryHeroes.EditorTools
             TMP_Text roomLabel = Label("RoomLabel", hudRect, "방 1/10", 38, TextAlignmentOptions.Top);
             Place(roomLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(520f, 60f));
 
+            // 별 ★2 도전 중일 때만 보이는 맞은 횟수 (Modes 3-2)
+            TMP_Text hitsLabel = Label("HitsLabel", hudRect, "맞음 0/15", 30, TextAlignmentOptions.TopRight, new Color(1f, 1f, 1f, 0.8f));
+            Place(hitsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -160f), new Vector2(300f, 46f));
+            hitsLabel.gameObject.SetActive(false);
+
             using (var props = new Props(ui.Hud))
             {
                 props.Ref("hpFill", hpFill).Ref("hpLabel", hpLabel).Ref("expFill", expFill)
-                    .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel);
+                    .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel).Ref("hitsLabel", hitsLabel);
             }
 
             // ----- 조이스틱 (화면 아래쪽 어디든 누르면 그 자리에 생김) -----
@@ -272,8 +339,10 @@ namespace HistoryHeroes.EditorTools
             ui.Fade.blocksRaycasts = false;
             ui.Fade.interactable = false;
 
+            ui.BossHud = BuildBossHud(hudRect, root);
             ui.LevelUp = BuildLevelUp(root);
             ui.Result = BuildResult(root);
+            ui.RecordSave = BuildRecordSave(root, null);
             return ui;
         }
 
@@ -369,15 +438,20 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text title = Label("Title", panel, "클리어!", 100, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 640f), new Vector2(900f, 130f));
-            TMP_Text body = Label("Body", panel, "", 40, TextAlignmentOptions.TopLeft);
-            body.lineSpacing = 28f;
-            Place(body.rectTransform, Center, Center, new Vector2(0f, 40f), new Vector2(820f, 1000f));
+            TMP_Text body = Label("Body", panel, "", 38, TextAlignmentOptions.TopLeft);
+            body.lineSpacing = 18f;
+            body.enableAutoSizing = true; // 보상 줄이 많으면 글씨를 줄여서 버튼 위에 다 들어가게
+            body.fontSizeMin = 24f;
+            body.fontSizeMax = 38f;
+            Place(body.rectTransform, Center, Center, new Vector2(0f, 20f), new Vector2(880f, 1060f));
 
-            Button retry = Btn("Retry", panel, "다시 도전", new Vector2(0f, -680f), new Vector2(520f, 140f), new Color(0.2f, 0.55f, 0.32f), out _);
+            Button primary = Btn("Primary", panel, "기록 남기기", new Vector2(0f, -640f), new Vector2(600f, 140f), new Color(0.2f, 0.55f, 0.32f), out TMP_Text primaryLabel);
+            Button secondary = Btn("Secondary", panel, "로비로", new Vector2(0f, -800f), new Vector2(440f, 110f), new Color(0.3f, 0.32f, 0.38f), out TMP_Text secondaryLabel);
 
             using (var props = new Props(screen))
             {
-                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("bodyLabel", body).Ref("retryButton", retry);
+                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("bodyLabel", body)
+                    .Ref("primaryButton", primary).Ref("primaryLabel", primaryLabel).Ref("secondaryButton", secondary).Ref("secondaryLabel", secondaryLabel);
             }
 
             return screen;

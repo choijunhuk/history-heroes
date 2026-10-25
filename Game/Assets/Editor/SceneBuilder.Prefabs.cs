@@ -7,13 +7,14 @@ using UnityEngine;
 
 namespace HistoryHeroes.EditorTools
 {
-    public static partial class V01SceneBuilder
+    public static partial class SceneBuilder
     {
         private sealed class Prefabs
         {
             public Projectile PlayerArrow, EnemyArrow;
             public ExperienceGem Gem;
             public EnemyBase Charger, Archer, Bomber;
+            public EnemyBase RiftWarden;
             public ActiveSkillBehaviour SpinBlade, FlameField, Lightning, ArrowRain, SteelWhirl, ThunderFire;
         }
 
@@ -30,6 +31,16 @@ namespace HistoryHeroes.EditorTools
             p.Charger = EnemyPrefab<ChargerEnemy>("Enemy_Charger", d.Charger, _circle, line, withBlastMarker: false);
             p.Archer = EnemyPrefab<ArcherEnemy>("Enemy_Archer", d.Archer, _square, line, withBlastMarker: false);
             p.Bomber = EnemyPrefab<BomberEnemy>("Enemy_Bomber", d.Bomber, _circle, line, withBlastMarker: true);
+            p.RiftWarden = EnemyPrefab<RiftWardenBoss>("Boss_RiftWarden", d.WardenEnemy, _circle, line, withBlastMarker: false, extra: (go, props) =>
+            {
+                // 내려찍기 예고 원 (보스를 따라가지 않게 Awake에서 떼어 낸다)
+                props.Ref("slamMarker", ChildSprite(go, "SlamMarker", _circle, new Color(1f, 0.25f, 0.2f, 0.3f), 1f, -1));
+                // 빈틈 표시: 발밑 노란 원 = "지금 멈춰서 쏘세요"
+                props.Ref("openingRing", ChildSprite(go, "OpeningRing", _circle, new Color(1f, 0.9f, 0.25f, 0.35f), 1.6f, -1));
+                // 파동 예고: 몸이 보라색으로 빛남
+                props.Ref("waveGlow", ChildSprite(go, "WaveGlow", _circle, new Color(0.75f, 0.45f, 1f, 0.4f), 1.35f, 3));
+                props.Mask("wallMask", Mask(WallLayer));
+            });
 
             p.SpinBlade = Behaviour<OrbitBladesBehaviour>("Skill_SpinBlade", null);
             p.SteelWhirl = Behaviour<OrbitBladesBehaviour>("Skill_SteelWhirl", props => props
@@ -70,7 +81,8 @@ namespace HistoryHeroes.EditorTools
             return AssetUtil.SavePrefab<ExperienceGem>(go, $"{PrefabDir}/ExpGem.prefab");
         }
 
-        private static EnemyBase EnemyPrefab<T>(string name, EnemyData data, Sprite sprite, Material lineMaterial, bool withBlastMarker)
+        private static EnemyBase EnemyPrefab<T>(string name, EnemyData data, Sprite sprite, Material lineMaterial, bool withBlastMarker,
+            System.Action<GameObject, Props> extra = null)
             where T : EnemyBase
         {
             var go = new GameObject(name) { layer = EnemyLayer };
@@ -115,9 +127,24 @@ namespace HistoryHeroes.EditorTools
                     marker.enabled = false;
                     props.Ref("blastMarker", marker);
                 }
+
+                extra?.Invoke(go, props);
             }
 
             return AssetUtil.SavePrefab<EnemyBase>(go, $"{PrefabDir}/Enemies/{name}.prefab");
+        }
+
+        private static SpriteRenderer ChildSprite(GameObject parent, string name, Sprite sprite, Color color, float size, int order)
+        {
+            var child = new GameObject(name);
+            child.transform.SetParent(parent.transform, false);
+            child.transform.localScale = Vector3.one * size;
+            var sr = child.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.color = color;
+            sr.sortingOrder = order;
+            sr.enabled = false;
+            return sr;
         }
 
         private static ActiveSkillBehaviour Behaviour<T>(string name, System.Action<Props> configure) where T : ActiveSkillBehaviour

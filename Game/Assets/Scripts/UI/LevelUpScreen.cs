@@ -28,7 +28,7 @@ namespace HistoryHeroes.UI
         [Header("규칙")]
         [SerializeField, Min(0)] private int rerollsPerRun = 2;
 
-        private readonly IRewardedAd _ads = new InstantRewardedAd();
+        private bool _lastAdFailed;
         private List<SkillCard> _current = new List<SkillCard>();
         private int _pending;
         private int _rerollsLeft;
@@ -56,8 +56,13 @@ namespace HistoryHeroes.UI
             if (!IsOpen) Open();
         }
 
+        private bool _legendaryWarning;
+
         private void Open()
         {
+            // 던전 ★3 "전설 없이 클리어"를 아직 안 땄고 이번 판에 전설을 안 골랐으면 경고한다
+            _legendaryWarning = GameSession.Mode == BattleMode.Dungeon && !skills.ChoseLegendary
+                && !Economy.Stars.Has(Records.SaveSystem.Data, GameSession.Chapter, Economy.Stars.Dungeon, 3);
             GamePause.Pause(this);
             root.SetActive(true);
             _current = skills.CreateOffer(Floor);
@@ -73,11 +78,13 @@ namespace HistoryHeroes.UI
                 if (!visible) continue;
 
                 SkillCard card = _current[i];
-                cards[i].Show(card, skills, () => Choose(card));
+                cards[i].Show(card, skills, () => Choose(card), _legendaryWarning);
             }
 
             bool hasFusion = _current.Exists(c => c.Type == CardType.Fusion);
-            rerollLabel.text = $"리롤 (광고) {_rerollsLeft}/{rerollsPerRun}";
+            rerollLabel.text = _waitingForAd ? "광고 보는 중…"
+                : _lastAdFailed ? $"광고 실패 · 다시 {_rerollsLeft}/{rerollsPerRun}"
+                : $"리롤 (광고) {_rerollsLeft}/{rerollsPerRun}";
             rerollButton.interactable = _rerollsLeft > 0 && !_waitingForAd;
             hideFusionButton.gameObject.SetActive(hasFusion);
 
@@ -107,6 +114,8 @@ namespace HistoryHeroes.UI
         {
             if (_waitingForAd) return;
             skills.Choose(card);
+            _legendaryWarning &= !skills.ChoseLegendary; // 전설을 골랐으면 이번 판 ★3은 이미 실패
+            Records.SaveSystem.SaveIfDirty(); // 스킬 선택 확정 = 안전한 저장 시점 (조합 도감 발견, 12-2)
             _pending--;
 
             if (_pending > 0)
@@ -126,9 +135,10 @@ namespace HistoryHeroes.UI
             _waitingForAd = true;
             Render();
 
-            _ads.Show("levelup_reroll", success =>
+            Ads.Current.Show("levelup_reroll", success =>
             {
                 _waitingForAd = false;
+                _lastAdFailed = !success;
                 if (success) // 실패·취소면 횟수를 쓰지 않는다
                 {
                     _rerollsLeft--;

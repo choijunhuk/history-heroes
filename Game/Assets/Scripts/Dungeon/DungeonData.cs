@@ -33,6 +33,13 @@ namespace HistoryHeroes.Dungeon
     [CreateAssetMenu(menuName = "History Heroes/Dungeon", fileName = "Dungeon_")]
     public sealed class DungeonData : ScriptableObject
     {
+        [Header("구간 (Content.md 3장: 구간마다 적 체력 ×1.35, 공격력 ×1.2, 임시)")]
+        public float chapterHpGrowth = 1.35f;
+        public float chapterAttackGrowth = 1.2f;
+
+        public float ChapterHpMultiplier(int chapter) => Mathf.Pow(chapterHpGrowth, Mathf.Max(0, chapter - 1));
+        public float ChapterAttackMultiplier(int chapter) => Mathf.Pow(chapterAttackGrowth, Mathf.Max(0, chapter - 1));
+
         public string id = "chapter1";
         public string displayName = "균열의 초원";
         [Min(1)] public int chapter = 1;

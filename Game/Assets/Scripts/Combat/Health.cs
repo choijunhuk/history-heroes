@@ -49,7 +49,7 @@ namespace HistoryHeroes.Combat
         {
             dealt = 0f;
             if (IsDead || info.AttackerTeam == team) return false;
-            if (Time.time < _invulnerableUntil) return false;
+            if (Invulnerable || Time.time < _invulnerableUntil) return false;
 
             float reduction = 0f;
             if (_stats != null)
@@ -67,6 +67,9 @@ namespace HistoryHeroes.Combat
             if (IsDead) Died?.Invoke(this);
             return true;
         }
+
+        /// <summary>켜면 어떤 피해도 받지 않는다 (판이 끝난 뒤 남은 탄환 등)</summary>
+        public bool Invulnerable { get; set; }
 
         public void Heal(float amount)
         {

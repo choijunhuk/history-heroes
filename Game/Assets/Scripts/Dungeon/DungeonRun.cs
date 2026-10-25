@@ -2,9 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
+using HistoryHeroes.Economy;
 using HistoryHeroes.Enemy;
 using HistoryHeroes.Player;
 using HistoryHeroes.Progress;
+using HistoryHeroes.Records;
 using HistoryHeroes.Skills;
 using HistoryHeroes.UI;
 using UnityEngine;
@@ -18,6 +20,7 @@ namespace HistoryHeroes.Dungeon
     public sealed class DungeonRun : MonoBehaviour
     {
         [SerializeField] private DungeonData dungeon;
+        [SerializeField] private SkillDatabase database;
 
         [Header("장면")]
         [SerializeField] private PlayerController player;
@@ -30,6 +33,7 @@ namespace HistoryHeroes.Dungeon
         [SerializeField] private LevelUpScreen levelUp;
         [SerializeField] private HudView hud;
         [SerializeField] private RunResultScreen result;
+        [SerializeField] private RecordSaveScreen recordSave;
         [SerializeField] private CanvasGroup fade;
 
         [Header("등장")]
@@ -44,6 +48,8 @@ namespace HistoryHeroes.Dungeon
         private readonly List<SpriteRenderer> _markers = new List<SpriteRenderer>();
         private readonly List<string> _fusions = new List<string>();
         private int _room;
+        private int _roomsCleared;
+        private int _hitsTaken;
         private int _alive;
         private bool _finished;
         private float _startTime;
@@ -58,6 +64,11 @@ namespace HistoryHeroes.Dungeon
             DamageLog.Reset();
             _startTime = Time.time;
             player.Health.Died += _ => Finish(victory: false);
+            player.Health.Damaged += (_, dealt) =>
+            {
+                if (dealt > 0f && !_finished) _hitsTaken++;
+            };
+            ShowHitCounter();
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
             door.Entered += () => StartCoroutine(GoToNextRoom());
             if (fade != null) fade.alpha = 0f;
@@ -69,7 +80,8 @@ namespace HistoryHeroes.Dungeon
             _room = room;
             levelUp.Floor = room;
             RoomData data = dungeon.rooms[room - 1];
-            hud.RoomText = data.kind == RoomKind.Elite ? $"방 {room}/{RoomCount}  엘리트" : $"방 {room}/{RoomCount}";
+            string chapter = GameSession.Chapter > 1 ? $"{GameSession.Chapter}구간 " : string.Empty;
+            hud.RoomText = data.kind == RoomKind.Elite ? $"{chapter}방 {room}/{RoomCount}  엘리트" : $"{chapter}방 {room}/{RoomCount}";
             door.SetOpen(false);
             StartCoroutine(SpawnRoom(data));
         }
@@ -100,7 +112,9 @@ namespace HistoryHeroes.Dungeon
             EnemyBase enemy = GetEnemy(entry.prefab);
             enemy.transform.position = point;
             enemy.gameObject.SetActive(true);
-            enemy.Spawn(player.transform, dungeon.HpMultiplier(_room), dungeon.AttackMultiplier(_room), entry.elite);
+            int chapter = GameSession.Chapter;
+            enemy.Spawn(player.transform, dungeon.HpMultiplier(_room) * dungeon.ChapterHpMultiplier(chapter),
+                dungeon.AttackMultiplier(_room) * dungeon.ChapterAttackMultiplier(chapter), entry.elite);
             experience.Register(enemy);
             enemy.Killed -= OnEnemyKilled;
             enemy.Killed += OnEnemyKilled;
@@ -133,8 +147,15 @@ namespace HistoryHeroes.Dungeon
 
         private void OnRoomCleared()
         {
+            _roomsCleared = Mathf.Max(_roomsCleared, _room);
             experience.AttractAll();
-            if (_room >= RoomCount) StartCoroutine(FinishAfter(1.5f));
+            SaveSystem.SaveIfDirty(); // 안전한 시점: 새로 발견한 조합 등 (GameDesign 12-2)
+            if (_room >= RoomCount)
+            {
+                // 마지막 방을 깨면 그 순간 클리어. 남은 보석이 날아오는 동안 맞아도 지지 않는다
+                player.Health.Invulnerable = true;
+                StartCoroutine(FinishAfter(1.5f));
+            }
             else door.SetOpen(true);
         }
 
@@ -186,7 +207,58 @@ namespace HistoryHeroes.Dungeon
             foreach (SkillInstance s in skills.Loadout.Actives) summary.Skills.Add($"{s.Data.displayName} Lv{s.Level}");
             foreach (SkillInstance s in skills.Loadout.Passives) summary.Skills.Add($"{s.Data.displayName} Lv{s.Level}");
 
-            result.Show(summary);
+            // 판 끝: 보상·계정 경험치·별 → 저장 (기록은 다음 화면에서 고른 뒤에 저장한다)
+            int roomsCleared = victory ? RoomCount : _roomsCleared;
+            summary.HitsTaken = _hitsTaken;
+            summary.RewardLines = GrantRewards(victory, roomsCleared);
+
+            // 기록 용량 = 기준 × 0.8 × (깬 방 ÷ 전체 방), 클리어 = 1 (GameDesign 7-2)
+            int capacity = RecordCapacity.For(roomsCleared, RoomCount, victory);
+            summary.Capacity = capacity;
+            RecordDraft draft = RecordDraft.FromLoadout(skills.Loadout, database, capacity);
+
+            System.Action saveRecord = null;
+            if (recordSave != null && capacity > 0 && draft.Entries.Count > 0)
+            {
+                int room = _room;
+                int chapter = GameSession.Chapter;
+                int balance = database != null ? database.balanceVersion : 0;
+                string subtitle = victory ? "클리어! 용량 안에서 남길 스킬을 고르세요" : $"방 {room}에서 쓰러졌어요. 깬 방만큼 용량이 줄었어요";
+                saveRecord = () => recordSave.Open(draft, d => d.ToRecord(skills.HeroId, chapter, room, RoomCount, victory, balance), subtitle, GameSession.ToLobby);
+            }
+
+            result.Show(summary, saveRecord);
+        }
+
+        /// <summary>골드 (Economy 4장), 계정 경험치 (Stats 7장), 별 (Modes 3-2), 별 상자</summary>
+        private List<string> GrantRewards(bool victory, int roomsCleared)
+        {
+            SaveData save = SaveSystem.Data;
+            save.dungeonRuns++;
+            int chapter = GameSession.Chapter;
+            var lines = new List<string>();
+
+            Reward gold = RunRewards.Dungeon(chapter, roomsCleared, RoomCount, victory);
+            Wallet.Grant(save, gold);
+            if (!gold.IsEmpty) lines.Add(gold.ToString());
+
+            AccountLevel.Result level = AccountLevel.AddExp(save, AccountLevel.DungeonExp(roomsCleared), Clock.UnixSeconds);
+            lines.Add(RunText.Level(level));
+
+            foreach (string star in Stars.EvaluateDungeon(save, chapter, victory, _hitsTaken, skills.ChoseLegendary)) lines.Add("새 별  " + star);
+            Reward box = Stars.ClaimBoxes(save);
+            if (!box.IsEmpty) lines.Add("별 상자  " + box);
+
+            SaveSystem.Save();
+            return lines;
+        }
+
+        /// <summary>★2를 아직 안 땄으면 HUD에 "맞은 횟수 n/한도"를 보여준다 (Modes 3-2)</summary>
+        private void ShowHitCounter()
+        {
+            int chapter = GameSession.Chapter;
+            bool challenge = !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2);
+            hud.SetHitCounter(challenge, () => _hitsTaken, Stars.DungeonHitLimit(chapter));
         }
 
         private EnemyBase GetEnemy(EnemyBase prefab)
@@ -242,5 +314,10 @@ namespace HistoryHeroes.Dungeon
         /// <summary>준 피해 중 기본 공격 비율 (목표 40% 이상, GameDesign 3-3)</summary>
         public float BasicAttackShare;
         public List<string> Skills;
+        /// <summary>남길 수 있는 기록 용량 (pt)</summary>
+        public int Capacity;
+        public int HitsTaken;
+        /// <summary>받은 것: 골드, 계정 경험치, 새 별, 별 상자</summary>
+        public List<string> RewardLines;
     }
 }

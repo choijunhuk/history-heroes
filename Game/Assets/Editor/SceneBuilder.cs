@@ -9,11 +9,11 @@ using UnityEngine.TextCore.LowLevel;
 namespace HistoryHeroes.EditorTools
 {
     /// <summary>
-    /// v0.1 테스트 장면을 한 번에 만든다: 레이어 → 임시 도형 → 한글 글꼴 → 데이터(SO) → 프리팹 → 장면·UI.
+    /// 게임 장면을 한 번에 만든다: 레이어 → 임시 도형 → 한글 글꼴 → 데이터(SO) → 프리팹 → 전투 장면 → 로비 장면.
     /// 여러 번 실행해도 된다 (에셋은 덮어쓰고 GUID는 유지). 숫자는 Docs/Design/Skills.md, Stats.md 기준.
-    /// 메뉴: History Heroes > v0.1 테스트 장면 만들기
+    /// 메뉴: History Heroes > 장면 전부 다시 만들기
     /// </summary>
-    public static partial class V01SceneBuilder
+    public static partial class SceneBuilder
     {
         public const int PlayerLayer = 8;
         public const int EnemyLayer = 9;
@@ -23,7 +23,9 @@ namespace HistoryHeroes.EditorTools
         private const string ArtDir = "Assets/Art/Placeholder";
         private const string DataDir = "Assets/Data";
         private const string PrefabDir = "Assets/Prefabs";
-        private const string ScenePath = "Assets/Scenes/Dungeon_v01.unity";
+        private const string BattleScenePath = "Assets/Scenes/Battle.unity";
+        private const string LobbyScenePath = "Assets/Scenes/Lobby.unity";
+        private const string OldScenePath = "Assets/Scenes/Dungeon_v01.unity"; // v0.1 장면 (v0.2부터 Battle)
         private const string FontPath = "Assets/Fonts/NanumGothic-Bold.ttf";
         private const string FontAssetPath = "Assets/Fonts/NanumGothic-Bold SDF.asset";
 
@@ -31,9 +33,11 @@ namespace HistoryHeroes.EditorTools
         private static Sprite _square;
         private static TMP_FontAsset _font;
 
-        [MenuItem("History Heroes/v0.1 테스트 장면 만들기")]
+        [MenuItem("History Heroes/장면 전부 다시 만들기")]
         public static string BuildAll()
         {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(OldScenePath) != null) AssetDatabase.DeleteAsset(OldScenePath);
+
             // 장면을 **먼저** 새로 연다. 나중에 열면 그 사이 만든 에셋이 메모리에서 내려가 참조가 비어 버린다.
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -46,12 +50,36 @@ namespace HistoryHeroes.EditorTools
             LinkData(data, prefabs);
             AssetDatabase.SaveAssets();
 
-            BuildScene(scene, data, prefabs);
+            BuildBattleScene(scene, data, prefabs);
             AssetDatabase.SaveAssets();
-            return $"완료: {ScenePath}";
+
+            // 로비는 두 번째 장면. 앞에서 만든 에셋은 다 저장했으므로 경로로 다시 읽어 쓴다
+            Scene lobby = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            ReloadShared();
+            var database = AssetDatabase.LoadAssetAtPath<Skills.SkillDatabase>($"{DataDir}/Skills/SkillDatabase.asset");
+            var warden = AssetDatabase.LoadAssetAtPath<Modes.BossData>($"{DataDir}/Bosses/Boss_RiftWarden.asset");
+            BuildLobbyScene(lobby, database, new[] { warden });
+            AssetDatabase.SaveAssets();
+
+            // 앱은 로비에서 시작한다
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(LobbyScenePath, true),
+                new EditorBuildSettingsScene(BattleScenePath, true),
+            };
+
+            return $"완료: {LobbyScenePath}, {BattleScenePath}";
         }
 
         private static int Mask(int layer) => 1 << layer;
+
+        /// <summary>장면을 새로 연 뒤 공용 도형·글꼴 참조를 디스크에서 다시 잡는다</summary>
+        private static void ReloadShared()
+        {
+            _circle = AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtDir}/Circle.png");
+            _square = AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtDir}/Square.png");
+            _font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
+        }
 
         // ---------- 레이어 ----------
         private static void SetupLayers()

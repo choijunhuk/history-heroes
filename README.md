@@ -91,8 +91,8 @@
    ```
    또는 Unity Hub → **Add** → `Game/` 폴더
 4. 처음 열면 **File → Build Profiles**에서 플랫폼을 **Android**로 바꿔요. (빌드 대상은 각자 컴퓨터에 저장돼서 저장소에 안 들어가요)
-5. `Assets/Scenes/Dungeon_v01.unity`를 열고 ▶ Play. Game 창은 세로(**History Heroes → Game 창 세로 1080x1920**)로 보면 폰과 같아요.
-   - 장면·데이터·프리팹은 **History Heroes → v0.1 테스트 장면 만들기**로 언제든 다시 만들 수 있어요.
+5. `Assets/Scenes/Lobby.unity`를 열고 ▶ Play (전투만 보려면 `Battle.unity`). Game 창은 세로(**History Heroes → Game 창 세로 1080x1920**, 긴 폰은 **1080x2340**)로 보면 폰과 같아요.
+   - 장면·데이터·프리팹은 **History Heroes → 장면 전부 다시 만들기**로 언제든 다시 만들 수 있어요.
    - 조작: 화면 아래쪽을 끌어서 이동, 손을 떼면(멈추면) 자동 공격. 에디터에서는 WASD/방향키도 돼요.
    - 개발용 단축키 (에디터·개발 빌드만): `K` 적 모두 처치 · `L` 레벨업 · `1` `2` `3` 카드 고르기
 

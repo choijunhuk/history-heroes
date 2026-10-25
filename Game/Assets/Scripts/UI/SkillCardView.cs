@@ -39,7 +39,8 @@ namespace HistoryHeroes.UI
             button.onClick.AddListener(() => _onClick?.Invoke());
         }
 
-        public void Show(SkillCard card, SkillManager skills, Action onClick)
+        /// <param name="legendaryWarning">던전 ★3(전설 없이 클리어) 도전 중이면 전설 카드에 경고 (Modes 3-2)</param>
+        public void Show(SkillCard card, SkillManager skills, Action onClick, bool legendaryWarning = false)
         {
             _onClick = onClick;
             _rainbow = card.Type == CardType.Fusion;
@@ -74,7 +75,10 @@ namespace HistoryHeroes.UI
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";
                     descriptionLabel.text = s.description;
                     background.color = RarityColor(s.rarity);
-                    materialLabel.gameObject.SetActive(skills.IsFusionMaterial(s));
+                    bool material = skills.IsFusionMaterial(s);
+                    bool warn = legendaryWarning && s.rarity == Rarity.Legendary;
+                    materialLabel.gameObject.SetActive(material || warn);
+                    materialLabel.text = warn ? (material ? "조합 재료\n<color=#FF7A6B>★3 도전 중: 고르면 이번 판 ★3 실패</color>" : "<color=#FF7A6B>★3 도전 중: 고르면 이번 판 ★3 실패</color>") : "조합 재료";
                     break;
             }
         }
