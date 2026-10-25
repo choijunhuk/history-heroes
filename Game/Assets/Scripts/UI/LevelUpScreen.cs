@@ -58,6 +58,42 @@ namespace HistoryHeroes.UI
 
         private bool _legendaryWarning;
 
+        /// <summary>창이 뜬 뒤 이 시간 동안은 못 누른다 (조이스틱을 쥔 손가락이 카드를 잘못 누르지 않게, 조사 A2)</summary>
+        [SerializeField] private float inputGuardSeconds = 0.4f;
+        private CanvasGroup _guard;
+        private float _guardUntil;
+        private bool _waitForRelease;
+
+        private void Update()
+        {
+            if (!IsOpen || _guard == null) return;
+            if (_waitForRelease && !PointerHeld()) _waitForRelease = false;
+            bool ready = Time.unscaledTime >= _guardUntil && !_waitForRelease;
+            if (_guard.interactable == ready) return;
+            _guard.interactable = ready;
+            _guard.alpha = ready ? 1f : 0.6f;
+        }
+
+        private static bool PointerHeld()
+        {
+            UnityEngine.InputSystem.Pointer pointer = UnityEngine.InputSystem.Pointer.current;
+            return pointer != null && pointer.press.isPressed;
+        }
+
+        /// <summary>새 카드가 뜰 때마다 (연달아 오른 레벨업 포함) 다시 잠깐 막는다</summary>
+        private void GuardInput()
+        {
+            if (_guard == null)
+            {
+                _guard = root.GetComponent<CanvasGroup>();
+                if (_guard == null) _guard = root.AddComponent<CanvasGroup>(); // ??는 유니티 오브젝트에서 안전하지 않다
+            }
+            _guardUntil = Time.unscaledTime + inputGuardSeconds;
+            _waitForRelease = PointerHeld();
+            _guard.interactable = false;
+            _guard.alpha = 0.6f;
+        }
+
         private void Open()
         {
             // 던전 ★3 "전설 없이 클리어"를 아직 안 땄고 이번 판에 전설을 안 골랐으면 경고한다
@@ -66,6 +102,7 @@ namespace HistoryHeroes.UI
             GamePause.Pause(this);
             root.SetActive(true);
             _current = skills.CreateOffer(Floor);
+            GuardInput();
             Render();
         }
 
@@ -82,9 +119,11 @@ namespace HistoryHeroes.UI
             }
 
             bool hasFusion = _current.Exists(c => c.Type == CardType.Fusion);
+            // 보상을 구체적으로 쓴다 (조사 A2). 다 쓰면 버튼을 숨긴다
             rerollLabel.text = _waitingForAd ? "광고 보는 중…"
-                : _lastAdFailed ? $"광고 실패 · 다시 {_rerollsLeft}/{rerollsPerRun}"
-                : $"리롤 (광고) {_rerollsLeft}/{rerollsPerRun}";
+                : _lastAdFailed ? $"광고를 못 불러왔어요 · 다시 (남은 {_rerollsLeft})"
+                : $"광고 보고 다시 뽑기 (남은 {_rerollsLeft})";
+            rerollButton.gameObject.SetActive(_rerollsLeft > 0 || _waitingForAd);
             rerollButton.interactable = _rerollsLeft > 0 && !_waitingForAd;
             hideFusionButton.gameObject.SetActive(hasFusion);
 
@@ -121,6 +160,7 @@ namespace HistoryHeroes.UI
             if (_pending > 0)
             {
                 _current = skills.CreateOffer(Floor);
+                GuardInput();
                 Render();
                 return;
             }

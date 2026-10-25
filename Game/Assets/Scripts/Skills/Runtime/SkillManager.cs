@@ -75,6 +75,7 @@ namespace HistoryHeroes.Skills
         {
             var kept = current.FindAll(c => c.Type == CardType.Fusion);
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
+            SkillPicker.ExcludeShown(candidates, current); // 방금 본 카드는 다시 안 나온다
             kept.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - kept.Count, floor, rarityTable));
             return kept;
         }

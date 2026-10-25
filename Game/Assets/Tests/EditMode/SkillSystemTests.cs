@@ -238,5 +238,50 @@ namespace HistoryHeroes.Tests
             level.Add(5f, expGainBonus: 0.5f);
             Assert.AreEqual(7.5f, level.Experience, 0.001f);
         }
+
+        // ---------------- 리롤: 방금 본 카드 빼기 (조사 A1) ----------------
+
+        [Test]
+        public void Reroll_ExcludesShownCards_KeepsOthers()
+        {
+            var a = Make<PassiveSkillData>("a");
+            var b = Make<PassiveSkillData>("b");
+            var c = Make<PassiveSkillData>("c");
+            var d = Make<PassiveSkillData>("d");
+            var candidates = new List<SkillCard>
+            {
+                new SkillCard { Type = CardType.NewSkill, Skill = a }, new SkillCard { Type = CardType.NewSkill, Skill = b },
+                new SkillCard { Type = CardType.NewSkill, Skill = c }, new SkillCard { Type = CardType.NewSkill, Skill = d },
+            };
+            var shown = new List<SkillCard> { new SkillCard { Type = CardType.NewSkill, Skill = a }, new SkillCard { Type = CardType.LevelUp, Skill = b }, SkillCard.Fallback() };
+
+            SkillPicker.ExcludeShown(candidates, shown);
+
+            Assert.AreEqual(2, candidates.Count);
+            Assert.IsFalse(candidates.Exists(x => x.Skill == a || x.Skill == b));
+        }
+
+        [Test]
+        public void Reroll_FewCandidates_StillFillsThreeCards()
+        {
+            var a = Make<PassiveSkillData>("a");
+            var candidates = new List<SkillCard> { new SkillCard { Type = CardType.NewSkill, Skill = a } };
+            SkillPicker.ExcludeShown(candidates, new List<SkillCard> { new SkillCard { Type = CardType.NewSkill, Skill = a } });
+
+            List<SkillCard> picked = SkillPicker.PickSkills(candidates, 3, 1, null);
+
+            Assert.AreEqual(3, picked.Count, "후보가 없어도 기본 카드로 채운다");
+            Assert.IsTrue(picked.TrueForAll(x => x.Type == CardType.Fallback));
+        }
+
+        [Test]
+        public void Reroll_FusionCardsAreNotExcluded()
+        {
+            var a = Make<PassiveSkillData>("a");
+            var candidates = new List<SkillCard> { new SkillCard { Type = CardType.NewSkill, Skill = a } };
+            var fusion = new SkillCard { Type = CardType.Fusion, Skill = a };
+            SkillPicker.ExcludeShown(candidates, new List<SkillCard> { fusion });
+            Assert.AreEqual(1, candidates.Count, "조합 카드는 고정이므로 빼기 대상이 아니다");
+        }
     }
 }

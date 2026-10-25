@@ -47,6 +47,21 @@ namespace HistoryHeroes.Skills
         }
 
         /// <summary>
+        /// 리롤: 방금 화면에 있던 일반 카드의 스킬은 후보에서 뺀다 (VS·Archero 2 방식, 조사 A1).
+        /// 광고를 보고도 같은 카드가 또 뜨는 일이 없게. 후보가 모자라면 등급 대체 → 기본 카드로 채운다 (PickSkills).
+        /// </summary>
+        public static void ExcludeShown(List<SkillCard> candidates, IEnumerable<SkillCard> shown)
+        {
+            var seen = new HashSet<SkillData>();
+            foreach (SkillCard c in shown)
+            {
+                if (c.Type != CardType.Fusion && c.Type != CardType.Fallback && c.Skill != null) seen.Add(c.Skill);
+            }
+
+            candidates.RemoveAll(c => c.Skill != null && seen.Contains(c.Skill));
+        }
+
+        /// <summary>
         /// 2단계: 후보에서 count장 뽑기 (GameDesign 6-4).
         ///   1. 카드 한 장마다 층별 확률로 **등급을 먼저** 뽑는다 (RarityTable).
         ///   2. 그 등급의 후보 중 하나를 무작위로 고른다. 뽑힌 카드는 후보에서 빠진다 (같은 스킬 두 장 금지).
