@@ -19,6 +19,7 @@ namespace HistoryHeroes.EditorTools
         /// <param name="heal">true면 매번 체력을 가득 채운다 (흐름만 확인할 때)</param>
         public static string Step(int cardIndex = 0, bool heal = false)
         {
+            if (!Application.isPlaying) return "Play 모드가 아님";
             var levelUp = Object.FindAnyObjectByType<LevelUpScreen>();
             var run = Object.FindAnyObjectByType<DungeonRun>();
             if (levelUp == null || run == null) return "Play 모드가 아님";
@@ -100,6 +101,7 @@ namespace HistoryHeroes.EditorTools
         /// <summary>시나리오 진행 확인. 적이 다 죽으면 걸린 시간과 기본 공격 피해 비중을 돌려준다.</summary>
         public static string ScenarioStatus()
         {
+            if (!Application.isPlaying) return "Play 모드가 아님";
             var player = Object.FindAnyObjectByType<PlayerController>();
             if (player == null) return "Play 모드가 아님";
             player.Health.Heal(1e9f); // 생존은 따로 본다. 여기서는 처치 속도만
@@ -138,6 +140,7 @@ namespace HistoryHeroes.EditorTools
 
         public static string State()
         {
+            if (!Application.isPlaying) return "Play 모드가 아님";
             var run = Object.FindAnyObjectByType<DungeonRun>();
             var exp = Object.FindAnyObjectByType<ExperienceSystem>();
             var skills = Object.FindAnyObjectByType<SkillManager>();
