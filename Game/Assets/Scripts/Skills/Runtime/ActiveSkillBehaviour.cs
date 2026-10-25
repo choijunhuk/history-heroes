@@ -11,11 +11,15 @@ namespace HistoryHeroes.Skills
     /// </summary>
     public abstract class ActiveSkillBehaviour : MonoBehaviour
     {
+        /// <summary>표적이 없어서 못 쏘았을 때 다시 시도하기까지의 시간</summary>
+        private const float RetryDelay = 0.25f;
+
         protected PlayerController player;
         protected ActiveSkillData data;
         protected int level;
         protected LayerMask enemyMask;
         private float _cooldownLeft;
+        private Transform _effectRoot;
 
         public void Bind(PlayerController owner, ActiveSkillData skill, int startLevel, LayerMask enemies)
         {
@@ -34,10 +38,28 @@ namespace HistoryHeroes.Skills
 
         protected virtual void OnLevelChanged() { }
 
-        /// <summary>조합 재료로 쓰여 사라질 때. 소환물·이벤트를 정리한다 (GameDesign 12-2 조합).</summary>
+        /// <summary>조합 재료로 쓰여 사라질 때. 소환물·이펙트도 함께 정리한다 (GameDesign 12-2 조합).</summary>
         public virtual void Dispose()
         {
             Destroy(gameObject);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            if (_effectRoot != null) Destroy(_effectRoot.gameObject);
+        }
+
+        /// <summary>
+        /// 장판·번개처럼 **월드에 남는** 이펙트를 담는 곳. 플레이어 자식이면 같이 끌려다니므로 따로 둔다.
+        /// 스킬이 사라지면 같이 지워진다.
+        /// </summary>
+        protected Transform EffectRoot
+        {
+            get
+            {
+                if (_effectRoot == null) _effectRoot = new GameObject($"{name} Effects").transform;
+                return _effectRoot;
+            }
         }
 
         protected virtual void Update()
@@ -47,12 +69,18 @@ namespace HistoryHeroes.Skills
             _cooldownLeft -= Time.deltaTime;
             if (_cooldownLeft > 0f) return;
 
+            if (!Activate())
+            {
+                _cooldownLeft = RetryDelay;
+                return;
+            }
+
             float cdr = player.Stats.Get(StatType.CooldownReduction, StatTarget.Active);
             _cooldownLeft = data.cooldown * (1f - cdr);
-            Activate();
         }
 
-        protected abstract void Activate();
+        /// <returns>실제로 발동했으면 true. 표적이 없어 못 쏘았으면 false (쿨다운을 쓰지 않음).</returns>
+        protected abstract bool Activate();
 
         protected DamageInfo RollDamage(float coefficient)
         {

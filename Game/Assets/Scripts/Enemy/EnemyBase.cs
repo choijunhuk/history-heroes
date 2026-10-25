@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HistoryHeroes.Combat;
 using UnityEngine;
 
@@ -31,6 +32,15 @@ namespace HistoryHeroes.Enemy
 
         public event Action<EnemyBase> Killed;
 
+        private static readonly List<EnemyBase> _alive = new List<EnemyBase>();
+
+        /// <summary>지금 살아 있는 적 (액티브 스킬 표적 고르기용). 물리 검사보다 싸다.</summary>
+        public static IReadOnlyList<EnemyBase> Alive => _alive;
+
+        // "도메인 다시 불러오기"를 끈 Play 모드에서도 지난 판의 목록이 남지 않게
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => _alive.Clear();
+
         protected virtual void Awake()
         {
             health = GetComponent<Health>();
@@ -48,6 +58,7 @@ namespace HistoryHeroes.Enemy
             IsElite = elite;
             health.Init(Team.Enemy, data.maxHp * hpMultiplier * (elite ? 5f : 1f));
             transform.localScale = Vector3.one * (elite ? 1.5f : 1f);
+            if (!_alive.Contains(this)) _alive.Add(this);
             Enter(State.Approach);
         }
 
@@ -83,8 +94,14 @@ namespace HistoryHeroes.Enemy
             telegraphLine.SetPosition(1, to);
         }
 
+        protected virtual void OnDisable()
+        {
+            _alive.Remove(this);
+        }
+
         protected virtual void OnDied(Health h)
         {
+            _alive.Remove(this);
             body.linearVelocity = Vector2.zero;
             Killed?.Invoke(this);
             gameObject.SetActive(false);

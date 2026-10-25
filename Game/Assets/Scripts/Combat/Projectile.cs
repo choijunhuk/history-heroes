@@ -100,6 +100,9 @@ namespace HistoryHeroes.Combat
             _damage.Amount *= 1f - _pierceFalloff;
         }
 
+        /// <summary>막혔을 때 (강철 회오리 칼날 등) 바로 사라진다.</summary>
+        public void Cancel() => Release();
+
         private void Release()
         {
             if (_release != null) _release(this);
