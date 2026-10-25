@@ -218,7 +218,7 @@ namespace HistoryHeroes.UI
                 slotButtons[i].gameObject.SetActive(exists);
                 if (!exists) continue;
                 RunRecord old = data.RecordInSlot(i);
-                slotLabels[i].text = old != null ? $"{RecordFormat.Title(old)}\n{RecordFormat.Details(old, database)}" : $"{i + 1}번 칸 (비어 있음)";
+                slotLabels[i].text = old != null ? $"{RecordFormat.Title(old, database)}\n{RecordFormat.Details(old, database)}" : $"{i + 1}번 칸 (비어 있음)";
             }
 
             slotPanel.SetActive(true);

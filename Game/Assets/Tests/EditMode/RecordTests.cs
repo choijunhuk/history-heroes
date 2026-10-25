@@ -188,6 +188,37 @@ namespace HistoryHeroes.Tests
             Assert.IsTrue(noShare.Fits, "피해 정보가 없어도 맞춘다");
         }
 
+        [Test]
+        public void Strength_SumsSaveCostByRole_AndPicksMain()
+        {
+            _blade.role = SkillRole.Defense;   // 2 + 2×(Lv-1)
+            _lightning.role = SkillRole.Area;  // 3 + 3×(Lv-1)
+            _atk.role = SkillRole.None;
+            _def.role = SkillRole.Defense;     // 1 + 1×(Lv-1)
+
+            var skills = new List<RecordSkill>
+            {
+                new RecordSkill("spin_blade", 2, false), // 방어 4
+                new RecordSkill("lightning", 3, false),  // 광역 9
+                new RecordSkill("atk_up", 5, false),     // 없음 (세지 않음)
+                new RecordSkill("def_up", 3, false),     // 방어 3
+                new RecordSkill("gone", 3, false),       // 없어진 스킬은 무시
+            };
+
+            RecordStrength strength = RecordStrength.Of(skills, _db);
+            Assert.AreEqual(0, strength.Single);
+            Assert.AreEqual(9, strength.Area);
+            Assert.AreEqual(7, strength.Defense);
+            Assert.AreEqual(SkillRole.Area, strength.Main);
+            Assert.AreEqual("광역형", RecordStrength.TypeName(strength.Main));
+            StringAssert.Contains("광역 56%", strength.Bar());
+            StringAssert.Contains("방어 44%", strength.Bar());
+            StringAssert.DoesNotContain("단일", strength.Bar(), "0인 역할은 글자로 안 쓴다");
+
+            Assert.AreEqual(SkillRole.None, RecordStrength.Of(new List<RecordSkill>(), _db).Main);
+            StringAssert.Contains("강점 없음", default(RecordStrength).Bar());
+        }
+
         // ---------------- 검사 (7-5) ----------------
 
         [Test]

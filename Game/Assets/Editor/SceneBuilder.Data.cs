@@ -343,6 +343,7 @@ namespace HistoryHeroes.EditorTools
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
+            foreach (SkillData s in d.Database.skills) AssignRole(s);
             foreach (string problem in d.Database.FindProblems()) Debug.LogError("[SkillDatabase] " + problem);
 
             // ----- v0.2: 1구간 보스 균열의 수문장 (Content.md 3장, Modes 2-9) -----
@@ -355,10 +356,42 @@ namespace HistoryHeroes.EditorTools
             d.RiftWarden.chapter = 1;
             d.RiftWarden.tests = "공격마다 크게 쉰다 → 빈틈마다 멈춰서 쏘기";
             d.RiftWarden.recommend = "기본 공격이 강한 빌드 (공격속도·멀티샷·흡혈)";
+            d.RiftWarden.recommendedRole = SkillRole.Single; // 멈춤 타이밍 보스 (조사 A8)
+            UnityEditor.EditorUtility.SetDirty(d.RiftWarden);
             d.RiftWarden.hpMultiplier = 300f; // 120 × 300 = 36,000. 대표 기록으로 제자리에서 약 1분 30초 → 피하면서 2~3분
             d.RiftWarden.attackMultiplier = 1.5f; // Stats.md 8장 (패턴 배수는 보스 쪽)
             d.RiftWarden.star2MaxHits = 8;
             return d;
+        }
+
+        // ----- 스킬 역할 (조사 A8, Skills.md 표 "역할" 열). 여기 없는 스킬은 "없음" -----
+        private static readonly Dictionary<string, SkillRole> Roles = new Dictionary<string, SkillRole>
+        {
+            // 단일: 기본 공격·보스 화력
+            ["aspd_up"] = SkillRole.Single, ["multishot"] = SkillRole.Single, ["lifesteal"] = SkillRole.Single,
+            ["pierce"] = SkillRole.Single, ["ricochet"] = SkillRole.Single, ["crit_rate"] = SkillRole.Single,
+            ["crit_dmg"] = SkillRole.Single, ["momentum"] = SkillRole.Single,
+            // 광역: 잡몹 떼
+            ["lightning"] = SkillRole.Area, ["flame_field"] = SkillRole.Area, ["arrow_rain"] = SkillRole.Area,
+            ["meteor"] = SkillRole.Area, ["poison_cloud"] = SkillRole.Area, ["whirlwind"] = SkillRole.Area,
+            ["ice_shard"] = SkillRole.Area, ["boomerang"] = SkillRole.Area,
+            ["khan_volley"] = SkillRole.Area, ["guan_spin"] = SkillRole.Area, ["napo_cannon"] = SkillRole.Area, ["tesla_coil"] = SkillRole.Area,
+            ["thunder_fire"] = SkillRole.Area, ["flame_trail"] = SkillRole.Area, ["blizzard_shard"] = SkillRole.Area,
+            ["toxic_bloom"] = SkillRole.Area, ["thunder_god"] = SkillRole.Area, ["twin_boomerang"] = SkillRole.Area,
+            ["blizzard"] = SkillRole.Area, ["heaven_bow"] = SkillRole.Area,
+            ["khan_storm"] = SkillRole.Area, ["guan_five"] = SkillRole.Area, ["napo_austerlitz"] = SkillRole.Area, ["tesla_tower"] = SkillRole.Area,
+            // 방어: 버티기·막기
+            ["spin_blade"] = SkillRole.Defense, ["steel_whirl"] = SkillRole.Defense, ["def_up"] = SkillRole.Defense,
+            ["hp_up"] = SkillRole.Defense, ["guard_shield"] = SkillRole.Defense, ["iron_wall"] = SkillRole.Defense,
+            ["dodge"] = SkillRole.Defense, ["regen"] = SkillRole.Defense, ["undying"] = SkillRole.Defense,
+            // 없음: atk_up, move_up, exp_up, cdr, active_dmg
+        };
+
+        private static void AssignRole(SkillData skill)
+        {
+            if (skill == null) return;
+            skill.role = Roles.TryGetValue(skill.id, out SkillRole role) ? role : SkillRole.None;
+            UnityEditor.EditorUtility.SetDirty(skill);
         }
 
         private static HeroData Hero(string id, string name, HeroClass heroClass, BasicAttackKind attack, float hp, float atk, float aspd,

@@ -18,6 +18,7 @@ MonoBehaviour:
   tests: "\uACF5\uACA9\uB9C8\uB2E4 \uD06C\uAC8C \uC270\uB2E4 \u2192 \uBE48\uD2C8\uB9C8\uB2E4
     \uBA48\uCDB0\uC11C \uC3D8\uAE30"
   recommend: "\uAE30\uBCF8 \uACF5\uACA9\uC774 \uAC15\uD55C \uBE4C\uB4DC (\uACF5\uACA9\uC18D\uB3C4\xB7\uBA40\uD2F0\uC0F7\xB7\uD761\uD608)"
+  recommendedRole: 1
   prefab: {fileID: 2731093488286354877, guid: 678d204cfb7b39249969c09984c3b3b9, type: 3}
   hpMultiplier: 300
   attackMultiplier: 1.5

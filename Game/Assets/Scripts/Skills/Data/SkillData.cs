@@ -17,6 +17,17 @@ namespace HistoryHeroes.Skills
         Legendary,
     }
 
+    /// <summary>
+    /// 스킬 역할 1개 (조사 A8, Skills.md 표 "역할" 열). 태그와 별개로, 기록의 강점(단일·광역·방어)과 보스 추천에 쓴다.
+    /// </summary>
+    public enum SkillRole
+    {
+        None,
+        Single,  // 단일: 기본 공격·보스 화력
+        Area,    // 광역: 잡몹 떼
+        Defense, // 방어: 버티기·막기
+    }
+
     /// <summary>스킬 태그 (GameDesign 6-3). 룬·시너지·영웅 전용 판정에 쓴다.</summary>
     [Flags]
     public enum SkillTag
@@ -51,6 +62,8 @@ namespace HistoryHeroes.Skills
         public Sprite icon;
         public Rarity rarity;
         public SkillTag tags;
+        [Tooltip("기록 강점 계산용 역할 (단일·광역·방어·없음)")]
+        public SkillRole role;
         [Min(1)] public int maxLevel = 5;
 
         [Header("기록 (GameDesign 7-2)")]

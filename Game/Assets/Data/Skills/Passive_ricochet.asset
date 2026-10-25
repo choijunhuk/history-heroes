@@ -21,6 +21,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   rarity: 1
   tags: 4
+  role: 1
   maxLevel: 2
   saveCostFirstLevel: 2
   saveCostPerLevel: 2

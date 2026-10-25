@@ -169,7 +169,7 @@ namespace HistoryHeroes.Modes
                 FirstClear = firstClear,
                 UnlockedChapter = firstClear ? _info.chapter + 1 : 0,
                 BasicAttackShare = DamageLog.BasicShare,
-                RecordLabel = _record != null ? RecordFormat.Title(_record) : "기록 없음 (기본 공격만)",
+                RecordLabel = _record != null ? RecordFormat.Title(_record, database) : "기록 없음 (기본 공격만)",
                 RewardLines = lines,
             };
             StartCoroutine(ShowResultAfter(victory ? 1f : 0.6f, summary));
