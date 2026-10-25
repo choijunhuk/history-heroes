@@ -66,3 +66,9 @@ GoogleService-Info.plist
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# QA 캡처 (unity capture가 Assets/Temp 아래에 저장함, 커밋하지 않음)
+Game/Assets/Temp/
+Game/Assets/Temp.meta
+# Unity Pipeline(에디터 원격 조작) 로컬 상태 — 컴퓨터마다 다름
+Game/ProjectSettings/Packages/com.unity.pipeline/

@@ -76,9 +76,22 @@ namespace HistoryHeroes.UI
                 cards[i].Show(card, skills, () => Choose(card));
             }
 
+            bool hasFusion = _current.Exists(c => c.Type == CardType.Fusion);
             rerollLabel.text = $"리롤 (광고) {_rerollsLeft}/{rerollsPerRun}";
             rerollButton.interactable = _rerollsLeft > 0 && !_waitingForAd;
-            hideFusionButton.gameObject.SetActive(_current.Exists(c => c.Type == CardType.Fusion));
+            hideFusionButton.gameObject.SetActive(hasFusion);
+
+            // 숨기기 버튼이 없으면 리롤 버튼을 가운데로
+            var rerollRect = (RectTransform)rerollButton.transform;
+            Vector2 position = rerollRect.anchoredPosition;
+            position.x = hasFusion ? -Mathf.Abs(((RectTransform)hideFusionButton.transform).anchoredPosition.x) : 0f;
+            rerollRect.anchoredPosition = position;
+        }
+
+        /// <summary>index번째 카드 고르기 (개발용 단축키, 테스트용)</summary>
+        public void ChooseIndex(int index)
+        {
+            if (IsOpen && index >= 0 && index < _current.Count) Choose(_current[index]);
         }
 
         private void Choose(SkillCard card)

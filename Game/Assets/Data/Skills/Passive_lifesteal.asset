@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8a1162d004b4454fa441b7538c6e4af, type: 3}
+  m_Name: Passive_lifesteal
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.PassiveSkillData
+  id: lifesteal
+  displayName: "\uD761\uD608"
+  description: "\uAE30\uBCF8 \uACF5\uACA9 \uD53C\uD574\uC758 2% \uD68C\uBCF5\n(\uB808\uBCA8\uB9C8\uB2E4
+    +1%)\n\uCD08\uB2F9 \uCD5C\uB300\uCCB4\uB825 3%\uAE4C\uC9C0"
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 2
+  maxLevel: 5
+  saveCostPerLevel: 2
+  recordable: 1
+  heroOnlyId: 
+  stats:
+  - stat: 9
+    kind: 0
+    firstLevel: 0.02
+    perLevel: 0.01
+    target: 1
+  attack: []

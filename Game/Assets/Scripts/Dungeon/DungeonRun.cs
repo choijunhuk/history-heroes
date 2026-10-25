@@ -49,6 +49,7 @@ namespace HistoryHeroes.Dungeon
 
         public int Room => _room;
         public int RoomCount => dungeon.rooms.Count;
+        public bool IsFinished => _finished;
 
         private void Start()
         {

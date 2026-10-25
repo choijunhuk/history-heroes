@@ -91,6 +91,10 @@
    ```
    또는 Unity Hub → **Add** → `Game/` 폴더
 4. 처음 열면 **File → Build Profiles**에서 플랫폼을 **Android**로 바꿔요. (빌드 대상은 각자 컴퓨터에 저장돼서 저장소에 안 들어가요)
+5. `Assets/Scenes/Dungeon_v01.unity`를 열고 ▶ Play. Game 창은 세로(**History Heroes → Game 창 세로 1080x1920**)로 보면 폰과 같아요.
+   - 장면·데이터·프리팹은 **History Heroes → v0.1 테스트 장면 만들기**로 언제든 다시 만들 수 있어요.
+   - 조작: 화면 아래쪽을 끌어서 이동, 손을 떼면(멈추면) 자동 공격. 에디터에서는 WASD/방향키도 돼요.
+   - 개발용 단축키 (에디터·개발 빌드만): `K` 적 모두 처치 · `L` 레벨업 · `1` `2` `3` 카드 고르기
 
 ## 📁 폴더 구조
 
@@ -101,6 +105,12 @@ history-heroes/
  ├─ AGENTS.md      AI 에이전트(Codex 등) 작업 규칙
  └─ CLAUDE.md      Claude Code 작업 규칙
 ```
+
+## 🙏 사용한 리소스
+
+| 리소스 | 출처 | 라이선스 |
+|---|---|---|
+| 나눔고딕 (Bold, ExtraBold) | NAVER · [Google Fonts](https://fonts.google.com/specimen/Nanum+Gothic) | [SIL Open Font License 1.1](Game/Assets/Fonts/OFL.txt) |
 
 ## 🤝 개발 방식
 
