@@ -9,7 +9,7 @@
 ![Unity](https://img.shields.io/badge/Unity-6.3_LTS-000000?logo=unity&logoColor=white)
 ![C#](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
-![Status](https://img.shields.io/badge/Status-기획_단계-orange)
+![Status](https://img.shields.io/badge/Status-v0.1_개발_중-blue)
 
 </div>
 
