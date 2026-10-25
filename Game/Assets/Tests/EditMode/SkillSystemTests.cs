@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HistoryHeroes.Progress;
 using HistoryHeroes.Skills;
 using NUnit.Framework;
@@ -86,6 +87,124 @@ namespace HistoryHeroes.Tests
                 Assert.AreNotSame(picked[0].Skill, picked[1].Skill);
                 Assert.AreEqual(CardType.Fallback, picked[2].Type);
             }
+        }
+
+        private static RarityTable Table(float common, float rare, float legendary)
+        {
+            var t = ScriptableObject.CreateInstance<RarityTable>();
+            t.common = AnimationCurve.Constant(0f, 100f, common);
+            t.rare = AnimationCurve.Constant(0f, 100f, rare);
+            t.legendary = AnimationCurve.Constant(0f, 100f, legendary);
+            return t;
+        }
+
+        private static List<SkillCard> CandidatesOf(params SkillData[] skills)
+        {
+            return SkillPicker.BuildCandidates(new SkillLoadout(), skills, "khan");
+        }
+
+        [Test]
+        public void PickSkills_NeverUpgradesToLegendary()
+        {
+            var legend = Make<ActiveSkillData>("arrow_rain");
+            legend.rarity = Rarity.Legendary;
+            var picked = SkillPicker.PickSkills(CandidatesOf(legend), 3, 1, Table(common: 100, rare: 0, legendary: 0));
+            Assert.IsTrue(picked.TrueForAll(c => c.Type == CardType.Fallback), "일반·희귀가 비어도 전설로 올라가지 않는다");
+        }
+
+        [Test]
+        public void PickSkills_LegendaryRollFallsDownToCommon()
+        {
+            var common = Make<PassiveSkillData>("atk_up");
+            var picked = SkillPicker.PickSkills(CandidatesOf(common), 1, 1, Table(common: 0, rare: 0, legendary: 100));
+            Assert.AreSame(common, picked[0].Skill);
+        }
+
+        [Test]
+        public void PickSkills_EmptyCommonGoesUpToRare()
+        {
+            var rare = Make<PassiveSkillData>("lifesteal");
+            rare.rarity = Rarity.Rare;
+            var picked = SkillPicker.PickSkills(CandidatesOf(rare), 1, 1, Table(common: 100, rare: 0, legendary: 0));
+            Assert.AreSame(rare, picked[0].Skill);
+        }
+
+        [Test]
+        public void PickSkills_RollsRarityByWeight()
+        {
+            var common = Make<PassiveSkillData>("c");
+            var rare = Make<PassiveSkillData>("r");
+            rare.rarity = Rarity.Rare;
+            var table = Table(common: 0, rare: 100, legendary: 0);
+            for (int i = 0; i < 20; i++)
+            {
+                Assert.AreSame(rare, SkillPicker.PickSkills(CandidatesOf(common, rare), 1, 1, table)[0].Skill);
+            }
+        }
+
+        private static FusionRecipe Recipe(FusionType type, ActiveSkillData a, int levelA, SkillData b, int levelB, string heroOnly = null)
+        {
+            var r = ScriptableObject.CreateInstance<FusionRecipe>();
+            r.id = "recipe";
+            r.type = type;
+            r.materialA = a;
+            r.requiredLevelA = levelA;
+            r.materialB = b;
+            r.requiredLevelB = levelB;
+            r.result = Make<ActiveSkillData>("result");
+            r.heroOnlyId = heroOnly;
+            return r;
+        }
+
+        [Test]
+        public void Fusions_EvolutionNeedsMaxLevelActiveAndPassive()
+        {
+            var blade = Make<ActiveSkillData>("spin_blade");
+            var def = Make<PassiveSkillData>("def_up");
+            var recipe = Recipe(FusionType.Evolution, blade, 5, def, 1);
+            var loadout = new SkillLoadout();
+            loadout.AddNew(blade, 4);
+            loadout.AddNew(def, 1);
+
+            Assert.AreEqual(0, FusionFinder.FindAvailableFusions(loadout, new[] { recipe }, "khan").Count, "Lv4면 아직");
+            loadout.Find(blade).Level = 5;
+            Assert.AreEqual(1, FusionFinder.FindAvailableFusions(loadout, new[] { recipe }, "khan").Count);
+        }
+
+        [Test]
+        public void Fusions_MergeNeedsBothLevel3()
+        {
+            var lightning = Make<ActiveSkillData>("lightning");
+            var flame = Make<ActiveSkillData>("flame_field");
+            var recipe = Recipe(FusionType.Merge, lightning, 3, flame, 3);
+            var loadout = new SkillLoadout();
+            loadout.AddNew(lightning, 3);
+            loadout.AddNew(flame, 2);
+
+            Assert.AreEqual(0, FusionFinder.FindAvailableFusions(loadout, new[] { recipe }, "khan").Count);
+            loadout.Find(flame).Level = 3;
+            Assert.AreEqual(1, FusionFinder.FindAvailableFusions(loadout, new[] { recipe }, "khan").Count);
+        }
+
+        [Test]
+        public void Fusions_ExcludeHiddenCompletedChainedAndOtherHero()
+        {
+            var a = Make<ActiveSkillData>("a");
+            var b = Make<ActiveSkillData>("b");
+            var loadout = new SkillLoadout();
+            loadout.AddNew(a, 3);
+            loadout.AddNew(b, 3);
+
+            var hidden = Recipe(FusionType.Merge, a, 3, b, 3);
+            loadout.Hide(hidden);
+            var completed = Recipe(FusionType.Merge, a, 3, b, 3);
+            loadout.MarkCompleted(completed);
+            var otherHero = Recipe(FusionType.Merge, a, 3, b, 3, heroOnly: "napoleon");
+            Assert.AreEqual(0, FusionFinder.FindAvailableFusions(loadout, new[] { hidden, completed, otherHero }, "khan").Count);
+
+            loadout.Find(a).IsFusionResult = true; // 조합 결과는 다시 재료가 되지 않는다
+            var chained = Recipe(FusionType.Merge, a, 3, b, 3);
+            Assert.AreEqual(0, FusionFinder.FindAvailableFusions(loadout, new[] { chained }, "khan").Count);
         }
 
         [Test]

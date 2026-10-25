@@ -47,41 +47,87 @@ namespace HistoryHeroes.Skills
         }
 
         /// <summary>
-        /// 2단계: 후보에서 count장 뽑기.
-        ///
-        /// ✍️ TODO (개발자가 직접 구현할 부분, Docs/Dev/v0.1-Plan.md 11단계)
-        /// 규칙 (GameDesign 6-4):
-        ///   1. 카드 한 장마다 rarityTable.WeightOf(등급, floor)로 **등급을 먼저** 뽑는다.
-        ///   2. 그 등급의 후보 중에서 하나를 무작위로 고른다.
-        ///   3. 이미 뽑힌 카드는 다음 카드의 후보에서 뺀다 (같은 스킬 두 장 금지).
-        ///   4. 뽑힌 등급에 후보가 없으면: 전설 → 희귀 → 일반 순서로 내려가고,
-        ///      일반이 비었으면 희귀로 올라간다. **전설로는 절대 올라가지 않는다.**
-        ///   5. 그래도 없으면 SkillCard.Fallback()으로 채운다 (중복 가능).
-        /// 힌트: 가중치 합 → Random.value × 합 → 누적 합이 그 값을 넘는 등급 선택.
-        ///
-        /// 지금은 게임이 돌아가게 하려고 **등급을 무시하고 균등하게** 뽑는 임시 코드가 들어 있다.
-        /// 위 규칙대로 바꾸면 이 임시 코드를 지운다.
+        /// 2단계: 후보에서 count장 뽑기 (GameDesign 6-4).
+        ///   1. 카드 한 장마다 층별 확률로 **등급을 먼저** 뽑는다 (RarityTable).
+        ///   2. 그 등급의 후보 중 하나를 무작위로 고른다. 뽑힌 카드는 후보에서 빠진다 (같은 스킬 두 장 금지).
+        ///   3. 그 등급에 후보가 없으면 전설 → 희귀 → 일반으로 내려가고, 일반이 비면 희귀로 올라간다.
+        ///      **전설로는 절대 올라가지 않는다.** ("전설은 귀하다")
+        ///   4. 그래도 없으면 기본 카드(체력 회복)로 채운다. 기본 카드는 중복돼도 된다.
         /// </summary>
         public static List<SkillCard> PickSkills(List<SkillCard> candidates, int count, int floor, RarityTable rarityTable)
         {
-            // ---- 임시 코드 시작 (TODO로 바꿀 것) ----
             var pool = new List<SkillCard>(candidates);
             var picked = new List<SkillCard>(count);
-            while (picked.Count < count)
-            {
-                if (pool.Count == 0)
-                {
-                    picked.Add(SkillCard.Fallback());
-                    continue;
-                }
 
-                int index = Random.Range(0, pool.Count);
-                picked.Add(pool[index]);
-                pool.RemoveAt(index);
+            for (int i = 0; i < count; i++)
+            {
+                Rarity rolled = RollRarity(floor, rarityTable);
+                SkillCard card = TakeFrom(pool, FallbackOrder(rolled));
+                picked.Add(card ?? SkillCard.Fallback());
             }
 
             return picked;
-            // ---- 임시 코드 끝 ----
+        }
+
+        private static readonly Rarity[] FromLegendary = { Rarity.Legendary, Rarity.Rare, Rarity.Common };
+        private static readonly Rarity[] FromRare = { Rarity.Rare, Rarity.Common };
+        private static readonly Rarity[] FromCommon = { Rarity.Common, Rarity.Rare };
+
+        /// <summary>뽑힌 등급에 후보가 없을 때 찾아볼 순서. 어떤 경우에도 전설로는 올라가지 않는다.</summary>
+        public static Rarity[] FallbackOrder(Rarity rolled)
+        {
+            switch (rolled)
+            {
+                case Rarity.Legendary: return FromLegendary;
+                case Rarity.Rare: return FromRare;
+                default: return FromCommon;
+            }
+        }
+
+        /// <summary>가중치 합 × 0~1 난수 → 누적 가중치가 그 값을 넘는 등급.</summary>
+        public static Rarity RollRarity(int floor, RarityTable table)
+        {
+            if (table == null) return Rarity.Common;
+
+            float legendary = table.WeightOf(Rarity.Legendary, floor);
+            float rare = table.WeightOf(Rarity.Rare, floor);
+            float common = table.WeightOf(Rarity.Common, floor);
+            float total = legendary + rare + common;
+            if (total <= 0f) return Rarity.Common;
+
+            float roll = Random.value * total;
+            if (roll < legendary) return Rarity.Legendary;
+            if (roll < legendary + rare) return Rarity.Rare;
+            return Rarity.Common;
+        }
+
+        /// <summary>order 순서대로 그 등급의 후보를 찾아 하나를 무작위로 꺼낸다. 없으면 null.</summary>
+        private static SkillCard TakeFrom(List<SkillCard> pool, Rarity[] order)
+        {
+            foreach (Rarity rarity in order)
+            {
+                int matches = 0;
+                for (int i = 0; i < pool.Count; i++)
+                {
+                    if (pool[i].Skill != null && pool[i].Skill.rarity == rarity) matches++;
+                }
+
+                if (matches == 0) continue;
+
+                // 그 등급 후보 중 n번째를 고른다 (목록을 새로 만들지 않고)
+                int target = Random.Range(0, matches);
+                for (int i = 0; i < pool.Count; i++)
+                {
+                    if (pool[i].Skill == null || pool[i].Skill.rarity != rarity) continue;
+                    if (target-- > 0) continue;
+
+                    SkillCard card = pool[i];
+                    pool.RemoveAt(i);
+                    return card;
+                }
+            }
+
+            return null;
         }
     }
 }

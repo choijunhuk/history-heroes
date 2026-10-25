@@ -60,6 +60,8 @@ namespace HistoryHeroes.EditorTools
         /// </summary>
         public static string Scenario(int preset, string kind, bool move)
         {
+            // 에디터 장면(Play 전)을 건드리면 안 된다 → Play 중일 때만
+            if (!Application.isPlaying) return "Play 모드가 아님";
             var run = Object.FindAnyObjectByType<DungeonRun>();
             var cheats = Object.FindAnyObjectByType<Dev.DevCheats>();
             var player = Object.FindAnyObjectByType<PlayerController>();
@@ -103,6 +105,7 @@ namespace HistoryHeroes.EditorTools
             player.Health.Heal(1e9f); // 생존은 따로 본다. 여기서는 처치 속도만
 
             float elapsed = Time.time - _scenarioStart;
+            if (elapsed < 0f) return "무효: 이전 Play 세션의 시나리오"; // Play를 다시 시작하면 Time.time이 0부터 다시 센다
             if (EnemyBase.Alive.Count > 0 && elapsed < 120f)
             {
                 // "이동만": 좌우로 계속 왔다 갔다 (멈추지 않음)
@@ -124,6 +127,13 @@ namespace HistoryHeroes.EditorTools
                 EnemyBase enemy = Object.Instantiate(prefab, position, Quaternion.identity, root);
                 enemy.Spawn(player.transform, hp, 1f, elite);
             }
+        }
+
+        /// <summary>Play 모드에 들어가서 장면이 다 준비됐는가 (자동 점검 스크립트가 기다릴 때 씀)</summary>
+        public static string Ready()
+        {
+            bool ready = Application.isPlaying && Time.time > 0.5f && Object.FindAnyObjectByType<DungeonRun>() != null;
+            return ready ? "ready" : "wait";
         }
 
         public static string State()
