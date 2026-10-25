@@ -24,3 +24,11 @@ The developer is learning game development with this project and plans to releas
 - **Public repository:** never commit keystores, passwords, ad SDK secrets, or other credentials.
 - **Commits:** `type: description` (types: feat, fix, balance, docs, refactor, chore). See `Docs/DevRules.md`.
 - **Design reviews:** save review notes to `Docs/Reviews/YYYY-MM-DD-<topic>.md`.
+
+## Tools
+
+- **Unity CLI** (`unity`, installed via winget) + **`com.unity.pipeline`** package in `Game/`: drive the live Editor instead of hand-editing `.unity` / `.prefab` / `.asset` YAML.
+  - Check first: `unity status` (state `ready`), then `unity command eval --caller plugin --skill <skill> '<C#>'`.
+  - On Windows, run `unity command eval` from **Git Bash**, not PowerShell 5.1 — PowerShell breaks embedded double quotes in native arguments.
+- **Unity's official agent plugin** (Claude Code: `unity@claude-plugins-official`) provides Unity skills (UI, sprites, LevelPlay ads, IAP, localization, …). Prefer them over guessing Unity APIs.
+- **Android testing:** `adb` ships with the Unity Android module at `C:\Program Files\Unity\Hub\Editor\6000.3.27f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\adb.exe`.

@@ -73,22 +73,29 @@
 
 ## 🚀 시작하기
 
-> ⚠️ 유니티 프로젝트는 아직 만들기 전이에요. 생성되면 이 부분을 업데이트할게요.
-
-1. **Unity Hub**에서 **Unity 6.3 LTS**를 설치해요. (모듈: Android Build Support, OpenJDK, Android SDK & NDK)
+1. **Unity 6.3 LTS (`6000.3.27f1`)**를 설치해요. (모듈: Android Build Support, OpenJDK, Android SDK & NDK)
+   ```powershell
+   winget install Unity.CLI
+   unity install 6000.3.27f1 -m android
+   ```
 2. 이 저장소를 클론해요.
    ```bash
    git clone https://github.com/choijunhuk/history-heroes.git
    ```
    > 경로에 **한글이나 공백이 없는 곳**에 받아주세요. 안드로이드 빌드가 실패할 수 있어요.
-3. Unity Hub → **Add** → `Game/` 폴더를 열어요.
+3. 프로젝트를 열어요.
+   ```bash
+   unity open history-heroes/Game
+   ```
+   또는 Unity Hub → **Add** → `Game/` 폴더
+4. 처음 열면 **File → Build Profiles**에서 플랫폼을 **Android**로 바꿔요. (빌드 대상은 각자 컴퓨터에 저장돼서 저장소에 안 들어가요)
 
 ## 📁 폴더 구조
 
 ```
 history-heroes/
  ├─ Docs/          기획서, 규칙, 아이디어, 리뷰
- ├─ Game/          유니티 프로젝트 (생성 예정)
+ ├─ Game/          유니티 프로젝트 (Unity 6.3, Universal 2D)
  ├─ AGENTS.md      AI 에이전트(Codex 등) 작업 규칙
  └─ CLAUDE.md      Claude Code 작업 규칙
 ```
