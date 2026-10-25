@@ -34,6 +34,17 @@ namespace HistoryHeroes.Stats
         }
 
         /// <summary>이 주인이 붙인 보정값을 전부 지운다. 스킬 교체·조합·기록 복원 때 쓴다.</summary>
+        /// <summary>
+        /// owner의 보정을 통째로 바꾼다. 지우고 다시 넣는 동안 알림을 **한 번만** 보낸다.
+        /// (따로 하면 최대체력이 1150 → 1000 → 1250으로 두 번 바뀌어 회복이 두 번 일어난다)
+        /// </summary>
+        public void ReplaceFrom(object owner, System.Collections.Generic.IReadOnlyList<StatModifier> modifiers)
+        {
+            _modifiers.RemoveAll(m => ReferenceEquals(m.Owner, owner));
+            for (int i = 0; i < modifiers.Count; i++) _modifiers.Add(modifiers[i]);
+            Changed?.Invoke();
+        }
+
         public int RemoveAllFrom(object owner)
         {
             int removed = _modifiers.RemoveAll(m => ReferenceEquals(m.Owner, owner));

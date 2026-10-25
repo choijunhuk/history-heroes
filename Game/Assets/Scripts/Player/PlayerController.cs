@@ -28,6 +28,10 @@ namespace HistoryHeroes.Player
         private float _attackCooldown;
         private bool _firstShotPending = true;
         private float _lifestealBudget;
+        private float _searchDelay;
+
+        /// <summary>표적이 없을 때 다시 찾기까지 (매 프레임 물리 검사를 하지 않게)</summary>
+        private const float SearchRetryInterval = 0.1f;
 
         public HeroData Hero => hero;
         public StatSheet Stats { get; } = new StatSheet();
@@ -85,10 +89,10 @@ namespace HistoryHeroes.Player
 
         private void Update()
         {
-            if (Health.IsDead) return;
+            // 카드 화면 등으로 멈춘 동안에는 쏘지도, 쿨다운이 돌지도 않는다
+            if (Health.IsDead || GamePause.IsPaused) return;
             float dt = Time.deltaTime;
-            Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
-            Stop.Tick(input, dt);
+            Stop.Tick(ReadInput(), dt);
 
             // 쿨다운은 이동 중에도 흐른다 → 멈췄다 움직이기를 반복해도 공격속도보다 빨리 쏠 수 없다.
             _attackCooldown -= dt;
@@ -108,8 +112,14 @@ namespace HistoryHeroes.Player
                 return;
             }
 
-            Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
-            _body.linearVelocity = input * Stats.Get(StatType.MoveSpeed);
+            _body.linearVelocity = ReadInput() * Stats.Get(StatType.MoveSpeed);
+        }
+
+        /// <summary>이동과 멈춤 판정이 같은 데드존을 쓴다 (약하게 밀면서 쏘기 방지, Codex 리뷰).</summary>
+        private Vector2 ReadInput()
+        {
+            Vector2 raw = joystick != null ? joystick.Direction : Vector2.zero;
+            return StopDetector.ApplyDeadZone(raw);
         }
 
         private void TryBasicAttack()
@@ -117,8 +127,15 @@ namespace HistoryHeroes.Player
             if (_attackCooldown > 0f) return;
             if (Stop.StoppedTime < hero.firstShotDelay) return;
 
+            _searchDelay -= Time.deltaTime;
+            if (_searchDelay > 0f) return;
+
             Health target = _targets.Find(transform.position, Stats.Get(StatType.Range));
-            if (target == null) return;
+            if (target == null)
+            {
+                _searchDelay = SearchRetryInterval;
+                return;
+            }
 
             Fire(target);
             _attackCooldown = 1f / Stats.Get(StatType.AttackSpeed, StatTarget.BasicAttack);

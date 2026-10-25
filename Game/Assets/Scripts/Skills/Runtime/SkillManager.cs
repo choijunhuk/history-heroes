@@ -19,7 +19,12 @@ namespace HistoryHeroes.Skills
         [Tooltip("기본 카드(체력 회복)가 회복하는 최대체력 비율")]
         [SerializeField, Range(0f, 1f)] private float fallbackHeal = 0.2f;
 
-        public SkillLoadout Loadout { get; } = new SkillLoadout();
+        [Header("슬롯 (모드마다 다름: 던전 4·4, 서바이벌 6·6 — GameDesign 6-1)")]
+        [SerializeField, Min(1)] private int activeSlots = 4;
+        [SerializeField, Min(1)] private int passiveSlots = 4;
+
+        private SkillLoadout _loadout;
+        public SkillLoadout Loadout => _loadout ??= new SkillLoadout(activeSlots, passiveSlots);
 
         /// <summary>조합을 처음 만들었을 때 (도감 기록·연출용)</summary>
         public event Action<FusionRecipe> FusionCompleted;
@@ -78,13 +83,14 @@ namespace HistoryHeroes.Skills
             return result;
         }
 
-        /// <summary>어떤 조합의 재료인가 (카드에 "조합 재료" 표시용, UX.md 3장)</summary>
+        /// <summary>**발견한** 조합의 재료인가 (카드에 "조합 재료" 표시용, UX.md 3장 · GameDesign 6-2)</summary>
         public bool IsFusionMaterial(SkillData skill)
         {
             if (skill == null) return false;
             foreach (FusionRecipe r in recipes)
             {
-                if (r == null || !string.IsNullOrEmpty(r.heroOnlyId) && r.heroOnlyId != HeroId) continue;
+                if (r == null || !RecipeBook.IsDiscovered(r)) continue;
+                if (!string.IsNullOrEmpty(r.heroOnlyId) && r.heroOnlyId != HeroId) continue;
                 if (r.materialA == skill || r.materialB == skill) return true;
             }
 
@@ -169,6 +175,7 @@ namespace HistoryHeroes.Skills
             Install(result);
 
             Loadout.MarkCompleted(recipe);
+            RecipeBook.Discover(recipe);
             FusionCompleted?.Invoke(recipe);
         }
     }

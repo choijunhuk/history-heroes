@@ -1,4 +1,5 @@
 using HistoryHeroes.Combat;
+using HistoryHeroes.Common;
 using HistoryHeroes.Player;
 using HistoryHeroes.Stats;
 using UnityEngine;
@@ -62,9 +63,12 @@ namespace HistoryHeroes.Skills
             }
         }
 
+        /// <summary>카드 화면 등으로 멈춘 동안에는 판정도 하지 않는다 (timeScale 0이어도 Update는 돈다).</summary>
+        protected bool IsPaused => GamePause.IsPaused;
+
         protected virtual void Update()
         {
-            if (player == null || data == null || data.cooldown <= 0f) return;
+            if (player == null || data == null || data.cooldown <= 0f || IsPaused) return;
 
             _cooldownLeft -= Time.deltaTime;
             if (_cooldownLeft > 0f) return;

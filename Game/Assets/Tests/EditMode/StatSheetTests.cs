@@ -121,5 +121,22 @@ namespace HistoryHeroes.Tests
 
             Assert.AreEqual(2, count);
         }
+
+        [Test]
+        public void ReplaceFrom_NotifiesOnceWithFinalValue()
+        {
+            // 최대체력 패시브 Lv1(+15%) → Lv2(+25%): 중간값(1000)을 거치지 않아야 회복이 한 번만 일어난다
+            var sheet = new StatSheet();
+            sheet.SetBase(StatType.MaxHp, 1000f);
+            sheet.ReplaceFrom(SkillA, new[] { new StatModifier(StatType.MaxHp, ModifierKind.Percent, 0.15f, ModifierSource.Skill, SkillA) });
+
+            var seen = new System.Collections.Generic.List<float>();
+            sheet.Changed += () => seen.Add(sheet.Get(StatType.MaxHp));
+            sheet.ReplaceFrom(SkillA, new[] { new StatModifier(StatType.MaxHp, ModifierKind.Percent, 0.25f, ModifierSource.Skill, SkillA) });
+
+            Assert.AreEqual(1, seen.Count);
+            Assert.AreEqual(1250f, seen[0], 0.01f);
+            Assert.AreEqual(1, sheet.ModifierCount);
+        }
     }
 }

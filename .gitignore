@@ -72,3 +72,5 @@ Game/Assets/Temp/
 Game/Assets/Temp.meta
 # Unity Pipeline(에디터 원격 조작) 로컬 상태 — 컴퓨터마다 다름
 Game/ProjectSettings/Packages/com.unity.pipeline/
+# 빌드 결과물
+Game/Builds/

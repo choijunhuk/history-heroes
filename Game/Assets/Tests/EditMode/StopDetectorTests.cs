@@ -71,5 +71,12 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(1, moved);
             Assert.AreEqual(1, stopped);
         }
+
+        [Test]
+        public void ApplyDeadZone_ZeroesWeakInputSoMovementMatchesStopRule()
+        {
+            Assert.AreEqual(Vector2.zero, StopDetector.ApplyDeadZone(new Vector2(0.05f, 0f)));
+            Assert.AreEqual(new Vector2(0.5f, 0f), StopDetector.ApplyDeadZone(new Vector2(0.5f, 0f)));
+        }
     }
 }

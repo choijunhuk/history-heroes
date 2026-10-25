@@ -42,8 +42,12 @@ namespace HistoryHeroes.Combat
             Current = Mathf.Clamp(Current + Mathf.Max(0f, gained), 0f, Max);
         }
 
-        public bool TryTakeDamage(DamageInfo info)
+        public bool TryTakeDamage(DamageInfo info) => TryTakeDamage(info, out _);
+
+        /// <param name="dealt">실제로 깎인 체력 (남은 체력보다 큰 피해는 남은 만큼만). 흡혈은 이 값으로 계산한다.</param>
+        public bool TryTakeDamage(DamageInfo info, out float dealt)
         {
+            dealt = 0f;
             if (IsDead || info.AttackerTeam == team) return false;
             if (Time.time < _invulnerableUntil) return false;
 
@@ -54,8 +58,8 @@ namespace HistoryHeroes.Combat
                 reduction = _stats.Get(StatType.DamageReduction);
             }
 
-            float dealt = info.Amount * (1f - reduction);
-            Current = Mathf.Max(0f, Current - dealt);
+            dealt = Mathf.Min(Current, info.Amount * (1f - reduction));
+            Current -= dealt;
             if (_invulnerableDuration > 0f) _invulnerableUntil = Time.time + _invulnerableDuration;
 
             Damaged?.Invoke(info, dealt);

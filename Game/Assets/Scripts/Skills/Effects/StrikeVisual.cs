@@ -65,6 +65,7 @@ namespace HistoryHeroes.Skills
 
         private void Update()
         {
+            if (GamePause.IsPaused) return;
             _t += Time.deltaTime;
 
             if (!_landed)

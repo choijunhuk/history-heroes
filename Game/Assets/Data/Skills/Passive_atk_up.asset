@@ -19,6 +19,7 @@ MonoBehaviour:
   rarity: 0
   tags: 1
   maxLevel: 5
+  saveCostFirstLevel: 1
   saveCostPerLevel: 1
   recordable: 1
   heroOnlyId: 

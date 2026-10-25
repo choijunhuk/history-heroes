@@ -26,6 +26,7 @@ namespace HistoryHeroes.Skills
         private float _duration;
         private float _timeLeft;
         private float _tickTimer;
+        private int _ticksLeft;
         private ContactFilter2D _filter;
         private Action<DamageZone> _release;
 
@@ -56,6 +57,8 @@ namespace HistoryHeroes.Skills
             _duration = duration;
             _timeLeft = duration;
             _tickTimer = 0f; // 깔리자마자 첫 틱
+            // 총 피해 = 틱 수 × 틱당 피해로 고정 → 프레임 속도와 관계없이 3초 장판은 정확히 6틱
+            _ticksLeft = Mathf.Max(1, Mathf.RoundToInt(duration / TickInterval));
             _filter = new ContactFilter2D { useLayerMask = true, layerMask = enemies, useTriggers = true };
             _release = release;
             transform.localScale = Vector3.one * radius * 2f;
@@ -64,13 +67,17 @@ namespace HistoryHeroes.Skills
 
         private void Update()
         {
+            if (GamePause.IsPaused) return;
+
             float dt = Time.deltaTime;
             _timeLeft -= dt;
             _tickTimer -= dt;
 
-            if (_tickTimer <= 0f)
+            // 프레임이 길어져도 밀린 틱을 다 처리하되, 정해진 틱 수를 넘지 않는다
+            while (_tickTimer <= 0f && _ticksLeft > 0)
             {
                 _tickTimer += TickInterval;
+                _ticksLeft--;
                 Tick();
             }
 
@@ -79,7 +86,7 @@ namespace HistoryHeroes.Skills
             c.a *= Mathf.Clamp01(_timeLeft / Mathf.Min(0.5f, _duration));
             _renderer.color = c;
 
-            if (_timeLeft <= 0f) _release?.Invoke(this);
+            if (_timeLeft <= 0f && _ticksLeft == 0) _release?.Invoke(this);
         }
 
         private void Tick()

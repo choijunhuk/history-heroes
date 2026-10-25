@@ -98,11 +98,11 @@ namespace HistoryHeroes.EditorTools
             // ----- 조합 결과 2개 (Skills.md 4-4). 풀에는 넣지 않는다 (카드로 직접 나오지 않음) -----
             d.SteelWhirl = Active("steel_whirl", "강철 회오리", Rarity.Rare, SkillTag.Melee | SkillTag.Defense, 1, 10,
                 "칼날 8개 (닿으면 50%)\n칼날마다 1초에 적 투사체 1발을 막는다",
-                cooldown: 0f, damage: 0.5f, damagePerLevel: 0f, count: 8, countPerLevel: 0, radius: 1.5f);
+                cooldown: 0f, damage: 0.5f, damagePerLevel: 0f, count: 8, countPerLevel: 0, radius: 1.5f, saveCostFirst: 10);
             // 합체 결과 Lv2 +25%, Lv3 +50% (Skills.md 4-3)
             d.ThunderFire = Active("thunder_fire", "뇌화 폭풍", Rarity.Rare, SkillTag.Lightning | SkillTag.Fire, 3, 3,
                 "3초마다 번개 3개 (각 130%)\n떨어진 자리에 불길 2초 (초당 30%)\nLv2 +25%, Lv3 +50%",
-                cooldown: 3f, damage: 1.3f, damagePerLevel: 0.325f, count: 3, countPerLevel: 0);
+                cooldown: 3f, damage: 1.3f, damagePerLevel: 0.325f, count: 3, countPerLevel: 0, saveCostFirst: 15);
 
             d.Recipes.Add(Recipe("steel_whirl", FusionType.Evolution, d.SpinBlade, 5, d.DefUp, 1, d.SteelWhirl));
             d.Recipes.Add(Recipe("thunder_fire", FusionType.Merge, d.Lightning, 3, d.FlameField, 3, d.ThunderFire));
@@ -135,7 +135,7 @@ namespace HistoryHeroes.EditorTools
             string description, params PassiveSkillData.StatEntry[] stats)
         {
             var s = AssetUtil.LoadOrCreate<PassiveSkillData>($"{DataDir}/Skills/Passive_{id}.asset");
-            FillCommon(s, id, name, rarity, tags, maxLevel, saveCost, description);
+            FillCommon(s, id, name, rarity, tags, maxLevel, saveCost, saveCost, description);
             s.stats = new List<PassiveSkillData.StatEntry>(stats);
             s.attack = new List<PassiveSkillData.AttackEntry>();
             return s;
@@ -143,10 +143,10 @@ namespace HistoryHeroes.EditorTools
 
         private static ActiveSkillData Active(string id, string name, Rarity rarity, SkillTag tags, int maxLevel, int saveCost,
             string description, float cooldown, float damage, float damagePerLevel, int count, int countPerLevel,
-            float radius = 1.5f, float radiusPerLevel = 0f, float duration = 0f)
+            float radius = 1.5f, float radiusPerLevel = 0f, float duration = 0f, int saveCostFirst = -1)
         {
             var s = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_{id}.asset");
-            FillCommon(s, id, name, rarity, tags, maxLevel, saveCost, description);
+            FillCommon(s, id, name, rarity, tags, maxLevel, saveCostFirst >= 0 ? saveCostFirst : saveCost, saveCost, description);
             s.cooldown = cooldown;
             s.damageFirstLevel = damage;
             s.damagePerLevel = damagePerLevel;
@@ -159,14 +159,16 @@ namespace HistoryHeroes.EditorTools
             return s;
         }
 
-        private static void FillCommon(SkillData s, string id, string name, Rarity rarity, SkillTag tags, int maxLevel, int saveCost, string description)
+        private static void FillCommon(SkillData s, string id, string name, Rarity rarity, SkillTag tags, int maxLevel,
+            int saveCostFirst, int saveCostPerLevel, string description)
         {
             s.id = id;
             s.displayName = name;
             s.rarity = rarity;
             s.tags = tags;
             s.maxLevel = maxLevel;
-            s.saveCostPerLevel = saveCost;
+            s.saveCostFirstLevel = saveCostFirst;
+            s.saveCostPerLevel = saveCostPerLevel;
             s.recordable = true;
             s.heroOnlyId = string.Empty;
             s.description = description;

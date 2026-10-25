@@ -51,8 +51,10 @@ namespace HistoryHeroes.Skills
         public SkillTag tags;
         [Min(1)] public int maxLevel = 5;
 
-        [Header("기록")]
-        [Tooltip("레벨 1개당 저장 비용 (GameDesign 7-2)")]
+        [Header("기록 (GameDesign 7-2)")]
+        [Tooltip("Lv1일 때 저장 비용")]
+        public int saveCostFirstLevel = 1;
+        [Tooltip("Lv2부터 레벨마다 더해지는 비용")]
         public int saveCostPerLevel = 1;
         public bool recordable = true;
 
@@ -61,6 +63,9 @@ namespace HistoryHeroes.Skills
         public string heroOnlyId;
 
         public abstract SkillKind Kind { get; }
+
+        /// <summary>이 레벨로 기록에 저장할 때 드는 용량. 예: 패시브 일반 Lv3 = 1 + 1×2 = 3, 뇌화 폭풍 Lv2 = 15 + 3 = 18</summary>
+        public int SaveCostAt(int level) => saveCostFirstLevel + saveCostPerLevel * Mathf.Max(0, level - 1);
 
         public bool IsAvailableFor(string heroId)
         {

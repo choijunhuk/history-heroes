@@ -70,7 +70,9 @@ namespace HistoryHeroes.EditorTools
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             playerObject.AddComponent<CircleCollider2D>().radius = 0.4f;
             playerObject.AddComponent<Health>();
-            Visual(playerObject.transform, "Body", _circle, d.Khan.color, new Vector2(0.9f, 0.9f), 3);
+            SpriteRenderer playerBody = Visual(playerObject.transform, "Body", _circle, d.Khan.color, new Vector2(0.9f, 0.9f), 3);
+            using (var flash = new Props(playerObject.AddComponent<HitFlash>())) flash.Ref("target", playerBody).Color("flashColor", new Color(1f, 0.3f, 0.3f));
+            SpriteRenderer stopFill = Visual(playerObject.transform, "StopIndicator", _circle, Color.white, Vector2.one, -1);
             Visual(playerObject.transform, "Facing", _square, new Color(1f, 1f, 1f, 0.8f), new Vector2(0.18f, 0.18f), 4).transform.localPosition = new Vector2(0f, 0.3f);
             var player = playerObject.AddComponent<PlayerController>();
             using (var props = new Props(player))
@@ -78,6 +80,8 @@ namespace HistoryHeroes.EditorTools
                 props.Ref("hero", d.Khan).Ref("joystick", ui.Joystick).Ref("projectilePrefab", p.PlayerArrow)
                     .Mask("enemyMask", Mask(EnemyLayer)).Mask("wallMask", Mask(WallLayer));
             }
+
+            using (var props = new Props(playerObject.AddComponent<StopIndicator>())) props.Ref("player", player).Ref("fill", stopFill);
 
             // ----- 시스템 -----
             var systems = new GameObject("Systems");
@@ -266,6 +270,7 @@ namespace HistoryHeroes.EditorTools
             level.color = new Color(1f, 0.95f, 0.7f);
 
             TMP_Text description = Label("Description", card, "", 27, TextAlignmentOptions.Top);
+            description.lineSpacing = 12f;
             RectTransform dr = description.rectTransform;
             dr.anchorMin = Vector2.zero;
             dr.anchorMax = Vector2.one;
@@ -297,6 +302,7 @@ namespace HistoryHeroes.EditorTools
             TMP_Text title = Label("Title", panel, "클리어!", 100, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 640f), new Vector2(900f, 130f));
             TMP_Text body = Label("Body", panel, "", 40, TextAlignmentOptions.TopLeft);
+            body.lineSpacing = 28f;
             Place(body.rectTransform, Center, Center, new Vector2(0f, 40f), new Vector2(820f, 1000f));
 
             Button retry = Btn("Retry", panel, "다시 도전", new Vector2(0f, -680f), new Vector2(520f, 140f), new Color(0.2f, 0.55f, 0.32f), out _);

@@ -9,7 +9,8 @@ namespace HistoryHeroes.Skills
     /// <summary>
     /// 회전 칼날 (상시): 몸 주위를 도는 칼날. 레벨마다 칼날 +1. (Skills.md 2장)
     /// 강철 회오리 (진화): 칼날 8개, 칼날마다 1초에 적 투사체 1발을 막는다. (Skills.md 4-4)
-    /// 같은 칼날은 같은 적을 hitInterval마다 한 번만 때린다 → 칼날 수가 곧 피해량.
+    /// 같은 적은 **스킬 전체에서** hitInterval(0.3초)마다 한 번만 맞는다 (Skills.md 4-4).
+    /// 칼날이 많을수록 더 자주 닿으므로 피해가 늘지만, 두 칼날이 겹쳐도 한 번에 두 번 맞지는 않는다.
     /// </summary>
     public sealed class OrbitBladesBehaviour : ActiveSkillBehaviour
     {
@@ -26,9 +27,10 @@ namespace HistoryHeroes.Skills
         private sealed class Blade
         {
             public Transform Transform;
-            public readonly Dictionary<Health, float> NextHit = new Dictionary<Health, float>();
-            public float NextBlock;
+            public float NextBlock; // 투사체 막기는 칼날마다 1초에 1발
         }
+
+        private readonly Dictionary<Health, float> _nextHit = new Dictionary<Health, float>();
 
         private static readonly List<Collider2D> _hits = new List<Collider2D>();
         private readonly List<Blade> _blades = new List<Blade>();
@@ -66,7 +68,7 @@ namespace HistoryHeroes.Skills
         protected override void Update()
         {
             base.Update();
-            if (player == null || _blades.Count == 0) return;
+            if (player == null || _blades.Count == 0 || IsPaused) return;
 
             float now = Time.time;
             _angle = (_angle + degreesPerSecond * Time.deltaTime) % 360f;
@@ -82,7 +84,7 @@ namespace HistoryHeroes.Skills
                 Blade blade = _blades[i];
                 blade.Transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 0f, degrees + 90f));
 
-                HitEnemies(blade, position, now);
+                HitEnemies(position, now);
 
                 if (blockProjectiles && now >= blade.NextBlock && EnemyProjectiles.TryBlock(position, hitRadius * 1.5f))
                 {
@@ -91,20 +93,20 @@ namespace HistoryHeroes.Skills
             }
         }
 
-        private void HitEnemies(Blade blade, Vector2 position, float now)
+        private void HitEnemies(Vector2 position, float now)
         {
             Physics2D.OverlapCircle(position, hitRadius, _filter, _hits);
             for (int h = 0; h < _hits.Count; h++)
             {
                 if (!_hits[h].TryGetComponent(out Health health) || health.IsDead) continue;
-                if (blade.NextHit.TryGetValue(health, out float next) && now < next) continue;
+                if (_nextHit.TryGetValue(health, out float next) && now < next) continue;
 
                 health.TryTakeDamage(RollDamage(data.DamageAt(level)));
-                blade.NextHit[health] = now + hitInterval;
+                _nextHit[health] = now + hitInterval;
             }
 
             // 죽은 적 기록이 쌓이지 않게 가끔 정리
-            if (blade.NextHit.Count > 64) blade.NextHit.Clear();
+            if (_nextHit.Count > 64) _nextHit.Clear();
         }
     }
 }

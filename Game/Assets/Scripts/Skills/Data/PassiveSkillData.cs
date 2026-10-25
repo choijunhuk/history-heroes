@@ -44,13 +44,15 @@ namespace HistoryHeroes.Skills
         /// </summary>
         public void Apply(PlayerController player, object owner, int level)
         {
-            player.Stats.RemoveAllFrom(owner);
-            player.Attack.RemoveAllFrom(owner);
-
+            // 능력치는 한 번에 교체해야 최대체력 회복이 늘어난 만큼만 일어난다
+            var modifiers = new List<StatModifier>(stats.Count);
             foreach (StatEntry e in stats)
             {
-                player.Stats.Add(new StatModifier(e.stat, e.kind, e.ValueAt(level), ModifierSource.Skill, owner, e.target));
+                modifiers.Add(new StatModifier(e.stat, e.kind, e.ValueAt(level), ModifierSource.Skill, owner, e.target));
             }
+
+            player.Stats.ReplaceFrom(owner, modifiers);
+            player.Attack.RemoveAllFrom(owner);
 
             foreach (AttackEntry e in attack)
             {

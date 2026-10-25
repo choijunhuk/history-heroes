@@ -156,7 +156,8 @@ namespace HistoryHeroes.EditorTools
             var settings = Resources.Load<TMP_Settings>("TMP Settings");
             if (settings != null)
             {
-                using (var p = new Props(settings)) p.Ref("m_defaultFontAsset", _font);
+                // 한글은 기본이 "글자마다 줄바꿈"이라 "회/복"처럼 끊긴다 → 띄어쓰기 단위로
+                using (var p = new Props(settings)) p.Ref("m_defaultFontAsset", _font).Bool("m_UseModernHangulLineBreakingRules", true);
             }
         }
     }

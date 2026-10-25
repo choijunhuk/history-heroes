@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HistoryHeroes.Combat;
+using HistoryHeroes.Common;
 using UnityEngine;
 
 namespace HistoryHeroes.Enemy
@@ -64,7 +65,7 @@ namespace HistoryHeroes.Enemy
 
         protected virtual void Update()
         {
-            if (player == null || health.IsDead) return;
+            if (player == null || health.IsDead || GamePause.IsPaused) return;
             stateTimer -= Time.deltaTime;
             Tick();
         }

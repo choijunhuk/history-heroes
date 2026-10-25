@@ -10,7 +10,15 @@ namespace HistoryHeroes.Player
     public sealed class StopDetector
     {
         public const float StopThreshold = 0.1f;
-        private const float DeadZoneSqr = 0.01f;
+        /// <summary>이보다 약한 입력은 "입력 없음". 이동과 멈춤 판정이 **같은 값**을 써야 한다 (움직이며 쏘기 방지).</summary>
+        public const float DeadZone = 0.1f;
+        private const float DeadZoneSqr = DeadZone * DeadZone;
+
+        /// <summary>데드존 안의 입력을 0으로 만든다. 이동에도 이 값을 쓴다.</summary>
+        public static UnityEngine.Vector2 ApplyDeadZone(UnityEngine.Vector2 input)
+        {
+            return input.sqrMagnitude < DeadZoneSqr ? UnityEngine.Vector2.zero : input;
+        }
 
         private float _idleTime = StopThreshold; // 시작할 때는 멈춘 상태
 

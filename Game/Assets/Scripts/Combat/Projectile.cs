@@ -25,6 +25,10 @@ namespace HistoryHeroes.Combat
         private Action<Projectile> _release;
         private Action<DamageInfo, float> _onHit;
 
+        // 한 번에 여러 개를 받아서, 방금 뚫고 지나온 적은 빼고 가장 가까운 것을 고른다
+        // (첫 결과가 방금 그 적이면 뒤의 벽을 못 보고 통과하던 문제 방지)
+        private static readonly RaycastHit2D[] _hits = new RaycastHit2D[8];
+
         public void Launch(Vector2 direction, float speed, DamageInfo damage, LayerMask hitMask, LayerMask wallMask,
             int pierce, int ricochet, Action<Projectile> release, Action<DamageInfo, float> onHit = null,
             float pierceFalloff = 0.2f)
@@ -58,9 +62,19 @@ namespace HistoryHeroes.Combat
 
             float distance = _speed * dt;
             Vector2 position = transform.position;
-            RaycastHit2D hit = Physics2D.CircleCast(position, radius, _direction, distance, _hitMask | _wallMask);
+            var filter = new ContactFilter2D { useLayerMask = true, layerMask = _hitMask | _wallMask, useTriggers = true };
+            int count = Physics2D.CircleCast(position, radius, _direction, filter, _hits, distance);
 
-            if (hit.collider == null || hit.collider == _lastHit)
+            RaycastHit2D hit = default;
+            float nearest = float.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                if (_hits[i].collider == _lastHit || _hits[i].distance >= nearest) continue;
+                nearest = _hits[i].distance;
+                hit = _hits[i];
+            }
+
+            if (hit.collider == null)
             {
                 transform.position = position + _direction * distance;
                 return;
@@ -85,9 +99,9 @@ namespace HistoryHeroes.Combat
             transform.position = hit.centroid;
             _lastHit = hit.collider;
 
-            if (hit.collider.TryGetComponent(out Health health) && health.TryTakeDamage(_damage))
+            if (hit.collider.TryGetComponent(out Health health) && health.TryTakeDamage(_damage, out float dealt))
             {
-                _onHit?.Invoke(_damage, _damage.Amount);
+                _onHit?.Invoke(_damage, dealt);
             }
 
             if (_pierceLeft <= 0)

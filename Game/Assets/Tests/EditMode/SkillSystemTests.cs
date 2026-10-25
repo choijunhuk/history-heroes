@@ -103,6 +103,16 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void SaveCost_FirstLevelPlusPerLevel()
+        {
+            var merged = Make<ActiveSkillData>("thunder_fire", maxLevel: 3);
+            merged.saveCostFirstLevel = 15;
+            merged.saveCostPerLevel = 3;
+            Assert.AreEqual(15, merged.SaveCostAt(1));
+            Assert.AreEqual(21, merged.SaveCostAt(3));
+        }
+
+        [Test]
         public void PlayerLevel_AppliesExpGainBonus()
         {
             var level = new PlayerLevel(baseRequirement: 10f);

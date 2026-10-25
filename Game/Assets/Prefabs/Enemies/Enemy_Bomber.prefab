@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6662337809993290595}
   - component: {fileID: 5127577357696050308}
   - component: {fileID: 7226769892038981068}
+  - component: {fileID: 4206174161373278667}
   - component: {fileID: 95242875126919497}
   m_Layer: 9
   m_Name: Enemy_Bomber
@@ -173,6 +174,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Health
   team: 1
+--- !u!114 &4206174161373278667
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5673848401605415949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d63072603ff2ded419dc7225195e6003, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.HitFlash
+  target: {fileID: 1511866284403928910}
+  duration: 0.08
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &95242875126919497
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -84,6 +84,7 @@ namespace HistoryHeroes.EditorTools
             body.gravityScale = 0f;
             body.freezeRotation = true;
             go.AddComponent<Health>();
+            using (var flash = new Props(go.AddComponent<HitFlash>())) flash.Ref("target", sr);
             T enemy = go.AddComponent<T>();
 
             // 공격 예고선 (돌진 방향, 조준선)
