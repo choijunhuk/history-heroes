@@ -78,22 +78,21 @@ namespace HistoryHeroes.UI
             if (_waitingForAd) return;
             _waitingForAd = true;
             Render();
+            Action changed = _onChanged;
             Ads.Current.Show("hearts", success =>
             {
-                _waitingForAd = false;
+                // 보상은 창이 닫히거나 장면이 바뀌어도 준다
                 if (success)
                 {
                     Hearts.GrantAd(SaveSystem.Data, Clock.UnixSeconds, Clock.Today);
                     SaveSystem.Save();
-                    _note = null;
-                }
-                else
-                {
-                    _note = "광고를 불러오지 못했어요 (횟수는 그대로)";
                 }
 
+                if (this == null) return; // 화면이 이미 없어졌다 (장면 이동)
+                _waitingForAd = false;
+                _note = success ? null : "광고를 불러오지 못했어요 (횟수는 그대로)";
                 Render();
-                _onChanged?.Invoke();
+                changed?.Invoke();
             });
         }
 

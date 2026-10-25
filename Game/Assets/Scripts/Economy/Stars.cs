@@ -52,17 +52,38 @@ namespace HistoryHeroes.Economy
             return earned;
         }
 
-        /// <summary>보스전이 끝났을 때 (record.bossesDefeated는 이미 갱신된 상태로 부른다)</summary>
+        /// <summary>보스전이 끝났을 때. 이긴 경우 RecordWin으로 이번 승리를 먼저 남긴 뒤 부른다.</summary>
         public static List<string> EvaluateBoss(SaveData d, int chapter, string bossId, bool victory, int hits, int star2MaxHits,
-            RunRecord record, SkillDatabase database)
+            RunRecord record, ICollection<string> foughtActives)
         {
             var earned = new List<string>();
             if (!victory) return earned;
 
             TryEarn(d, chapter, Boss, 1, true, "보스 격파", earned);
             TryEarn(d, chapter, Boss, 2, hits <= star2MaxHits, $"맞은 횟수 {star2MaxHits}번 이하로 격파", earned);
-            TryEarn(d, chapter, Boss, 3, HasDifferentWinningRecord(d, bossId, record, database), "서로 다른 기록 2개로 격파", earned);
+            TryEarn(d, chapter, Boss, 3, HasDifferentWin(d, bossId, record, foughtActives), "서로 다른 기록 2개로 격파", earned);
             return earned;
+        }
+
+        /// <summary>이 기록으로 이긴 것을 남긴다 (그때 실제로 싸운 액티브 구성과 함께). 같은 구성은 한 번만</summary>
+        public static void RecordWin(RunRecord record, string bossId, ICollection<string> foughtActives)
+        {
+            if (record == null) return;
+            if (!record.bossesDefeated.Contains(bossId)) record.bossesDefeated.Add(bossId);
+            var actives = new List<string>(foughtActives);
+            actives.Sort(System.StringComparer.Ordinal);
+            foreach (BossWin w in record.bossWins)
+            {
+                if (w.bossId == bossId && SameSet(w.actives, actives)) return;
+            }
+
+            record.bossWins.Add(new BossWin { bossId = bossId, actives = actives });
+        }
+
+        private static bool SameSet(List<string> a, List<string> b)
+        {
+            var set = new HashSet<string>(a);
+            return set.SetEquals(b);
         }
 
         private static void TryEarn(SaveData d, int chapter, string mode, int star, bool condition, string description, List<string> earned)
@@ -73,29 +94,33 @@ namespace HistoryHeroes.Economy
         }
 
         /// <summary>
-        /// 이 보스를 깬 다른 기록이 있고, 액티브(조합 포함) 구성이 2개 이상 다른가 (Modes 3-3).
+        /// 이 보스를 이긴 **다른 기록**이 있고, 그때 싸운 액티브(조합 포함) 구성이 이번과 2개 이상 다른가 (Modes 3-3).
         /// "2개 이상 다르다" = 한쪽에만 있는 액티브를 합쳐서 2개 이상 (하나를 바꾸면 2개 차이).
         /// 패시브만 바꾼 복사본이나 같은 빌드를 다시 저장한 기록은 같은 기록으로 본다.
         /// </summary>
-        public static bool HasDifferentWinningRecord(SaveData d, string bossId, RunRecord record, SkillDatabase database)
+        public static bool HasDifferentWin(SaveData d, string bossId, RunRecord record, ICollection<string> foughtActives)
         {
             if (record == null) return false;
-            HashSet<string> mine = ActiveIds(record, database);
             foreach (RunRecord other in d.records)
             {
-                if (other == record || other.id == record.id || !other.bossesDefeated.Contains(bossId)) continue;
-                var difference = new HashSet<string>(mine);
-                difference.SymmetricExceptWith(ActiveIds(other, database));
-                if (difference.Count >= 2) return true;
+                if (other == record || other.id == record.id) continue;
+                foreach (BossWin w in other.bossWins)
+                {
+                    if (w.bossId != bossId) continue;
+                    var difference = new HashSet<string>(foughtActives);
+                    difference.SymmetricExceptWith(w.actives);
+                    if (difference.Count >= 2) return true;
+                }
             }
 
             return false;
         }
 
-        private static HashSet<string> ActiveIds(RunRecord record, SkillDatabase database)
+        /// <summary>기록(검사 뒤)의 액티브 ID들</summary>
+        public static List<string> ActiveIds(IEnumerable<RecordSkill> skills, SkillDatabase database)
         {
-            var ids = new HashSet<string>();
-            foreach (RecordSkill s in record.skills)
+            var ids = new List<string>();
+            foreach (RecordSkill s in skills)
             {
                 SkillData data = database != null ? database.Find(s.id) : null;
                 if (data != null && data.Kind != SkillKind.Passive) ids.Add(s.id);

@@ -84,7 +84,7 @@ namespace HistoryHeroes.UI
 
             AppendRewards(sb, s.RewardLines);
             bodyLabel.text = sb.ToString();
-            SetButtons("다시 도전 (하트 1)", Retry, "로비로", GameSession.ToLobby);
+            SetButtons(GameSession.Practice ? "다시 연습" : "다시 도전 (하트 1)", Retry, "로비로", GameSession.ToLobby);
         }
 
         private static void AppendRewards(StringBuilder sb, System.Collections.Generic.List<string> lines)

@@ -31,6 +31,12 @@ namespace HistoryHeroes.Records
         /// </summary>
         private bool _mainIsValid = true;
 
+        /// <summary>망가진 본 파일의 사본을 이미 남겼는가 (남기지 못했으면 지우지 않는다)</summary>
+        private bool _brokenMainPreserved;
+
+        /// <summary>읽은 임시 파일을 본 파일로 옮기지 못했다 → 그 임시 파일이 유일한 정상본이므로 덮어쓰면 안 된다</summary>
+        private bool _tempIsOnlyCopy;
+
         public SaveStore(string folder)
         {
             Folder = folder;
@@ -47,6 +53,15 @@ namespace HistoryHeroes.Records
             string json = JsonUtility.ToJson(data, true);
 
             Directory.CreateDirectory(Folder);
+
+            if (_tempIsOnlyCopy)
+            {
+                // 지난번에 못 옮긴 임시 파일(유일한 정상본)을 먼저 본 파일로 옮긴다. 또 실패하면 저장하지 않는다
+                if (File.Exists(MainPath)) throw new IOException("본 파일과 복구한 임시 파일이 둘 다 있어 저장을 멈춤");
+                File.Move(TempPath, MainPath);
+                _tempIsOnlyCopy = false;
+                _mainIsValid = true;
+            }
 
             // 1) 임시 파일에 끝까지 쓰고 디스크까지 내려보낸다
             using (var stream = new FileStream(TempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
@@ -68,9 +83,16 @@ namespace HistoryHeroes.Records
                 }
                 else
                 {
-                    // 망가진 본 파일: 정상 백업은 그대로 두고, 망가진 파일은 사본으로 남긴 뒤 치운다
-                    PreserveBroken(MainPath);
+                    // 망가진 본 파일: 정상 백업은 그대로 두고, 망가진 파일은 사본으로 남긴 뒤 치운다.
+                    // 사본을 못 남기면 지우지 않고 저장 실패로 돌린다 (원본 보존이 먼저)
+                    if (!_brokenMainPreserved && PreserveBroken(MainPath) == null)
+                    {
+                        File.Delete(TempPath);
+                        throw new IOException("망가진 저장 파일을 보존하지 못해서 저장을 멈춤");
+                    }
+
                     File.Delete(MainPath);
+                    _brokenMainPreserved = false;
                 }
             }
 
@@ -86,6 +108,8 @@ namespace HistoryHeroes.Records
 
             bool mainExists = File.Exists(MainPath);
             _mainIsValid = true;
+            _brokenMainPreserved = false;
+            _tempIsOnlyCopy = false;
             var candidates = new List<string> { MainPath };
             if (!mainExists) candidates.Add(TempPath); // 교체 도중에 꺼진 경우에만 임시 파일을 믿는다
             candidates.Add(BackupPath);
@@ -103,16 +127,30 @@ namespace HistoryHeroes.Records
                     // 그대로 두면 다음 저장이 임시 파일을 새로 쓰면서(잘라내며) 유일한 정상 파일을 지운다.
                     if (path == TempPath && !File.Exists(MainPath))
                     {
-                        File.Move(TempPath, MainPath);
-                        report.Source = MainPath;
+                        try
+                        {
+                            File.Move(TempPath, MainPath);
+                            report.Source = MainPath;
+                        }
+                        catch (Exception e)
+                        {
+                            // 읽은 데이터는 그대로 쓰되, 다음 저장이 이 임시 파일을 덮어쓰지 못하게 막는다
+                            _tempIsOnlyCopy = true;
+                            report.Problems.Add("임시 파일을 본 파일로 옮기지 못함: " + e.Message);
+                        }
                     }
 
                     return data;
                 }
 
                 report.Problems.Add($"{Path.GetFileName(path)}: {problem}");
-                report.PreservedCopies.Add(PreserveBroken(path));
-                if (path == MainPath) _mainIsValid = false;
+                string copy = PreserveBroken(path);
+                report.PreservedCopies.Add(copy);
+                if (path == MainPath)
+                {
+                    _mainIsValid = false;
+                    _brokenMainPreserved = copy != null;
+                }
             }
 
             report.IsFresh = true;
@@ -196,6 +234,7 @@ namespace HistoryHeroes.Records
             data.stars ??= new List<string>();
             data.items ??= new List<ItemCount>();
             data.daily ??= new DailyCounters();
+            data.daily.heartRefunds ??= new List<ItemCount>();
             if (data.accountLevel < 1) data.accountLevel = 1;
             if (data.hearts < 0) data.hearts = 0;
             if (data.recordSlots < 1) data.recordSlots = 3;
@@ -206,6 +245,7 @@ namespace HistoryHeroes.Records
             {
                 r.skills ??= new List<RecordSkill>();
                 r.bossesDefeated ??= new List<string>();
+                r.bossWins ??= new List<BossWin>();
                 r.skills.RemoveAll(s => s == null || string.IsNullOrEmpty(s.id));
             }
         }

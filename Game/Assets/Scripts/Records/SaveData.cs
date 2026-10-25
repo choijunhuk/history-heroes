@@ -151,8 +151,21 @@ namespace HistoryHeroes.Records
         public string createdAt;
         public int balanceVersion;
 
-        /// <summary>보스맵에서 이 기록으로 깬 보스 ID (별 ★3 "서로 다른 기록 2개" 판정용, Modes 3-3)</summary>
+        /// <summary>보스맵에서 이 기록으로 깬 보스 ID (화면 표시용)</summary>
         public List<string> bossesDefeated = new List<string>();
+
+        /// <summary>
+        /// 이 기록으로 이긴 보스와 그때 **실제로 싸운** 액티브 구성 (별 ★3 "서로 다른 기록 2개" 판정, Modes 3-3).
+        /// 패치·다시 고르기로 기록이 바뀌어도 그때 싸운 구성으로 비교한다.
+        /// </summary>
+        public List<BossWin> bossWins = new List<BossWin>();
+    }
+
+    [Serializable]
+    public sealed class BossWin
+    {
+        public string bossId;
+        public List<string> actives = new List<string>();
     }
 
     [Serializable]
@@ -173,8 +186,8 @@ namespace HistoryHeroes.Records
         public int adHearts;
         /// <summary>보석으로 하트 채우기 (하루 5회)</summary>
         public int gemHearts;
-        /// <summary>보스 최초 도전 패배 환급 (하루 5회, Economy 3-3)</summary>
-        public int heartRefunds;
+        /// <summary>보스 최초 도전 패배 환급: 보스마다 하루 5회 (Economy 3-3)</summary>
+        public List<ItemCount> heartRefunds = new List<ItemCount>();
     }
 
     [Serializable]

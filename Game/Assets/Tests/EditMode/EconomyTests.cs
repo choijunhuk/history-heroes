@@ -121,13 +121,15 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void Hearts_BossLossRefund_FivePerDay()
+        public void Hearts_BossLossRefund_FivePerBossPerDay()
         {
             SaveData d = Fresh();
             d.hearts = 0;
-            for (int i = 0; i < Hearts.RefundsPerDay; i++) Assert.IsTrue(Hearts.TryRefundBossLoss(d, T0, Day1));
-            Assert.IsFalse(Hearts.TryRefundBossLoss(d, T0, Day1));
-            Assert.AreEqual(Hearts.RefundsPerDay, d.hearts);
+            for (int i = 0; i < Hearts.RefundsPerDay; i++) Assert.IsTrue(Hearts.TryRefundBossLoss(d, "boss_a", T0, Day1));
+            Assert.IsFalse(Hearts.TryRefundBossLoss(d, "boss_a", T0, Day1));
+            Assert.IsTrue(Hearts.TryRefundBossLoss(d, "boss_b", T0, Day1), "다른 보스는 따로 센다");
+            Assert.IsTrue(Hearts.TryRefundBossLoss(d, "boss_a", T0, Day2), "다음 날 다시");
+            Assert.AreEqual(Hearts.RefundsPerDay + 2, d.hearts);
         }
 
         // ---------------- 재화 ----------------
@@ -223,36 +225,36 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void BossStar3_NeedsTwoRecordsWithDifferentActives()
+        public void BossStar3_ComparesBuildsActuallyFought()
         {
-            var blade = ScriptableObject.CreateInstance<ActiveSkillData>(); blade.id = "spin_blade";
-            var flame = ScriptableObject.CreateInstance<ActiveSkillData>(); flame.id = "flame_field";
-            var bolt = ScriptableObject.CreateInstance<ActiveSkillData>(); bolt.id = "lightning";
-            var atk = ScriptableObject.CreateInstance<PassiveSkillData>(); atk.id = "atk_up";
-            var hp = ScriptableObject.CreateInstance<PassiveSkillData>(); hp.id = "hp_up";
-            var db = ScriptableObject.CreateInstance<SkillDatabase>();
-            db.skills = new List<SkillData> { blade, flame, bolt, atk, hp };
-
-            RunRecord Rec(string id, params string[] skills)
-            {
-                var r = new RunRecord { id = id };
-                foreach (string s in skills) r.skills.Add(new RecordSkill(s, 1, false));
-                return r;
-            }
-
+            RunRecord Rec(string id) => new RunRecord { id = id };
             var d = new SaveData();
-            RunRecord a = Rec("a", "spin_blade", "flame_field", "atk_up");
-            RunRecord copy = Rec("b", "spin_blade", "flame_field", "hp_up"); // 패시브만 다름
-            RunRecord other = Rec("c", "spin_blade", "lightning", "atk_up"); // 액티브 하나 바꿈 = 2개 차이
+            RunRecord a = Rec("a"), copy = Rec("b"), other = Rec("c");
             d.records.AddRange(new[] { a, copy, other });
 
-            a.bossesDefeated.Add("rift_warden");
-            copy.bossesDefeated.Add("rift_warden");
-            Assert.IsFalse(Stars.HasDifferentWinningRecord(d, "rift_warden", copy, db), "패시브만 바꾼 복사본은 같은 기록");
+            var bladeFlame = new[] { "spin_blade", "flame_field" };
+            Stars.RecordWin(a, "rift_warden", bladeFlame);
+            Stars.RecordWin(copy, "rift_warden", bladeFlame); // 패시브만 다른 복사본: 싸운 액티브가 같다
+            Assert.IsFalse(Stars.HasDifferentWin(d, "rift_warden", copy, bladeFlame), "같은 액티브 구성은 같은 기록");
 
-            other.bossesDefeated.Add("rift_warden");
-            List<string> earned = Stars.EvaluateBoss(d, 1, "rift_warden", true, 3, 8, other, db);
+            var bladeBolt = new[] { "spin_blade", "lightning" }; // 액티브 하나 바꿈 = 2개 차이
+            Stars.RecordWin(other, "rift_warden", bladeBolt);
+            List<string> earned = Stars.EvaluateBoss(d, 1, "rift_warden", true, 3, 8, other, bladeBolt);
             Assert.AreEqual(3, earned.Count, "★1 격파 · ★2 피격 · ★3 다른 기록");
+
+            Stars.RecordWin(other, "rift_warden", bladeBolt);
+            Assert.AreEqual(1, other.bossWins.Count, "같은 구성으로 또 이기면 한 번만 남긴다");
+        }
+
+        [Test]
+        public void ActiveIds_SkipsPassives()
+        {
+            var blade = ScriptableObject.CreateInstance<ActiveSkillData>(); blade.id = "spin_blade";
+            var atk = ScriptableObject.CreateInstance<PassiveSkillData>(); atk.id = "atk_up";
+            var db = ScriptableObject.CreateInstance<SkillDatabase>();
+            db.skills = new List<SkillData> { blade, atk };
+            List<string> ids = Stars.ActiveIds(new[] { new RecordSkill("spin_blade", 1, false), new RecordSkill("atk_up", 2, false) }, db);
+            CollectionAssert.AreEqual(new[] { "spin_blade" }, ids);
         }
 
         [Test]

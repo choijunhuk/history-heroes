@@ -49,7 +49,8 @@ namespace HistoryHeroes.EditorTools
             TMP_Text chapter = Label("Chapter", main, "1구간 · 균열의 초원", 50, TextAlignmentOptions.Center);
             Place(chapter.rectTransform, Center, Center, new Vector2(0f, 400f), new Vector2(680f, 110f));
             TMP_Text chapterInfo = Label("ChapterInfo", main, "", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.75f));
-            Place(chapterInfo.rectTransform, Center, Center, new Vector2(0f, 265f), new Vector2(940f, 140f));
+            Place(chapterInfo.rectTransform, Center, Center, new Vector2(0f, 262f), new Vector2(940f, 150f));
+            chapterInfo.lineSpacing = 10f;
 
             Button dungeon = Btn("Dungeon", main, "던전 시작", new Vector2(0f, 50f), new Vector2(820f, 210f), ButtonGreen, out TMP_Text dungeonLabel);
             dungeonLabel.fontSize = 64;
@@ -120,15 +121,17 @@ namespace HistoryHeroes.EditorTools
                 labels[i] = label;
             }
 
-            Button start = Btn("Start", panel, "도전", new Vector2(0f, -430f), new Vector2(620f, 150f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text startLabel);
-            startLabel.fontSize = 48;
+            Button start = Btn("Start", panel, "도전", new Vector2(-150f, -430f), new Vector2(560f, 150f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text startLabel);
+            startLabel.fontSize = 46;
+            Button practice = Btn("Practice", panel, "연습\n<size=60%>하트·보상 없음</size>", new Vector2(320f, -430f), new Vector2(330f, 150f), ButtonGray, out TMP_Text practiceLabel);
+            practiceLabel.fontSize = 36;
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -610f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("testsLabel", tests).Ref("recommendLabel", recommend)
                     .Refs("slotButtons", buttons).Refs("slotBackgrounds", backgrounds).Refs("slotLabels", labels)
-                    .Ref("startButton", start).Ref("startLabel", startLabel).Ref("backButton", back).Ref("database", database);
+                    .Ref("startButton", start).Ref("startLabel", startLabel).Ref("backButton", back).Ref("practiceButton", practice).Ref("database", database);
             }
 
             return screen;

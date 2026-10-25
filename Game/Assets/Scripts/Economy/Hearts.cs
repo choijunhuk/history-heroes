@@ -106,12 +106,20 @@ namespace HistoryHeroes.Economy
             return true;
         }
 
-        /// <summary>보스 최초 도전에서 졌을 때 돌려주기 (아직 못 깬 보스만, 하루 5회)</summary>
-        public static bool TryRefundBossLoss(SaveData d, long now, string today)
+        /// <summary>보스 최초 도전에서 졌을 때 돌려주기 (아직 못 깬 보스만, 같은 보스 하루 5회)</summary>
+        public static bool TryRefundBossLoss(SaveData d, string bossId, long now, string today)
         {
             DailyCounters daily = d.Today(today);
-            if (daily.heartRefunds >= RefundsPerDay) return false;
-            daily.heartRefunds++;
+            daily.heartRefunds ??= new System.Collections.Generic.List<ItemCount>();
+            ItemCount counter = daily.heartRefunds.Find(c => c.id == bossId);
+            if (counter == null)
+            {
+                counter = new ItemCount { id = bossId, count = 0 };
+                daily.heartRefunds.Add(counter);
+            }
+
+            if (counter.count >= RefundsPerDay) return false;
+            counter.count++;
             Add(d, 1, now);
             return true;
         }

@@ -29,6 +29,19 @@ namespace HistoryHeroes.Common
         /// <summary>이번 판에 하트를 실제로 썼는가 (첫날 무료 판이면 false → 보스 패배 환급 대상 아님)</summary>
         public static bool HeartSpent { get; private set; }
 
+        /// <summary>보스 연습: 하트를 안 쓰고 보상·별·해금도 없다 (Economy 3-4 "하트가 0이어도 보스맵 연습")</summary>
+        public static bool Practice { get; private set; }
+
+        public static void StartBossPractice(int chapter, string recordId)
+        {
+            HeartSpent = false;
+            Practice = true;
+            Mode = BattleMode.Boss;
+            Chapter = Mathf.Max(1, chapter);
+            BossRecordId = recordId;
+            Load(BattleScene);
+        }
+
         /// <summary>하트 1개를 쓰고 던전 시작. 모자라면 false (로비가 충전 방법을 보여준다)</summary>
         public static bool TryStartDungeon(int chapter)
         {
@@ -48,6 +61,12 @@ namespace HistoryHeroes.Common
         /// <summary>결과 화면의 "다시 도전": 같은 설정, 하트 1개</summary>
         public static bool TryRetry()
         {
+            if (Practice)
+            {
+                Retry(); // 연습은 하트 없이 또
+                return true;
+            }
+
             if (!TrySpendHeart()) return false;
             Retry();
             return true;
@@ -64,6 +83,7 @@ namespace HistoryHeroes.Common
 
         public static void StartDungeon(int chapter)
         {
+            Practice = false;
             Mode = BattleMode.Dungeon;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = null;
@@ -72,6 +92,7 @@ namespace HistoryHeroes.Common
 
         public static void StartBoss(int chapter, string recordId)
         {
+            Practice = false;
             Mode = BattleMode.Boss;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = recordId;
@@ -96,6 +117,7 @@ namespace HistoryHeroes.Common
             Chapter = 1;
             BossRecordId = null;
             HeartSpent = false;
+            Practice = false;
         }
     }
 }

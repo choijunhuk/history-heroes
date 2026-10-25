@@ -37,6 +37,7 @@ namespace HistoryHeroes.Modes
         [SerializeField] private float introSeconds = 1.5f;
 
         private BossData _info;
+        private List<string> _foughtActives = new List<string>();
         private EnemyBase _boss;
         private RunRecord _record;
         private float _startTime;
@@ -62,8 +63,9 @@ namespace HistoryHeroes.Modes
             RecordValidator.Result build = RecordValidator.Validate(_record, database, skills.Loadout.ActiveSlots, skills.Loadout.PassiveSlots);
             foreach (string note in build.Notes) Debug.Log("[BossRun] " + note);
             skills.ApplyRecord(build.Skills, database);
+            _foughtActives = Stars.ActiveIds(build.Skills, database);
 
-            hud.RoomText = _info != null ? $"보스  {_info.displayName}" : "보스";
+            hud.RoomText = (_info != null ? $"보스  {_info.displayName}" : "보스") + (GameSession.Practice ? "  (연습)" : string.Empty);
             hud.SetBossMode();
             player.Teleport(playerStart.position);
             player.Health.Died += _ => Finish(victory: false);
@@ -73,7 +75,7 @@ namespace HistoryHeroes.Modes
             };
             if (_info != null)
             {
-                bool challenge = !Stars.Has(SaveSystem.Data, _info.chapter, Stars.Boss, 2);
+                bool challenge = !GameSession.Practice && !Stars.Has(SaveSystem.Data, _info.chapter, Stars.Boss, 2);
                 hud.SetHitCounter(challenge, () => _hitsTaken, _info.star2MaxHits);
             }
 
@@ -110,37 +112,49 @@ namespace HistoryHeroes.Modes
             float elapsed = _boss != null ? Time.time - _startTime : 0f;
 
             SaveData save = SaveSystem.Data;
-            save.bossRuns++;
             bool firstClear = false;
             var lines = new List<string>();
             long now = Clock.UnixSeconds;
             string today = Clock.Today;
 
-            if (victory && _info != null)
+            if (GameSession.Practice)
             {
-                firstClear = !save.defeatedBosses.Contains(_info.id);
-                if (firstClear) save.defeatedBosses.Add(_info.id);
-                save.unlockedChapter = Mathf.Max(save.unlockedChapter, _info.chapter + 1);
-                if (_record != null && !_record.bossesDefeated.Contains(_info.id)) _record.bossesDefeated.Add(_info.id);
-
-                // 보상 (Economy 4장): 최초 격파는 크게, 반복은 하루 3번까지
-                Reward reward = firstClear ? RunRewards.BossFirstClear(skills.HeroId) : RunRewards.BossRepeat(save, today);
-                Wallet.Grant(save, reward);
-                lines.Add(reward.IsEmpty ? "오늘 반복 격파 보상은 다 받았어요 (하루 3번)" : reward.ToString());
-                lines.Add(RunText.Level(AccountLevel.AddExp(save, AccountLevel.BossExp, now)));
-
-                foreach (string star in Stars.EvaluateBoss(save, _info.chapter, _info.id, true, _hitsTaken, _info.star2MaxHits, _record, database))
+                lines.Add("연습이라 보상·별·해금은 없어요");
+            }
+            else if (_info != null)
+            {
+                save.bossRuns++;
+                if (victory)
                 {
-                    lines.Add("새 별  " + star);
+                    firstClear = !save.defeatedBosses.Contains(_info.id);
+                    if (firstClear) save.defeatedBosses.Add(_info.id);
+                    save.unlockedChapter = Mathf.Max(save.unlockedChapter, _info.chapter + 1);
+                    Stars.RecordWin(_record, _info.id, _foughtActives);
+
+                    // 보상 (Economy 4장): 최초 격파는 크게, 반복은 하루 3번까지
+                    Reward reward = firstClear ? RunRewards.BossFirstClear(skills.HeroId) : RunRewards.BossRepeat(save, today);
+                    Wallet.Grant(save, reward);
+                    lines.Add(reward.IsEmpty ? "오늘 반복 격파 보상은 다 받았어요 (하루 3번)" : reward.ToString());
+                }
+                else if (!save.defeatedBosses.Contains(_info.id) && GameSession.HeartSpent)
+                {
+                    // 아직 못 깬 보스에게 지면 하트를 돌려준다 (여러 기록을 시험해보게, Economy 3-2)
+                    if (Hearts.TryRefundBossLoss(save, _info.id, now, today)) lines.Add("아직 못 깬 보스라 하트 1개를 돌려받았어요");
                 }
 
-                Reward box = Stars.ClaimBoxes(save);
-                if (!box.IsEmpty) lines.Add("별 상자  " + box);
-            }
-            else if (!victory && _info != null && !save.defeatedBosses.Contains(_info.id) && GameSession.HeartSpent)
-            {
-                // 아직 못 깬 보스에게 지면 하트를 돌려준다 (여러 기록을 시험해보게, Economy 3-2)
-                if (Hearts.TryRefundBossLoss(save, now, today)) lines.Add("아직 못 깬 보스라 하트 1개를 돌려받았어요");
+                // 계정 경험치는 이기든 지든 (Stats 7장 "보스맵: 50")
+                lines.Add(RunText.Level(AccountLevel.AddExp(save, AccountLevel.BossExp, now)));
+
+                if (victory)
+                {
+                    foreach (string star in Stars.EvaluateBoss(save, _info.chapter, _info.id, true, _hitsTaken, _info.star2MaxHits, _record, _foughtActives))
+                    {
+                        lines.Add("새 별  " + star);
+                    }
+
+                    Reward box = Stars.ClaimBoxes(save);
+                    if (!box.IsEmpty) lines.Add("별 상자  " + box);
+                }
             }
 
             SaveSystem.Save();

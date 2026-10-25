@@ -28,6 +28,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button startButton;
         [SerializeField] private TMP_Text startLabel;
         [SerializeField] private Button backButton;
+        [SerializeField] private Button practiceButton;
 
         [SerializeField] private SkillDatabase database;
         [SerializeField] private RecordSaveScreen reselect;
@@ -50,6 +51,7 @@ namespace HistoryHeroes.UI
             }
 
             startButton.onClick.AddListener(StartFight);
+            if (practiceButton != null) practiceButton.onClick.AddListener(StartPractice);
             backButton.onClick.AddListener(() => root.SetActive(false));
         }
 
@@ -108,6 +110,7 @@ namespace HistoryHeroes.UI
             RunRecord selected = data.RecordInSlot(_selectedSlot);
             startButton.interactable = selected != null;
             bool over = selected != null && RecordValidator.Validate(selected, database).OverCapacity;
+            if (practiceButton != null) practiceButton.interactable = selected != null && !over;
             startLabel.text = selected == null ? "기록을 고르세요" : over ? "다시 고르고 시작" : "도전";
         }
 
@@ -125,6 +128,14 @@ namespace HistoryHeroes.UI
             }
 
             if (!GameSession.TryStartBoss(_chapter, record.id) && hearts != null) hearts.Open(Render);
+        }
+
+        /// <summary>하트 없이, 보상 없이 (Economy 3-4)</summary>
+        private void StartPractice()
+        {
+            RunRecord record = SaveSystem.Data.RecordInSlot(_selectedSlot);
+            if (record == null || RecordValidator.Validate(record, database).OverCapacity) return;
+            GameSession.StartBossPractice(_chapter, record.id);
         }
 
         private RecordDraft DraftFrom(RunRecord record, RecordValidator.Result build)
