@@ -1,0 +1,68 @@
+# ===== Unity (project lives in Game/) =====
+/Game/[Ll]ibrary/
+/Game/[Tt]emp/
+/Game/[Oo]bj/
+/Game/[Bb]uild/
+/Game/[Bb]uilds/
+/Game/[Ll]ogs/
+/Game/[Uu]ser[Ss]ettings/
+/Game/[Mm]emoryCaptures/
+/Game/[Rr]ecordings/
+
+# Asset meta data should only be ignored when the corresponding asset is also ignored
+!/Game/[Aa]ssets/**/*.meta
+
+# Plugin-generated
+/Game/[Aa]ssets/Plugins/Editor/JetBrains*
+/Game/[Aa]ssets/AddressableAssetsData/*/*.bin*
+/Game/[Aa]ssets/StreamingAssets/aa.meta
+/Game/[Aa]ssets/StreamingAssets/aa/*
+
+# IDE generated
+.vs/
+.vscode/
+.idea/
+.gradle/
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity crash / build output
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+crashlytics-build.properties
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# ===== Secrets (PUBLIC repo — never commit) =====
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+.env
+.env.*
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+Desktop.ini
