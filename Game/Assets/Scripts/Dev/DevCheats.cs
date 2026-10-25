@@ -8,6 +8,7 @@ namespace HistoryHeroes.Dev
     /// 개발용 단축키 (에디터·개발 빌드에서만 동작, 출시 빌드에서는 아무것도 안 함).
     /// K: 화면의 적 모두 처치 · L: 레벨업 1번 · 1/2/3: 레벨업 카드 고르기
     /// F1/F2/F3: 빌드 3종 바로 받기 (연사형 / 칼날 탱커형 / 번개 광역형, GameDesign 6-8 검증용)
+    /// A: 가짜 광고 모드 바꾸기 (성공 / 실패 / 취소 / 지연)
     /// </summary>
     public sealed class DevCheats : MonoBehaviour
     {
@@ -49,6 +50,15 @@ namespace HistoryHeroes.Dev
             if (k.f1Key.wasPressedThisFrame) ApplyPreset(0);
             if (k.f2Key.wasPressedThisFrame) ApplyPreset(1);
             if (k.f3Key.wasPressedThisFrame) ApplyPreset(2);
+            if (k.aKey.wasPressedThisFrame) CycleAdMode();
+        }
+
+        /// <summary>가짜 광고 모드 바꾸기: 성공 → 실패 → 취소 → 지연 (GameDesign 12-2)</summary>
+        public static string CycleAdMode()
+        {
+            Common.FakeRewardedAd.Mode = (Common.FakeAdMode)(((int)Common.FakeRewardedAd.Mode + 1) % 4);
+            Debug.Log($"[DevCheats] 가짜 광고: {Common.FakeRewardedAd.Mode}");
+            return Common.FakeRewardedAd.Mode.ToString();
         }
 
         public string ApplyPreset(int index)

@@ -28,7 +28,7 @@ namespace HistoryHeroes.UI
         [Header("규칙")]
         [SerializeField, Min(0)] private int rerollsPerRun = 2;
 
-        private readonly IRewardedAd _ads = new InstantRewardedAd();
+        private bool _lastAdFailed;
         private List<SkillCard> _current = new List<SkillCard>();
         private int _pending;
         private int _rerollsLeft;
@@ -77,7 +77,9 @@ namespace HistoryHeroes.UI
             }
 
             bool hasFusion = _current.Exists(c => c.Type == CardType.Fusion);
-            rerollLabel.text = $"리롤 (광고) {_rerollsLeft}/{rerollsPerRun}";
+            rerollLabel.text = _waitingForAd ? "광고 보는 중…"
+                : _lastAdFailed ? $"광고 실패 · 다시 {_rerollsLeft}/{rerollsPerRun}"
+                : $"리롤 (광고) {_rerollsLeft}/{rerollsPerRun}";
             rerollButton.interactable = _rerollsLeft > 0 && !_waitingForAd;
             hideFusionButton.gameObject.SetActive(hasFusion);
 
@@ -126,9 +128,10 @@ namespace HistoryHeroes.UI
             _waitingForAd = true;
             Render();
 
-            _ads.Show("levelup_reroll", success =>
+            Ads.Current.Show("levelup_reroll", success =>
             {
                 _waitingForAd = false;
+                _lastAdFailed = !success;
                 if (success) // 실패·취소면 횟수를 쓰지 않는다
                 {
                     _rerollsLeft--;
