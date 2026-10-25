@@ -22,6 +22,7 @@ namespace HistoryHeroes.Skills
         [SerializeField] private Color zapColor = new Color(0.6f, 0.9f, 1f, 0.95f);
 
         private readonly List<EnemyBase> _targets = new List<EnemyBase>();
+        private ComponentPool<FxSprite> _fx;
 
         protected override bool Activate()
         {
@@ -31,14 +32,9 @@ namespace HistoryHeroes.Skills
 
         private IEnumerator Run(Vector2 position)
         {
-            var coil = new GameObject("TeslaCoil");
-            coil.transform.SetParent(EffectRoot, false);
-            coil.transform.position = position;
-            coil.transform.localScale = new Vector3(coilSize.x, coilSize.y, 1f);
-            var sr = coil.AddComponent<SpriteRenderer>();
-            sr.sprite = PlaceholderSprites.Square;
-            sr.color = coilColor;
-            sr.sortingOrder = 1;
+            _fx ??= FxSprite.CreatePool(EffectRoot);
+            FxSprite coil = _fx.Get(position, Quaternion.identity);
+            coil.Hold(PlaceholderSprites.Square, position, coilSize, coilColor, 1);
 
             float duration = data.DurationAt(level);
             float radius = data.RadiusAt(level);
@@ -66,7 +62,7 @@ namespace HistoryHeroes.Skills
                 yield return new WaitForSeconds(zapInterval);
             }
 
-            Destroy(coil);
+            _fx.Release(coil);
         }
     }
 }

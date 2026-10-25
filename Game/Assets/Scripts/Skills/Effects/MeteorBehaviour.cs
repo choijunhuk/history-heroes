@@ -18,6 +18,7 @@ namespace HistoryHeroes.Skills
         [SerializeField] private Color blastColor = new Color(1f, 0.6f, 0.25f, 0.7f);
 
         private readonly List<EnemyBase> _hits = new List<EnemyBase>();
+        private ComponentPool<FxSprite> _fx;
 
         protected override bool Activate()
         {
@@ -29,13 +30,9 @@ namespace HistoryHeroes.Skills
         private IEnumerator Fall(Vector2 center)
         {
             float radius = data.RadiusAt(level);
-            var marker = new GameObject("MeteorMarker");
-            marker.transform.SetParent(EffectRoot, false);
-            marker.transform.position = center;
-            var sr = marker.AddComponent<SpriteRenderer>();
-            sr.sprite = PlaceholderSprites.Circle;
-            sr.color = markerColor;
-            sr.sortingOrder = -1;
+            _fx ??= FxSprite.CreatePool(EffectRoot);
+            FxSprite marker = _fx.Get(center, Quaternion.identity);
+            marker.Hold(PlaceholderSprites.Circle, center, Vector2.one * radius * 0.6f, markerColor, -1);
 
             for (float t = 0f; t < telegraph; t += Time.deltaTime)
             {
@@ -44,7 +41,7 @@ namespace HistoryHeroes.Skills
                 yield return null;
             }
 
-            Destroy(marker);
+            _fx.Release(marker);
             AttackFx.Burst(center, radius, blastColor, 0.35f);
             CombatQuery.EnemiesWithin(center, radius, _hits);
             foreach (EnemyBase e in _hits) e.Health.TryTakeDamage(RollDamage(data.DamageAt(level)));

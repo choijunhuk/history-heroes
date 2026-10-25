@@ -19,7 +19,10 @@ namespace HistoryHeroes.Skills
 
         [Header("쌍 부메랑")]
         [SerializeField] private bool split;
+        [Tooltip("조각 하나의 피해 (공격력 배수, Skills 4-4: 각 50%)")]
         [SerializeField] private float splitCoefficient = 0.5f;
+
+        private float ReturnSpeed => distance / Mathf.Max(0.05f, outTime) * 1.3f;
 
         private ComponentPool<BoomerangMover> _pool;
 
@@ -39,20 +42,20 @@ namespace HistoryHeroes.Skills
             {
                 Vector2 direction = Quaternion.Euler(0f, 0f, start + spreadDegrees * i) * aim;
                 _pool.Get(origin, Quaternion.identity).Launch(player.transform, player.Stats, enemyMask, origin, direction, distance, outTime,
-                    coefficient, false, split ? SplitAt : null, _pool.Release);
+                    coefficient, false, split ? SplitAt : null, _pool.Release, ReturnSpeed, endAtApex: split);
             }
 
             return true;
         }
 
-        /// <summary>쌍 부메랑: 가장 멀리 간 자리에서 양옆으로 조각 2개가 돌아온다</summary>
+        /// <summary>쌍 부메랑: 가장 멀리 간 자리에서 원본은 사라지고 양옆으로 조각 2개(각 50%)가 돌아온다</summary>
         private void SplitAt(Vector2 apex, Vector2 direction)
         {
             for (int side = -1; side <= 1; side += 2)
             {
                 Vector2 offset = Quaternion.Euler(0f, 0f, 90f * side) * direction * 0.6f;
                 _pool.Get(apex + offset, Quaternion.identity).Launch(player.transform, player.Stats, enemyMask, apex + offset, direction, 0f, outTime,
-                    data.DamageAt(level) * splitCoefficient, true, null, _pool.Release);
+                    splitCoefficient, true, null, _pool.Release, ReturnSpeed);
             }
         }
     }

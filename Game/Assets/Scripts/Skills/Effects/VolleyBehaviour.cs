@@ -38,7 +38,7 @@ namespace HistoryHeroes.Skills
                 for (int i = 0; i < count; i++)
                 {
                     Vector2 direction = Quaternion.Euler(0f, 0f, count > 1 ? start + step * i : 0f) * aim;
-                    player.LaunchSkillProjectile(origin, direction, arrowSpeed, RollDamage(data.DamageAt(level)));
+                    player.LaunchSkillProjectile(origin, direction, arrowSpeed, RollDamage(data.DamageAt(level)), owner: this);
                 }
 
                 if (b < bursts - 1) yield return new WaitForSeconds(burstInterval);

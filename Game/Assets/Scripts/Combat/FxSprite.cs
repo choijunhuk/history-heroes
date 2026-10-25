@@ -13,6 +13,30 @@ namespace HistoryHeroes.Combat
         private float _age;
         private Vector3 _grow;
         private Action<FxSprite> _release;
+        private bool _held;
+
+        /// <summary>오브젝트를 모아 두고 다시 쓰는 풀 (유성 표시·회오리·코일처럼 스킬이 잡고 있는 그림)</summary>
+        public static Common.ComponentPool<FxSprite> CreatePool(Transform root)
+        {
+            var template = new GameObject("FxSprite", typeof(SpriteRenderer));
+            template.SetActive(false);
+            template.transform.SetParent(root, false);
+            return new Common.ComponentPool<FxSprite>(template.AddComponent<FxSprite>(), root, prewarm: 2);
+        }
+
+        /// <summary>사라지지 않고 계속 보이는 그림 (주인이 위치·크기를 직접 바꾸고, 다 쓰면 풀에 돌려준다)</summary>
+        public SpriteRenderer Hold(Sprite sprite, Vector2 position, Vector2 scale, Color color, int order)
+        {
+            if (_renderer == null) _renderer = GetComponent<SpriteRenderer>();
+            _held = true;
+            _renderer.sprite = sprite;
+            _renderer.color = color;
+            _renderer.sortingOrder = order;
+            transform.position = position;
+            transform.rotation = Quaternion.identity;
+            transform.localScale = new Vector3(scale.x, scale.y, 1f);
+            return _renderer;
+        }
 
         private void Awake()
         {
@@ -23,6 +47,7 @@ namespace HistoryHeroes.Combat
             Action<FxSprite> release, float growTo = 1f)
         {
             if (_renderer == null) _renderer = GetComponent<SpriteRenderer>();
+            _held = false;
             _renderer.sprite = sprite;
             _renderer.sortingOrder = order;
             _renderer.color = color;
@@ -38,6 +63,7 @@ namespace HistoryHeroes.Combat
 
         private void Update()
         {
+            if (_held) return;
             // 게임이 멈춰도(카드 화면) 효과는 마저 사라지게 실제 시간으로
             _age += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(_age / _duration);

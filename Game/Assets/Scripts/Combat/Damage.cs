@@ -32,7 +32,8 @@ namespace HistoryHeroes.Combat
     /// </summary>
     public static class DamageCalculator
     {
-        public static DamageInfo Roll(StatSheet attacker, float coefficient, DamageKind kind)
+        /// <param name="forceCrit">치명타 확정 (서리 창: 빙결한 적)</param>
+        public static DamageInfo Roll(StatSheet attacker, float coefficient, DamageKind kind, bool forceCrit = false)
         {
             StatTarget context = kind == DamageKind.Active ? StatTarget.Active : StatTarget.BasicAttack;
 
@@ -42,7 +43,7 @@ namespace HistoryHeroes.Combat
                 amount *= 1f + attacker.Get(StatType.ActiveDamage, context);
             }
 
-            bool crit = Random.value < attacker.Get(StatType.CritRate, context);
+            bool crit = forceCrit || Random.value < attacker.Get(StatType.CritRate, context);
             if (crit) amount *= attacker.Get(StatType.CritDamage, context);
 
             return new DamageInfo

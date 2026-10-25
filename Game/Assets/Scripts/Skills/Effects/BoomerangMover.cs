@@ -28,6 +28,7 @@ namespace HistoryHeroes.Skills
         private bool _returning;
         private float _returnSpeed;
         private Action<Vector2, Vector2> _onApex;
+        private bool _endAtApex;
         private Action<BoomerangMover> _release;
 
         public static ComponentPool<BoomerangMover> CreatePool(Transform root, Color color, Vector2 size)
@@ -45,9 +46,13 @@ namespace HistoryHeroes.Skills
 
         /// <param name="startReturning">처음부터 돌아오는 중 (쌍 부메랑이 갈라진 조각)</param>
         /// <param name="onApex">가장 멀리 갔을 때 (자리, 방향) — 쌍 부메랑이 갈라짐</param>
+        /// <param name="returnSpeed">돌아오는 속도 (조각은 나간 거리가 0이라 따로 받는다)</param>
+        /// <param name="endAtApex">가장 멀리 가면 사라진다 (쌍 부메랑: 원본이 조각 2개로 바뀜)</param>
         public void Launch(Transform owner, StatSheet stats, LayerMask enemies, Vector2 origin, Vector2 direction, float distance, float outTime,
-            float coefficient, bool startReturning, Action<Vector2, Vector2> onApex, Action<BoomerangMover> release)
+            float coefficient, bool startReturning, Action<Vector2, Vector2> onApex, Action<BoomerangMover> release,
+            float returnSpeed, bool endAtApex = false)
         {
+            _endAtApex = endAtApex;
             _owner = owner;
             _stats = stats;
             _filter = new ContactFilter2D { useLayerMask = true, layerMask = enemies, useTriggers = true };
@@ -58,7 +63,7 @@ namespace HistoryHeroes.Skills
             _coefficient = coefficient;
             _age = 0f;
             _returning = startReturning;
-            _returnSpeed = distance / _outTime * 1.3f;
+            _returnSpeed = Mathf.Max(1f, returnSpeed);
             _onApex = onApex;
             _release = release;
             _hitThisPass.Clear();
@@ -83,6 +88,11 @@ namespace HistoryHeroes.Skills
                     _returning = true;
                     _hitThisPass.Clear();
                     _onApex?.Invoke(transform.position, _direction);
+                    if (_endAtApex)
+                    {
+                        _release?.Invoke(this);
+                        return;
+                    }
                 }
             }
             else

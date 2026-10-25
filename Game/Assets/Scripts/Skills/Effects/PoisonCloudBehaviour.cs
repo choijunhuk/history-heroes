@@ -35,7 +35,7 @@ namespace HistoryHeroes.Skills
             DamageZone zone = _zones.Get(point, Quaternion.identity);
             System.Action<Vector2> onKill = null;
             if (bloom && chain < maxBloomChain) onKill = p => Spawn(p, bloomRadius, bloomDuration, chain + 1);
-            zone.Begin(player.Stats, data.DamageAt(level), radius, duration, enemyMask, _zones.Release, onKill);
+            zone.BeginPoison(player.Stats, data.DamageAt(level), radius, duration, enemyMask, _zones.Release, onKill);
         }
     }
 }

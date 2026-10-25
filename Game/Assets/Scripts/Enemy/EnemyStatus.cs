@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
 using UnityEngine;
@@ -28,10 +30,18 @@ namespace HistoryHeroes.Enemy
         private int _chillStacks;
         private float _chillUntil;
 
-        private int _poisonStacks;
-        private float _poisonDamagePerStack;
-        private float _poisonUntil;
+        /// <summary>지금 이 적에게 독을 거는 것들 (구름 하나 = 한 겹). 가장 센 3개까지만 피해를 준다</summary>
+        private struct PoisonSource
+        {
+            public object Owner;
+            public float DamagePerSecond;
+            public float Until;
+            public Action<Vector2> OnDeathInside;
+        }
+
+        private readonly List<PoisonSource> _poison = new List<PoisonSource>(4);
         private float _poisonTimer;
+        private static readonly List<float> _strengths = new List<float>(8);
 
         private Vector2 _pullCenter;
         private float _pullSpeed;
@@ -54,8 +64,9 @@ namespace HistoryHeroes.Enemy
         /// <summary>다시 나올 때 (오브젝트 풀) 상태를 비운다</summary>
         public void Clear()
         {
-            _slowUntil = _freezeUntil = _chillUntil = _poisonUntil = _pullUntil = 0f;
-            _chillStacks = _poisonStacks = 0;
+            _slowUntil = _freezeUntil = _chillUntil = _pullUntil = 0f;
+            _chillStacks = 0;
+            _poison.Clear();
             if (_tint != null) _tint.color = _baseColor;
         }
 
@@ -82,12 +93,51 @@ namespace HistoryHeroes.Enemy
             _freezeUntil = Mathf.Max(_freezeUntil, Time.time + duration);
         }
 
-        /// <param name="damagePerSecond">한 겹당 초당 피해 (이미 굴린 값)</param>
-        public void ApplyPoison(float damagePerSecond, float duration)
+        /// <summary>
+        /// 독 구름 안에 있다 (구름이 틱마다 부른다). 같은 구름은 한 겹으로 센다. 겹친 구름은 3겹까지만 (Skills 2장 "중첩").
+        /// onDeathInside: 이 구름 안에서 죽으면 (막타가 무엇이든) — 맹독 개화 번짐
+        /// </summary>
+        public void TouchPoison(object owner, float damagePerSecond, float duration, Action<Vector2> onDeathInside = null)
         {
-            _poisonStacks = Mathf.Min(MaxPoisonStacks, _poisonStacks + 1);
-            _poisonDamagePerStack = Mathf.Max(_poisonDamagePerStack, damagePerSecond);
-            _poisonUntil = Mathf.Max(_poisonUntil, Time.time + duration);
+            float until = Time.time + duration;
+            for (int i = 0; i < _poison.Count; i++)
+            {
+                if (_poison[i].Owner != owner) continue;
+                PoisonSource s = _poison[i];
+                s.DamagePerSecond = damagePerSecond;
+                s.Until = until;
+                s.OnDeathInside = onDeathInside;
+                _poison[i] = s;
+                return;
+            }
+
+            _poison.Add(new PoisonSource { Owner = owner, DamagePerSecond = damagePerSecond, Until = until, OnDeathInside = onDeathInside });
+        }
+
+        public int PoisonLayers
+        {
+            get
+            {
+                int n = 0;
+                foreach (PoisonSource s in _poison) if (Time.time < s.Until) n++;
+                return Mathf.Min(n, MaxPoisonStacks);
+            }
+        }
+
+        /// <summary>죽을 때 (EnemyBase가 부른다): 독 구름 안이었으면 그 자리에서 번진다 (한 번만)</summary>
+        public void NotifyDeath(Vector2 position)
+        {
+            float now = Time.time;
+            foreach (PoisonSource s in _poison)
+            {
+                if (now >= s.Until || s.OnDeathInside == null) continue;
+                Action<Vector2> spread = s.OnDeathInside;
+                _poison.Clear();
+                spread(position);
+                return;
+            }
+
+            _poison.Clear();
         }
 
         public void Pull(Vector2 center, float speed, float duration)
@@ -103,23 +153,26 @@ namespace HistoryHeroes.Enemy
             if (GamePause.IsPaused || _enemy == null || _enemy.Health.IsDead) return;
             float now = Time.time;
 
-            // 독: 0.5초마다 (겹 수 × 초당 피해 × 0.5)
-            if (_poisonStacks > 0)
+            // 독: 0.5초마다, 지금 걸린 구름 중 가장 센 3개의 초당 피해 합 × 0.5
+            _poison.RemoveAll(p => now >= p.Until);
+            if (_poison.Count > 0)
             {
-                if (now >= _poisonUntil)
+                _poisonTimer -= Time.deltaTime;
+                if (_poisonTimer <= 0f)
                 {
-                    _poisonStacks = 0;
+                    _poisonTimer += PoisonTick;
+                    _strengths.Clear();
+                    foreach (PoisonSource s in _poison) _strengths.Add(s.DamagePerSecond);
+                    _strengths.Sort((a, b) => b.CompareTo(a));
+                    float dps = 0f;
+                    for (int i = 0; i < _strengths.Count && i < MaxPoisonStacks; i++) dps += _strengths[i];
+                    var info = new DamageInfo { Amount = dps * PoisonTick, Kind = DamageKind.Active, AttackerTeam = Team.Player };
+                    _enemy.Health.TryTakeDamage(info);
                 }
-                else
-                {
-                    _poisonTimer -= Time.deltaTime;
-                    if (_poisonTimer <= 0f)
-                    {
-                        _poisonTimer += PoisonTick;
-                        var info = new DamageInfo { Amount = _poisonDamagePerStack * _poisonStacks * PoisonTick, Kind = DamageKind.Active, AttackerTeam = Team.Player };
-                        _enemy.Health.TryTakeDamage(info);
-                    }
-                }
+            }
+            else
+            {
+                _poisonTimer = 0f;
             }
 
             // 색으로 보여주기: 빙결 하늘색, 독 초록, 둔화 연한 파랑
@@ -127,7 +180,7 @@ namespace HistoryHeroes.Enemy
             {
                 Color target = _baseColor;
                 if (IsFrozen) target = new Color(0.6f, 0.85f, 1f);
-                else if (_poisonStacks > 0) target = Color.Lerp(_baseColor, new Color(0.45f, 0.9f, 0.35f), 0.5f);
+                else if (_poison.Count > 0) target = Color.Lerp(_baseColor, new Color(0.45f, 0.9f, 0.35f), 0.5f);
                 else if (now < _slowUntil) target = Color.Lerp(_baseColor, new Color(0.6f, 0.8f, 1f), 0.4f);
                 if (_tint.color != target) _tint.color = target;
             }

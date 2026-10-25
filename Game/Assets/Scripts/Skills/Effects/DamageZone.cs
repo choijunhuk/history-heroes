@@ -30,6 +30,7 @@ namespace HistoryHeroes.Skills
         private ContactFilter2D _filter;
         private Action<DamageZone> _release;
         private Action<Vector2> _onKill;
+        private bool _poison;
 
         public static ComponentPool<DamageZone> CreatePool(Transform root, Color color, int sortingOrder = -1)
         {
@@ -55,6 +56,7 @@ namespace HistoryHeroes.Skills
             Action<Vector2> onKill = null)
         {
             _onKill = onKill;
+            _poison = false;
             _stats = stats;
             _coefficientPerSecond = coefficientPerSecond;
             _radius = radius;
@@ -93,9 +95,32 @@ namespace HistoryHeroes.Skills
             if (_timeLeft <= 0f && _ticksLeft == 0) _release?.Invoke(this);
         }
 
+        /// <summary>
+        /// 독 구름: 직접 때리지 않고, 안에 있는 적에게 독 한 겹을 건다 (적마다 3겹까지, EnemyStatus).
+        /// onDeathInside: 구름 안에서 죽으면 그 자리 (막타가 무엇이든, 맹독 개화 번짐)
+        /// </summary>
+        public void BeginPoison(StatSheet stats, float coefficientPerSecond, float radius, float duration, LayerMask enemies,
+            Action<DamageZone> release, Action<Vector2> onDeathInside)
+        {
+            Begin(stats, coefficientPerSecond, radius, duration, enemies, release, onDeathInside);
+            _poison = true;
+        }
+
         private void Tick()
         {
             Physics2D.OverlapCircle(transform.position, _radius, _filter, _hits);
+            if (_poison)
+            {
+                for (int i = 0; i < _hits.Count; i++)
+                {
+                    if (!_hits[i].TryGetComponent(out HistoryHeroes.Enemy.EnemyStatus status)) continue;
+                    float dps = DamageCalculator.Roll(_stats, _coefficientPerSecond, DamageKind.Active).Amount;
+                    status.TouchPoison(this, dps, TickInterval + 0.15f, _onKill);
+                }
+
+                return;
+            }
+
             for (int i = 0; i < _hits.Count; i++)
             {
                 if (_hits[i].TryGetComponent(out Health health))

@@ -48,7 +48,7 @@ namespace HistoryHeroes.Player
         private bool _firstShotPending = true;
         private float _lifestealBudget;
         private float _searchDelay;
-        private int _basicAttacks;
+        private int _bulletsFired;
         private float _lastShotCoefficient = 1f;
         private bool _lowHpActive;
         private bool _awake;
@@ -256,9 +256,15 @@ namespace HistoryHeroes.Player
             if (hero.attackKind == BasicAttackKind.MeleeArc) Slash(target);
             else Fire(target);
 
-            // 나폴레옹 포병의 눈: 기본 공격 3번마다 작은 포탄
-            _basicAttacks++;
-            if (hero.cannonEvery > 0 && _basicAttacks % hero.cannonEvery == 0) FireCannon(target.transform.position);
+            // 나폴레옹 포병의 눈: 쏜 총알 3발마다 작은 포탄 (멀티샷이면 더 자주)
+            if (hero.cannonEvery > 0)
+            {
+                while (_bulletsFired >= hero.cannonEvery)
+                {
+                    _bulletsFired -= hero.cannonEvery;
+                    FireCannon(target.transform.position);
+                }
+            }
 
             _attackCooldown = 1f / Stats.Get(StatType.AttackSpeed, StatTarget.BasicAttack);
         }
@@ -280,6 +286,7 @@ namespace HistoryHeroes.Player
             int count = 1 + extra;
             float perProjectile = NextShotCoefficient(extra);
             _lastShotCoefficient = perProjectile;
+            _bulletsFired += count;
 
             Vector2 origin = transform.position;
             Vector2 aim = ((Vector2)target.transform.position - origin).normalized;
@@ -379,7 +386,8 @@ namespace HistoryHeroes.Player
         {
             for (int s = 0; s < swings; s++)
             {
-                if (Health.IsDead) yield break;
+                // 기본 공격은 멈췄을 때만: 연속 베기 도중에 움직이면 남은 베기는 취소 (GameDesign 3-3)
+                if (Health.IsDead || (s > 0 && !Stop.IsStopped)) yield break;
                 Vector2 origin = transform.position;
                 Vector2 aim = target != null && !target.IsDead ? ((Vector2)target.transform.position - origin) : (Vector2)transform.up;
                 if (aim.sqrMagnitude < 0.0001f) aim = Vector2.up;
@@ -434,17 +442,18 @@ namespace HistoryHeroes.Player
 
         // ---------------------------------------------------------------- 스킬이 쓰는 투사체
 
-        /// <summary>액티브 스킬(만궁 연사 등)이 플레이어의 투사체를 빌려 쏜다</summary>
+        /// <summary>액티브 스킬(만궁 연사 등)이 플레이어의 투사체를 빌려 쏜다. owner = 쏜 스킬 (스킬이 사라지면 같이 거둔다)</summary>
         public void LaunchSkillProjectile(Vector2 origin, Vector2 direction, float speed, DamageInfo damage, int pierce = 0,
-            System.Action<Health, Vector2> onHitTarget = null)
+            System.Action<Health, Vector2> onHitTarget = null, object owner = null)
         {
             Projectile p = _projectiles.Get(origin, Quaternion.identity);
-            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, _projectiles.Release, null, 0.2f, onHitTarget);
+            Track(p, owner, _projectiles);
+            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, ReleaseFor(_projectiles), null, 0.2f, onHitTarget);
         }
 
         /// <summary>다른 투사체 프리팹으로 쏜다 (얼음 파편 등, 프리팹마다 풀을 따로 둔다)</summary>
         public void LaunchSkillProjectile(Projectile prefab, Vector2 origin, Vector2 direction, float speed, DamageInfo damage, int pierce,
-            System.Action<Health, Vector2> onHitTarget)
+            System.Action<Health, Vector2> onHitTarget, object owner = null)
         {
             if (!_extraPools.TryGetValue(prefab, out ComponentPool<Projectile> pool))
             {
@@ -453,9 +462,47 @@ namespace HistoryHeroes.Player
             }
 
             Projectile p = pool.Get(origin, Quaternion.identity);
-            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, pool.Release, null, 0f, onHitTarget);
+            Track(p, owner, pool);
+            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, ReleaseFor(pool), null, 0f, onHitTarget);
+        }
+
+        /// <summary>스킬이 조합 재료로 사라지거나 기록을 다시 불러올 때, 그 스킬이 쏜 투사체를 모두 거둔다 (12-2 정리 계약)</summary>
+        public void CancelSkillProjectiles(object owner)
+        {
+            if (owner == null) return;
+            _cancelBuffer.Clear();
+            foreach (KeyValuePair<Projectile, object> pair in _skillShots)
+            {
+                if (pair.Value == owner) _cancelBuffer.Add(pair.Key);
+            }
+
+            foreach (Projectile p in _cancelBuffer) p.Cancel();
+        }
+
+        private void Track(Projectile p, object owner, ComponentPool<Projectile> pool)
+        {
+            if (owner != null) _skillShots[p] = owner;
+            else _skillShots.Remove(p);
+        }
+
+        private System.Action<Projectile> ReleaseFor(ComponentPool<Projectile> pool)
+        {
+            if (!_releasers.TryGetValue(pool, out System.Action<Projectile> release))
+            {
+                release = p =>
+                {
+                    _skillShots.Remove(p);
+                    pool.Release(p);
+                };
+                _releasers[pool] = release;
+            }
+
+            return release;
         }
 
         private readonly Dictionary<Projectile, ComponentPool<Projectile>> _extraPools = new Dictionary<Projectile, ComponentPool<Projectile>>();
+        private readonly Dictionary<Projectile, object> _skillShots = new Dictionary<Projectile, object>();
+        private readonly Dictionary<ComponentPool<Projectile>, System.Action<Projectile>> _releasers = new Dictionary<ComponentPool<Projectile>, System.Action<Projectile>>();
+        private readonly List<Projectile> _cancelBuffer = new List<Projectile>();
     }
 }

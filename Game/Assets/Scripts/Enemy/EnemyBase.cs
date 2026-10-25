@@ -119,6 +119,7 @@ namespace HistoryHeroes.Enemy
 
         protected virtual void OnDied(Health h)
         {
+            status.NotifyDeath(transform.position); // 독 구름 안에서 죽었으면 번짐 (맹독 개화)
             _alive.Remove(this);
             body.linearVelocity = Vector2.zero;
             Killed?.Invoke(this);

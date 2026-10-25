@@ -35,9 +35,10 @@ namespace HistoryHeroes.Skills
             for (int i = 0; i < count; i++)
             {
                 Vector2 direction = Quaternion.Euler(0f, 0f, count > 1 ? -fanDegrees * 0.5f + step * i : 0f) * aim;
-                DamageInfo damage = RollDamage(data.DamageAt(level));
-                if (shardPrefab != null) player.LaunchSkillProjectile(shardPrefab, origin, direction, speed, damage, 0, OnHit);
-                else player.LaunchSkillProjectile(origin, direction, speed, damage, 0, OnHit);
+                // 서리 창: 맞는 순간의 빙결 여부로 치명타를 정해야 하므로 피해는 OnHit에서 직접 준다 (투사체는 0)
+                DamageInfo damage = chill ? new DamageInfo { Amount = 0f, Kind = DamageKind.Active, AttackerTeam = Team.Player } : RollDamage(data.DamageAt(level));
+                if (shardPrefab != null) player.LaunchSkillProjectile(shardPrefab, origin, direction, speed, damage, 0, OnHit, this);
+                else player.LaunchSkillProjectile(origin, direction, speed, damage, 0, OnHit, this);
             }
 
             return true;
@@ -47,11 +48,11 @@ namespace HistoryHeroes.Skills
         {
             if (!target.TryGetComponent(out EnemyStatus status)) return;
 
-            // 서리 창: 이미 얼어 있던 적에게는 치명타 확정 (치명타가 안 떴으면 그만큼 더 준다)
-            if (chill && status.IsFrozen && !target.IsDead)
+            // 서리 창: 맞기 전에 이미 얼어 있던 적에게는 치명타 확정 (한 번만 굴린다)
+            if (chill && !target.IsDead)
             {
-                float critExtra = player.Stats.Get(StatType.CritDamage, StatTarget.Active) - 1f;
-                if (critExtra > 0f) target.TryTakeDamage(RollDamage(data.DamageAt(level) * critExtra));
+                bool frozenBefore = status.IsFrozen;
+                target.TryTakeDamage(RollDamage(data.DamageAt(level), forceCrit: frozenBefore));
             }
 
             status.ApplySlow(slow, slowDuration);

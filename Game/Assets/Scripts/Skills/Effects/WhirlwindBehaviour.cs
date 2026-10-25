@@ -20,6 +20,7 @@ namespace HistoryHeroes.Skills
         [SerializeField] private float freezeDuration = 1.5f;
 
         private readonly List<EnemyBase> _inside = new List<EnemyBase>();
+        private ComponentPool<FxSprite> _fx;
 
         protected override bool Activate()
         {
@@ -34,21 +35,17 @@ namespace HistoryHeroes.Skills
             float duration = data.DurationAt(level);
             float dps = data.DamageAt(level);
 
-            var go = new GameObject("Whirlwind");
-            go.transform.SetParent(EffectRoot, false);
-            go.transform.position = center;
-            go.transform.localScale = Vector3.one * radius * 2f;
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = PlaceholderSprites.Fan(300);
-            sr.color = color;
-            sr.sortingOrder = -1;
+            _fx ??= FxSprite.CreatePool(EffectRoot);
+            FxSprite visual = _fx.Get(center, Quaternion.identity);
+            visual.Hold(PlaceholderSprites.Fan(300), center, Vector2.one * radius * 2f, color, -1);
+            Transform go = visual.transform;
 
             float tick = 0f;
             for (float t = 0f; t < duration; t += Time.deltaTime)
             {
                 if (!IsPaused)
                 {
-                    go.transform.Rotate(0f, 0f, -540f * Time.deltaTime);
+                    go.Rotate(0f, 0f, -540f * Time.deltaTime);
                     CombatQuery.EnemiesWithin(center, radius, _inside);
                     foreach (EnemyBase e in _inside) e.Status.Pull(center, pullSpeed, 0.15f);
 
@@ -70,7 +67,7 @@ namespace HistoryHeroes.Skills
                 AttackFx.Burst(center, radius, new Color(0.7f, 0.9f, 1f, 0.6f), 0.3f);
             }
 
-            Destroy(go);
+            _fx.Release(visual);
         }
     }
 }

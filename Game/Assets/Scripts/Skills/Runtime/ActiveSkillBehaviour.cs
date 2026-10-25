@@ -42,6 +42,7 @@ namespace HistoryHeroes.Skills
         /// <summary>조합 재료로 쓰여 사라질 때. 소환물·이펙트도 함께 정리한다 (GameDesign 12-2 조합).</summary>
         public virtual void Dispose()
         {
+            if (player != null) player.CancelSkillProjectiles(this);
             Destroy(gameObject);
         }
 
@@ -86,9 +87,9 @@ namespace HistoryHeroes.Skills
         /// <returns>실제로 발동했으면 true. 표적이 없어 못 쏘았으면 false (쿨다운을 쓰지 않음).</returns>
         protected abstract bool Activate();
 
-        protected DamageInfo RollDamage(float coefficient)
+        protected DamageInfo RollDamage(float coefficient, bool forceCrit = false)
         {
-            return DamageCalculator.Roll(player.Stats, coefficient, DamageKind.Active);
+            return DamageCalculator.Roll(player.Stats, coefficient, DamageKind.Active, forceCrit);
         }
     }
 }
