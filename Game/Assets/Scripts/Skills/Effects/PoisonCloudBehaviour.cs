@@ -25,7 +25,7 @@ namespace HistoryHeroes.Skills
             CombatQuery.RandomEnemiesOnScreen(data.CountAt(level), _targets);
             if (_targets.Count == 0) return false;
 
-            _zones ??= DamageZone.CreatePool(EffectRoot, color);
+            _zones ??= DamageZone.CreatePool(EffectRoot, color, -1, data.id);
             foreach (EnemyBase e in _targets) Spawn(e.transform.position, data.RadiusAt(level), data.DurationAt(level), 0);
             return true;
         }

@@ -42,7 +42,7 @@ namespace HistoryHeroes.Skills
             {
                 Vector2 direction = Quaternion.Euler(0f, 0f, start + spreadDegrees * i) * aim;
                 _pool.Get(origin, Quaternion.identity).Launch(player.transform, player.Stats, enemyMask, origin, direction, distance, outTime,
-                    coefficient, false, split ? SplitAt : null, _pool.Release, ReturnSpeed, endAtApex: split);
+                    coefficient, false, split ? SplitAt : null, _pool.Release, ReturnSpeed, endAtApex: split, sourceId: data.id);
             }
 
             return true;
@@ -55,7 +55,7 @@ namespace HistoryHeroes.Skills
             {
                 Vector2 offset = Quaternion.Euler(0f, 0f, 90f * side) * direction * 0.6f;
                 _pool.Get(apex + offset, Quaternion.identity).Launch(player.transform, player.Stats, enemyMask, apex + offset, direction, 0f, outTime,
-                    splitCoefficient, true, null, _pool.Release, ReturnSpeed);
+                    splitCoefficient, true, null, _pool.Release, ReturnSpeed, sourceId: data.id);
             }
         }
     }

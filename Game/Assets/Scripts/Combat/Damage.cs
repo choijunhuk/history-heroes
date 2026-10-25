@@ -23,6 +23,9 @@ namespace HistoryHeroes.Combat
         public bool IsCrit;
         public DamageKind Kind;
         public Team AttackerTeam;
+
+        /// <summary>어느 스킬의 피해인가 (스킬 ID, 기본 공격 "basic", 영웅 대표 효과 "sig_영웅ID"). 스킬별 피해 비율용</summary>
+        public string SourceId;
     }
 
     /// <summary>
@@ -33,7 +36,7 @@ namespace HistoryHeroes.Combat
     public static class DamageCalculator
     {
         /// <param name="forceCrit">치명타 확정 (서리 창: 빙결한 적)</param>
-        public static DamageInfo Roll(StatSheet attacker, float coefficient, DamageKind kind, bool forceCrit = false)
+        public static DamageInfo Roll(StatSheet attacker, float coefficient, DamageKind kind, bool forceCrit = false, string source = null)
         {
             StatTarget context = kind == DamageKind.Active ? StatTarget.Active : StatTarget.BasicAttack;
 
@@ -52,6 +55,7 @@ namespace HistoryHeroes.Combat
                 IsCrit = crit,
                 Kind = kind,
                 AttackerTeam = Team.Player,
+                SourceId = source ?? (kind == DamageKind.BasicAttack ? DamageLog.BasicSource : null),
             };
         }
 

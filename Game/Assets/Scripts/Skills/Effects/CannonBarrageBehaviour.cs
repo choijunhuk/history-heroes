@@ -33,7 +33,7 @@ namespace HistoryHeroes.Skills
             if (!CombatQuery.DensestPoint(1.6f, out Vector2 center)) return false;
 
             _shells ??= StrikeVisual.CreatePool(EffectRoot);
-            if (leaveField) _zones ??= DamageZone.CreatePool(EffectRoot, fieldColor);
+            if (leaveField) _zones ??= DamageZone.CreatePool(EffectRoot, fieldColor, -1, data.id);
 
             int count = data.CountAt(level);
             float radius = data.RadiusAt(level);

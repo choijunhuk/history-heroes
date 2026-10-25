@@ -31,13 +31,13 @@ namespace HistoryHeroes.Skills
             if (_trailTimer > 0f || (here - _lastTrail).sqrMagnitude < trailRadius * trailRadius) return;
             _trailTimer = trailInterval;
             _lastTrail = here;
-            _zones ??= DamageZone.CreatePool(EffectRoot, color);
+            _zones ??= DamageZone.CreatePool(EffectRoot, color, -1, data.id);
             _zones.Get(here, Quaternion.identity).Begin(player.Stats, trailDamagePerSecond, trailRadius, trailDuration, enemyMask, _zones.Release);
         }
 
         protected override bool Activate()
         {
-            _zones ??= DamageZone.CreatePool(EffectRoot, color);
+            _zones ??= DamageZone.CreatePool(EffectRoot, color, -1, data.id);
             DamageZone zone = _zones.Get(player.transform.position, Quaternion.identity);
             zone.Begin(player.Stats, data.DamageAt(level), data.RadiusAt(level), data.DurationAt(level), enemyMask, _zones.Release);
             return true;

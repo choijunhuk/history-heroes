@@ -143,17 +143,18 @@ namespace HistoryHeroes.Records
         /// 순서: 일반 → 희귀 → 전설, 패시브 → 액티브 → 합체 → 진화, 같은 묶음이면 높은 레벨부터.
         /// 남긴 진화의 필수 패시브는 Lv1 아래로 깎지 않는다 (깎으면 진화가 풀리므로 차라리 진화를 뺀다).
         /// </summary>
-        public void AutoFit()
+        /// <param name="damageShare">스킬 ID → 이번 판 피해 비율 (있으면 같은 등급 액티브 중 피해가 적은 것부터 깎는다, 조사 A5)</param>
+        public void AutoFit(Func<string, float> damageShare = null)
         {
             for (int guard = 0; guard < 500 && !Fits; guard++)
             {
-                Entry victim = PickToCut();
+                Entry victim = PickToCut(damageShare);
                 if (victim == null) break;
                 SetLevel(victim, victim.IsEvolution ? 0 : victim.Level - 1);
             }
         }
 
-        private Entry PickToCut()
+        private Entry PickToCut(Func<string, float> damageShare)
         {
             Entry best = null;
             int bestScore = int.MaxValue;
@@ -162,7 +163,7 @@ namespace HistoryHeroes.Records
                 if (!e.Kept) continue;
                 if (e.Level <= 1 && IsRequiredByKeptEvolution(e.Skill)) continue;
 
-                int score = CutPriority(e);
+                int score = CutPriority(e, damageShare);
                 if (score < bestScore)
                 {
                     best = e;
@@ -183,13 +184,16 @@ namespace HistoryHeroes.Records
             return false;
         }
 
-        /// <summary>작을수록 먼저 깎는다</summary>
-        private static int CutPriority(Entry e)
+        /// <summary>
+        /// 작을수록 먼저 깎는다: 진화·합체 → 등급 → 패시브 먼저 → (피해 비율이 있으면) 피해가 적은 것 먼저 → 레벨이 높은 것부터 한 단계씩.
+        /// </summary>
+        private static int CutPriority(Entry e, Func<string, float> damageShare)
         {
             int group = e.IsEvolution ? 2 : e.IsMerge ? 1 : 0;
             int rarity = (int)e.Skill.rarity;
             int kind = e.Skill.Kind == SkillKind.Passive ? 0 : 1;
-            return group * 10000 + rarity * 1000 + kind * 100 + (99 - e.Level);
+            int share = kind == 1 && damageShare != null ? Math.Min(99, (int)(damageShare(e.Skill.id) * 100f)) : 0;
+            return group * 1000000 + rarity * 100000 + kind * 10000 + share * 100 + (99 - e.Level);
         }
 
         /// <summary>저장할 스킬 목록. 진화가 풀린 칸은 진화 전 액티브로 적는다.</summary>

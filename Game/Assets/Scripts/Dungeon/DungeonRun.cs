@@ -221,6 +221,7 @@ namespace HistoryHeroes.Dungeon
             // 판 끝: 보상·계정 경험치·별 → 저장 (기록은 다음 화면에서 고른 뒤에 저장한다)
             int roomsCleared = victory ? RoomCount : _roomsCleared;
             summary.HitsTaken = _hitsTaken;
+            summary.TopDamage = RunText.TopDamage(database, player.Hero);
             summary.RewardLines = GrantRewards(victory, roomsCleared);
 
             // 기록 용량 = 기준 × 0.8 × (깬 방 ÷ 전체 방), 클리어 = 1 (GameDesign 7-2)
@@ -236,6 +237,7 @@ namespace HistoryHeroes.Dungeon
                 int balance = database != null ? database.balanceVersion : 0;
                 string subtitle = victory ? "클리어! 용량 안에서 남길 스킬을 고르세요" : $"방 {room}에서 쓰러졌어요. 깬 방만큼 용량이 줄었어요";
                 string heroName = player.Hero != null ? player.Hero.displayName : string.Empty;
+                recordSave.DamageShare = DamageLog.ShareOf;
                 saveRecord = () => recordSave.Open(draft, d =>
                 {
                     RunRecord r = d.ToRecord(skills.HeroId, chapter, room, RoomCount, victory, balance);
@@ -334,6 +336,8 @@ namespace HistoryHeroes.Dungeon
         /// <summary>남길 수 있는 기록 용량 (pt)</summary>
         public int Capacity;
         public int HitsTaken;
+        /// <summary>"기본 공격 41% · 낙뢰 32% …" (조사 A5)</summary>
+        public string TopDamage;
         /// <summary>받은 것: 골드, 계정 경험치, 새 별, 별 상자</summary>
         public List<string> RewardLines;
     }

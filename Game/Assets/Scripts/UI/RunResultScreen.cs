@@ -46,6 +46,7 @@ namespace HistoryHeroes.UI
             sb.AppendLine($"처치  {s.Kills}");
             sb.AppendLine($"레벨  {s.Level}");
             sb.AppendLine($"기본 공격 피해 비중  {Mathf.RoundToInt(s.BasicAttackShare * 100f)}%  (목표 40% 이상)");
+            if (!string.IsNullOrEmpty(s.TopDamage)) sb.AppendLine($"<size=85%>피해  {s.TopDamage}</size>");
             sb.AppendLine();
             sb.AppendLine("만든 조합");
             sb.AppendLine(s.Fusions.Count > 0 ? "  " + string.Join(", ", s.Fusions) : "  없음");

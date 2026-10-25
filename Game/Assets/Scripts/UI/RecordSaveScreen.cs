@@ -59,6 +59,9 @@ namespace HistoryHeroes.UI
         private int _fixedSlot = -1;
 
         public bool IsOpen => root.activeSelf;
+
+        /// <summary>스킬 ID → 이번 판 피해 비율 (조사 A5: 무엇을 남길지 고르는 근거). 없으면 표시 안 함</summary>
+        public Func<string, float> DamageShare { get; set; }
         public RecordDraft Draft => _draft;
 
         private void Awake()
@@ -95,6 +98,7 @@ namespace HistoryHeroes.UI
         /// <summary>패치로 비용이 올라 용량을 넘은 기록을 다시 고르기 (같은 칸에 덮어씀, GameDesign 7-5)</summary>
         public void OpenReselect(RecordDraft draft, Func<RecordDraft, RunRecord> makeRecord, int slot, Action onDone)
         {
+            DamageShare = null; // 다시 고르기에는 판 피해 기록이 없다
             _fixedSlot = slot;
             OpenInternal(draft, makeRecord, "기록 다시 고르기", "패치로 비용이 올라 용량을 넘었어요. 남길 스킬을 다시 골라 주세요.", "취소", onDone);
         }
@@ -108,7 +112,7 @@ namespace HistoryHeroes.UI
             subtitleLabel.text = subtitle;
             subtitleLabel.color = new Color(1f, 1f, 1f, 0.75f);
             skipLabel.text = skip;
-            _draft.AutoFit(); // 처음엔 추천값
+            _draft.AutoFit(DamageShare); // 처음엔 추천값 (피해를 많이 낸 스킬을 남긴다)
             slotPanel.SetActive(false);
             root.SetActive(true);
             GamePause.Pause(this);
@@ -125,7 +129,7 @@ namespace HistoryHeroes.UI
         private void AutoFit()
         {
             foreach (RecordDraft.Entry e in _draft.Entries) _draft.SetLevel(e, e.OwnedLevel);
-            _draft.AutoFit();
+            _draft.AutoFit(DamageShare);
             Render();
         }
 
@@ -180,6 +184,11 @@ namespace HistoryHeroes.UI
                 {
                     return $"{other.Skill.displayName}에 필요해요 (빼면 진화가 풀려요)";
                 }
+            }
+
+            if (DamageShare != null && e.Skill.Kind != SkillKind.Passive)
+            {
+                return $"<color=#9FD8FF>이번 판 피해 {Mathf.RoundToInt(DamageShare(e.Skill.id) * 100f)}%</color>";
             }
 
             return string.Empty;

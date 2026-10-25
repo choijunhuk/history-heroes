@@ -29,6 +29,7 @@ namespace HistoryHeroes.Skills
         private float _returnSpeed;
         private Action<Vector2, Vector2> _onApex;
         private bool _endAtApex;
+        private string _sourceId;
         private Action<BoomerangMover> _release;
 
         public static ComponentPool<BoomerangMover> CreatePool(Transform root, Color color, Vector2 size)
@@ -50,9 +51,10 @@ namespace HistoryHeroes.Skills
         /// <param name="endAtApex">가장 멀리 가면 사라진다 (쌍 부메랑: 원본이 조각 2개로 바뀜)</param>
         public void Launch(Transform owner, StatSheet stats, LayerMask enemies, Vector2 origin, Vector2 direction, float distance, float outTime,
             float coefficient, bool startReturning, Action<Vector2, Vector2> onApex, Action<BoomerangMover> release,
-            float returnSpeed, bool endAtApex = false)
+            float returnSpeed, bool endAtApex = false, string sourceId = null)
         {
             _endAtApex = endAtApex;
+            _sourceId = sourceId;
             _owner = owner;
             _stats = stats;
             _filter = new ContactFilter2D { useLayerMask = true, layerMask = enemies, useTriggers = true };
@@ -123,7 +125,7 @@ namespace HistoryHeroes.Skills
             for (int i = 0; i < _overlap.Count; i++)
             {
                 if (!_overlap[i].TryGetComponent(out Health h) || h.IsDead || !_hitThisPass.Add(h)) continue;
-                h.TryTakeDamage(DamageCalculator.Roll(_stats, _coefficient, DamageKind.Active));
+                h.TryTakeDamage(DamageCalculator.Roll(_stats, _coefficient, DamageKind.Active, false, _sourceId));
             }
         }
     }

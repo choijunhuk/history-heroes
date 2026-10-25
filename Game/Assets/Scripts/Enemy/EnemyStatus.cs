@@ -37,6 +37,7 @@ namespace HistoryHeroes.Enemy
             public float DamagePerSecond;
             public float Until;
             public Action<Vector2> OnDeathInside;
+            public string SourceId;
         }
 
         private readonly List<PoisonSource> _poison = new List<PoisonSource>(4);
@@ -97,7 +98,7 @@ namespace HistoryHeroes.Enemy
         /// 독 구름 안에 있다 (구름이 틱마다 부른다). 같은 구름은 한 겹으로 센다. 겹친 구름은 3겹까지만 (Skills 2장 "중첩").
         /// onDeathInside: 이 구름 안에서 죽으면 (막타가 무엇이든) — 맹독 개화 번짐
         /// </summary>
-        public void TouchPoison(object owner, float damagePerSecond, float duration, Action<Vector2> onDeathInside = null)
+        public void TouchPoison(object owner, float damagePerSecond, float duration, Action<Vector2> onDeathInside = null, string sourceId = null)
         {
             float until = Time.time + duration;
             for (int i = 0; i < _poison.Count; i++)
@@ -107,11 +108,12 @@ namespace HistoryHeroes.Enemy
                 s.DamagePerSecond = damagePerSecond;
                 s.Until = until;
                 s.OnDeathInside = onDeathInside;
+                s.SourceId = sourceId;
                 _poison[i] = s;
                 return;
             }
 
-            _poison.Add(new PoisonSource { Owner = owner, DamagePerSecond = damagePerSecond, Until = until, OnDeathInside = onDeathInside });
+            _poison.Add(new PoisonSource { Owner = owner, DamagePerSecond = damagePerSecond, Until = until, OnDeathInside = onDeathInside, SourceId = sourceId });
         }
 
         public int PoisonLayers
@@ -162,11 +164,22 @@ namespace HistoryHeroes.Enemy
                 {
                     _poisonTimer += PoisonTick;
                     _strengths.Clear();
-                    foreach (PoisonSource s in _poison) _strengths.Add(s.DamagePerSecond);
+                    string source = null;
+                    float strongest = -1f;
+                    foreach (PoisonSource s in _poison)
+                    {
+                        _strengths.Add(s.DamagePerSecond);
+                        if (s.DamagePerSecond > strongest)
+                        {
+                            strongest = s.DamagePerSecond;
+                            source = s.SourceId;
+                        }
+                    }
+
                     _strengths.Sort((a, b) => b.CompareTo(a));
                     float dps = 0f;
                     for (int i = 0; i < _strengths.Count && i < MaxPoisonStacks; i++) dps += _strengths[i];
-                    var info = new DamageInfo { Amount = dps * PoisonTick, Kind = DamageKind.Active, AttackerTeam = Team.Player };
+                    var info = new DamageInfo { Amount = dps * PoisonTick, Kind = DamageKind.Active, AttackerTeam = Team.Player, SourceId = source };
                     _enemy.Health.TryTakeDamage(info);
                 }
             }

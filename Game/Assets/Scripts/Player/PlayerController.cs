@@ -362,7 +362,7 @@ namespace HistoryHeroes.Player
             for (int i = 0; i < _overlap.Count; i++)
             {
                 if (!_overlap[i].TryGetComponent(out Health h) || h.IsDead) continue;
-                DamageInfo damage = DamageCalculator.Roll(Stats, hero.cannonCoefficient, DamageKind.BasicAttack);
+                DamageInfo damage = DamageCalculator.Roll(Stats, hero.cannonCoefficient, DamageKind.BasicAttack, source: "sig_" + hero.id);
                 if (h.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
             }
         }

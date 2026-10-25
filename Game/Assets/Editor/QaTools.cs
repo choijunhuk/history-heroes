@@ -181,7 +181,9 @@ namespace HistoryHeroes.EditorTools
             if (!Application.isPlaying) return "Play 모드가 아님";
             var player = Object.FindAnyObjectByType<PlayerController>();
             player.Health.Heal(1e9f);
-            return $"남은 적 {EnemyBase.Alive.Count} · 액티브 피해 {Combat.DamageLog.Active:0} · 기본 공격 {Combat.DamageLog.BasicAttack:0} · 보호막 {player.Health.Shield:0}";
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            return $"남은 적 {EnemyBase.Alive.Count} · 액티브 피해 {Combat.DamageLog.Active:0} · 기본 공격 {Combat.DamageLog.BasicAttack:0} · 보호막 {player.Health.Shield:0} / "
+                + $"출처별: {Economy.RunText.TopDamage(db, player.Hero, 8)}";
         }
 
         /// <summary>

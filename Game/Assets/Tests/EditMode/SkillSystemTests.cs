@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using HistoryHeroes.Combat;
+using HistoryHeroes.Economy;
 using HistoryHeroes.Progress;
 using HistoryHeroes.Skills;
 using NUnit.Framework;
@@ -282,6 +284,26 @@ namespace HistoryHeroes.Tests
             var fusion = new SkillCard { Type = CardType.Fusion, Skill = a };
             SkillPicker.ExcludeShown(candidates, new List<SkillCard> { fusion });
             Assert.AreEqual(1, candidates.Count, "조합 카드는 고정이므로 빼기 대상이 아니다");
+        }
+
+        [Test]
+        public void DamageLog_SharesBySource()
+        {
+            DamageLog.Reset();
+            DamageLog.Record(new DamageInfo { Kind = DamageKind.BasicAttack }, 60f);
+            DamageLog.Record(new DamageInfo { Kind = DamageKind.Active, SourceId = "lightning" }, 30f);
+            DamageLog.Record(new DamageInfo { Kind = DamageKind.Active, SourceId = "lightning" }, 10f);
+            DamageLog.Record(new DamageInfo { Kind = DamageKind.Active, SourceId = "flame" }, 0f); // 0은 안 센다
+
+            List<KeyValuePair<string, float>> shares = DamageLog.Shares();
+            Assert.AreEqual(2, shares.Count);
+            Assert.AreEqual(DamageLog.BasicSource, shares[0].Key, "큰 것부터");
+            Assert.AreEqual(0.6f, shares[0].Value, 1e-4f);
+            Assert.AreEqual(0.4f, DamageLog.ShareOf("lightning"), 1e-4f);
+            Assert.AreEqual(0f, DamageLog.ShareOf("flame"));
+            Assert.AreEqual("기본 공격 60% · 기타 40%", RunText.TopDamage(null, null), "DB가 없으면 스킬 이름 대신 기타");
+            DamageLog.Reset();
+            Assert.AreEqual("피해 없음", RunText.TopDamage(null, null));
         }
     }
 }

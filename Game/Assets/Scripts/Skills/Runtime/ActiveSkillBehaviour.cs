@@ -89,7 +89,7 @@ namespace HistoryHeroes.Skills
 
         protected DamageInfo RollDamage(float coefficient, bool forceCrit = false)
         {
-            return DamageCalculator.Roll(player.Stats, coefficient, DamageKind.Active, forceCrit);
+            return DamageCalculator.Roll(player.Stats, coefficient, DamageKind.Active, forceCrit, data != null ? data.id : null);
         }
     }
 }

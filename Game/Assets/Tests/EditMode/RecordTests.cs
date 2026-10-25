@@ -173,6 +173,21 @@ namespace HistoryHeroes.Tests
             Assert.IsFalse(draft.Reverts(draft.Entries[0]));
         }
 
+        [Test]
+        public void Draft_AutoFit_WithDamageShare_CutsLowDamageActiveFirst()
+        {
+            // 같은 일반 액티브 Lv1 둘 (각 2pt), 용량 2 → 하나만 남는다
+            var draft = new RecordDraft(new[] { Entry(_blade, 1), Entry(_flame, 1) }, 2);
+            draft.AutoFit(id => id == "flame_field" ? 0.35f : 0.03f);
+            Assert.IsTrue(draft.Fits);
+            Assert.IsFalse(draft.Entries[0].Kept, "피해 3%인 회전 칼날을 먼저 뺀다");
+            Assert.IsTrue(draft.Entries[1].Kept, "피해 35%인 불꽃 장판은 남긴다");
+
+            var noShare = new RecordDraft(new[] { Entry(_blade, 1), Entry(_flame, 1) }, 2);
+            noShare.AutoFit();
+            Assert.IsTrue(noShare.Fits, "피해 정보가 없어도 맞춘다");
+        }
+
         // ---------------- 검사 (7-5) ----------------
 
         [Test]

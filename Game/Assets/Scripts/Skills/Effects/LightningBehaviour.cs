@@ -38,7 +38,7 @@ namespace HistoryHeroes.Skills
             if (_targets.Count == 0) return false;
 
             _bolts ??= StrikeVisual.CreatePool(EffectRoot);
-            if (leaveField) _zones ??= DamageZone.CreatePool(EffectRoot, fieldColor);
+            if (leaveField) _zones ??= DamageZone.CreatePool(EffectRoot, fieldColor, -1, data.id);
 
             // 합체 결과의 레벨 효과(Lv2 +25%, Lv3 +50%)를 장판에도 같은 비율로
             float levelScale = data.DamageAt(level) / Mathf.Max(0.01f, data.DamageAt(1));
