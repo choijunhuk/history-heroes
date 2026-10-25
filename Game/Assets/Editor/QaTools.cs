@@ -59,9 +59,6 @@ namespace HistoryHeroes.EditorTools
         }
 
         // ---------- 빌드 비교 시나리오 (GameDesign 6-8 "상황마다 1등이 다른가", 3-3 "정지 vs 이동") ----------
-        private static float _scenarioStart;
-        private static bool _scenarioMoving;
-        private static string _scenarioName;
 
         /// <summary>
         /// Play 시작 직후에 부른다. 던전 흐름을 끄고, 빌드 프리셋을 준 뒤, 시나리오 적을 세운다.
@@ -79,8 +76,17 @@ namespace HistoryHeroes.EditorTools
             var player = Object.FindAnyObjectByType<PlayerController>();
             if (run == null || cheats == null || player == null) return "Play 모드가 아님";
 
+            // 방 적을 없앨 때 얻는 경험치로 레벨업 창이 뜨면 게임이 멈춰서(timeScale 0) 측정이 끝나지 않는다 → 시나리오 동안 끈다
+            var levelUp = Object.FindAnyObjectByType<LevelUpScreen>();
+            if (levelUp != null)
+            {
+                levelUp.DevCancel();
+                levelUp.enabled = false;
+            }
+
             run.gameObject.SetActive(false); // 방 흐름·그 방의 적 정지
             Dev.DevCheats.KillAll();
+            Object.FindAnyObjectByType<SkillManager>().DevClearAll(); // Play 시작 후 몇 초 동안 고른 카드가 섞이지 않게
             string presetName = cheats.ApplyPreset(preset);
 
             player.Teleport(new Vector2(0f, -5.5f));
@@ -102,11 +108,9 @@ namespace HistoryHeroes.EditorTools
             }
 
             Combat.DamageLog.Reset();
-            _scenarioStart = Time.time;
-            _scenarioMoving = move;
-            _scenarioName = $"{presetName} | {kind} | {(move ? "이동만" : "정지")}";
-            FloatingJoystick.DevOverride = move ? Vector2.right : (Vector2?)null;
-            return "시작: " + _scenarioName;
+            string scenarioName = $"{presetName} | {kind} | {(move ? "이동만" : "정지")}";
+            root.gameObject.AddComponent<Dev.ScenarioMonitor>().Begin(scenarioName, move, player);
+            return "시작: " + scenarioName;
         }
 
         /// <summary>시나리오 진행 확인. 적이 다 죽으면 걸린 시간과 기본 공격 피해 비중을 돌려준다.</summary>
@@ -114,22 +118,12 @@ namespace HistoryHeroes.EditorTools
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
             KeepRunning();
-            var player = Object.FindAnyObjectByType<PlayerController>();
-            if (player == null) return "Play 모드가 아님";
-            player.Health.Heal(1e9f); // 생존은 따로 본다. 여기서는 처치 속도만
+            var monitor = Object.FindAnyObjectByType<Dev.ScenarioMonitor>();
+            if (monitor == null) return "무효: 시나리오 없음";
+            if (!monitor.Finished) return $"진행 중 {monitor.Elapsed:0.0}초 남은 적 {EnemyBase.Alive.Count}";
 
-            float elapsed = Time.time - _scenarioStart;
-            if (elapsed < 0f) return "무효: 이전 Play 세션의 시나리오"; // Play를 다시 시작하면 Time.time이 0부터 다시 센다
-            if (EnemyBase.Alive.Count > 0 && elapsed < 120f)
-            {
-                // "이동만": 좌우로 계속 왔다 갔다 (멈추지 않음)
-                if (_scenarioMoving) FloatingJoystick.DevOverride = new Vector2(-(FloatingJoystick.DevOverride?.x ?? 1f), 0f);
-                return $"진행 중 {elapsed:0.0}초 남은 적 {EnemyBase.Alive.Count}";
-            }
-
-            FloatingJoystick.DevOverride = null;
-            string result = EnemyBase.Alive.Count == 0 ? $"{elapsed:0.0}초" : "120초 안에 못 잡음";
-            return $"결과: {_scenarioName} | {result} | 기본 공격 {Mathf.RoundToInt(Combat.DamageLog.BasicShare * 100f)}%";
+            string result = monitor.Cleared ? $"{monitor.Elapsed:0.0}초" : $"{Dev.ScenarioMonitor.TimeLimit:0}초 안에 못 잡음";
+            return $"결과: {monitor.ScenarioName} | {result} | 기본 공격 {Mathf.RoundToInt(Combat.DamageLog.BasicShare * 100f)}%";
         }
 
         private static void SpawnScenario(Transform root, string prefabName, int count, float hp, bool elite, PlayerController player)

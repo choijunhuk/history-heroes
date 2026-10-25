@@ -121,6 +121,21 @@ namespace HistoryHeroes.Skills
             return true;
         }
 
+        /// <summary>개발·테스트용: 가진 스킬을 모두 없애고 새 판처럼 비운다 (빌드 비교 시나리오를 깨끗한 상태에서 시작하려고).</summary>
+        public void DevClearAll()
+        {
+            var owned = new List<SkillInstance>(Loadout.Actives);
+            owned.AddRange(Loadout.Passives);
+            foreach (SkillInstance instance in owned)
+            {
+                player.Stats.RemoveAllFrom(instance);
+                player.Attack.RemoveAllFrom(instance);
+                if (instance.Behaviour != null) instance.Behaviour.Dispose();
+            }
+
+            _loadout = new SkillLoadout(activeSlots, passiveSlots);
+        }
+
         public void Choose(SkillCard card)
         {
             switch (card.Type)

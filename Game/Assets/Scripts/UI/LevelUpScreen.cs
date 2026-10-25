@@ -88,6 +88,15 @@ namespace HistoryHeroes.UI
             rerollRect.anchoredPosition = position;
         }
 
+        /// <summary>개발·테스트용: 카드를 고르지 않고 창을 닫는다 (남은 레벨업도 버린다).</summary>
+        public void DevCancel()
+        {
+            _pending = 0;
+            if (!IsOpen) return;
+            root.SetActive(false);
+            GamePause.Resume(this);
+        }
+
         /// <summary>index번째 카드 고르기 (개발용 단축키, 테스트용)</summary>
         public void ChooseIndex(int index)
         {
