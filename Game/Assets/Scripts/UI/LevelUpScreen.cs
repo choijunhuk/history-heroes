@@ -134,6 +134,17 @@ namespace HistoryHeroes.UI
             rerollRect.anchoredPosition = position;
         }
 
+        /// <summary>개발·테스트용: 정한 카드로 창을 연다 (카드 힌트·경고 화면 점검).</summary>
+        public void DevShow(List<SkillCard> cardsToShow)
+        {
+            _legendaryWarning = false;
+            GamePause.Pause(this);
+            root.SetActive(true);
+            _current = cardsToShow;
+            GuardInput();
+            Render();
+        }
+
         /// <summary>개발·테스트용: 카드를 고르지 않고 창을 닫는다 (남은 레벨업도 버린다).</summary>
         public void DevCancel()
         {

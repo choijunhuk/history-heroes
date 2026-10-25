@@ -430,15 +430,21 @@ namespace HistoryHeroes.EditorTools
             dr.offsetMin = new Vector2(12f, 10f);
             dr.offsetMax = new Vector2(-12f, -10f);
 
-            TMP_Text material = Label("Material", card, "조합 재료", 28, TextAlignmentOptions.Bottom, new Color(1f, 0.9f, 0.3f));
-            Place(material.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 12f), new Vector2(CardWidth - 20f, 40f));
-            material.rectTransform.pivot = new Vector2(0.5f, 0f);
+            // 힌트 줄 (조합 진행·막히는 조합·★3 경고). 있으면 설명 칸이 위로 줄어든다 (SkillCardView.SetHint)
+            RectTransform hintBox = Rect("HintBox", card, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(CardWidth - 24f, 100f));
+            Img(hintBox, new Color(0.05f, 0.06f, 0.09f, 0.78f), null);
+            TMP_Text material = Label("Material", card, "", 25, TextAlignmentOptions.Center, new Color(1f, 0.9f, 0.3f));
+            Place(material.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(CardWidth - 36f, 96f));
+            material.enableAutoSizing = true;
+            material.fontSizeMin = 17f;
+            material.fontSizeMax = 25f;
+            material.lineSpacing = -4f;
 
             var view = card.gameObject.AddComponent<SkillCardView>();
             using (var props = new Props(view))
             {
                 props.Ref("button", button).Ref("background", background).Ref("kindBand", bandImage).Ref("kindLabel", kind)
-                    .Ref("nameLabel", nameLabel).Ref("levelLabel", level).Ref("descriptionLabel", description).Ref("materialLabel", material);
+                    .Ref("nameLabel", nameLabel).Ref("levelLabel", level).Ref("descriptionLabel", description).Ref("materialLabel", material).Ref("descriptionBox", box).Ref("hintBox", hintBox.gameObject);
             }
 
             return view;

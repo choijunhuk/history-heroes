@@ -305,5 +305,111 @@ namespace HistoryHeroes.Tests
             DamageLog.Reset();
             Assert.AreEqual("피해 없음", RunText.TopDamage(null, null));
         }
+
+        // ---------------- 조합 힌트 (조사 A3·A4) ----------------
+
+        private static FusionRecipe Recipe(string id, FusionType type, ActiveSkillData a, SkillData b, ActiveSkillData result, int needA, int needB)
+        {
+            var r = ScriptableObject.CreateInstance<FusionRecipe>();
+            r.id = id;
+            r.type = type;
+            r.materialA = a;
+            r.materialB = b;
+            r.result = result;
+            r.requiredLevelA = needA;
+            r.requiredLevelB = needB;
+            return r;
+        }
+
+        [Test]
+        public void Hints_NearestKnownRecipe_WithProgressAndOthers()
+        {
+            var flame = Make<ActiveSkillData>("flame");
+            var lightning = Make<ActiveSkillData>("lightning");
+            var atk = Make<PassiveSkillData>("atk");
+            var trail = Make<ActiveSkillData>("trail");
+            var storm = Make<ActiveSkillData>("storm");
+            var secret = Make<ActiveSkillData>("secret");
+            flame.displayName = "불꽃 장판";
+            lightning.displayName = "낙뢰";
+            atk.displayName = "공격력";
+            trail.displayName = "불꽃 발자국";
+            storm.displayName = "뇌화 폭풍";
+
+            var evo = Recipe("evo", FusionType.Evolution, flame, atk, trail, 5, 1);
+            var merge = Recipe("merge", FusionType.Merge, flame, lightning, storm, 3, 3);
+            var unknown = Recipe("unknown", FusionType.Merge, flame, lightning, secret, 3, 3);
+            var recipes = new[] { evo, merge, unknown };
+            var known = new HashSet<FusionRecipe> { evo, merge };
+
+            var loadout = new SkillLoadout();
+            loadout.AddNew(flame, 2);
+            loadout.AddNew(lightning, 3);
+
+            Assert.IsTrue(FusionHints.TryNearest(flame, 3, loadout, recipes, "khan", known.Contains, out FusionHints.Progress p, out int others));
+            Assert.AreSame(merge, p.Recipe, "낙뢰 3/3 + 불꽃 3/3인 합체가 진화(불꽃 3/5, 공격력 없음)보다 가깝다");
+            Assert.AreEqual(1, others, "모르는 조합은 세지 않는다");
+            StringAssert.Contains("뇌화 폭풍", FusionHints.CardLine(p, others));
+            StringAssert.Contains("외 1", FusionHints.CardLine(p, others));
+
+            Assert.IsFalse(FusionHints.TryNearest(atk, 1, loadout, new[] { unknown }, "khan", known.Contains, out _, out _), "모르는 조합만 있으면 힌트 없음");
+
+            loadout.MarkCompleted(merge);
+            Assert.IsTrue(FusionHints.TryNearest(flame, 3, loadout, recipes, "khan", known.Contains, out p, out others));
+            Assert.AreSame(evo, p.Recipe, "이미 만든 조합은 빼고 찾는다");
+            Assert.AreEqual(0, others);
+        }
+
+        [Test]
+        public void Hints_BlockedBy_ListsOnlyKnownRecipesLosingAMaterial()
+        {
+            var flame = Make<ActiveSkillData>("flame");
+            var lightning = Make<ActiveSkillData>("lightning");
+            var ice = Make<ActiveSkillData>("ice");
+            var atk = Make<PassiveSkillData>("atk");
+            var trail = Make<ActiveSkillData>("trail");
+            var storm = Make<ActiveSkillData>("storm");
+            var god = Make<ActiveSkillData>("god");
+            var frost = Make<ActiveSkillData>("frost");
+            flame.displayName = "불꽃 장판";
+            trail.displayName = "불꽃 발자국";
+
+            var evoFlame = Recipe("evo_flame", FusionType.Evolution, flame, atk, trail, 5, 1);
+            var stormR = Recipe("storm", FusionType.Merge, flame, lightning, storm, 3, 3);
+            var evoLightning = Recipe("evo_lightning", FusionType.Evolution, lightning, atk, god, 5, 1);
+            var iceR = Recipe("ice", FusionType.Merge, ice, lightning, frost, 3, 3);
+            var recipes = new[] { evoFlame, stormR, evoLightning, iceR };
+            var loadout = new SkillLoadout();
+
+            // 합체(불꽃+낙뢰)를 고르면 불꽃·낙뢰 둘 다 사라진다 → 불꽃 진화, 낙뢰 진화가 막힘. 얼음 합체는 모르는 조합이라 말 안 함
+            var known = new HashSet<FusionRecipe> { evoFlame, stormR, evoLightning };
+            var blocked = FusionHints.BlockedBy(stormR, loadout, recipes, "khan", known.Contains);
+            Assert.AreEqual(2, blocked.Count);
+            Assert.IsTrue(blocked.Exists(x => x.blocked == evoFlame && x.lost == flame));
+            Assert.IsTrue(blocked.Exists(x => x.blocked == evoLightning && x.lost == lightning));
+            StringAssert.Contains("불꽃 발자국", FusionHints.BlockedLine(blocked));
+
+            // 진화(불꽃)는 액티브만 사라진다 → 패시브(공격력)를 쓰는 낙뢰 진화는 막히지 않는다
+            blocked = FusionHints.BlockedBy(evoFlame, loadout, recipes, "khan", known.Contains);
+            Assert.AreEqual(1, blocked.Count);
+            Assert.AreSame(stormR, blocked[0].blocked);
+
+            Assert.AreEqual(string.Empty, FusionHints.BlockedLine(new List<(SkillData, FusionRecipe)>()));
+        }
+
+        [Test]
+        public void Hints_CountForCodex()
+        {
+            var flame = Make<ActiveSkillData>("flame");
+            var atk = Make<PassiveSkillData>("atk");
+            var lightning = Make<ActiveSkillData>("lightning");
+            var a = Recipe("a", FusionType.Evolution, flame, atk, Make<ActiveSkillData>("r1"), 5, 1);
+            var b = Recipe("b", FusionType.Merge, flame, lightning, Make<ActiveSkillData>("r2"), 3, 3);
+            var known = new HashSet<FusionRecipe> { a };
+
+            Assert.AreEqual((2, 1), FusionHints.CountFor(flame, new[] { a, b }, known.Contains));
+            Assert.AreEqual((1, 0), FusionHints.CountFor(lightning, new[] { a, b }, known.Contains));
+            Assert.AreEqual((0, 0), FusionHints.CountFor(Make<PassiveSkillData>("none"), new[] { a, b }, known.Contains));
+        }
     }
 }

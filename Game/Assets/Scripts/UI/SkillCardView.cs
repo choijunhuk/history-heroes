@@ -20,7 +20,15 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text nameLabel;
         [SerializeField] private TMP_Text levelLabel;
         [SerializeField] private TMP_Text descriptionLabel;
+        [Tooltip("카드 아래 힌트 줄: 조합 진행(A3) · 막히는 조합 경고(A4) · ★3 경고")]
         [SerializeField] private TMP_Text materialLabel;
+        [Tooltip("힌트 글자 뒤 어두운 판 (조합 카드의 무지개 바탕 위에서도 읽히게)")]
+        [SerializeField] private GameObject hintBox;
+        [Tooltip("힌트가 있으면 설명 칸을 위로 줄여 겹치지 않게 한다")]
+        [SerializeField] private RectTransform descriptionBox;
+
+        private const float BoxBottomPlain = 58f;
+        private const float BoxBottomWithHint = 112f;
 
         public static readonly Color Common = new Color(0.42f, 0.45f, 0.5f);
         public static readonly Color Rare = new Color(0.2f, 0.45f, 0.9f);
@@ -44,7 +52,7 @@ namespace HistoryHeroes.UI
         {
             _onClick = onClick;
             _rainbow = card.Type == CardType.Fusion;
-            materialLabel.gameObject.SetActive(false);
+            string hint = null;
 
             switch (card.Type)
             {
@@ -55,6 +63,7 @@ namespace HistoryHeroes.UI
                     nameLabel.text = r.result.displayName;
                     levelLabel.text = "NEW";
                     descriptionLabel.text = $"{r.materialA.displayName} + {r.materialB.displayName}\n\n{r.result.description}";
+                    hint = skills.BlockedWarning(r);
                     break;
 
                 case CardType.Fallback:
@@ -75,12 +84,26 @@ namespace HistoryHeroes.UI
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";
                     descriptionLabel.text = s.DescriptionFor(skills.HeroClass);
                     background.color = RarityColor(s.rarity);
-                    bool material = skills.IsFusionMaterial(s);
-                    bool warn = legendaryWarning && s.rarity == Rarity.Legendary;
-                    materialLabel.gameObject.SetActive(material || warn);
-                    materialLabel.text = warn ? (material ? "조합 재료\n<color=#FF7A6B>★3 도전 중: 고르면 이번 판 ★3 실패</color>" : "<color=#FF7A6B>★3 도전 중: 고르면 이번 판 ★3 실패</color>") : "조합 재료";
+                    hint = skills.CardHint(card);
+                    if (legendaryWarning && s.rarity == Rarity.Legendary)
+                    {
+                        const string star = "<color=#FF7A6B>★3 도전 중: 고르면 이번 판 ★3 실패</color>";
+                        hint = string.IsNullOrEmpty(hint) ? star : hint + "\n" + star;
+                    }
+
                     break;
             }
+
+            SetHint(hint);
+        }
+
+        private void SetHint(string hint)
+        {
+            bool has = !string.IsNullOrEmpty(hint);
+            materialLabel.gameObject.SetActive(has);
+            if (hintBox != null) hintBox.SetActive(has);
+            materialLabel.text = has ? hint : string.Empty;
+            if (descriptionBox != null) descriptionBox.offsetMin = new Vector2(descriptionBox.offsetMin.x, has ? BoxBottomWithHint : BoxBottomPlain);
         }
 
         public static Color RarityColor(Rarity rarity)

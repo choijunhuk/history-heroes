@@ -106,18 +106,22 @@ namespace HistoryHeroes.Skills
             return result;
         }
 
-        /// <summary>**발견한** 조합의 재료인가 (카드에 "조합 재료" 표시용, UX.md 3장 · GameDesign 6-2)</summary>
-        public bool IsFusionMaterial(SkillData skill)
+        /// <summary>
+        /// 일반 카드의 조합 힌트 (조사 A3): 이 카드를 고르면 가장 가까워지는 **발견한** 조합 한 줄. 없으면 null.
+        /// 예: "◆ 강철 회오리 ← 방어력 보유 · 회전 칼날 4/5"
+        /// </summary>
+        public string CardHint(SkillCard card)
         {
-            if (skill == null) return false;
-            foreach (FusionRecipe r in recipes)
-            {
-                if (r == null || !RecipeBook.IsDiscovered(r)) continue;
-                if (!string.IsNullOrEmpty(r.heroOnlyId) && r.heroOnlyId != HeroId) continue;
-                if (r.materialA == skill || r.materialB == skill) return true;
-            }
+            if (card == null || card.Skill == null || card.Type == CardType.Fusion || card.Type == CardType.Fallback) return null;
+            return FusionHints.TryNearest(card.Skill, card.NextLevel, Loadout, recipes, HeroId, RecipeBook.IsDiscovered, out FusionHints.Progress p, out int others)
+                ? FusionHints.CardLine(p, others)
+                : null;
+        }
 
-            return false;
+        /// <summary>조합 카드 경고 (조사 A4): 이 조합으로 재료가 사라져 이번 판에 못 만들게 되는 발견한 조합. 없으면 빈 문자열</summary>
+        public string BlockedWarning(FusionRecipe recipe)
+        {
+            return FusionHints.BlockedLine(FusionHints.BlockedBy(recipe, Loadout, recipes, HeroId, RecipeBook.IsDiscovered));
         }
 
         /// <summary>
