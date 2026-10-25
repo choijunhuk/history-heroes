@@ -64,6 +64,8 @@ namespace HistoryHeroes.Records
             sb.AppendLine(lines.Count > 0 ? string.Join(" · ", lines) : "스킬 없음 (기본 공격만)");
             sb.Append($"비용 {checkedBuild.Cost} / {record.capacity}pt");
             if (checkedBuild.OverCapacity) sb.Append("  (패치로 비용이 올라 다시 골라야 해요)");
+            for (int i = 0; i < checkedBuild.Notes.Count && i < 2; i++) sb.Append($"\n<color=#FFB347>바뀐 점: {checkedBuild.Notes[i]}</color>");
+            if (checkedBuild.Notes.Count > 2) sb.Append($"<color=#FFB347> 외 {checkedBuild.Notes.Count - 2}개</color>");
             if (record.bossesDefeated.Count > 0) sb.Append($"  · 보스 {record.bossesDefeated.Count}마리 격파");
             return sb.ToString();
         }

@@ -133,7 +133,7 @@ namespace HistoryHeroes.UI
             {
                 SkillData data = database.Find(s.id);
                 if (data == null) continue;
-                entries.Add(new RecordDraft.Entry(data, s.level, s.fusion, s.fusion ? database.RecipeProducing(data) : null));
+                entries.Add(new RecordDraft.Entry(data, s.level, s.fusion, s.fusion ? database.RecipeProducing(data) : null) { FromSavedRecord = true });
             }
 
             return new RecordDraft(entries, record.capacity);

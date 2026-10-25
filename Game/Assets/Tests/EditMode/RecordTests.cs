@@ -346,6 +346,66 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Save_AfterRecoveringFromBackup_KeepsGoodBackup()
+        {
+            var store = new SaveStore(_folder);
+            SaveData good = SampleSave();
+            good.unlockedChapter = 3;
+            store.Save(good);
+            store.Save(good); // 백업 = 구간 3
+            File.WriteAllText(store.MainPath, "{ 망가짐");
+
+            SaveData loaded = store.Load(); // 백업에서 읽음
+            loaded.unlockedChapter = 4;
+            store.Save(loaded);
+
+            StringAssert.Contains("\"unlockedChapter\": 3", File.ReadAllText(store.BackupPath), "정상 백업이 망가진 파일로 바뀌면 안 된다");
+            StringAssert.Contains("\"unlockedChapter\": 4", File.ReadAllText(store.MainPath));
+        }
+
+        [Test]
+        public void Load_OnlyCompletedTemp_PromotesItToMain()
+        {
+            var store = new SaveStore(_folder);
+            Directory.CreateDirectory(_folder);
+            SaveData only = SampleSave();
+            only.unlockedChapter = 2;
+            File.WriteAllText(store.TempPath, JsonUtility.ToJson(only, true)); // 본 파일·백업 없이 임시 파일만
+
+            store.Load();
+
+            Assert.IsTrue(File.Exists(store.MainPath), "읽은 임시 파일은 바로 본 파일로 확정");
+            Assert.IsFalse(File.Exists(store.TempPath));
+        }
+
+        [Test]
+        public void Load_SchemaV1_MigratesEconomyDefaults()
+        {
+            var store = new SaveStore(_folder);
+            Directory.CreateDirectory(_folder);
+            File.WriteAllText(store.MainPath, "{\"schemaVersion\": 1, \"records\": [], \"unlockedChapter\": 2}");
+
+            SaveData loaded = store.Load();
+
+            Assert.AreEqual(SaveData.CurrentSchemaVersion, loaded.schemaVersion);
+            Assert.AreEqual(2, loaded.unlockedChapter);
+            Assert.AreEqual(5, loaded.hearts);
+            Assert.AreEqual(1, loaded.accountLevel);
+        }
+
+        [Test]
+        public void Reselect_SavedEvolution_DoesNotRevertWhenRecipeChanged()
+        {
+            // 레시피가 바뀌어 필요한 패시브가 기록에 없어도, 이미 만든 진화는 그대로 (GameDesign 7-5)
+            _evolution.materialB = _atk;
+            var evo = new RecordDraft.Entry(_whirl, 1, true, _evolution) { FromSavedRecord = true };
+            var draft = new RecordDraft(new[] { evo, Entry(_def, 2) }, 27);
+
+            Assert.IsFalse(draft.Reverts(evo));
+            Assert.AreEqual("steel_whirl", draft.ToSkills()[0].id);
+        }
+
+        [Test]
         public void Load_NothingSaved_StartsFresh()
         {
             SaveData loaded = new SaveStore(_folder).Load();

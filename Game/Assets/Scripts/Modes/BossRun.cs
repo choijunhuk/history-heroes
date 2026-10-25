@@ -86,21 +86,21 @@ namespace HistoryHeroes.Modes
 
             _boss = Instantiate(_info.prefab, bossSpawn.position, Quaternion.identity, transform);
             _boss.Spawn(player.transform, _info.hpMultiplier, _info.attackMultiplier, false);
-            _boss.Killed += _ => StartCoroutine(FinishAfter(1f));
+            _boss.Killed += _ => Finish(victory: true);
             _startTime = Time.time;
             if (bossHud != null) bossHud.Bind(_boss, _info.displayName);
         }
 
-        private IEnumerator FinishAfter(float seconds)
-        {
-            yield return new WaitForSeconds(seconds);
-            Finish(victory: true);
-        }
-
+        /// <summary>
+        /// 승패는 보스(또는 플레이어)가 쓰러지는 순간 확정하고 저장한다. 결과 화면만 조금 늦게 띄운다.
+        /// (보스가 죽은 뒤 남은 파편에 맞아 죽어도 패배가 되면 안 된다)
+        /// </summary>
         private void Finish(bool victory)
         {
             if (_finished) return;
             _finished = true;
+            player.Health.Invulnerable = true;
+            float elapsed = _boss != null ? Time.time - _startTime : 0f;
 
             SaveData save = SaveSystem.Data;
             save.bossRuns++;
@@ -115,10 +115,10 @@ namespace HistoryHeroes.Modes
 
             SaveSystem.Save();
 
-            result.ShowBoss(new BossSummary
+            var summary = new BossSummary
             {
                 Victory = victory,
-                Seconds = _boss != null ? Time.time - _startTime : 0f,
+                Seconds = elapsed,
                 BossName = _info != null ? _info.displayName : "보스",
                 HitsTaken = _hitsTaken,
                 Star2MaxHits = _info != null ? _info.star2MaxHits : 0,
@@ -126,7 +126,14 @@ namespace HistoryHeroes.Modes
                 UnlockedChapter = firstClear ? _info.chapter + 1 : 0,
                 BasicAttackShare = DamageLog.BasicShare,
                 RecordLabel = _record != null ? RecordFormat.Title(_record) : "기록 없음 (기본 공격만)",
-            });
+            };
+            StartCoroutine(ShowResultAfter(victory ? 1f : 0.6f, summary));
+        }
+
+        private IEnumerator ShowResultAfter(float seconds, BossSummary summary)
+        {
+            yield return new WaitForSeconds(seconds);
+            result.ShowBoss(summary);
         }
 
         private BossData FindBoss(int chapter)

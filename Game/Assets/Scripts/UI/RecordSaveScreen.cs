@@ -106,6 +106,7 @@ namespace HistoryHeroes.UI
             _onDone = onDone;
             titleLabel.text = title;
             subtitleLabel.text = subtitle;
+            subtitleLabel.color = new Color(1f, 1f, 1f, 0.75f);
             skipLabel.text = skip;
             _draft.AutoFit(); // 처음엔 추천값
             slotPanel.SetActive(false);
@@ -175,7 +176,7 @@ namespace HistoryHeroes.UI
 
             foreach (RecordDraft.Entry other in _draft.Entries)
             {
-                if (other.IsEvolution && other.Kept && other.Recipe.materialB == e.Skill)
+                if (other.IsEvolution && other.Kept && !other.FromSavedRecord && other.Recipe.materialB == e.Skill)
                 {
                     return $"{other.Skill.displayName}에 필요해요 (빼면 진화가 풀려요)";
                 }
@@ -229,9 +230,20 @@ namespace HistoryHeroes.UI
                 record.bossesDefeated = old.bossesDefeated;
             }
 
+            RunRecord replaced = data.RecordInSlot(slot);
             data.records.RemoveAll(r => r.slot == slot);
             data.records.Add(record);
-            SaveSystem.Save();
+            if (!SaveSystem.Save())
+            {
+                // 디스크가 꽉 찼을 때 등: 기록을 되돌리고 화면을 그대로 둔다 (다시 누르면 다시 시도)
+                data.records.Remove(record);
+                if (replaced != null) data.records.Add(replaced);
+                slotPanel.SetActive(false);
+                subtitleLabel.text = "저장하지 못했어요. 기기 저장 공간을 확인하고 다시 눌러 주세요.";
+                subtitleLabel.color = Over;
+                return;
+            }
+
             Close();
         }
 

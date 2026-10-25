@@ -77,6 +77,9 @@ namespace HistoryHeroes.Common
         {
             private static AdRunner _instance;
 
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+            private static void ResetStatics() => _instance = null;
+
             public static AdRunner Instance
             {
                 get

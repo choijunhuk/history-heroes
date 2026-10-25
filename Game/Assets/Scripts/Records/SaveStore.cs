@@ -25,6 +25,12 @@ namespace HistoryHeroes.Records
         /// <summary>마지막 Load가 어디서 읽었고 무슨 문제가 있었는지 (로그·테스트용)</summary>
         public LoadReport LastLoad { get; private set; } = new LoadReport();
 
+        /// <summary>
+        /// 지금 본 파일이 "읽을 수 있는 정상 파일"인가. 망가진 본 파일을 백업 자리로 돌리면
+        /// 정상 백업이 사라지므로, 망가졌으면 백업을 그대로 두고 본 파일만 바꾼다.
+        /// </summary>
+        private bool _mainIsValid = true;
+
         public SaveStore(string folder)
         {
             Folder = folder;
@@ -55,11 +61,21 @@ namespace HistoryHeroes.Records
             //    (두 단계 사이에 꺼지면 본 파일이 없고 임시 파일이 완성본이다 → Load가 임시 파일을 읽는다)
             if (File.Exists(MainPath))
             {
-                if (File.Exists(BackupPath)) File.Delete(BackupPath);
-                File.Move(MainPath, BackupPath);
+                if (_mainIsValid)
+                {
+                    if (File.Exists(BackupPath)) File.Delete(BackupPath);
+                    File.Move(MainPath, BackupPath);
+                }
+                else
+                {
+                    // 망가진 본 파일: 정상 백업은 그대로 두고, 망가진 파일은 사본으로 남긴 뒤 치운다
+                    PreserveBroken(MainPath);
+                    File.Delete(MainPath);
+                }
             }
 
             File.Move(TempPath, MainPath);
+            _mainIsValid = true;
         }
 
         /// <summary>저장 파일을 읽는다. 파일이 하나도 없거나 전부 읽지 못하면 새 데이터를 돌려준다 (기존 파일은 그대로 둔다).</summary>
@@ -69,6 +85,7 @@ namespace HistoryHeroes.Records
             LastLoad = report;
 
             bool mainExists = File.Exists(MainPath);
+            _mainIsValid = true;
             var candidates = new List<string> { MainPath };
             if (!mainExists) candidates.Add(TempPath); // 교체 도중에 꺼진 경우에만 임시 파일을 믿는다
             candidates.Add(BackupPath);
@@ -81,11 +98,21 @@ namespace HistoryHeroes.Records
                 {
                     report.Source = path;
                     report.FromBackup = path != MainPath;
+
+                    // 교체 도중에 꺼져서 임시 파일만 완성본으로 남았다 → 바로 본 파일로 확정한다.
+                    // 그대로 두면 다음 저장이 임시 파일을 새로 쓰면서(잘라내며) 유일한 정상 파일을 지운다.
+                    if (path == TempPath && !File.Exists(MainPath))
+                    {
+                        File.Move(TempPath, MainPath);
+                        report.Source = MainPath;
+                    }
+
                     return data;
                 }
 
                 report.Problems.Add($"{Path.GetFileName(path)}: {problem}");
                 report.PreservedCopies.Add(PreserveBroken(path));
+                if (path == MainPath) _mainIsValid = false;
             }
 
             report.IsFresh = true;
@@ -147,7 +174,16 @@ namespace HistoryHeroes.Records
         /// <summary>옛 구조를 지금 구조로 옮겨 담는다. 구조 버전을 올릴 때 여기에 단계별로 추가한다.</summary>
         private static void Migrate(SaveData data)
         {
-            // 지금은 구조 1 하나뿐
+            if (data.schemaVersion < 2)
+            {
+                // 1 → 2: 재화·하트·계정 레벨·별이 생겼다. 옛 파일에는 없으므로 처음 값으로 채운다
+                // (JsonUtility는 파일에 없는 칸을 기본값 0으로 두므로 하트·레벨을 직접 넣는다)
+                data.hearts = 5;
+                data.heartsUpdatedAt = 0;
+                data.accountLevel = 1;
+                data.accountExp = 0;
+            }
+
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -157,6 +193,11 @@ namespace HistoryHeroes.Records
             data.records ??= new List<RunRecord>();
             data.discoveredRecipes ??= new List<string>();
             data.defeatedBosses ??= new List<string>();
+            data.stars ??= new List<string>();
+            data.items ??= new List<ItemCount>();
+            data.daily ??= new DailyCounters();
+            if (data.accountLevel < 1) data.accountLevel = 1;
+            if (data.hearts < 0) data.hearts = 0;
             if (data.recordSlots < 1) data.recordSlots = 3;
             if (data.unlockedChapter < 1) data.unlockedChapter = 1;
 

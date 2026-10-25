@@ -47,6 +47,7 @@ namespace HistoryHeroes.Dungeon
         private readonly List<SpriteRenderer> _markers = new List<SpriteRenderer>();
         private readonly List<string> _fusions = new List<string>();
         private int _room;
+        private int _roomsCleared;
         private int _alive;
         private bool _finished;
         private float _startTime;
@@ -139,9 +140,15 @@ namespace HistoryHeroes.Dungeon
 
         private void OnRoomCleared()
         {
+            _roomsCleared = Mathf.Max(_roomsCleared, _room);
             experience.AttractAll();
             SaveSystem.SaveIfDirty(); // 안전한 시점: 새로 발견한 조합 등 (GameDesign 12-2)
-            if (_room >= RoomCount) StartCoroutine(FinishAfter(1.5f));
+            if (_room >= RoomCount)
+            {
+                // 마지막 방을 깨면 그 순간 클리어. 남은 보석이 날아오는 동안 맞아도 지지 않는다
+                player.Health.Invulnerable = true;
+                StartCoroutine(FinishAfter(1.5f));
+            }
             else door.SetOpen(true);
         }
 
@@ -198,7 +205,7 @@ namespace HistoryHeroes.Dungeon
             SaveSystem.Save();
 
             // 기록 용량 = 기준 × 0.8 × (깬 방 ÷ 전체 방), 클리어 = 1 (GameDesign 7-2)
-            int roomsCleared = victory ? RoomCount : _room - 1;
+            int roomsCleared = victory ? RoomCount : _roomsCleared;
             int capacity = RecordCapacity.For(roomsCleared, RoomCount, victory);
             summary.Capacity = capacity;
             RecordDraft draft = RecordDraft.FromLoadout(skills.Loadout, database, capacity);

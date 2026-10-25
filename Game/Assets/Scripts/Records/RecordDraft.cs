@@ -31,6 +31,12 @@ namespace HistoryHeroes.Records
             public int Level { get; internal set; }
 
             public bool Kept => Level > 0;
+
+            /// <summary>
+            /// 이미 저장된 기록의 조합 결과인가. 레시피가 바뀌어도 이미 만든 결과는 빼앗지 않는다 (GameDesign 7-5)
+            /// → 다시 고르기 화면에서는 재료 패시브를 빼도 진화가 풀리지 않는다.
+            /// </summary>
+            public bool FromSavedRecord { get; set; }
             public bool IsEvolution => IsFusion && Recipe != null && Recipe.type == FusionType.Evolution;
             public bool IsMerge => IsFusion && Recipe != null && Recipe.type == FusionType.Merge;
 
@@ -99,7 +105,8 @@ namespace HistoryHeroes.Records
         /// <summary>진화를 남겼는데 그 진화에 필요한 패시브를 뺐는가 → 진화 전 액티브로 돌아간다</summary>
         public bool Reverts(Entry entry)
         {
-            return entry != null && entry.IsEvolution && entry.Kept && entry.Recipe.materialA != null && !IsKept(entry.Recipe.materialB);
+            return entry != null && entry.IsEvolution && entry.Kept && !entry.FromSavedRecord
+                   && entry.Recipe.materialA != null && !IsKept(entry.Recipe.materialB);
         }
 
         /// <summary>진화가 풀리면 돌아갈 레벨 = 진화 전 액티브의 최대 레벨 (진화 조건이 MAX였으므로)</summary>
@@ -170,7 +177,7 @@ namespace HistoryHeroes.Records
         {
             foreach (Entry e in _entries)
             {
-                if (e.IsEvolution && e.Kept && e.Recipe.materialB == passive) return true;
+                if (e.IsEvolution && e.Kept && !e.FromSavedRecord && e.Recipe.materialB == passive) return true;
             }
 
             return false;

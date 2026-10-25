@@ -11,7 +11,8 @@ namespace HistoryHeroes.Records
     public sealed class SaveData
     {
         /// <summary>저장 구조가 바뀌면 올린다. 읽을 때 옛 구조면 옮겨 담고(Migrate), 더 새 구조면 읽지 않고 원본을 보존한다.</summary>
-        public const int CurrentSchemaVersion = 1;
+        /// 1: v0.2 기록·도감·구간 / 2: v0.2b 재화·하트·계정 레벨·별
+        public const int CurrentSchemaVersion = 2;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -38,6 +39,63 @@ namespace HistoryHeroes.Records
         /// <summary>판 수 (통계·테스트용)</summary>
         public int dungeonRuns;
         public int bossRuns;
+
+        // ---------------- v0.2b 경제 (Economy.md, Stats.md 7장, Modes.md 3장) ----------------
+        public int gold;
+        /// <summary>보석은 무료분과 유료분을 따로 센다 (Economy 2-1). 쓸 때는 무료분부터</summary>
+        public int gemsFree;
+        public int gemsPaid;
+
+        public int hearts = 5;
+        /// <summary>하트 충전을 마지막으로 계산한 시각 (유닉스 초). 가득 차 있으면 의미 없음</summary>
+        public long heartsUpdatedAt;
+        /// <summary>첫날 처음 3판은 하트를 쓰지 않는다 (Economy 3-2)</summary>
+        public string firstPlayDate;
+        public int freeRunsUsed;
+
+        public int accountLevel = 1;
+        public int accountExp;
+
+        /// <summary>딴 별. "c1.dungeon.2" 형태 (구간·모드·별 번호). 한 번 딴 별은 사라지지 않는다 (Modes 3-1)</summary>
+        public List<string> stars = new List<string>();
+        /// <summary>받은 별 상자 수 (별 5개마다 1개, Modes 3-4)</summary>
+        public int starBoxesClaimed;
+
+        /// <summary>아직 쓰는 화면이 없는 보조 재료 (고급 소환권, 장비 조각, 영웅 조각…). 나중 시스템이 쓴다</summary>
+        public List<ItemCount> items = new List<ItemCount>();
+
+        public DailyCounters daily = new DailyCounters();
+
+        public int ItemCount(string itemId)
+        {
+            foreach (ItemCount i in items)
+            {
+                if (i.id == itemId) return i.count;
+            }
+
+            return 0;
+        }
+
+        public void AddItem(string itemId, int amount)
+        {
+            if (amount == 0 || string.IsNullOrEmpty(itemId)) return;
+            foreach (ItemCount i in items)
+            {
+                if (i.id != itemId) continue;
+                i.count += amount;
+                return;
+            }
+
+            items.Add(new ItemCount { id = itemId, count = amount });
+        }
+
+        /// <summary>오늘 날짜가 아니면 하루 한도를 새로 시작한다</summary>
+        public DailyCounters Today(string today)
+        {
+            daily ??= new DailyCounters();
+            if (daily.date != today) daily = new DailyCounters { date = today };
+            return daily;
+        }
 
         public RunRecord RecordInSlot(int slot)
         {
@@ -95,6 +153,28 @@ namespace HistoryHeroes.Records
 
         /// <summary>보스맵에서 이 기록으로 깬 보스 ID (별 ★3 "서로 다른 기록 2개" 판정용, Modes 3-3)</summary>
         public List<string> bossesDefeated = new List<string>();
+    }
+
+    [Serializable]
+    public sealed class ItemCount
+    {
+        public string id;
+        public int count;
+    }
+
+    /// <summary>하루 한도 (자정에 새로)</summary>
+    [Serializable]
+    public sealed class DailyCounters
+    {
+        public string date;
+        /// <summary>보스 반복 격파 보상 (하루 3회, Economy 4장)</summary>
+        public int bossRepeatRewards;
+        /// <summary>광고로 하트 받기 (하루 3회)</summary>
+        public int adHearts;
+        /// <summary>보석으로 하트 채우기 (하루 5회)</summary>
+        public int gemHearts;
+        /// <summary>보스 최초 도전 패배 환급 (하루 5회, Economy 3-3)</summary>
+        public int heartRefunds;
     }
 
     [Serializable]

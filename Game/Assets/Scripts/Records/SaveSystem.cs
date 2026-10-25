@@ -16,12 +16,19 @@ namespace HistoryHeroes.Records
 
         public static SaveStore Store => _store ??= SaveStore.ForDevice();
 
+        /// <summary>저장하지 못한 변경이 남아 있는가 (실패 후 다시 시도할 것)</summary>
+        public static bool IsDirty => _dirty;
+
+        /// <summary>마지막 저장 실패 이유 (화면에 보여줄 때)</summary>
+        public static string LastError { get; private set; }
+
         public static SaveData Data
         {
             get
             {
                 if (_data == null)
                 {
+                    SaveLifecycle.Ensure();
                     _data = Store.Load();
                     SaveStore.LoadReport report = Store.LastLoad;
                     if (report.Problems.Count > 0)
@@ -46,25 +53,26 @@ namespace HistoryHeroes.Records
         /// <summary>바뀐 게 있다고 표시만 한다. 실제 쓰기는 SaveIfDirty / Save에서.</summary>
         public static void MarkDirty() => _dirty = true;
 
-        public static void Save()
+        /// <summary>저장한다. 실패하면 false (게임은 멈추지 않고, 다음 안전한 시점에 다시 시도한다)</summary>
+        public static bool Save()
         {
             try
             {
                 Store.Save(Data);
                 _dirty = false;
+                LastError = null;
+                return true;
             }
             catch (Exception e)
             {
-                // 저장 실패로 게임이 멈추면 안 된다. 다음 안전한 시점에 다시 시도한다.
                 _dirty = true;
+                LastError = e.Message;
                 Debug.LogError("[SaveSystem] 저장 실패: " + e.Message);
+                return false;
             }
         }
 
-        public static void SaveIfDirty()
-        {
-            if (_dirty) Save();
-        }
+        public static bool SaveIfDirty() => !_dirty || Save();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -72,6 +80,39 @@ namespace HistoryHeroes.Records
             _store = null;
             _data = null;
             _dirty = false;
+            LastError = null;
+        }
+
+        /// <summary>
+        /// 앱이 뒤로 가거나 꺼질 때 남은 변경을 저장한다 (모바일은 OnApplicationQuit을 믿으면 안 된다, 12-2).
+        /// 장면이 바뀌어도 남는 숨은 오브젝트 하나.
+        /// </summary>
+        private sealed class SaveLifecycle : MonoBehaviour
+        {
+            private static SaveLifecycle _instance;
+
+            public static void Ensure()
+            {
+                if (_instance != null || !Application.isPlaying) return;
+                var go = new GameObject("SaveLifecycle") { hideFlags = HideFlags.HideInHierarchy };
+                DontDestroyOnLoad(go);
+                _instance = go.AddComponent<SaveLifecycle>();
+            }
+
+            private void OnApplicationPause(bool paused)
+            {
+                if (paused) SaveIfDirty();
+            }
+
+            private void OnApplicationFocus(bool focused)
+            {
+                if (!focused) SaveIfDirty();
+            }
+
+            private void OnApplicationQuit() => SaveIfDirty();
+
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+            private static void ResetStatics() => _instance = null;
         }
     }
 }

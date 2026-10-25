@@ -133,7 +133,7 @@ namespace HistoryHeroes.EditorTools
             d.RiftWarden.tests = "공격마다 크게 쉰다 → 빈틈마다 멈춰서 쏘기";
             d.RiftWarden.recommend = "기본 공격이 강한 빌드 (공격속도·멀티샷·흡혈)";
             d.RiftWarden.hpMultiplier = 300f; // 120 × 300 = 36,000. 대표 기록으로 제자리에서 약 1분 30초 → 피하면서 2~3분
-            d.RiftWarden.attackMultiplier = 1f;
+            d.RiftWarden.attackMultiplier = 1.5f; // Stats.md 8장 (패턴 배수는 보스 쪽)
             d.RiftWarden.star2MaxHits = 8;
             return d;
         }

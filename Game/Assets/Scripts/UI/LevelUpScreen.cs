@@ -109,6 +109,7 @@ namespace HistoryHeroes.UI
         {
             if (_waitingForAd) return;
             skills.Choose(card);
+            Records.SaveSystem.SaveIfDirty(); // 스킬 선택 확정 = 안전한 저장 시점 (조합 도감 발견, 12-2)
             _pending--;
 
             if (_pending > 0)
