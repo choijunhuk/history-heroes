@@ -52,6 +52,45 @@ namespace HistoryHeroes.Skills
             return kept;
         }
 
+        /// <summary>
+        /// 조합 카드의 "이번 판에서 숨기기" (GameDesign 6-2). 그 자리는 다른 조합이 있으면 그 조합으로,
+        /// 없으면 일반 카드 1장으로 채운다. 나머지 카드는 그대로 둔다 (숨기기로 공짜 리롤이 되지 않게).
+        /// </summary>
+        public List<SkillCard> HideFusion(List<SkillCard> current, int floor)
+        {
+            var result = new List<SkillCard>(current.Count);
+            foreach (SkillCard card in current)
+            {
+                if (card.Type == CardType.Fusion) Loadout.Hide(card.Recipe);
+                else result.Add(card);
+            }
+
+            List<FusionRecipe> fusions = FusionFinder.FindAvailableFusions(Loadout, recipes, HeroId);
+            if (fusions.Count > 0)
+            {
+                result.Insert(0, new SkillCard { Type = CardType.Fusion, Recipe = fusions[UnityEngine.Random.Range(0, fusions.Count)] });
+                return result;
+            }
+
+            List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
+            candidates.RemoveAll(c => result.Exists(r => r.Skill != null && r.Skill == c.Skill));
+            result.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - result.Count, floor, rarityTable));
+            return result;
+        }
+
+        /// <summary>어떤 조합의 재료인가 (카드에 "조합 재료" 표시용, UX.md 3장)</summary>
+        public bool IsFusionMaterial(SkillData skill)
+        {
+            if (skill == null) return false;
+            foreach (FusionRecipe r in recipes)
+            {
+                if (r == null || !string.IsNullOrEmpty(r.heroOnlyId) && r.heroOnlyId != HeroId) continue;
+                if (r.materialA == skill || r.materialB == skill) return true;
+            }
+
+            return false;
+        }
+
         public void Choose(SkillCard card)
         {
             switch (card.Type)

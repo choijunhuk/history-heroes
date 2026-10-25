@@ -27,6 +27,12 @@ namespace HistoryHeroes.Progress
             _baseRequirement = baseRequirement;
         }
 
+        /// <summary>확정 레벨업 (엘리트 처치 보상, Content.md 2-2). 남은 필요량만큼 채워서 1레벨 올린다.</summary>
+        public void GrantLevel()
+        {
+            Add(Required - Experience + 0.01f); // 소수 오차로 딱 모자라지 않게 조금 더
+        }
+
         /// <param name="expGainBonus">판 안 "배움" 패시브만 준다. 판 밖 출처는 0 (Stats.md 4-1).</param>
         public void Add(float amount, float expGainBonus = 0f)
         {

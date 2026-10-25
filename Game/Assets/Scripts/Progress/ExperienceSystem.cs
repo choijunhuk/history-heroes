@@ -34,6 +34,8 @@ namespace HistoryHeroes.Progress
             enemy.Killed += OnKilled;
         }
 
+        public void GrantLevelUp() => Level.GrantLevel();
+
         /// <summary>방을 깨면 남은 보석을 모두 끌어온다 (줍느라 돌아다니지 않게).</summary>
         public void AttractAll()
         {

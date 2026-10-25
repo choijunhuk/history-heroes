@@ -75,8 +75,17 @@ namespace HistoryHeroes.Player
             if (Health != null) Health.SetMax(Stats.Get(StatType.MaxHp));
         }
 
+        /// <summary>방을 옮길 때 시작 위치로 (물리 위치까지 같이 옮겨야 다음 프레임에 되돌아가지 않는다).</summary>
+        public void Teleport(Vector2 position)
+        {
+            _body.position = position;
+            _body.linearVelocity = Vector2.zero;
+            transform.position = position;
+        }
+
         private void Update()
         {
+            if (Health.IsDead) return;
             float dt = Time.deltaTime;
             Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
             Stop.Tick(input, dt);
@@ -93,6 +102,12 @@ namespace HistoryHeroes.Player
 
         private void FixedUpdate()
         {
+            if (Health.IsDead)
+            {
+                _body.linearVelocity = Vector2.zero;
+                return;
+            }
+
             Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
             _body.linearVelocity = input * Stats.Get(StatType.MoveSpeed);
         }
