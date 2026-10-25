@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 057982bd3e4931b4cb61cc6c60d344d7, type: 3}
+  m_Name: SkillDatabase
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.SkillDatabase
+  balanceVersion: 1
+  skills:
+  - {fileID: 11400000, guid: bf39b5b658819d44396251dcb219523b, type: 2}
+  - {fileID: 11400000, guid: 4fe706efd00d38442bf20cdf6fbf9e8f, type: 2}
+  - {fileID: 11400000, guid: 34bcf0bbd885d334e94559cc89d54b0f, type: 2}
+  - {fileID: 11400000, guid: 98db5c7db42b3d24988e9c9652ce100d, type: 2}
+  - {fileID: 11400000, guid: cca63b5079490f445ace56641817664b, type: 2}
+  - {fileID: 11400000, guid: 64cfa9cddb84ee142879194bf6a18b68, type: 2}
+  - {fileID: 11400000, guid: b02cc56aa5757a546acbdc43c0fcdeab, type: 2}
+  - {fileID: 11400000, guid: 1944699965684aa46a0d17396f31389d, type: 2}
+  - {fileID: 11400000, guid: 07cada886cb78794a89ec6843a2e3098, type: 2}
+  - {fileID: 11400000, guid: 1d9fca741c6efcc4ea523aa8c14bb558, type: 2}
+  - {fileID: 11400000, guid: e50ff479f921aae46901a093586fbac4, type: 2}
+  - {fileID: 11400000, guid: 7c594dd5a0d427c47bcdeca93ce65253, type: 2}
+  recipes:
+  - {fileID: 11400000, guid: f3baa3337c0e25b48962efbb7c83116c, type: 2}
+  - {fileID: 11400000, guid: ea359ea81f70c2a4cb47f270b8a53478, type: 2}

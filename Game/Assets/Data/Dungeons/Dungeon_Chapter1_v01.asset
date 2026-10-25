@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1c1c1ea389d1ab4290078d2106e217e, type: 3}
   m_Name: Dungeon_Chapter1_v01
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Dungeon.DungeonData
+  chapterHpGrowth: 1.35
+  chapterAttackGrowth: 1.2
   id: chapter1_v01
   displayName: "\uADE0\uC5F4\uC758 \uCD08\uC6D0 (v0.1)"
   chapter: 1

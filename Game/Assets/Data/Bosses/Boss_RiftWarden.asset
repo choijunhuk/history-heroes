@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3bc6d1f39a0264c963774252ca5201, type: 3}
+  m_Name: Boss_RiftWarden
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Modes.BossData
+  id: rift_warden
+  displayName: "\uADE0\uC5F4\uC758 \uC218\uBB38\uC7A5"
+  chapter: 1
+  tests: "\uACF5\uACA9\uB9C8\uB2E4 \uD06C\uAC8C \uC270\uB2E4 \u2192 \uBE48\uD2C8\uB9C8\uB2E4
+    \uBA48\uCDB0\uC11C \uC3D8\uAE30"
+  recommend: "\uAE30\uBCF8 \uACF5\uACA9\uC774 \uAC15\uD55C \uBE4C\uB4DC (\uACF5\uACA9\uC18D\uB3C4\xB7\uBA40\uD2F0\uC0F7\xB7\uD761\uD608)"
+  prefab: {fileID: 2731093488286354877, guid: 678d204cfb7b39249969c09984c3b3b9, type: 3}
+  hpMultiplier: 300
+  attackMultiplier: 1
+  star2MaxHits: 8

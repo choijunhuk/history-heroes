@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HistoryHeroes.Dungeon;
 using HistoryHeroes.Enemy;
 using HistoryHeroes.Heroes;
+using HistoryHeroes.Modes;
 using HistoryHeroes.Player;
 using HistoryHeroes.Skills;
 using HistoryHeroes.Stats;
@@ -9,7 +10,7 @@ using UnityEngine;
 
 namespace HistoryHeroes.EditorTools
 {
-    public static partial class V01SceneBuilder
+    public static partial class SceneBuilder
     {
         private sealed class Data
         {
@@ -23,6 +24,11 @@ namespace HistoryHeroes.EditorTools
 
             public PassiveSkillData DefUp;
             public ActiveSkillData SpinBlade, FlameField, Lightning, ArrowRain, SteelWhirl, ThunderFire;
+
+            // v0.2
+            public SkillDatabase Database;
+            public EnemyData WardenEnemy;
+            public BossData RiftWarden;
         }
 
         private static Data CreateData()
@@ -108,6 +114,27 @@ namespace HistoryHeroes.EditorTools
             d.Recipes.Add(Recipe("thunder_fire", FusionType.Merge, d.Lightning, 3, d.FlameField, 3, d.ThunderFire));
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
+
+            // ----- v0.2: 스킬 전체 목록 (기록의 스킬 ID → 데이터) -----
+            d.Database = AssetUtil.LoadOrCreate<SkillDatabase>($"{DataDir}/Skills/SkillDatabase.asset");
+            d.Database.balanceVersion = 1;
+            d.Database.skills = new List<SkillData>(d.Pool) { d.SteelWhirl, d.ThunderFire };
+            d.Database.recipes = new List<FusionRecipe>(d.Recipes);
+            foreach (string problem in d.Database.FindProblems()) Debug.LogError("[SkillDatabase] " + problem);
+
+            // ----- v0.2: 1구간 보스 균열의 수문장 (Content.md 3장, Modes 2-9) -----
+            // 체력: 대표 빌드(기록 80%)가 빈틈마다 멈춰서 쏘면 2~3분 (보스맵 목표, Content 2-1). 15,600은 제자리 38초라 너무 빨랐다
+            d.WardenEnemy = Enemy("rift_warden", "균열의 수문장", 2.2f, 1.1f, 1.5f, new Color(0.42f, 0.5f, 0.72f));
+            d.WardenEnemy.experience = 0;
+            d.RiftWarden = AssetUtil.LoadOrCreate<BossData>($"{DataDir}/Bosses/Boss_RiftWarden.asset");
+            d.RiftWarden.id = "rift_warden";
+            d.RiftWarden.displayName = "균열의 수문장";
+            d.RiftWarden.chapter = 1;
+            d.RiftWarden.tests = "공격마다 크게 쉰다 → 빈틈마다 멈춰서 쏘기";
+            d.RiftWarden.recommend = "기본 공격이 강한 빌드 (공격속도·멀티샷·흡혈)";
+            d.RiftWarden.hpMultiplier = 300f; // 120 × 300 = 36,000. 대표 기록으로 제자리에서 약 1분 30초 → 피하면서 2~3분
+            d.RiftWarden.attackMultiplier = 1f;
+            d.RiftWarden.star2MaxHits = 8;
             return d;
         }
 
@@ -191,6 +218,10 @@ namespace HistoryHeroes.EditorTools
         /// <summary>프리팹이 생긴 뒤에 넣어야 하는 참조 (스킬 동작, 던전 방 구성).</summary>
         private static void LinkData(Data d, Prefabs p)
         {
+            d.RiftWarden.prefab = p.RiftWarden;
+            UnityEditor.EditorUtility.SetDirty(d.RiftWarden);
+            UnityEditor.EditorUtility.SetDirty(d.Database);
+
             d.SpinBlade.behaviourPrefab = p.SpinBlade;
             d.FlameField.behaviourPrefab = p.FlameField;
             d.Lightning.behaviourPrefab = p.Lightning;

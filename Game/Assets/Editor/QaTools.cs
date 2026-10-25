@@ -86,7 +86,7 @@ namespace HistoryHeroes.EditorTools
 
             run.gameObject.SetActive(false); // 방 흐름·그 방의 적 정지
             Dev.DevCheats.KillAll();
-            Object.FindAnyObjectByType<SkillManager>().DevClearAll(); // Play 시작 후 몇 초 동안 고른 카드가 섞이지 않게
+            Object.FindAnyObjectByType<SkillManager>().ClearAll(); // Play 시작 후 몇 초 동안 고른 카드가 섞이지 않게
             string presetName = cheats.ApplyPreset(preset);
 
             player.Teleport(new Vector2(0f, -5.5f));
@@ -135,6 +135,25 @@ namespace HistoryHeroes.EditorTools
                 EnemyBase enemy = Object.Instantiate(prefab, position, Quaternion.identity, root);
                 enemy.Spawn(player.transform, hp, 1f, elite);
             }
+        }
+
+        /// <summary>
+        /// 화면에 보이는 버튼을 이름으로 누른다 (로비·결과·기록 화면 흐름 점검용).
+        /// 예: "Dungeon", "Boss", "Primary"(결과 첫 버튼), "Save", "AutoFit", "Slot1", "Start", "Back"
+        /// </summary>
+        public static string Press(string buttonName)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            foreach (UnityEngine.UI.Button b in Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsSortMode.None))
+            {
+                if (b.name != buttonName || !b.gameObject.activeInHierarchy) continue;
+                if (!b.interactable) return $"{buttonName}: 누를 수 없음";
+                b.onClick.Invoke();
+                return $"{buttonName} 누름 | 장면 {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}";
+            }
+
+            return $"{buttonName}: 화면에 없음";
         }
 
         /// <summary>Play 모드에 들어가서 장면이 다 준비됐는가 (자동 점검 스크립트가 기다릴 때 씀)</summary>
