@@ -86,7 +86,7 @@ namespace HistoryHeroes.EditorTools
             var player = playerObject.AddComponent<PlayerController>();
             using (var props = new Props(player))
             {
-                props.Ref("hero", d.Khan).Ref("joystick", ui.Joystick).Ref("projectilePrefab", p.PlayerArrow)
+                props.Ref("hero", d.Khan).Ref("joystick", ui.Joystick).Ref("projectilePrefab", p.PlayerArrow).Ref("bodyRenderer", playerBody)
                     .Mask("enemyMask", Mask(EnemyLayer)).Mask("wallMask", Mask(WallLayer));
             }
 
@@ -140,7 +140,10 @@ namespace HistoryHeroes.EditorTools
             }
 
             var bootstrap = systems.AddComponent<BattleBootstrap>();
-            using (var props = new Props(bootstrap)) props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject);
+            using (var props = new Props(bootstrap))
+            {
+                props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player);
+            }
 
             var cheats = systems.AddComponent<Dev.DevCheats>();
             using (var props = new Props(cheats)) props.Ref("experience", experience).Ref("levelUp", ui.LevelUp).Ref("skills", skills);

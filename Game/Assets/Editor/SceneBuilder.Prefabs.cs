@@ -15,6 +15,8 @@ namespace HistoryHeroes.EditorTools
             public ExperienceGem Gem;
             public EnemyBase Charger, Archer, Bomber;
             public EnemyBase RiftWarden;
+            public Projectile Bullet, Orb, SwordWave;
+            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower;
             public ActiveSkillBehaviour SpinBlade, FlameField, Lightning, ArrowRain, SteelWhirl, ThunderFire;
         }
 
@@ -25,6 +27,10 @@ namespace HistoryHeroes.EditorTools
                 PlayerArrow = ProjectilePrefab("Arrow_Player", d.Khan.color, new Vector2(0.55f, 0.12f), 0.15f, 3f),
                 EnemyArrow = ProjectilePrefab("Arrow_Enemy", new Color(0.95f, 0.2f, 0.55f), new Vector2(0.45f, 0.16f), 0.15f, 4f),
                 Gem = GemPrefab(),
+                // 영웅별 기본 공격 (Heroes.md): 나폴레옹 총알, 테슬라 전기 구체, 관우 검기 (벽 튕김 패시브)
+                Bullet = ProjectilePrefab("Bullet_Napoleon", new Color(1f, 0.85f, 0.4f), new Vector2(0.32f, 0.14f), 0.12f, 2.5f),
+                Orb = ProjectilePrefab("Orb_Tesla", new Color(0.55f, 0.9f, 1f), new Vector2(0.34f, 0.34f), 0.17f, 3f, _circle),
+                SwordWave = ProjectilePrefab("SwordWave_Guan", new Color(0.85f, 1f, 0.9f, 0.85f), new Vector2(0.2f, 0.8f), 0.3f, 1.2f),
             };
 
             Material line = AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
@@ -53,15 +59,27 @@ namespace HistoryHeroes.EditorTools
                 .Bool("leaveField", true)
                 .Color("boltColor", new Color(1f, 0.7f, 0.3f)));
             p.ArrowRain = Behaviour<ArrowRainBehaviour>("Skill_ArrowRain", null);
+
+            // 영웅 전용 (Skills.md 3장·4-4)
+            p.KhanVolley = Behaviour<VolleyBehaviour>("Skill_KhanVolley", null);
+            p.KhanStorm = Behaviour<VolleyBehaviour>("Skill_KhanStorm", props => props.Int("bursts", 2).Float("fanDegrees", 70f));
+            p.GuanSpin = Behaviour<SpinSlashBehaviour>("Skill_GuanSpin", null);
+            p.GuanFive = Behaviour<SpinSlashBehaviour>("Skill_GuanFive", props => props.Int("spins", 5).Float("guardWhileSpinning", 0.5f)
+                .Color("slashColor", new Color(1f, 0.9f, 0.4f, 0.6f)));
+            p.NapoCannon = Behaviour<CannonBarrageBehaviour>("Skill_NapoCannon", null);
+            p.NapoAusterlitz = Behaviour<CannonBarrageBehaviour>("Skill_NapoAusterlitz", props => props.Bool("leaveField", true));
+            p.TeslaCoil = Behaviour<TeslaCoilBehaviour>("Skill_TeslaCoil", null);
+            p.TeslaTower = Behaviour<TeslaCoilBehaviour>("Skill_TeslaTower", props => props.Int("screenTargets", 5).Float("zapInterval", 1f)
+                .Vector2("coilSize", new Vector2(0.9f, 2.2f)).Color("coilColor", new Color(0.6f, 0.5f, 1f)));
             return p;
         }
 
-        private static Projectile ProjectilePrefab(string name, Color color, Vector2 size, float radius, float lifetime)
+        private static Projectile ProjectilePrefab(string name, Color color, Vector2 size, float radius, float lifetime, Sprite sprite = null)
         {
             var go = new GameObject(name);
             go.transform.localScale = new Vector3(size.x, size.y, 1f);
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = _square;
+            sr.sprite = sprite != null ? sprite : _square;
             sr.color = color;
             sr.sortingOrder = 5;
             var projectile = go.AddComponent<Projectile>();

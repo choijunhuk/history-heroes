@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_guan_spin
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: guan_spin
+  displayName: "\uCCAD\uB8E1 \uD68C\uC804 \uBCA0\uAE30"
+  description: "6\uCD08\uB9C8\uB2E4 \uC81C\uC790\uB9AC \uD68C\uC804 \uBCA0\uAE30\n(\uC8FC\uBCC0
+    180%)\n\uB808\uBCA8\uB9C8\uB2E4 \uD53C\uD574 +25%"
+  warriorDescription: 
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 8
+  maxLevel: 5
+  saveCostFirstLevel: 3
+  saveCostPerLevel: 3
+  recordable: 1
+  heroOnlyId: guan
+  cooldown: 6
+  damageFirstLevel: 1.8
+  damagePerLevel: 0.45
+  countFirstLevel: 1
+  countPerLevel: 0
+  radius: 2.5
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 4454748320442681044, guid: 7e20cdbd840febe47bb730469a5710f1, type: 3}

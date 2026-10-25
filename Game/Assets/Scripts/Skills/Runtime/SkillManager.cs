@@ -30,6 +30,11 @@ namespace HistoryHeroes.Skills
         public event Action<FusionRecipe> FusionCompleted;
 
         public string HeroId => player.Hero != null ? player.Hero.id : string.Empty;
+        public Heroes.HeroClass HeroClass => player.Hero != null ? player.Hero.heroClass : Heroes.HeroClass.Archer;
+
+        /// <summary>첫 레벨업에 영웅 전용 액티브가 나올 확률을 조금 높인다 (Skills.md 3장: 영웅 개성을 빨리 느끼게)</summary>
+        [SerializeField, Range(0f, 1f)] private float firstOfferExclusiveChance = 0.5f;
+        private int _offersMade;
 
         /// <summary>레벨업 카드 만들기 (GameDesign 6-4). 조합 조건을 채웠으면 1장은 조합 카드로 확정.</summary>
         public List<SkillCard> CreateOffer(int floor)
@@ -45,7 +50,24 @@ namespace HistoryHeroes.Skills
 
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
             offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable));
+            if (_offersMade++ == 0) BoostExclusive(offer, candidates);
             return offer;
+        }
+
+        /// <summary>첫 카드 묶음에 전용 액티브가 없으면 확률적으로 마지막 일반 카드와 바꾼다</summary>
+        private void BoostExclusive(List<SkillCard> offer, List<SkillCard> candidates)
+        {
+            SkillData exclusive = player.Hero != null ? player.Hero.exclusiveActive : null;
+            if (exclusive == null || offer.Exists(c => c.Skill == exclusive)) return;
+            SkillCard card = candidates.Find(c => c.Skill == exclusive);
+            if (card == null || UnityEngine.Random.value > firstOfferExclusiveChance) return;
+
+            for (int i = offer.Count - 1; i >= 0; i--)
+            {
+                if (offer[i].Type == CardType.Fusion) continue;
+                offer[i] = card;
+                return;
+            }
         }
 
         /// <summary>리롤: 조합 카드는 고정하고 나머지만 다시 뽑는다 (GameDesign 6-7).</summary>

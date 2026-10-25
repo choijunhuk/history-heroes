@@ -15,6 +15,7 @@ MonoBehaviour:
   id: atk_up
   displayName: "\uACF5\uACA9\uB825"
   description: "\uACF5\uACA9\uB825 +15%\n(\uB808\uBCA8\uB9C8\uB2E4 +10%)"
+  warriorDescription: 
   icon: {fileID: 0}
   rarity: 0
   tags: 1

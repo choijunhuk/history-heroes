@@ -228,6 +228,8 @@ namespace HistoryHeroes.UI
                 record.id = old.id;
                 record.createdAt = old.createdAt;
                 record.bossesDefeated = old.bossesDefeated;
+                record.bossWins = old.bossWins;
+                if (string.IsNullOrEmpty(record.heroName)) record.heroName = old.heroName;
             }
 
             RunRecord replaced = data.RecordInSlot(slot);

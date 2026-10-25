@@ -58,7 +58,8 @@ namespace HistoryHeroes.EditorTools
             ReloadShared();
             var database = AssetDatabase.LoadAssetAtPath<Skills.SkillDatabase>($"{DataDir}/Skills/SkillDatabase.asset");
             var warden = AssetDatabase.LoadAssetAtPath<Modes.BossData>($"{DataDir}/Bosses/Boss_RiftWarden.asset");
-            BuildLobbyScene(lobby, database, new[] { warden });
+            var roster = AssetDatabase.LoadAssetAtPath<Heroes.HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
+            BuildLobbyScene(lobby, database, new[] { warden }, roster);
             AssetDatabase.SaveAssets();
 
             // 앱은 로비에서 시작한다

@@ -14,7 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan;
+            public HeroData Khan, Guan, Napoleon, Tesla;
+            public HeroRoster Roster;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower;
             public EnemyData Charger, Archer, Bomber;
             public RarityTable Rarity;
             public DungeonData Dungeon;
@@ -48,6 +50,47 @@ namespace HistoryHeroes.EditorTools
             d.Khan.firstShotBonus = 0.5f;
             d.Khan.projectileSpeed = 14f;
             d.Khan.color = new Color(0.95f, 0.75f, 0.2f);
+            d.Khan.heroClass = HeroClass.Archer;
+            d.Khan.attackKind = BasicAttackKind.Projectile;
+            d.Khan.playStyle = "\"멈칫멈칫\" 짧게 서면서 계속 쏘는 리듬";
+            d.Khan.signatureName = "기마 속사";
+            d.Khan.signatureDescription = "멈추는 순간 공격 준비 시간 0. 첫 발 피해 +50%";
+            d.Khan.unlockAfterBossChapter = 0;
+
+            // ----- 관우 (Heroes.md 4장): 근접 부채꼴 베기, 받는 피해 -15%, 체력 50% 아래 공격력 +20% -----
+            d.Guan = Hero("guan", "관우", HeroClass.Warrior, BasicAttackKind.MeleeArc, 1400f, 130f, 0.8f, 5.2f, 2f, new Color(0.25f, 0.7f, 0.4f));
+            d.Guan.playStyle = "다가가서 멈추는 위험한 플레이. 근접이라 긴장감이 가장 크다";
+            d.Guan.signatureName = "의리의 투지";
+            d.Guan.signatureDescription = "받는 피해 -15%. 체력이 50% 아래면 공격력 +20%";
+            d.Guan.damageReduction = 0.15f;
+            d.Guan.lowHpThreshold = 0.5f;
+            d.Guan.lowHpAttackBonus = 0.2f;
+            d.Guan.meleeArcDegrees = 120f;
+            d.Guan.meleeWaveCoefficient = 0.4f;
+            d.Guan.unlockAfterBossChapter = 1;
+
+            // ----- 나폴레옹 (5장): 총알 연사·밀어냄, 3발마다 작은 포탄 -----
+            d.Napoleon = Hero("napoleon", "나폴레옹", HeroClass.Gunner, BasicAttackKind.Projectile, 900f, 90f, 1.4f, 4.8f, 5f, new Color(0.3f, 0.45f, 0.95f));
+            d.Napoleon.playStyle = "연사로 밀어내면서 몰린 적을 포탄으로 정리";
+            d.Napoleon.signatureName = "포병의 눈";
+            d.Napoleon.signatureDescription = "기본 공격 3발마다 작은 포탄 (범위 피해 80%). 총알이 적을 살짝 밀어냄";
+            d.Napoleon.projectileSpeed = 18f;
+            d.Napoleon.knockback = 0.25f;
+            d.Napoleon.cannonEvery = 3;
+            d.Napoleon.cannonCoefficient = 0.8f;
+            d.Napoleon.cannonRadius = 1.2f;
+            d.Napoleon.unlockAfterBossChapter = 2;
+
+            // ----- 니콜라 테슬라 (6장): 전기 구체가 근처 적에게 2번 튕김 -----
+            d.Tesla = Hero("tesla", "니콜라 테슬라", HeroClass.Mage, BasicAttackKind.Projectile, 850f, 95f, 0.9f, 5f, 5.5f, new Color(0.55f, 0.85f, 1f));
+            d.Tesla.playStyle = "코일을 깔아두고 그 주변에서 싸우는 자리 잡기";
+            d.Tesla.signatureName = "교류";
+            d.Tesla.signatureDescription = "기본 공격이 맞으면 근처 적에게 2번 튕김 (튕길 때마다 -30%)";
+            d.Tesla.projectileSpeed = 11f;
+            d.Tesla.chainBounces = 2;
+            d.Tesla.chainRadius = 3f;
+            d.Tesla.chainFalloff = 0.3f;
+            d.Tesla.unlockAfterBossChapter = 3;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -80,6 +123,7 @@ namespace HistoryHeroes.EditorTools
             {
                 new PassiveSkillData.AttackEntry { kind = AttackModifierKind.ExtraProjectiles, firstLevel = 1, perLevel = 1 },
             };
+            multishot.warriorDescription = "베기 1회 추가\n(회당 피해 -10%)";
             d.Pool.Add(multishot);
 
             // ----- 액티브 4개 (Skills.md 2장 🅥). 동작 프리팹은 LinkData에서 넣는다 -----
@@ -113,12 +157,69 @@ namespace HistoryHeroes.EditorTools
             d.Recipes.Add(Recipe("steel_whirl", FusionType.Evolution, d.SpinBlade, 5, d.DefUp, 1, d.SteelWhirl));
             d.Recipes.Add(Recipe("thunder_fire", FusionType.Merge, d.Lightning, 3, d.FlameField, 3, d.ThunderFire));
 
+            // ----- 영웅 전용 액티브 4개 (Skills.md 3장, 희귀 비용 레벨당 3) -----
+            d.KhanVolley = Active("khan_volley", "만궁 연사", Rarity.Rare, SkillTag.Projectile, 5, 3,
+                "5초마다 부채꼴 화살 5발\n(각 60%)\n레벨마다 +1발",
+                cooldown: 5f, damage: 0.6f, damagePerLevel: 0f, count: 5, countPerLevel: 1);
+            d.GuanSpin = Active("guan_spin", "청룡 회전 베기", Rarity.Rare, SkillTag.Melee, 5, 3,
+                "6초마다 제자리 회전 베기\n(주변 180%)\n레벨마다 피해 +25%",
+                cooldown: 6f, damage: 1.8f, damagePerLevel: 0.45f, count: 1, countPerLevel: 0, radius: 2.5f);
+            d.NapoCannon = Active("napo_cannon", "대포 포격", Rarity.Rare, SkillTag.Fire, 5, 3,
+                "7초마다 적이 많은 곳에 포탄 3발\n(각 120%)\n레벨마다 +1발",
+                cooldown: 7f, damage: 1.2f, damagePerLevel: 0f, count: 3, countPerLevel: 1, radius: 1.2f);
+            d.TeslaCoil = Active("tesla_coil", "테슬라 코일", Rarity.Rare, SkillTag.Lightning, 5, 3,
+                "8초마다 코일 설치 5초\n(0.5초마다 근처 적 번개 50%)\n레벨마다 지속 +1초",
+                cooldown: 8f, damage: 0.5f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 3f, duration: 5f);
+            d.TeslaCoil.durationPerLevel = 1f;
+            d.KhanVolley.heroOnlyId = "khan";
+            d.GuanSpin.heroOnlyId = "guan";
+            d.NapoCannon.heroOnlyId = "napoleon";
+            d.TeslaCoil.heroOnlyId = "tesla";
+            d.Pool.Add(d.KhanVolley);
+            d.Pool.Add(d.GuanSpin);
+            d.Pool.Add(d.NapoCannon);
+            d.Pool.Add(d.TeslaCoil);
+            d.Khan.exclusiveActive = d.KhanVolley;
+            d.Guan.exclusiveActive = d.GuanSpin;
+            d.Napoleon.exclusiveActive = d.NapoCannon;
+            d.Tesla.exclusiveActive = d.TeslaCoil;
+
+            // ----- 영웅 전용 조합 4개 (Skills.md 4-3·4-4) -----
+            d.KhanStorm = Active("khan_storm", "천호의 화살비", Rarity.Rare, SkillTag.Projectile, 1, 12,
+                "부채꼴 화살 9발 (각 60%)\n2번 연속",
+                cooldown: 5f, damage: 0.6f, damagePerLevel: 0f, count: 9, countPerLevel: 0, saveCostFirst: 12);
+            d.KhanStorm.saveCostPerLevel = 0;
+            d.GuanFive = Active("guan_five", "오관참장", Rarity.Rare, SkillTag.Melee | SkillTag.Defense, 1, 12,
+                "회전 베기 5번 연속 (회당 120%)\n도는 동안 받는 피해 -50%",
+                cooldown: 6f, damage: 1.2f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 2.5f, saveCostFirst: 12);
+            d.GuanFive.saveCostPerLevel = 0;
+            d.NapoAusterlitz = Active("napo_austerlitz", "아우스터리츠의 포화", Rarity.Rare, SkillTag.Fire, 3, 4,
+                "7초마다 포탄 3발 (각 130%)\n떨어진 자리에 불꽃 장판 2초\nLv2 +25%, Lv3 +50%",
+                cooldown: 7f, damage: 1.3f, damagePerLevel: 0.325f, count: 3, countPerLevel: 0, radius: 1.2f, saveCostFirst: 18);
+            d.TeslaTower = Active("tesla_tower", "워든클리프 탑", Rarity.Rare, SkillTag.Lightning, 3, 4,
+                "12초마다 탑 8초\n1초마다 화면 안 적 5명에게 번개 60%\nLv2 +25%, Lv3 +50%",
+                cooldown: 12f, damage: 0.6f, damagePerLevel: 0.15f, count: 1, countPerLevel: 0, radius: 3f, duration: 8f, saveCostFirst: 18);
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower }) UnityEditor.EditorUtility.SetDirty(s);
+            d.KhanStorm.heroOnlyId = "khan";
+            d.GuanFive.heroOnlyId = "guan";
+            d.NapoAusterlitz.heroOnlyId = "napoleon";
+            d.TeslaTower.heroOnlyId = "tesla";
+
+            PassiveSkillData aspd = (PassiveSkillData)d.Pool.Find(s => s.id == "aspd_up");
+            AddHeroRecipe(d, "khan_storm", FusionType.Evolution, d.KhanVolley, 5, aspd, 1, d.KhanStorm, "khan");
+            AddHeroRecipe(d, "guan_five", FusionType.Evolution, d.GuanSpin, 5, d.DefUp, 1, d.GuanFive, "guan");
+            AddHeroRecipe(d, "napo_austerlitz", FusionType.Merge, d.NapoCannon, 3, d.FlameField, 3, d.NapoAusterlitz, "napoleon");
+            AddHeroRecipe(d, "tesla_tower", FusionType.Merge, d.TeslaCoil, 3, d.Lightning, 3, d.TeslaTower, "tesla");
+
+            d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla };
+
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
             // ----- v0.2: 스킬 전체 목록 (기록의 스킬 ID → 데이터) -----
             d.Database = AssetUtil.LoadOrCreate<SkillDatabase>($"{DataDir}/Skills/SkillDatabase.asset");
             d.Database.balanceVersion = 1;
-            d.Database.skills = new List<SkillData>(d.Pool) { d.SteelWhirl, d.ThunderFire };
+            d.Database.skills = new List<SkillData>(d.Pool) { d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
             foreach (string problem in d.Database.FindProblems()) Debug.LogError("[SkillDatabase] " + problem);
 
@@ -136,6 +237,43 @@ namespace HistoryHeroes.EditorTools
             d.RiftWarden.attackMultiplier = 1.5f; // Stats.md 8장 (패턴 배수는 보스 쪽)
             d.RiftWarden.star2MaxHits = 8;
             return d;
+        }
+
+        private static HeroData Hero(string id, string name, HeroClass heroClass, BasicAttackKind attack, float hp, float atk, float aspd,
+            float move, float range, Color color)
+        {
+            var h = AssetUtil.LoadOrCreate<HeroData>($"{DataDir}/Heroes/Hero_{id}.asset");
+            h.id = id;
+            h.displayName = name;
+            h.heroClass = heroClass;
+            h.attackKind = attack;
+            h.maxHp = hp;
+            h.attack = atk;
+            h.attackSpeed = aspd;
+            h.moveSpeed = move;
+            h.range = range;
+            h.critRate = 0.05f;
+            h.critDamage = 1.5f;
+            h.firstShotDelay = 0.2f;
+            h.firstShotBonus = 0f;
+            h.damageReduction = 0f;
+            h.lowHpAttackBonus = 0f;
+            h.cannonEvery = 0;
+            h.knockback = 0f;
+            h.chainBounces = 0;
+            h.projectileSpeed = 14f;
+            h.unlockGems = 1500;
+            h.color = color;
+            return h;
+        }
+
+        private static void AddHeroRecipe(Data d, string id, FusionType type, ActiveSkillData a, int levelA, SkillData b, int levelB,
+            ActiveSkillData result, string heroId)
+        {
+            FusionRecipe r = Recipe(id, type, a, levelA, b, levelB, result);
+            r.heroOnlyId = heroId;
+            UnityEditor.EditorUtility.SetDirty(r);
+            d.Recipes.Add(r);
         }
 
         private static EnemyData Enemy(string id, string name, float speed, float telegraph, float recover, Color color)
@@ -219,6 +357,19 @@ namespace HistoryHeroes.EditorTools
         private static void LinkData(Data d, Prefabs p)
         {
             d.RiftWarden.prefab = p.RiftWarden;
+            d.Guan.projectilePrefab = p.SwordWave;
+            d.Napoleon.projectilePrefab = p.Bullet;
+            d.Tesla.projectilePrefab = p.Orb;
+            d.KhanVolley.behaviourPrefab = p.KhanVolley;
+            d.KhanStorm.behaviourPrefab = p.KhanStorm;
+            d.GuanSpin.behaviourPrefab = p.GuanSpin;
+            d.GuanFive.behaviourPrefab = p.GuanFive;
+            d.NapoCannon.behaviourPrefab = p.NapoCannon;
+            d.NapoAusterlitz.behaviourPrefab = p.NapoAusterlitz;
+            d.TeslaCoil.behaviourPrefab = p.TeslaCoil;
+            d.TeslaTower.behaviourPrefab = p.TeslaTower;
+            foreach (HeroData h in d.Roster.heroes) UnityEditor.EditorUtility.SetDirty(h);
+            UnityEditor.EditorUtility.SetDirty(d.Roster);
             UnityEditor.EditorUtility.SetDirty(d.RiftWarden);
             UnityEditor.EditorUtility.SetDirty(d.Database);
 

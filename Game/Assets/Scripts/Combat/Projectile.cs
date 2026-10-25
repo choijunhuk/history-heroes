@@ -24,6 +24,7 @@ namespace HistoryHeroes.Combat
         private Collider2D _lastHit;
         private Action<Projectile> _release;
         private Action<DamageInfo, float> _onHit;
+        private Action<Health, Vector2> _onHitTarget;
 
         // 한 번에 여러 개를 받아서, 방금 뚫고 지나온 적은 빼고 가장 가까운 것을 고른다
         // (첫 결과가 방금 그 적이면 뒤의 벽을 못 보고 통과하던 문제 방지)
@@ -31,8 +32,9 @@ namespace HistoryHeroes.Combat
 
         public void Launch(Vector2 direction, float speed, DamageInfo damage, LayerMask hitMask, LayerMask wallMask,
             int pierce, int ricochet, Action<Projectile> release, Action<DamageInfo, float> onHit = null,
-            float pierceFalloff = 0.2f)
+            float pierceFalloff = 0.2f, Action<Health, Vector2> onHitTarget = null)
         {
+            _onHitTarget = onHitTarget;
             _direction = direction.normalized;
             _speed = speed;
             _damage = damage;
@@ -102,6 +104,7 @@ namespace HistoryHeroes.Combat
             if (hit.collider.TryGetComponent(out Health health) && health.TryTakeDamage(_damage, out float dealt))
             {
                 _onHit?.Invoke(_damage, dealt);
+                _onHitTarget?.Invoke(health, hit.centroid);
             }
 
             if (_pierceLeft <= 0)

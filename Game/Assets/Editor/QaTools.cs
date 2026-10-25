@@ -156,6 +156,31 @@ namespace HistoryHeroes.EditorTools
             return $"{buttonName}: 화면에 없음";
         }
 
+        /// <summary>
+        /// 메인 카메라가 보는 전투 화면을 바로 PNG로 (UI 제외). Game 창이 뒤에 있으면 capture가 옛 화면을 줄 때가 있어서.
+        /// 예: SnapshotWorld("Assets/Temp/qa/x.png")
+        /// </summary>
+        public static string SnapshotWorld(string path, int width = 540, int height = 1170)
+        {
+            Camera camera = Camera.main;
+            if (camera == null) return "카메라 없음";
+            var rt = new RenderTexture(width, height, 24);
+            RenderTexture previous = camera.targetTexture;
+            camera.targetTexture = rt;
+            camera.Render();
+            RenderTexture.active = rt;
+            var texture = new Texture2D(width, height, TextureFormat.RGB24, false);
+            texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            texture.Apply();
+            camera.targetTexture = previous;
+            RenderTexture.active = null;
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+            System.IO.File.WriteAllBytes(path, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+            Object.DestroyImmediate(rt);
+            return "저장 " + path;
+        }
+
         /// <summary>Play 모드에 들어가서 장면이 다 준비됐는가 (자동 점검 스크립트가 기다릴 때 씀)</summary>
         public static string Ready()
         {

@@ -1,5 +1,8 @@
+using System.Collections;
+using System.Collections.Generic;
 using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
+using HistoryHeroes.Enemy;
 using HistoryHeroes.Heroes;
 using HistoryHeroes.Stats;
 using UnityEngine;
@@ -9,18 +12,34 @@ namespace HistoryHeroes.Player
     /// <summary>
     /// 플레이어: 능력치, 체력, 이동, 멈춤 판정, 기본 공격을 묶는다.
     /// 기본 공격은 멈춰야 나가고, 쿨다운은 이동 중에도 흐른다. (Stats.md 1-1)
+    /// 영웅마다 기본 공격 모양과 대표 효과가 다르다 (Heroes.md):
+    /// - 칭기즈 칸: 화살. 멈추는 순간 바로 쏘고 첫 발 +50%
+    /// - 관우: 근접 부채꼴 베기 (맞은 적 전부). 받는 피해 -15%, 체력 50% 아래면 공격력 +20%
+    /// - 나폴레옹: 총알이 적을 살짝 밀어냄, 3발마다 작은 포탄 (범위)
+    /// - 테슬라: 전기 구체가 맞으면 근처 적에게 2번 튕김
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D), typeof(Health))]
     public sealed class PlayerController : MonoBehaviour
     {
         [SerializeField] private HeroData hero;
         [SerializeField] private FloatingJoystick joystick;
+        [Tooltip("영웅에게 따로 정한 투사체가 없을 때 (화살)")]
         [SerializeField] private Projectile projectilePrefab;
         [SerializeField] private LayerMask enemyMask;
         [SerializeField] private LayerMask wallMask;
+        [SerializeField] private SpriteRenderer bodyRenderer;
 
         [Header("멀티샷 부채꼴 각도")]
         [SerializeField] private float spreadDegrees = 10f;
+
+        [Header("근접 (관우)")]
+        [Tooltip("멀티샷(연속 베기) 사이 간격")]
+        [SerializeField] private float swingInterval = 0.12f;
+        [SerializeField] private Color slashColor = new Color(1f, 0.95f, 0.8f, 0.7f);
+
+        [Header("나폴레옹·테슬라 효과 색")]
+        [SerializeField] private Color cannonColor = new Color(1f, 0.6f, 0.2f, 0.55f);
+        [SerializeField] private Color chainColor = new Color(0.55f, 0.9f, 1f, 0.9f);
 
         private Rigidbody2D _body;
         private ComponentPool<Projectile> _projectiles;
@@ -29,6 +48,16 @@ namespace HistoryHeroes.Player
         private bool _firstShotPending = true;
         private float _lifestealBudget;
         private float _searchDelay;
+        private int _basicAttacks;
+        private float _lastShotCoefficient = 1f;
+        private bool _lowHpActive;
+        private bool _awake;
+
+        private readonly object _heroModifiers = new object();
+        private readonly object _lowHpModifier = new object();
+        private readonly List<Collider2D> _overlap = new List<Collider2D>(32);
+        private readonly HashSet<Health> _chainVisited = new HashSet<Health>();
+        private ContactFilter2D _enemyFilter;
 
         /// <summary>표적이 없을 때 다시 찾기까지 (매 프레임 물리 검사를 하지 않게)</summary>
         private const float SearchRetryInterval = 0.1f;
@@ -39,12 +68,35 @@ namespace HistoryHeroes.Player
         public StopDetector Stop { get; } = new StopDetector();
         public Health Health { get; private set; }
         public bool IsStopped => Stop.IsStopped;
+        public LayerMask EnemyMask => enemyMask;
+        public LayerMask WallMask => wallMask;
+
+        /// <summary>
+        /// 이번 판 영웅을 정한다. 전투 장면이 열릴 때 BattleBootstrap이 Awake보다 먼저 부른다
+        /// (던전 = 로비에서 고른 영웅, 보스 = 기록의 영웅).
+        /// </summary>
+        public void SetHero(HeroData newHero)
+        {
+            if (newHero == null) return;
+            hero = newHero;
+            if (bodyRenderer != null) bodyRenderer.color = hero.color;
+            if (!_awake) return;
+
+            // Awake 뒤에 바뀌면 능력치를 다시 만든다 (개발·테스트용)
+            Stats.RemoveAllFrom(_heroModifiers);
+            Stats.RemoveAllFrom(_lowHpModifier);
+            _lowHpActive = false;
+            ApplyHeroBaseStats();
+            Health.Init(Team.Player, Stats.Get(StatType.MaxHp), Stats, invulnerableDuration: 0.5f);
+            CreateProjectilePool();
+        }
 
         private void Awake()
         {
             _body = GetComponent<Rigidbody2D>();
             _body.gravityScale = 0f;
             _body.freezeRotation = true;
+            _enemyFilter = new ContactFilter2D { useLayerMask = true, layerMask = enemyMask, useTriggers = true };
 
             Health = GetComponent<Health>();
             ApplyHeroBaseStats();
@@ -52,10 +104,18 @@ namespace HistoryHeroes.Player
             Stats.Changed += OnStatsChanged;
 
             _targets = new TargetSelector(enemyMask, wallMask);
-            var poolRoot = new GameObject("PlayerProjectiles").transform;
-            _projectiles = new ComponentPool<Projectile>(projectilePrefab, poolRoot, prewarm: 32);
+            CreateProjectilePool();
+            if (bodyRenderer != null) bodyRenderer.color = hero.color;
 
             Stop.Moved += () => _firstShotPending = true;
+            _awake = true;
+        }
+
+        private void CreateProjectilePool()
+        {
+            Projectile prefab = hero.projectilePrefab != null ? hero.projectilePrefab : projectilePrefab;
+            var poolRoot = new GameObject("PlayerProjectiles").transform;
+            _projectiles = new ComponentPool<Projectile>(prefab, poolRoot, prewarm: 32);
         }
 
         private void OnDestroy()
@@ -72,6 +132,12 @@ namespace HistoryHeroes.Player
             Stats.SetBase(StatType.Range, hero.range);
             Stats.SetBase(StatType.CritRate, hero.critRate);
             Stats.SetBase(StatType.CritDamage, hero.critDamage);
+
+            // 대표 효과 중 늘 켜져 있는 것 (관우: 받는 피해 -15%)
+            if (hero.damageReduction > 0f)
+            {
+                Stats.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, hero.damageReduction, ModifierSource.Hero, _heroModifiers));
+            }
         }
 
         private void OnStatsChanged()
@@ -101,6 +167,7 @@ namespace HistoryHeroes.Player
             float regen = Stats.Get(StatType.HpRegen);
             if (regen > 0f) Health.Heal(regen * dt);
 
+            UpdateLowHpBonus();
             if (Stop.IsStopped) TryBasicAttack();
         }
 
@@ -122,6 +189,17 @@ namespace HistoryHeroes.Player
             return StopDetector.ApplyDeadZone(raw);
         }
 
+        /// <summary>관우 의리의 투지: 체력이 절반 아래면 공격력 +20%</summary>
+        private void UpdateLowHpBonus()
+        {
+            if (hero.lowHpAttackBonus <= 0f) return;
+            bool low = Health.Current < Health.Max * hero.lowHpThreshold;
+            if (low == _lowHpActive) return;
+            _lowHpActive = low;
+            if (low) Stats.Add(new StatModifier(StatType.Attack, ModifierKind.Percent, hero.lowHpAttackBonus, ModifierSource.Hero, _lowHpModifier));
+            else Stats.RemoveAllFrom(_lowHpModifier);
+        }
+
         private void TryBasicAttack()
         {
             if (_attackCooldown > 0f) return;
@@ -137,21 +215,38 @@ namespace HistoryHeroes.Player
                 return;
             }
 
-            Fire(target);
+            if (hero.attackKind == BasicAttackKind.MeleeArc) Slash(target);
+            else Fire(target);
+
+            // 나폴레옹 포병의 눈: 기본 공격 3번마다 작은 포탄
+            _basicAttacks++;
+            if (hero.cannonEvery > 0 && _basicAttacks % hero.cannonEvery == 0) FireCannon(target.transform.position);
+
             _attackCooldown = 1f / Stats.Get(StatType.AttackSpeed, StatTarget.BasicAttack);
         }
+
+        /// <summary>멀티샷 수에 따른 한 발(한 번 베기)의 피해 배수 + 첫 발 보너스</summary>
+        private float NextShotCoefficient(int extra)
+        {
+            float coefficient = 1f - 0.1f * extra; // 멀티샷: 발당 -10% (Skills.md 1장)
+            if (_firstShotPending) coefficient *= 1f + hero.firstShotBonus;
+            _firstShotPending = false;
+            return coefficient;
+        }
+
+        // ---------------------------------------------------------------- 투사체 (궁수·총잡이·법사)
 
         private void Fire(Health target)
         {
             int extra = Attack.Get(AttackModifierKind.ExtraProjectiles);
             int count = 1 + extra;
-            float perProjectile = 1f - 0.1f * extra; // 멀티샷: 발당 -10% (Skills.md 1장)
-            if (_firstShotPending) perProjectile *= 1f + hero.firstShotBonus;
-            _firstShotPending = false;
+            float perProjectile = NextShotCoefficient(extra);
+            _lastShotCoefficient = perProjectile;
 
             Vector2 origin = transform.position;
             Vector2 aim = ((Vector2)target.transform.position - origin).normalized;
             float start = -spreadDegrees * (count - 1) * 0.5f;
+            bool needsTarget = hero.knockback > 0f || hero.chainBounces > 0;
 
             for (int i = 0; i < count; i++)
             {
@@ -160,9 +255,133 @@ namespace HistoryHeroes.Player
                 Projectile p = _projectiles.Get(origin, Quaternion.identity);
                 p.Launch(direction, hero.projectileSpeed, damage, enemyMask, wallMask,
                     Attack.Get(AttackModifierKind.Pierce), Attack.Get(AttackModifierKind.Ricochet),
-                    _projectiles.Release, OnBasicAttackHit);
+                    _projectiles.Release, OnBasicAttackHit, onHitTarget: needsTarget ? OnProjectileHitTarget : null);
             }
         }
+
+        /// <summary>나폴레옹 밀어내기, 테슬라 튕김</summary>
+        private void OnProjectileHitTarget(Health target, Vector2 point)
+        {
+            if (hero.knockback > 0f) Knockback(target, (Vector2)target.transform.position - (Vector2)transform.position, hero.knockback);
+            if (hero.chainBounces > 0) Chain(target, _lastShotCoefficient);
+        }
+
+        private static void Knockback(Health target, Vector2 direction, float distance)
+        {
+            if (!target.TryGetComponent(out EnemyBase enemy) || !enemy.CanBeKnockedBack) return;
+            if (target.TryGetComponent(out Rigidbody2D rb)) rb.MovePosition(rb.position + direction.normalized * distance);
+        }
+
+        /// <summary>테슬라 교류: 맞은 적에서 가장 가까운 다른 적에게 튕긴다 (튕길 때마다 피해 -30%)</summary>
+        private void Chain(Health first, float coefficient)
+        {
+            _chainVisited.Clear();
+            _chainVisited.Add(first);
+            Health current = first;
+            float radiusSqr = hero.chainRadius * hero.chainRadius;
+
+            for (int bounce = 0; bounce < hero.chainBounces; bounce++)
+            {
+                Vector2 from = current.transform.position;
+                Health next = null;
+                float best = radiusSqr;
+                IReadOnlyList<EnemyBase> alive = EnemyBase.Alive;
+                for (int i = 0; i < alive.Count; i++)
+                {
+                    Health h = alive[i].Health;
+                    if (h == null || h.IsDead || _chainVisited.Contains(h)) continue;
+                    float d = ((Vector2)h.transform.position - from).sqrMagnitude;
+                    if (d < best)
+                    {
+                        best = d;
+                        next = h;
+                    }
+                }
+
+                if (next == null) return;
+                coefficient *= 1f - hero.chainFalloff;
+                AttackFx.Line(from, next.transform.position, 0.09f, chainColor);
+                DamageInfo damage = DamageCalculator.Roll(Stats, coefficient, DamageKind.BasicAttack);
+                if (next.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
+                _chainVisited.Add(next);
+                current = next;
+            }
+        }
+
+        /// <summary>나폴레옹: 표적 자리에 작은 포탄 (범위 피해, 기본 공격으로 침)</summary>
+        private void FireCannon(Vector2 point)
+        {
+            AttackFx.Burst(point, hero.cannonRadius, cannonColor);
+            _overlap.Clear();
+            Physics2D.OverlapCircle(point, hero.cannonRadius, _enemyFilter, _overlap);
+            for (int i = 0; i < _overlap.Count; i++)
+            {
+                if (!_overlap[i].TryGetComponent(out Health h) || h.IsDead) continue;
+                DamageInfo damage = DamageCalculator.Roll(Stats, hero.cannonCoefficient, DamageKind.BasicAttack);
+                if (h.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
+            }
+        }
+
+        // ---------------------------------------------------------------- 근접 베기 (전사)
+
+        /// <summary>
+        /// 관우 기본 공격: 표적 쪽 부채꼴(120°) 안의 적 전부. 투사체 패시브는 근접식으로 바뀐다 (Skills.md 1-1):
+        /// 멀티샷 = 베기 1회 추가 (회당 -10%), 관통 = 각도 160°, 벽 튕김 = 베기마다 검기 1발 (공격력 40%, 벽에 튕김)
+        /// </summary>
+        private void Slash(Health target)
+        {
+            int extra = Attack.Get(AttackModifierKind.ExtraProjectiles);
+            float coefficient = NextShotCoefficient(extra);
+            float arc = hero.meleeArcDegrees + (Attack.Get(AttackModifierKind.Pierce) > 0 ? 40f : 0f);
+            int waveBounces = Attack.Get(AttackModifierKind.Ricochet);
+            StartCoroutine(Swings(target, 1 + extra, coefficient, arc, waveBounces));
+        }
+
+        private IEnumerator Swings(Health target, int swings, float coefficient, float arc, int waveBounces)
+        {
+            for (int s = 0; s < swings; s++)
+            {
+                if (Health.IsDead) yield break;
+                Vector2 origin = transform.position;
+                Vector2 aim = target != null && !target.IsDead ? ((Vector2)target.transform.position - origin) : (Vector2)transform.up;
+                if (aim.sqrMagnitude < 0.0001f) aim = Vector2.up;
+                aim.Normalize();
+
+                SlashOnce(origin, aim, coefficient, arc);
+                if (waveBounces > 0) FireWave(origin, aim, waveBounces);
+                if (s < swings - 1) yield return new WaitForSeconds(swingInterval);
+            }
+        }
+
+        private void SlashOnce(Vector2 origin, Vector2 aim, float coefficient, float arc)
+        {
+            float reach = Stats.Get(StatType.Range) + 0.4f;
+            AttackFx.Arc(origin, aim, reach, arc, slashColor);
+
+            _overlap.Clear();
+            Physics2D.OverlapCircle(origin, reach, _enemyFilter, _overlap);
+            float half = arc * 0.5f;
+            for (int i = 0; i < _overlap.Count; i++)
+            {
+                if (!_overlap[i].TryGetComponent(out Health h) || h.IsDead) continue;
+                Vector2 to = (Vector2)h.transform.position - origin;
+                // 몸에 붙은 적은 각도와 상관없이 맞는다
+                if (to.sqrMagnitude > 0.5f && Vector2.Angle(aim, to) > half) continue;
+
+                DamageInfo damage = DamageCalculator.Roll(Stats, coefficient, DamageKind.BasicAttack);
+                if (h.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
+            }
+        }
+
+        /// <summary>근접 + 벽 튕김: 검기 (공격력 40%) 한 발이 날아가 벽에 튕긴다</summary>
+        private void FireWave(Vector2 origin, Vector2 aim, int bounces)
+        {
+            DamageInfo damage = DamageCalculator.Roll(Stats, hero.meleeWaveCoefficient, DamageKind.BasicAttack);
+            Projectile p = _projectiles.Get(origin, Quaternion.identity);
+            p.Launch(aim, 12f, damage, enemyMask, wallMask, 0, bounces, _projectiles.Release, OnBasicAttackHit);
+        }
+
+        // ---------------------------------------------------------------- 흡혈
 
         /// <summary>흡혈은 기본 공격에만, 초당 최대체력 3%까지 (Stats.md 1장).</summary>
         private void OnBasicAttackHit(DamageInfo info, float dealt)
@@ -173,6 +392,15 @@ namespace HistoryHeroes.Player
             float heal = Mathf.Min(dealt * lifesteal, _lifestealBudget);
             _lifestealBudget -= heal;
             Health.Heal(heal);
+        }
+
+        // ---------------------------------------------------------------- 스킬이 쓰는 투사체
+
+        /// <summary>액티브 스킬(만궁 연사 등)이 플레이어의 투사체를 빌려 쏜다</summary>
+        public void LaunchSkillProjectile(Vector2 origin, Vector2 direction, float speed, DamageInfo damage, int pierce = 0)
+        {
+            Projectile p = _projectiles.Get(origin, Quaternion.identity);
+            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, _projectiles.Release);
         }
     }
 }

@@ -73,7 +73,7 @@ namespace HistoryHeroes.UI
                     kindBand.color = passive ? PassiveBand : ActiveBand;
                     nameLabel.text = s.displayName;
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";
-                    descriptionLabel.text = s.description;
+                    descriptionLabel.text = s.DescriptionFor(skills.HeroClass);
                     background.color = RarityColor(s.rarity);
                     bool material = skills.IsFusionMaterial(s);
                     bool warn = legendaryWarning && s.rarity == Rarity.Legendary;

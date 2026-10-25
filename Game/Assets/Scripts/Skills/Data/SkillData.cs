@@ -46,6 +46,8 @@ namespace HistoryHeroes.Skills
         public string id;
         public string displayName;
         [TextArea] public string description;
+        [Tooltip("근접 영웅(관우)일 때 다르게 적용되는 패시브의 설명 (Skills.md 1-1). 비어 있으면 description")]
+        [TextArea] public string warriorDescription;
         public Sprite icon;
         public Rarity rarity;
         public SkillTag tags;
@@ -66,6 +68,11 @@ namespace HistoryHeroes.Skills
 
         /// <summary>이 레벨로 기록에 저장할 때 드는 용량. 예: 패시브 일반 Lv3 = 1 + 1×2 = 3, 뇌화 폭풍 Lv2 = 15 + 3 = 18</summary>
         public int SaveCostAt(int level) => saveCostFirstLevel + saveCostPerLevel * Mathf.Max(0, level - 1);
+
+        public string DescriptionFor(Heroes.HeroClass heroClass)
+        {
+            return heroClass == Heroes.HeroClass.Warrior && !string.IsNullOrEmpty(warriorDescription) ? warriorDescription : description;
+        }
 
         public bool IsAvailableFor(string heroId)
         {

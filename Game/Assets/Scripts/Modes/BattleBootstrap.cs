@@ -1,4 +1,7 @@
 using HistoryHeroes.Common;
+using HistoryHeroes.Heroes;
+using HistoryHeroes.Player;
+using HistoryHeroes.Records;
 using UnityEngine;
 
 namespace HistoryHeroes.Modes
@@ -12,9 +15,30 @@ namespace HistoryHeroes.Modes
     {
         [SerializeField] private GameObject dungeonRoot;
         [SerializeField] private GameObject bossRoot;
+        [SerializeField] private HeroRoster roster;
+        [SerializeField] private PlayerController player;
+
+        /// <summary>
+        /// 이번 판 영웅: 던전 = 로비에서 고른 영웅, 보스 = 기록에 저장된 영웅 (GameDesign 7-1 "사용한 영웅").
+        /// 플레이어의 Awake보다 먼저 정해야 능력치가 그 영웅으로 만들어진다.
+        /// </summary>
+        public static HeroData HeroForThisBattle(HeroRoster roster)
+        {
+            SaveData save = SaveSystem.Data;
+            if (GameSession.Mode == BattleMode.Boss)
+            {
+                RunRecord record = save.FindRecord(GameSession.BossRecordId);
+                if (record == null && save.records.Count > 0) record = save.records[save.records.Count - 1];
+                if (record != null) return roster.Find(record.heroId);
+            }
+
+            return HeroUnlock.Selected(save, roster);
+        }
 
         private void Awake()
         {
+            if (roster != null && player != null) player.SetHero(HeroForThisBattle(roster));
+
             bool boss = GameSession.Mode == BattleMode.Boss;
             if (dungeonRoot != null) dungeonRoot.SetActive(!boss);
             if (bossRoot != null) bossRoot.SetActive(boss);

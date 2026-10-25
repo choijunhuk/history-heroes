@@ -14,7 +14,8 @@ namespace HistoryHeroes.Records
         {
             if (record == null) return "빈 칸";
             string progress = record.cleared ? "클리어" : $"방 {record.roomReached}/{record.roomCount}";
-            return $"{record.slot + 1}번 기록 · {progress} · {When(record.createdAt)}";
+            string hero = string.IsNullOrEmpty(record.heroName) ? string.Empty : $" · {record.heroName}";
+            return $"{record.slot + 1}번 기록{hero} · {progress} · {When(record.createdAt)}";
         }
 
         public static string When(string isoUtc)

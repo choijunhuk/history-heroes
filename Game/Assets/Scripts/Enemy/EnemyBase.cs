@@ -31,6 +31,9 @@ namespace HistoryHeroes.Enemy
         public bool IsElite { get; private set; }
         public float Damage => data.damage * attackMultiplier;
 
+        /// <summary>나폴레옹 총알에 밀리는가. 엘리트·보스는 밀리지 않는다</summary>
+        public virtual bool CanBeKnockedBack => !IsElite;
+
         public event Action<EnemyBase> Killed;
 
         private static readonly List<EnemyBase> _alive = new List<EnemyBase>();

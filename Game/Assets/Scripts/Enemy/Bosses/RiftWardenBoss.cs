@@ -68,6 +68,7 @@ namespace HistoryHeroes.Enemy
         private float _secondRingTimer;
 
         public int Phase => _phase;
+        public override bool CanBeKnockedBack => false;
         public Pattern CurrentPattern => _pattern;
 
         /// <summary>빈틈인가 (멈춰서 쏠 때)</summary>

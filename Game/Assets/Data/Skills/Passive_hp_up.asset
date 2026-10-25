@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: "\uCD5C\uB300\uCCB4\uB825"
   description: "\uCD5C\uB300\uCCB4\uB825 +15%\n(\uB808\uBCA8\uB9C8\uB2E4 +10%)\n\uB298\uC5B4\uB09C
     \uB9CC\uD07C \uD68C\uBCF5"
+  warriorDescription: 
   icon: {fileID: 0}
   rarity: 0
   tags: 2

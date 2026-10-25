@@ -224,7 +224,13 @@ namespace HistoryHeroes.Dungeon
                 int chapter = GameSession.Chapter;
                 int balance = database != null ? database.balanceVersion : 0;
                 string subtitle = victory ? "클리어! 용량 안에서 남길 스킬을 고르세요" : $"방 {room}에서 쓰러졌어요. 깬 방만큼 용량이 줄었어요";
-                saveRecord = () => recordSave.Open(draft, d => d.ToRecord(skills.HeroId, chapter, room, RoomCount, victory, balance), subtitle, GameSession.ToLobby);
+                string heroName = player.Hero != null ? player.Hero.displayName : string.Empty;
+                saveRecord = () => recordSave.Open(draft, d =>
+                {
+                    RunRecord r = d.ToRecord(skills.HeroId, chapter, room, RoomCount, victory, balance);
+                    r.heroName = heroName;
+                    return r;
+                }, subtitle, GameSession.ToLobby);
             }
 
             result.Show(summary, saveRecord);

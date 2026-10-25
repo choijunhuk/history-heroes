@@ -66,6 +66,12 @@ namespace HistoryHeroes.Records
 
         public DailyCounters daily = new DailyCounters();
 
+        // ---------------- v0.3 영웅 (Heroes.md) ----------------
+        /// <summary>로비에서 고른 영웅 (던전에 들고 들어감)</summary>
+        public string selectedHero = "khan";
+        /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
+        public List<string> unlockedHeroes = new List<string>();
+
         public int ItemCount(string itemId)
         {
             foreach (ItemCount i in items)
@@ -137,6 +143,8 @@ namespace HistoryHeroes.Records
         public string id;
         public int slot;
         public string heroId;
+        /// <summary>화면 표시용 (영웅 이름이 바뀌어도 ID로 다시 찾는다)</summary>
+        public string heroName;
         public List<RecordSkill> skills = new List<RecordSkill>();
 
         /// <summary>저장할 때의 용량. 패치로 비용이 올라 이걸 넘으면 다음 사용 때 다시 고르게 한다 (7-5).</summary>

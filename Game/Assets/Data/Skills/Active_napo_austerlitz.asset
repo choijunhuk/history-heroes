@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_napo_austerlitz
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: napo_austerlitz
+  displayName: "\uC544\uC6B0\uC2A4\uD130\uB9AC\uCE20\uC758 \uD3EC\uD654"
+  description: "7\uCD08\uB9C8\uB2E4 \uD3EC\uD0C4 3\uBC1C (\uAC01 130%)\n\uB5A8\uC5B4\uC9C4
+    \uC790\uB9AC\uC5D0 \uBD88\uAF43 \uC7A5\uD310 2\uCD08\nLv2 +25%, Lv3 +50%"
+  warriorDescription: 
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 16
+  maxLevel: 3
+  saveCostFirstLevel: 18
+  saveCostPerLevel: 4
+  recordable: 1
+  heroOnlyId: napoleon
+  cooldown: 7
+  damageFirstLevel: 1.3
+  damagePerLevel: 0.325
+  countFirstLevel: 3
+  countPerLevel: 0
+  radius: 1.2
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 1573743545258790631, guid: 5f0920558c2497a48b4be706ba95c53e, type: 3}

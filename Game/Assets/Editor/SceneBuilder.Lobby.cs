@@ -12,7 +12,7 @@ namespace HistoryHeroes.EditorTools
     /// <summary>v0.2 로비 장면: 구간 고르기, 던전 / 보스 도전 / 기록 보관함 / 조합 도감 (UX.md 1장 축소판).</summary>
     public static partial class SceneBuilder
     {
-        private static void BuildLobbyScene(Scene scene, SkillDatabase database, BossData[] bosses)
+        private static void BuildLobbyScene(Scene scene, SkillDatabase database, BossData[] bosses, Heroes.HeroRoster roster)
         {
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
             cameraObject.transform.position = new Vector3(0f, 0f, -10f);
@@ -58,6 +58,7 @@ namespace HistoryHeroes.EditorTools
             bossLabel.fontSize = 44;
             Button archive = Btn("Archive", main, "기록 보관함", new Vector2(0f, -380f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text archiveLabel);
             Button codex = Btn("Codex", main, "조합 도감", new Vector2(0f, -540f), new Vector2(820f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text codexLabel);
+            Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -700f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
             TMP_Text note = Label("Note", main, "그래픽은 아직 임시 도형이에요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
 
@@ -67,6 +68,7 @@ namespace HistoryHeroes.EditorTools
             CodexPanel codexPanel = BuildCodexPanel(safe, database);
             RecordSaveScreen reselect = BuildRecordSave(root, database);
             HeartPanel heartPanel = BuildHeartPanel(root);
+            HeroPanel heroPanel = BuildHeroPanel(safe, roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
 
             using (var props = new Props(lobby))
@@ -77,7 +79,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("archiveButton", archive).Ref("archiveButtonLabel", archiveLabel)
                     .Ref("codexButton", codex).Ref("codexButtonLabel", codexLabel)
                     .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)
-                    .Ref("walletLabel", wallet).Ref("noticeLabel", notice);
+                    .Ref("walletLabel", wallet).Ref("noticeLabel", notice)
+                    .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("roster", roster).Ref("heroPanel", heroPanel);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
@@ -169,6 +172,43 @@ namespace HistoryHeroes.EditorTools
             {
                 props.Ref("root", panel.gameObject).Refs("slotTitles", titles).Refs("slotDetails", details)
                     .Refs("deleteButtons", deletes).Refs("deleteLabels", deleteLabels).Ref("backButton", back).Ref("database", database);
+            }
+
+            return screen;
+        }
+
+        private static HeroPanel BuildHeroPanel(Transform parent, Heroes.HeroRoster roster)
+        {
+            RectTransform panel = Overlay(parent, "HeroPanel", out GameObject holder);
+            var screen = holder.AddComponent<HeroPanel>();
+
+            TMP_Text title = Label("Title", panel, "영웅", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 800f), new Vector2(900f, 100f));
+
+            var buttons = new Button[4];
+            var backgrounds = new Image[4];
+            var labels = new TMP_Text[4];
+            for (int i = 0; i < 4; i++)
+            {
+                buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(0f, 560f - i * 265f), new Vector2(980f, 245f), RowColor, out TMP_Text label);
+                backgrounds[i] = buttons[i].GetComponent<Image>();
+                label.fontSize = 32;
+                label.alignment = TextAlignmentOptions.MidlineLeft;
+                label.rectTransform.offsetMin = new Vector2(30f, 8f);
+                label.rectTransform.offsetMax = new Vector2(-30f, -8f);
+                labels[i] = label;
+            }
+
+            Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -520f), new Vector2(440f, 130f), ButtonGreen, out TMP_Text selectLabel);
+            Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -520f), new Vector2(440f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
+            unlockLabel.fontSize = 28;
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -680f), new Vector2(400f, 110f), ButtonGray, out _);
+
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("roster", roster).Refs("heroButtons", buttons).Refs("heroBackgrounds", backgrounds)
+                    .Refs("heroLabels", labels).Ref("selectButton", select).Ref("selectLabel", selectLabel)
+                    .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("backButton", back);
             }
 
             return screen;
