@@ -74,3 +74,4 @@ Game/Assets/Temp.meta
 Game/ProjectSettings/Packages/com.unity.pipeline/
 # 빌드 결과물
 Game/Builds/
+Game/.utmp/
