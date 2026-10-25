@@ -35,6 +35,15 @@ namespace HistoryHeroes.UI
 
         public string RoomText { set => roomLabel.text = value; }
 
+        /// <summary>보스맵: 레벨업이 없으므로 레벨·경험치·처치 수를 숨긴다 (GameDesign 7-3)</summary>
+        public void SetBossMode()
+        {
+            levelLabel.gameObject.SetActive(false);
+            killLabel.gameObject.SetActive(false);
+            expFill.transform.parent.gameObject.SetActive(false);
+            experience = null;
+        }
+
         // 지난번에 그린 값. 같으면 글자를 다시 만들지 않는다 (모바일에서 매 프레임 문자열 = GC)
         private int _hp = -1, _maxHp = -1, _level = -1, _kills = -1;
 

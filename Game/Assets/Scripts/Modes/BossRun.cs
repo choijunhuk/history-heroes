@@ -64,6 +64,7 @@ namespace HistoryHeroes.Modes
             skills.ApplyRecord(build.Skills, database);
 
             hud.RoomText = _info != null ? $"보스  {_info.displayName}" : "보스";
+            hud.SetBossMode();
             player.Teleport(playerStart.position);
             player.Health.Died += _ => Finish(victory: false);
             player.Health.Damaged += (_, dealt) =>
