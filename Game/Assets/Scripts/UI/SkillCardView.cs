@@ -7,12 +7,15 @@ using UnityEngine.UI;
 namespace HistoryHeroes.UI
 {
     /// <summary>
-    /// 레벨업 카드 한 장. 카드 색 = 등급 (일반 회색, 희귀 파랑, 전설 금색, 조합 무지개). (UX.md 3장)
+    /// 레벨업 카드 한 장. (UX.md 3장)
+    /// - 카드 바탕색 = 등급 (일반 회색, 희귀 파랑, 전설 금색, 조합 무지개)
+    /// - 맨 위 띠 색 = 종류 (액티브 주황, 패시브 초록, 조합 보라, 기본 회색) — 글자를 안 읽어도 구분된다
     /// </summary>
     public sealed class SkillCardView : MonoBehaviour
     {
         [SerializeField] private Button button;
         [SerializeField] private Image background;
+        [SerializeField] private Image kindBand;
         [SerializeField] private TMP_Text kindLabel;
         [SerializeField] private TMP_Text nameLabel;
         [SerializeField] private TMP_Text levelLabel;
@@ -22,6 +25,11 @@ namespace HistoryHeroes.UI
         public static readonly Color Common = new Color(0.42f, 0.45f, 0.5f);
         public static readonly Color Rare = new Color(0.2f, 0.45f, 0.9f);
         public static readonly Color Legendary = new Color(0.9f, 0.68f, 0.12f);
+
+        public static readonly Color ActiveBand = new Color(0.93f, 0.42f, 0.16f);
+        public static readonly Color PassiveBand = new Color(0.16f, 0.66f, 0.42f);
+        public static readonly Color FusionBand = new Color(0.45f, 0.24f, 0.7f);
+        public static readonly Color BasicBand = new Color(0.25f, 0.27f, 0.3f);
 
         private bool _rainbow;
         private Action _onClick;
@@ -42,6 +50,7 @@ namespace HistoryHeroes.UI
                 case CardType.Fusion:
                     FusionRecipe r = card.Recipe;
                     kindLabel.text = r.type == FusionType.Evolution ? "조합 · 진화" : "조합 · 합체";
+                    kindBand.color = FusionBand;
                     nameLabel.text = r.result.displayName;
                     levelLabel.text = "NEW";
                     descriptionLabel.text = $"{r.materialA.displayName} + {r.materialB.displayName}\n\n{r.result.description}";
@@ -49,6 +58,7 @@ namespace HistoryHeroes.UI
 
                 case CardType.Fallback:
                     kindLabel.text = "기본";
+                    kindBand.color = BasicBand;
                     nameLabel.text = "체력 회복";
                     levelLabel.text = string.Empty;
                     descriptionLabel.text = "최대체력의 20%를 회복한다.";
@@ -57,7 +67,9 @@ namespace HistoryHeroes.UI
 
                 default:
                     SkillData s = card.Skill;
-                    kindLabel.text = s.Kind == SkillKind.Passive ? "패시브" : "액티브";
+                    bool passive = s.Kind == SkillKind.Passive;
+                    kindLabel.text = passive ? "패시브" : "액티브";
+                    kindBand.color = passive ? PassiveBand : ActiveBand;
                     nameLabel.text = s.displayName;
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";
                     descriptionLabel.text = s.description;

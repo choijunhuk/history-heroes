@@ -206,6 +206,10 @@ namespace HistoryHeroes.EditorTools
 
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
 
+        // 카드 3장 + 간격 = 1032 (기준 너비 1080 안에 들어감)
+        private const float CardWidth = 336f;
+        private const float CardHeight = 500f;
+
         private static Ui BuildUi()
         {
             var ui = new Ui();
@@ -216,7 +220,8 @@ namespace HistoryHeroes.EditorTools
             var scaler = canvasObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1080f, 1920f);
-            scaler.matchWidthOrHeight = 0.5f;
+            // Expand: 화면 비율이 어떻든 1080×1920 기준 영역이 통째로 보인다 (세로로 긴 폰에서 카드가 잘리지 않음)
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             canvasObject.AddComponent<GraphicRaycaster>();
             Transform root = canvasObject.transform;
 
@@ -225,6 +230,7 @@ namespace HistoryHeroes.EditorTools
 
             // ----- HUD -----
             RectTransform hudRect = Rect("HUD", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            hudRect.gameObject.AddComponent<SafeAreaFitter>(); // 카메라 구멍·상태 표시줄 피하기
             ui.Hud = hudRect.gameObject.AddComponent<HudView>();
 
             RectTransform expBg = Rect("ExpBar", hudRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(-40f, 18f));
@@ -285,7 +291,8 @@ namespace HistoryHeroes.EditorTools
             Place(subtitle.rectTransform, Center, Center, new Vector2(0f, 420f), new Vector2(900f, 50f));
 
             var cards = new SkillCardView[3];
-            for (int i = 0; i < 3; i++) cards[i] = BuildCard(panel, i, new Vector2(-350f + 350f * i, 40f));
+            const float step = CardWidth + 12f;
+            for (int i = 0; i < 3; i++) cards[i] = BuildCard(panel, i, new Vector2(-step + step * i, 40f));
 
             Button reroll = Btn("Reroll", panel, "리롤 (광고) 2/2", new Vector2(-220f, -400f), new Vector2(390f, 120f), new Color(0.22f, 0.3f, 0.45f), out TMP_Text rerollLabel);
             Button hide = Btn("HideFusion", panel, "이번 판 숨기기", new Vector2(220f, -400f), new Vector2(390f, 120f), new Color(0.38f, 0.25f, 0.45f), out _);
@@ -303,34 +310,50 @@ namespace HistoryHeroes.EditorTools
 
         private static SkillCardView BuildCard(Transform parent, int index, Vector2 position)
         {
-            RectTransform card = Rect($"Card {index + 1}", parent, Center, Center, Center, position, new Vector2(320f, 560f));
+            RectTransform card = Rect($"Card {index + 1}", parent, Center, Center, Center, position, new Vector2(CardWidth, CardHeight));
             Image background = Img(card, SkillCardView.Common, null);
             background.raycastTarget = true;
             var button = card.gameObject.AddComponent<Button>();
             button.targetGraphic = background;
 
-            TMP_Text kind = TopLabel("Kind", card, 28, 24f, 40f);
-            TMP_Text nameLabel = TopLabel("Name", card, 44, 74f, 110f);
-            TMP_Text level = TopLabel("Level", card, 32, 190f, 44f);
+            // 맨 위 띠: 종류(액티브/패시브/조합)를 색으로 구분
+            RectTransform band = Rect("KindBand", card, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 56f));
+            Image bandImage = Img(band, SkillCardView.ActiveBand, null);
+            TMP_Text kind = Label("Kind", band, "", 31, TextAlignmentOptions.Center);
+            Stretch(kind.rectTransform);
+
+            TMP_Text nameLabel = TopLabel("Name", card, 42, 68f, 58f);
+            nameLabel.enableAutoSizing = true;
+            nameLabel.fontSizeMin = 30f;
+            nameLabel.fontSizeMax = 42f;
+            TMP_Text level = TopLabel("Level", card, 31, 128f, 42f);
             level.color = new Color(1f, 0.95f, 0.7f);
 
-            TMP_Text description = Label("Description", card, "", 27, TextAlignmentOptions.Top);
-            description.lineSpacing = 12f;
-            RectTransform dr = description.rectTransform;
-            dr.anchorMin = Vector2.zero;
-            dr.anchorMax = Vector2.one;
-            dr.offsetMin = new Vector2(18f, 70f);
-            dr.offsetMax = new Vector2(-18f, -250f);
+            // 설명: 어두운 판 위에 크게. 길면 조금 줄어든다
+            RectTransform box = Rect("DescriptionBox", card, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            box.offsetMin = new Vector2(12f, 58f);
+            box.offsetMax = new Vector2(-12f, -178f);
+            Img(box, new Color(0f, 0f, 0f, 0.32f), null);
 
-            TMP_Text material = Label("Material", card, "조합 재료", 26, TextAlignmentOptions.Bottom, new Color(1f, 0.9f, 0.3f));
-            Place(material.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(300f, 40f));
+            TMP_Text description = Label("Description", box, "", 32, TextAlignmentOptions.Center);
+            description.enableAutoSizing = true;
+            description.fontSizeMin = 22f;
+            description.fontSizeMax = 32f;
+            description.lineSpacing = 6f;
+            RectTransform dr = description.rectTransform;
+            Stretch(dr);
+            dr.offsetMin = new Vector2(12f, 10f);
+            dr.offsetMax = new Vector2(-12f, -10f);
+
+            TMP_Text material = Label("Material", card, "조합 재료", 28, TextAlignmentOptions.Bottom, new Color(1f, 0.9f, 0.3f));
+            Place(material.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 12f), new Vector2(CardWidth - 20f, 40f));
             material.rectTransform.pivot = new Vector2(0.5f, 0f);
 
             var view = card.gameObject.AddComponent<SkillCardView>();
             using (var props = new Props(view))
             {
-                props.Ref("button", button).Ref("background", background).Ref("kindLabel", kind).Ref("nameLabel", nameLabel)
-                    .Ref("levelLabel", level).Ref("descriptionLabel", description).Ref("materialLabel", material);
+                props.Ref("button", button).Ref("background", background).Ref("kindBand", bandImage).Ref("kindLabel", kind)
+                    .Ref("nameLabel", nameLabel).Ref("levelLabel", level).Ref("descriptionLabel", description).Ref("materialLabel", material);
             }
 
             return view;

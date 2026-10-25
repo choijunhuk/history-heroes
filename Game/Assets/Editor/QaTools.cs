@@ -16,10 +16,20 @@ namespace HistoryHeroes.EditorTools
     /// </summary>
     public static class QaTools
     {
+        /// <summary>
+        /// 에디터 창이 뒤에 있으면 Play 모드가 아예 멈춘다 (프레임이 안 넘어감).
+        /// 자동 테스트를 창 포커스와 상관없이 돌리려고, QA 도구를 부를 때마다 켠다. 이번 Play에만 적용된다.
+        /// </summary>
+        private static void KeepRunning()
+        {
+            Application.runInBackground = true;
+        }
+
         /// <param name="heal">true면 매번 체력을 가득 채운다 (흐름만 확인할 때)</param>
         public static string Step(int cardIndex = 0, bool heal = false)
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
             var levelUp = Object.FindAnyObjectByType<LevelUpScreen>();
             var run = Object.FindAnyObjectByType<DungeonRun>();
             if (levelUp == null || run == null) return "Play 모드가 아님";
@@ -63,6 +73,7 @@ namespace HistoryHeroes.EditorTools
         {
             // 에디터 장면(Play 전)을 건드리면 안 된다 → Play 중일 때만
             if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
             var run = Object.FindAnyObjectByType<DungeonRun>();
             var cheats = Object.FindAnyObjectByType<Dev.DevCheats>();
             var player = Object.FindAnyObjectByType<PlayerController>();
@@ -102,6 +113,7 @@ namespace HistoryHeroes.EditorTools
         public static string ScenarioStatus()
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
             var player = Object.FindAnyObjectByType<PlayerController>();
             if (player == null) return "Play 모드가 아님";
             player.Health.Heal(1e9f); // 생존은 따로 본다. 여기서는 처치 속도만
@@ -134,6 +146,7 @@ namespace HistoryHeroes.EditorTools
         /// <summary>Play 모드에 들어가서 장면이 다 준비됐는가 (자동 점검 스크립트가 기다릴 때 씀)</summary>
         public static string Ready()
         {
+            if (Application.isPlaying) KeepRunning();
             bool ready = Application.isPlaying && Time.time > 0.5f && Object.FindAnyObjectByType<DungeonRun>() != null;
             return ready ? "ready" : "wait";
         }
@@ -141,6 +154,7 @@ namespace HistoryHeroes.EditorTools
         public static string State()
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
             var run = Object.FindAnyObjectByType<DungeonRun>();
             var exp = Object.FindAnyObjectByType<ExperienceSystem>();
             var skills = Object.FindAnyObjectByType<SkillManager>();
