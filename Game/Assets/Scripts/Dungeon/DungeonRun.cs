@@ -83,6 +83,9 @@ namespace HistoryHeroes.Dungeon
             string chapter = GameSession.Chapter > 1 ? $"{GameSession.Chapter}구간 " : string.Empty;
             hud.RoomText = data.kind == RoomKind.Elite ? $"{chapter}방 {room}/{RoomCount}  엘리트" : $"{chapter}방 {room}/{RoomCount}";
             door.SetOpen(false);
+            var elite = new List<bool>(RoomCount);
+            foreach (RoomData r in dungeon.rooms) elite.Add(r.kind == RoomKind.Elite);
+            hud.SetRoomProgress(room, elite);
             StartCoroutine(SpawnRoom(data));
         }
 
@@ -149,6 +152,14 @@ namespace HistoryHeroes.Dungeon
         {
             _roomsCleared = Mathf.Max(_roomsCleared, _room);
             experience.AttractAll();
+
+            // 지금 끝나면 남길 수 있는 기록 용량 / 클리어하면 (조사 A7: "한 방만 더"의 동기)
+            if (_room < RoomCount)
+            {
+                int now = RecordCapacity.For(_roomsCleared, RoomCount, cleared: false);
+                int full = RecordCapacity.For(RoomCount, RoomCount, cleared: true);
+                hud.ShowNotice($"기록 용량  지금 {now}pt · 클리어하면 {full}pt");
+            }
             SaveSystem.SaveIfDirty(); // 안전한 시점: 새로 발견한 조합 등 (GameDesign 12-2)
             if (_room >= RoomCount)
             {

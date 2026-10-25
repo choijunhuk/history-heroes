@@ -313,6 +313,12 @@ namespace HistoryHeroes.EditorTools
             TMP_Text roomLabel = Label("RoomLabel", hudRect, "방 1/10", 38, TextAlignmentOptions.Top);
             Place(roomLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(520f, 60f));
 
+            // 방 진행 바 (조사 A6) · 알림 (A7)
+            RectTransform roomBar = Rect("RoomBar", hudRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -178f), new Vector2(600f, 36f));
+            TMP_Text hudNotice = Label("Notice", hudRect, "", 30, TextAlignmentOptions.Center, new Color(1f, 0.9f, 0.55f));
+            Place(hudNotice.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -330f), new Vector2(960f, 56f));
+            hudNotice.gameObject.SetActive(false);
+
             // 별 ★2 도전 중일 때만 보이는 맞은 횟수 (Modes 3-2)
             TMP_Text hitsLabel = Label("HitsLabel", hudRect, "맞음 0/15", 30, TextAlignmentOptions.TopRight, new Color(1f, 1f, 1f, 0.8f));
             Place(hitsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -160f), new Vector2(300f, 46f));
@@ -321,7 +327,8 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(ui.Hud))
             {
                 props.Ref("hpFill", hpFill).Ref("hpLabel", hpLabel).Ref("expFill", expFill)
-                    .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel).Ref("hitsLabel", hitsLabel);
+                    .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel).Ref("hitsLabel", hitsLabel)
+                    .Ref("roomBar", roomBar).Ref("noticeLabel", hudNotice);
             }
 
             // ----- 조이스틱 (화면 아래쪽 어디든 누르면 그 자리에 생김) -----
@@ -367,6 +374,12 @@ namespace HistoryHeroes.EditorTools
             for (int i = 0; i < 3; i++) cards[i] = BuildCard(panel, i, new Vector2(-step + step * i, 40f));
 
             Button reroll = Btn("Reroll", panel, "리롤 (광고) 2/2", new Vector2(-220f, -400f), new Vector2(390f, 120f), new Color(0.22f, 0.3f, 0.45f), out TMP_Text rerollLabel);
+            rerollLabel.enableAutoSizing = true; // "광고 보고 다시 뽑기 (남은 2)"가 한 줄에 들어가게
+            rerollLabel.fontSizeMin = 22f;
+            rerollLabel.fontSizeMax = 32f;
+            rerollLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            rerollLabel.rectTransform.offsetMin = new Vector2(14f, 0f);
+            rerollLabel.rectTransform.offsetMax = new Vector2(-14f, 0f);
             Button hide = Btn("HideFusion", panel, "이번 판 숨기기", new Vector2(220f, -400f), new Vector2(390f, 120f), new Color(0.38f, 0.25f, 0.45f), out _);
             TMP_Text note = Label("RerollNote", panel, "리롤은 다시 뽑을 기회일 뿐, 더 좋은 카드를 보장하지 않아요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.55f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -500f), new Vector2(1000f, 40f));
