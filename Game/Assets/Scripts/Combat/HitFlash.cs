@@ -14,6 +14,9 @@ namespace HistoryHeroes.Combat
         private Color _baseColor;
         private float _timeLeft;
 
+        /// <summary>지금 번쩍이는 중인가 (상태 이상 색칠이 덮어쓰지 않게)</summary>
+        public bool IsFlashing => _timeLeft > 0f;
+
         private void Awake()
         {
             _health = GetComponent<Health>();

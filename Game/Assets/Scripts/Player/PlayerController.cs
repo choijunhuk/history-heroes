@@ -52,6 +52,10 @@ namespace HistoryHeroes.Player
         private float _lastShotCoefficient = 1f;
         private bool _lowHpActive;
         private bool _awake;
+        private bool _undyingUsed;
+        private float _momentumUntil;
+        private bool _momentumActive;
+        private readonly object _momentumModifier = new object();
 
         private readonly object _heroModifiers = new object();
         private readonly object _lowHpModifier = new object();
@@ -108,6 +112,8 @@ namespace HistoryHeroes.Player
             if (bodyRenderer != null) bodyRenderer.color = hero.color;
 
             Stop.Moved += () => _firstShotPending = true;
+            Stop.Stopped += () => _momentumUntil = Time.time + MomentumSeconds;
+            Health.PreventDeath = TryUndying;
             _awake = true;
         }
 
@@ -165,9 +171,10 @@ namespace HistoryHeroes.Player
             _lifestealBudget = Mathf.Min(_lifestealBudget + dt * Health.Max * 0.03f, Health.Max * 0.03f);
 
             float regen = Stats.Get(StatType.HpRegen);
-            if (regen > 0f) Health.Heal(regen * dt);
+            if (regen > 0f) Health.Heal(regen * Health.Max * dt);
 
             UpdateLowHpBonus();
+            UpdateMomentum();
             if (Stop.IsStopped) TryBasicAttack();
         }
 
@@ -188,6 +195,37 @@ namespace HistoryHeroes.Player
             Vector2 raw = joystick != null ? joystick.Direction : Vector2.zero;
             return StopDetector.ApplyDeadZone(raw);
         }
+
+        private const float MomentumSeconds = 3f;
+
+        /// <summary>영웅의 기세 (전설): 멈춘 뒤 3초간 기본 공격 속도 +50%, 기본 공격 피해 +30% (Skills.md 1장)</summary>
+        private void UpdateMomentum()
+        {
+            bool active = Attack.Get(AttackModifierKind.Momentum) > 0 && Stop.IsStopped && Time.time < _momentumUntil;
+            if (active == _momentumActive) return;
+            _momentumActive = active;
+            if (active)
+            {
+                Stats.Add(new StatModifier(StatType.AttackSpeed, ModifierKind.Percent, 0.5f, ModifierSource.Skill, _momentumModifier, StatTarget.BasicAttack));
+                Stats.Add(new StatModifier(StatType.Attack, ModifierKind.Percent, 0.3f, ModifierSource.Skill, _momentumModifier, StatTarget.BasicAttack));
+            }
+            else
+            {
+                Stats.RemoveAllFrom(_momentumModifier);
+            }
+        }
+
+        /// <summary>불굴 (전설): 판에서 한 번, 죽는 순간 체력 50%로 부활</summary>
+        private bool TryUndying()
+        {
+            if (_undyingUsed || Attack.Get(AttackModifierKind.Undying) <= 0) return false;
+            _undyingUsed = true;
+            Health.Revive(Health.Max * 0.5f);
+            AttackFx.Burst(transform.position, 1.6f, new Color(1f, 0.85f, 0.3f, 0.7f), 0.5f);
+            return true;
+        }
+
+        public bool UndyingUsed => _undyingUsed;
 
         /// <summary>관우 의리의 투지: 체력이 절반 아래면 공격력 +20%</summary>
         private void UpdateLowHpBonus()
@@ -397,10 +435,27 @@ namespace HistoryHeroes.Player
         // ---------------------------------------------------------------- 스킬이 쓰는 투사체
 
         /// <summary>액티브 스킬(만궁 연사 등)이 플레이어의 투사체를 빌려 쏜다</summary>
-        public void LaunchSkillProjectile(Vector2 origin, Vector2 direction, float speed, DamageInfo damage, int pierce = 0)
+        public void LaunchSkillProjectile(Vector2 origin, Vector2 direction, float speed, DamageInfo damage, int pierce = 0,
+            System.Action<Health, Vector2> onHitTarget = null)
         {
             Projectile p = _projectiles.Get(origin, Quaternion.identity);
-            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, _projectiles.Release);
+            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, _projectiles.Release, null, 0.2f, onHitTarget);
         }
+
+        /// <summary>다른 투사체 프리팹으로 쏜다 (얼음 파편 등, 프리팹마다 풀을 따로 둔다)</summary>
+        public void LaunchSkillProjectile(Projectile prefab, Vector2 origin, Vector2 direction, float speed, DamageInfo damage, int pierce,
+            System.Action<Health, Vector2> onHitTarget)
+        {
+            if (!_extraPools.TryGetValue(prefab, out ComponentPool<Projectile> pool))
+            {
+                pool = new ComponentPool<Projectile>(prefab, new GameObject(prefab.name + " Pool").transform, prewarm: 8);
+                _extraPools[prefab] = pool;
+            }
+
+            Projectile p = pool.Get(origin, Quaternion.identity);
+            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, pool.Release, null, 0f, onHitTarget);
+        }
+
+        private readonly Dictionary<Projectile, ComponentPool<Projectile>> _extraPools = new Dictionary<Projectile, ComponentPool<Projectile>>();
     }
 }

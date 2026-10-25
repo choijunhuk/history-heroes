@@ -58,7 +58,28 @@ namespace HistoryHeroes.Combat
                 reduction = _stats.Get(StatType.DamageReduction);
             }
 
-            dealt = Mathf.Min(Current, info.Amount * (1f - reduction));
+            float incoming = info.Amount * (1f - reduction);
+            if (Shield > 0f)
+            {
+                float absorbed = Mathf.Min(Shield, incoming);
+                Shield -= absorbed;
+                incoming -= absorbed;
+                if (Shield <= 0f)
+                {
+                    Shield = 0f;
+                    ShieldBroken?.Invoke();
+                }
+            }
+
+            dealt = Mathf.Min(Current, incoming);
+            if (Current - dealt <= 0f && PreventDeath != null && PreventDeath())
+            {
+                // 불굴: 죽지 않았다 (체력은 PreventDeath가 정함)
+                if (_invulnerableDuration > 0f) _invulnerableUntil = Time.time + _invulnerableDuration;
+                Damaged?.Invoke(info, dealt);
+                return true;
+            }
+
             Current -= dealt;
             if (_invulnerableDuration > 0f) _invulnerableUntil = Time.time + _invulnerableDuration;
 
@@ -70,6 +91,21 @@ namespace HistoryHeroes.Combat
 
         /// <summary>켜면 어떤 피해도 받지 않는다 (판이 끝난 뒤 남은 탄환 등)</summary>
         public bool Invulnerable { get; set; }
+
+        /// <summary>보호막: 체력보다 먼저 깎인다 (수호 방패·철벽)</summary>
+        public float Shield { get; private set; }
+
+        /// <summary>보호막이 다 깎였을 때 (철벽: 깨질 때 폭발)</summary>
+        public event Action ShieldBroken;
+
+        /// <summary>죽을 만큼 맞았을 때 한 번 막을 기회 (불굴). true를 돌려주면 죽지 않고, 체력은 그쪽이 정한다</summary>
+        public Func<bool> PreventDeath;
+
+        /// <summary>보호막을 채운다. 이미 있는 것보다 크면 그만큼으로 (겹쳐서 무한히 쌓이지 않게)</summary>
+        public void SetShieldAtLeast(float amount) => Shield = Mathf.Max(Shield, amount);
+
+        /// <summary>죽지 않고 체력을 정한다 (불굴)</summary>
+        public void Revive(float hp) => Current = Mathf.Clamp(hp, 1f, Max);
 
         public void Heal(float amount)
         {

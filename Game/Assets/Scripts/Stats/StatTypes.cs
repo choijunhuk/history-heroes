@@ -13,7 +13,7 @@ namespace HistoryHeroes.Stats
         DamageReduction,   // 0.1 = 10%
         Dodge,
         Lifesteal,         // 기본 공격에만 (StatTarget.BasicAttack)
-        HpRegen,           // 초당 회복량
+        HpRegen,           // 초당 최대체력 비율 (0.005 = 초당 0.5%, Skills.md 체력 재생)
         CooldownReduction, // 액티브에만
         ActiveDamage,      // 액티브 피해 증가
         ExpGain,           // 판 안 스킬(배움)만 줄 수 있다. 판 밖 출처는 0 (Stats.md 4-1)
