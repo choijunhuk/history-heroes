@@ -64,4 +64,8 @@ Codex effort per call: `codex exec -c model_reasoning_effort=<low|medium|high|xh
   - Check first: `unity status` (state `ready`), then `unity command eval --caller plugin --skill <skill> '<C#>'`.
   - On Windows, run `unity command eval` from **Git Bash**, not PowerShell 5.1 — PowerShell breaks embedded double quotes in native arguments.
 - **Unity's official agent plugin** (Claude Code: `unity@claude-plugins-official`) provides Unity skills (UI, sprites, LevelPlay ads, IAP, localization, …). Prefer them over guessing Unity APIs.
+- **Scene builder:** `HistoryHeroes.EditorTools.V01SceneBuilder.BuildAll()` (menu **History Heroes → v0.1 테스트 장면 만들기**) regenerates layers, placeholder sprites, the Korean TMP font, all data assets, prefabs, and `Assets/Scenes/Dungeon_v01.unity`. Change numbers in the builder (or the assets) and rerun it; don't hand-edit the scene.
+- **QA in Play mode** (via `unity command eval`): `QaTools.Step(card, heal)` advances one action (pick card → kill → enter door); `QaTools.State()` prints run state; `QaTools.Scenario(preset, "boss"|"swarm"|"barrage", move)` + `QaTools.ScenarioStatus()` benchmark the three builds. `GameViewTools.SetPortrait()` sets the Game view to 1080×1920.
+- **Captures:** `unity command capture game_view --width 540 --height 960 --save_path Temp/qa/x.png` saves under `Game/Assets/Temp/` (git-ignored). Each `eval` call takes ~3 s, so keep polling loops coarse.
+- **Disk:** drive C is tight. If the Editor stops responding, check free space first (Editor.log "Win32 IO returned 112" = disk full).
 - **Android testing:** `adb` ships with the Unity Android module at `C:\Program Files\Unity\Hub\Editor\6000.3.27f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\adb.exe`.

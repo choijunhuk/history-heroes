@@ -110,10 +110,55 @@ namespace HistoryHeroes.EditorTools
             }
 
             var cheats = systems.AddComponent<Dev.DevCheats>();
-            using (var props = new Props(cheats)) props.Ref("experience", experience).Ref("levelUp", ui.LevelUp);
+            using (var props = new Props(cheats)) props.Ref("experience", experience).Ref("levelUp", ui.LevelUp).Ref("skills", skills);
+            SetPresets(cheats, d);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        }
+
+        /// <summary>
+        /// 빌드 3종 프리셋 (GameDesign 6-8). 셋 다 레벨업 약 15번어치로 맞춰서 공정하게 비교한다.
+        /// 조합은 "재료 레벨 + 조합 카드 1장" = 7번으로 센다.
+        /// </summary>
+        private static void SetPresets(Dev.DevCheats cheats, Data d)
+        {
+            SkillData Find(string id) => d.Pool.Find(s => s.id == id);
+            var presets = new (string name, (SkillData skill, int level, bool fusion)[] skills)[]
+            {
+                ("연사형 (공속 4 · 멀티샷 3 · 공격력 4 · 흡혈 4)", new[]
+                {
+                    (Find("aspd_up"), 4, false), (Find("multishot"), 3, false), (Find("atk_up"), 4, false), (Find("lifesteal"), 4, false),
+                }),
+                ("칼날 탱커형 (강철 회오리 · 방어력 5 · 최대체력 4)", new[]
+                {
+                    ((SkillData)d.SteelWhirl, 1, true), (Find("def_up"), 5, false), (Find("hp_up"), 4, false),
+                }),
+                ("번개 광역형 (뇌화 폭풍 Lv3 · 최대체력 5 · 공격력 1)", new[]
+                {
+                    ((SkillData)d.ThunderFire, 3, true), (Find("hp_up"), 5, false), (Find("atk_up"), 1, false),
+                }),
+            };
+
+            var so = new SerializedObject(cheats);
+            SerializedProperty list = so.FindProperty("presets");
+            list.arraySize = presets.Length;
+            for (int i = 0; i < presets.Length; i++)
+            {
+                SerializedProperty preset = list.GetArrayElementAtIndex(i);
+                preset.FindPropertyRelative("name").stringValue = presets[i].name;
+                SerializedProperty entries = preset.FindPropertyRelative("skills");
+                entries.arraySize = presets[i].skills.Length;
+                for (int j = 0; j < presets[i].skills.Length; j++)
+                {
+                    SerializedProperty e = entries.GetArrayElementAtIndex(j);
+                    e.FindPropertyRelative("skill").objectReferenceValue = presets[i].skills[j].skill;
+                    e.FindPropertyRelative("level").intValue = presets[i].skills[j].level;
+                    e.FindPropertyRelative("fusionResult").boolValue = presets[i].skills[j].fusion;
+                }
+            }
+
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static GameObject Block(string name, Transform parent, Vector2 position, Vector2 size, Color color, int order, bool collider)

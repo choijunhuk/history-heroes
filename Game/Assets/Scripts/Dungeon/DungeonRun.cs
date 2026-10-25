@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
 using HistoryHeroes.Enemy;
 using HistoryHeroes.Player;
@@ -54,6 +55,7 @@ namespace HistoryHeroes.Dungeon
         private void Start()
         {
             GamePause.ResetAll();
+            DamageLog.Reset();
             _startTime = Time.time;
             player.Health.Died += _ => Finish(victory: false);
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
@@ -177,6 +179,7 @@ namespace HistoryHeroes.Dungeon
                 RoomReached = _room,
                 RoomCount = RoomCount,
                 Fusions = new List<string>(_fusions),
+                BasicAttackShare = DamageLog.BasicShare,
                 Skills = new List<string>(),
             };
 
@@ -236,6 +239,8 @@ namespace HistoryHeroes.Dungeon
         public int RoomReached;
         public int RoomCount;
         public List<string> Fusions;
+        /// <summary>준 피해 중 기본 공격 비율 (목표 40% 이상, GameDesign 3-3)</summary>
+        public float BasicAttackShare;
         public List<string> Skills;
     }
 }

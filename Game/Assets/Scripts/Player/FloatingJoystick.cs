@@ -20,12 +20,24 @@ namespace HistoryHeroes.Player
 
         public Vector2 Direction { get; private set; }
 
+        /// <summary>테스트용: 값이 있으면 실제 입력 대신 이 방향으로 움직인다 ("이동만" vs "정지" 비교, GameDesign 3-3).</summary>
+        public static Vector2? DevOverride { get; set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => DevOverride = null;
+
         private void Update()
         {
             if (GamePause.IsPaused)
             {
                 // 카드 고르는 터치가 이동으로 이어지지 않게, 멈춘 동안의 누름은 무시한다.
                 EndDrag();
+                return;
+            }
+
+            if (DevOverride.HasValue)
+            {
+                Direction = Vector2.ClampMagnitude(DevOverride.Value, 1f);
                 return;
             }
 

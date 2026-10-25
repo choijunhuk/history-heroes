@@ -34,7 +34,7 @@ namespace HistoryHeroes.Dungeon
             // 닫힌 문 위에 서 있다가 방을 깬 경우: 들어오는 순간(Enter)이 다시 오지 않으므로 바로 확인
             if (open && _trigger != null)
             {
-                _trigger.Overlap(new ContactFilter2D().NoFilter(), _overlaps);
+                _trigger.Overlap(ContactFilter2D.noFilter, _overlaps);
                 foreach (Collider2D c in _overlaps)
                 {
                     if (TryEnter(c)) break;

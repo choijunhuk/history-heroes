@@ -97,6 +97,30 @@ namespace HistoryHeroes.Skills
             return false;
         }
 
+        /// <summary>
+        /// 개발·테스트용: 스킬을 그 레벨로 바로 맞춘다 (없으면 새로 얻음, 칸이 없으면 무시).
+        /// 조합 결과도 넣을 수 있다. 빌드 3종 비교(GameDesign 6-8)를 빨리 하려고 쓴다.
+        /// </summary>
+        public bool DevSetLevel(SkillData skill, int level, bool isFusionResult = false)
+        {
+            if (skill == null) return false;
+            level = Mathf.Clamp(level, 1, skill.maxLevel);
+
+            SkillInstance owned = Loadout.Find(skill);
+            if (owned == null)
+            {
+                if (!Loadout.HasFreeSlot(skill.Kind)) return false;
+                owned = Loadout.AddNew(skill, level);
+                owned.IsFusionResult = isFusionResult;
+                Install(owned);
+                return true;
+            }
+
+            owned.Level = level;
+            Refresh(owned);
+            return true;
+        }
+
         public void Choose(SkillCard card)
         {
             switch (card.Type)

@@ -47,6 +47,85 @@ namespace HistoryHeroes.EditorTools
             return "대기 | " + State();
         }
 
+        // ---------- 빌드 비교 시나리오 (GameDesign 6-8 "상황마다 1등이 다른가", 3-3 "정지 vs 이동") ----------
+        private static float _scenarioStart;
+        private static bool _scenarioMoving;
+        private static string _scenarioName;
+
+        /// <summary>
+        /// Play 시작 직후에 부른다. 던전 흐름을 끄고, 빌드 프리셋을 준 뒤, 시나리오 적을 세운다.
+        /// kind: boss (체력 25배 엘리트 1) / swarm (돌진병 14) / barrage (궁병 6 + 투척병 2)
+        /// move: true면 계속 움직임(기본 공격 없음), false면 제자리(멈춤)
+        /// 시나리오 적은 경험치를 주지 않아서 도중에 레벨업으로 빌드가 바뀌지 않는다.
+        /// </summary>
+        public static string Scenario(int preset, string kind, bool move)
+        {
+            var run = Object.FindAnyObjectByType<DungeonRun>();
+            var cheats = Object.FindAnyObjectByType<Dev.DevCheats>();
+            var player = Object.FindAnyObjectByType<PlayerController>();
+            if (run == null || cheats == null || player == null) return "Play 모드가 아님";
+
+            run.gameObject.SetActive(false); // 방 흐름·그 방의 적 정지
+            Dev.DevCheats.KillAll();
+            string presetName = cheats.ApplyPreset(preset);
+
+            player.Teleport(new Vector2(0f, -5.5f));
+            player.Health.Heal(1e9f);
+
+            var root = new GameObject("Scenario").transform;
+            switch (kind)
+            {
+                case "boss":
+                    SpawnScenario(root, "Enemy_Charger", 1, hp: 5f, elite: true, player);
+                    break;
+                case "swarm":
+                    SpawnScenario(root, "Enemy_Charger", 14, hp: 1.4f, elite: false, player);
+                    break;
+                default:
+                    SpawnScenario(root, "Enemy_Archer", 6, hp: 1.4f, elite: false, player);
+                    SpawnScenario(root, "Enemy_Bomber", 2, hp: 1.4f, elite: false, player);
+                    break;
+            }
+
+            Combat.DamageLog.Reset();
+            _scenarioStart = Time.time;
+            _scenarioMoving = move;
+            _scenarioName = $"{presetName} | {kind} | {(move ? "이동만" : "정지")}";
+            FloatingJoystick.DevOverride = move ? Vector2.right : (Vector2?)null;
+            return "시작: " + _scenarioName;
+        }
+
+        /// <summary>시나리오 진행 확인. 적이 다 죽으면 걸린 시간과 기본 공격 피해 비중을 돌려준다.</summary>
+        public static string ScenarioStatus()
+        {
+            var player = Object.FindAnyObjectByType<PlayerController>();
+            if (player == null) return "Play 모드가 아님";
+            player.Health.Heal(1e9f); // 생존은 따로 본다. 여기서는 처치 속도만
+
+            float elapsed = Time.time - _scenarioStart;
+            if (EnemyBase.Alive.Count > 0 && elapsed < 120f)
+            {
+                // "이동만": 좌우로 계속 왔다 갔다 (멈추지 않음)
+                if (_scenarioMoving) FloatingJoystick.DevOverride = new Vector2(-(FloatingJoystick.DevOverride?.x ?? 1f), 0f);
+                return $"진행 중 {elapsed:0.0}초 남은 적 {EnemyBase.Alive.Count}";
+            }
+
+            FloatingJoystick.DevOverride = null;
+            string result = EnemyBase.Alive.Count == 0 ? $"{elapsed:0.0}초" : "120초 안에 못 잡음";
+            return $"결과: {_scenarioName} | {result} | 기본 공격 {Mathf.RoundToInt(Combat.DamageLog.BasicShare * 100f)}%";
+        }
+
+        private static void SpawnScenario(Transform root, string prefabName, int count, float hp, bool elite, PlayerController player)
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>($"Assets/Prefabs/Enemies/{prefabName}.prefab");
+            for (int i = 0; i < count; i++)
+            {
+                var position = new Vector2(Random.Range(-3.2f, 3.2f), Random.Range(1f, 6f));
+                EnemyBase enemy = Object.Instantiate(prefab, position, Quaternion.identity, root);
+                enemy.Spawn(player.transform, hp, 1f, elite);
+            }
+        }
+
         public static string State()
         {
             var run = Object.FindAnyObjectByType<DungeonRun>();

@@ -62,6 +62,7 @@ namespace HistoryHeroes.Combat
             Current -= dealt;
             if (_invulnerableDuration > 0f) _invulnerableUntil = Time.time + _invulnerableDuration;
 
+            if (team == Team.Enemy) DamageLog.Record(info.Kind, dealt);
             Damaged?.Invoke(info, dealt);
             if (IsDead) Died?.Invoke(this);
             return true;
