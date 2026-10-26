@@ -17,6 +17,7 @@ namespace HistoryHeroes.UI
     public sealed class NewcomerPanel : MonoBehaviour
     {
         [SerializeField] private GameObject root;
+        [SerializeField] private TMP_Text titleLabel;
         [SerializeField] private TMP_Text attendanceLabel;
         [SerializeField] private ButtonList list;
         [SerializeField] private Button backButton;
@@ -54,6 +55,17 @@ namespace HistoryHeroes.UI
 
             var rows = new List<ButtonList.Row>();
             int index = Newcomer.DayIndex(s, now);
+            bool newcomer = Newcomer.Visible(s, now);
+            if (titleLabel != null) titleLabel.text = newcomer ? "신규 7일 미션" : "출석부";
+            if (!newcomer)
+            {
+                int block = Attendance.BlockDay(s);
+                rows.Add(new ButtonList.Row($"누적 출석 (28일 묶음)  <b>{block}/28</b>\n<size=80%>14일 장비 조각 20 · 28일 장비 조각 40 + 칭호 \"꾸준한 수호자\"</size>", OpenColor, null, false));
+                rows.Add(new ButtonList.Row(s.newcomer.bonusClaimed ? "<size=80%>신규 7일 미션을 다 받았어요</size>" : "<size=80%>신규 7일 미션 기간이 끝났어요</size>", LockedColor, null, false));
+                list.Show(rows, scrollToTop);
+                return;
+            }
+
             for (int day = 1; day <= Newcomer.Days; day++)
             {
                 int d = day;

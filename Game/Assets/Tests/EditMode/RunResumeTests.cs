@@ -98,5 +98,64 @@ namespace HistoryHeroes.Tests
             CollectionAssert.AreEqual(save.run.rng, back.run.rng, "64비트 상태가 문자열로 그대로");
             Assert.IsTrue(back.run.choseLegendary);
         }
+
+        [Test]
+        public void SnapshotKeepsRewardHeartMetaAndFusionHistory()
+        {
+            var save = new SaveData();
+            save.run = new RunSnapshot { valid = true, mode = (int)BattleMode.Dungeon, room = 5, rewardTaken = true, heartSpent = true, hasMeta = true };
+            save.run.meta = new MetaSnapshot { heroLevel = 12, heroStars = 3 };
+            save.run.consumed.Add("def_up");
+            save.run.completedFusions.Add("steel_whirl");
+            save.run.hiddenFusions.Add("thunder_fire");
+
+            SaveData back = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(save));
+
+            Assert.IsTrue(back.run.rewardTaken, "보상 받음 → 껐다 켜도 다시 안 열린다");
+            Assert.IsTrue(back.run.heartSpent, "하트 쓴 첫 보스전 → 지면 돌려준다");
+            Assert.IsTrue(back.run.hasMeta);
+            Assert.AreEqual(12, back.run.meta.heroLevel, "판을 시작할 때의 성장");
+            CollectionAssert.AreEqual(new[] { "def_up" }, back.run.consumed);
+            CollectionAssert.AreEqual(new[] { "steel_whirl" }, back.run.completedFusions);
+            CollectionAssert.AreEqual(new[] { "thunder_fire" }, back.run.hiddenFusions);
+        }
+
+        [Test]
+        public void OldSnapshotWithoutNewFields_UsesCurrentMeta()
+        {
+            // v1.0 첫 이어하기 파일 (새 칸이 없다) → 성장은 지금 계정 것, 보상은 아직 안 받음
+            RunSnapshot old = JsonUtility.FromJson<RunSnapshot>("{ \"valid\": true, \"mode\": 0, \"room\": 4 }");
+            Assert.IsFalse(old.hasMeta);
+            Assert.IsFalse(old.rewardTaken);
+            Assert.IsNotNull(old.consumed);
+        }
+
+        [Test]
+        public void TutorialBossPending_AfterRecordSaved()
+        {
+            var s = new SaveData();
+            Assert.IsTrue(Progress.Tutorial.Needed(s), "처음 깐 사람");
+            Assert.IsFalse(Progress.Tutorial.BossPending(s));
+
+            // 튜토리얼 던전에서 기록을 남겼고, 보스 전에 앱이 꺼졌다
+            s.records.Add(new RunRecord { id = "tut" });
+            s.tutorialRecordId = "tut";
+            Assert.IsTrue(Progress.Tutorial.BossPending(s), "로비가 튜토리얼 보스로 바로 보낸다");
+            Assert.IsTrue(Progress.Tutorial.Needed(s), "기록이 있어도 튜토리얼은 안 끝났다");
+
+            Progress.Tutorial.Complete(s);
+            Assert.IsFalse(Progress.Tutorial.BossPending(s));
+            Assert.IsFalse(Progress.Tutorial.Needed(s));
+            Assert.IsNull(s.tutorialRecordId);
+        }
+
+        [Test]
+        public void TutorialNotNeeded_ForPlayerWithOtherRecords()
+        {
+            var s = new SaveData();
+            s.records.Add(new RunRecord { id = "old" });
+            Assert.IsFalse(Progress.Tutorial.Needed(s), "튜토리얼 기록이 아닌 기록이 있으면 (옛 저장) 튜토리얼을 다시 시키지 않는다");
+            Assert.IsFalse(Progress.Tutorial.BossPending(s));
+        }
     }
 }

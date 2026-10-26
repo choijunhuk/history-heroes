@@ -26,7 +26,10 @@ namespace HistoryHeroes.Progress
         public const float SaveHp = 0.5f;
 
         /// <summary>처음 들어온 사람 (튜토리얼을 안 했고 진행한 것도 없다)</summary>
-        public static bool Needed(SaveData s) => !s.tutorialDone && s.records.Count == 0 && s.unlockedChapter <= 1 && s.stars.Count == 0 && s.dungeonRuns == 0;
+        public static bool Needed(SaveData s) => !s.tutorialDone && s.unlockedChapter <= 1 && s.stars.Count == 0 && s.dungeonRuns == 0 && (s.records.Count == 0 || BossPending(s));
+
+        /// <summary>튜토리얼 기록은 남겼는데 보스를 아직 못 깼다 (앱이 꺼졌다) → 튜토리얼 보스로 바로</summary>
+        public static bool BossPending(SaveData s) => !s.tutorialDone && !string.IsNullOrEmpty(s.tutorialRecordId) && s.FindRecord(s.tutorialRecordId) != null;
 
         /// <summary>
         /// 방 6개: ① 빈 방 (이동) ② 궁병 1 (멈추면 쏜다) ③ 돌진병 2 (예고선 → 피하기) ④⑤ 섞어서 (레벨업·조합) ⑥ 엘리트 돌진병 (마지막)
@@ -53,6 +56,7 @@ namespace HistoryHeroes.Progress
             var lines = new List<string>();
             if (s.tutorialDone) return lines;
             s.tutorialDone = true;
+            s.tutorialRecordId = null;
             var reward = new Reward { Gold = 500, Tickets = 1 };
             Wallet.Grant(s, reward);
             lines.Add("튜토리얼 끝!  " + reward + " (상점에서 고급 상자 1번 무료)");

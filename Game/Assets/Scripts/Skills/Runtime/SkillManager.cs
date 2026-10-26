@@ -279,6 +279,36 @@ namespace HistoryHeroes.Skills
             ChoseLegendary = choseLegendary;
         }
 
+        /// <summary>판 이어하기: 조합 이력 (재료로 쓴 스킬 · 끝낸 조합 · 숨긴 조합) — 없으면 카드 후보가 달라진다</summary>
+        public void CaptureFusionHistory(Records.RunSnapshot s)
+        {
+            foreach (SkillData d in Loadout.ConsumedMaterials) s.consumed.Add(d.id);
+            foreach (FusionRecipe r in Loadout.CompletedFusions) s.completedFusions.Add(r.id);
+            foreach (FusionRecipe r in Loadout.HiddenFusions) s.hiddenFusions.Add(r.id);
+        }
+
+        public void RestoreFusionHistory(Records.RunSnapshot s, SkillDatabase database)
+        {
+            if (s == null) return;
+            foreach (string id in s.consumed)
+            {
+                SkillData d = database != null ? database.Find(id) : null;
+                if (d != null) Loadout.MarkConsumed(d);
+            }
+
+            foreach (string id in s.completedFusions)
+            {
+                FusionRecipe r = recipes.Find(x => x != null && x.id == id);
+                if (r != null) Loadout.MarkCompleted(r);
+            }
+
+            foreach (string id in s.hiddenFusions)
+            {
+                FusionRecipe r = recipes.Find(x => x != null && x.id == id);
+                if (r != null) Loadout.Hide(r);
+            }
+        }
+
         public void Choose(SkillCard card)
         {
             if (card.Skill != null && card.Skill.rarity == Rarity.Legendary && card.Type != CardType.Fallback)

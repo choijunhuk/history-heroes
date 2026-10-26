@@ -92,8 +92,16 @@ namespace HistoryHeroes.Common
             switch ((BattleMode)s.mode)
             {
                 case BattleMode.Boss:
-                    if (s.practice) StartBossPractice(s.chapter, s.recordId);
-                    else StartBoss(s.chapter, s.recordId);
+                    if (s.practice)
+                    {
+                        StartBossPractice(s.chapter, s.recordId);
+                    }
+                    else
+                    {
+                        HeartSpent = s.heartSpent; // 하트를 쓰고 시작한 첫 보스전 → 지면 돌려준다
+                        StartBoss(s.chapter, s.recordId);
+                    }
+
                     return;
                 case BattleMode.Daily:
                     ClearSpecialRun();
@@ -115,6 +123,7 @@ namespace HistoryHeroes.Common
             }
 
             BossRecordId = null;
+            HeartSpent = s.heartSpent;
             Resuming = s;
             Load(BattleScene);
         }

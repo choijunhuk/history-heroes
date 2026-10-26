@@ -53,7 +53,7 @@ namespace HistoryHeroes.Records
         }
 
         /// <summary>글 안 해시 칸에 해시를 채운다</summary>
-        private static string Sign(string json)
+        public static string Sign(string json)
         {
             Match m = IntegrityField.Match(json);
             if (!m.Success) return json;
@@ -61,11 +61,20 @@ namespace HistoryHeroes.Records
             return json.Substring(0, m.Groups[2].Index) + hash + json.Substring(m.Groups[2].Index + m.Groups[2].Length);
         }
 
-        /// <summary>해시가 맞나. 해시 칸이 없거나 비었으면 옛 파일 → 통과</summary>
+        /// <summary>해시가 맞나. 해시가 없거나 비었으면 **구조 1~4(옛 파일)만** 통과 (구조 5부터는 해시가 꼭 있다)</summary>
         public static bool IntegrityOk(string json)
         {
             string body = WithoutHash(json, out string stored);
-            return string.IsNullOrEmpty(stored) || stored == Hash(body);
+            if (string.IsNullOrEmpty(stored)) return SchemaOf(json) < 5;
+            return stored == Hash(body);
+        }
+
+        private static readonly Regex SchemaField = new Regex("\"schemaVersion\"\\s*:\\s*(\\d+)", RegexOptions.CultureInvariant);
+
+        private static int SchemaOf(string json)
+        {
+            Match m = SchemaField.Match(json);
+            return m.Success && int.TryParse(m.Groups[1].Value, out int v) ? v : 0;
         }
 
         /// <summary>마지막 Load가 어디서 읽었고 무슨 문제가 있었는지 (로그·테스트용)</summary>
@@ -438,6 +447,9 @@ namespace HistoryHeroes.Records
             data.run.boosts ??= new List<int>();
             data.run.fusions ??= new List<string>();
             data.run.rng ??= new List<string>();
+            data.run.consumed ??= new List<string>();
+            data.run.completedFusions ??= new List<string>();
+            data.run.hiddenFusions ??= new List<string>();
             data.dailyChallenge ??= new DailySave();
             data.dailyChallenge.history ??= new List<DailyResult>();
             data.dailyChallenge.history.RemoveAll(h => h == null);

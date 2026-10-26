@@ -381,6 +381,35 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Load_BlankedHashOnNewSchema_UsesBackup()
+        {
+            var store = new SaveStore(_folder);
+            SaveData data = SampleSave();
+            data.gold = 100;
+            store.Save(data);
+            data.gold = 200;
+            store.Save(data); // 백업 = 100
+            string text = File.ReadAllText(store.MainPath).Replace("\"gold\": 200", "\"gold\": 999999");
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"(""integrity""\s*:\s*"")([^""]*)("")", "$1$3"); // 해시 칸만 비운다
+            File.WriteAllText(store.MainPath, text);
+
+            SaveData loaded = store.Load();
+
+            Assert.IsFalse(SaveStore.IntegrityOk(text), "구조 5부터는 해시가 꼭 있어야 한다");
+            Assert.AreEqual(100, loaded.gold, "해시를 지운 본 파일 대신 백업");
+            Assert.IsTrue(store.LastLoad.FromBackup);
+        }
+
+        [Test]
+        public void IntegrityOk_OldSchemaWithoutHash_Passes()
+        {
+            Assert.IsTrue(SaveStore.IntegrityOk("{ \"schemaVersion\": 4, \"gold\": 5 }"), "옛 파일(구조 1~4)은 해시가 없다");
+            Assert.IsTrue(SaveStore.IntegrityOk("{ \"gold\": 5 }"), "구조 칸도 없는 아주 옛 파일");
+            Assert.IsFalse(SaveStore.IntegrityOk("{ \"schemaVersion\": 5, \"integrity\": \"\", \"gold\": 5 }"));
+            Assert.IsFalse(SaveStore.IntegrityOk("{ \"schemaVersion\": 6, \"gold\": 5 }"), "해시 칸을 통째로 지워도 안 된다");
+        }
+
+        [Test]
         public void RotateRunBackups_KeepsLastThree()
         {
             var store = new SaveStore(_folder);
@@ -493,7 +522,7 @@ namespace HistoryHeroes.Tests
 
             // 교체 도중에 꺼진 상태 흉내: 본 파일은 백업으로 옮겨졌고, 임시 파일은 완성본
             File.Move(store.MainPath, store.BackupPath);
-            File.WriteAllText(store.TempPath, JsonUtility.ToJson(newer, true));
+            File.WriteAllText(store.TempPath, SaveStore.Sign(JsonUtility.ToJson(newer, true)));
 
             SaveData loaded = store.Load();
 
@@ -525,7 +554,7 @@ namespace HistoryHeroes.Tests
             Directory.CreateDirectory(_folder);
             SaveData only = SampleSave();
             only.unlockedChapter = 2;
-            File.WriteAllText(store.TempPath, JsonUtility.ToJson(only, true)); // 본 파일·백업 없이 임시 파일만
+            File.WriteAllText(store.TempPath, SaveStore.Sign(JsonUtility.ToJson(only, true))); // 본 파일·백업 없이 임시 파일만
 
             store.Load();
 

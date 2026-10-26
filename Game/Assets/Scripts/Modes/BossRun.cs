@@ -61,13 +61,16 @@ namespace HistoryHeroes.Modes
             _info = FindBoss(GameSession.Chapter);
             _record = SaveSystem.Data.FindRecord(GameSession.BossRecordId) ?? LatestRecord();
 
-            // 판 이어하기: 앱이 꺼지면 같은 기록으로 이 보스를 처음부터 (하트는 이미 썼다)
-            SaveSystem.Data.run = new RunSnapshot
+            // 판 이어하기: 앱이 꺼지면 같은 기록으로 이 보스를 처음부터 (하트는 이미 썼다). 튜토리얼 보스는 로비가 다시 연다
+            if (!GameSession.Tutorial)
             {
-                valid = true, mode = (int)BattleMode.Boss, chapter = GameSession.Chapter, practice = GameSession.Practice,
-                recordId = _record != null ? _record.id : GameSession.BossRecordId, savedAt = Economy.Clock.UnixSeconds,
-            };
-            SaveSystem.Save();
+                SaveSystem.Data.run = new RunSnapshot
+                {
+                    valid = true, mode = (int)BattleMode.Boss, chapter = GameSession.Chapter, practice = GameSession.Practice,
+                    recordId = _record != null ? _record.id : GameSession.BossRecordId, heartSpent = GameSession.HeartSpent, savedAt = Economy.Clock.UnixSeconds,
+                };
+                SaveSystem.Save();
+            }
 
             // 보스전에서는 레벨업하지 않는다 (7-3)
             if (levelUp != null) levelUp.enabled = false;
@@ -142,7 +145,6 @@ namespace HistoryHeroes.Modes
             _finished = true;
             SaveSystem.Data.run = new RunSnapshot();
             SaveSystem.MarkDirty();
-            SaveSystem.RotateRunBackups();
             player.Health.Invulnerable = true;
             float elapsed = _boss != null ? Time.time - _startTime : 0f;
 

@@ -174,9 +174,11 @@ namespace HistoryHeroes.UI
             }
 
             // 튜토리얼 (UX 4장): 처음이면 오프닝 → 튜토리얼 던전. 방금 끝냈으면 다음 목표
-            bool tutorial = Progress.Tutorial.Needed(data) && opening != null;
+            bool tutorialBoss = Progress.Tutorial.BossPending(data);
+            bool tutorial = tutorialBoss || (Progress.Tutorial.Needed(data) && opening != null);
             Audio.AudioManager.PlayMusic(tutorial ? "opening" : "lobby");
-            if (tutorial) opening.Open(() => GameSession.StartTutorial(false));
+            if (tutorialBoss) GameSession.StartTutorialBoss(data.tutorialRecordId); // 기록은 남겼고 보스 전에 꺼졌다
+            else if (tutorial) opening.Open(() => GameSession.StartTutorial(false));
             if (GameSession.TutorialJustFinished)
             {
                 GameSession.TutorialJustFinished = false;
@@ -451,9 +453,15 @@ namespace HistoryHeroes.UI
         private void RenderNewcomer(SaveData data)
         {
             if (newcomerButton == null) return;
-            bool visible = Missions.Newcomer.Visible(data, Clock.Now());
-            newcomerButton.gameObject.SetActive(visible);
-            if (!visible) return;
+            bool attendance = Missions.Attendance.Unlocked(data);
+            newcomerButton.gameObject.SetActive(attendance);
+            if (!attendance) return;
+            if (!Missions.Newcomer.Visible(data, Clock.Now()))
+            {
+                newcomerLabel.text = "출석부"; // 7일 미션이 끝나도 출석부는 계속
+                return;
+            }
+
             int ready = Missions.Newcomer.Claimable(data, Clock.Now());
             newcomerLabel.text = ready > 0 ? $"7일 <color=#FFD966>●{ready}</color>" : "7일 미션";
         }

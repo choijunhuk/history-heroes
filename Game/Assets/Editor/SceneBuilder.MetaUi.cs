@@ -217,7 +217,7 @@ namespace HistoryHeroes.EditorTools
             Place(attendance.rectTransform, Center, Center, new Vector2(0f, 730f), new Vector2(1000f, 110f));
             ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, -20f), new Vector2(1000f, 1340f), 150f, 28f);
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -790f), new Vector2(400f, 100f), ButtonGray, out _);
-            using (var props = new Props(screen)) props.Ref("root", panel.gameObject).Ref("attendanceLabel", attendance).Ref("list", list).Ref("backButton", back);
+            using (var props = new Props(screen)) props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("attendanceLabel", attendance).Ref("list", list).Ref("backButton", back);
             return screen;
         }
 

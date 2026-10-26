@@ -90,6 +90,9 @@ namespace HistoryHeroes.Dungeon
         /// <summary>이 판이 속한 주 (월요일 05:00을 넘기면 이 판의 층 보상·체크포인트는 거기까지)</summary>
         private string _riftWeek;
         private bool _riftSeasonNoticed;
+        /// <summary>이어한 방의 보상을 이미 받았나 (그 방에서는 보상 방을 다시 열지 않는다)</summary>
+        private bool _resumeRewardTaken;
+        private int _resumeRoom;
 
         public bool IsRift => _rift;
         public bool IsDaily => _daily;
@@ -166,14 +169,29 @@ namespace HistoryHeroes.Dungeon
                 offersMade = skills.OffersMade,
                 choseLegendary = skills.ChoseLegendary,
                 rerollsLeft = levelUp.RerollsLeft,
+                rewardTaken = _resumeRewardTaken && room == _resumeRoom,
+                heartSpent = GameSession.HeartSpent,
+                hasMeta = true,
+                meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)),
                 savedAt = Clock.UnixSeconds,
             };
+            skills.CaptureFusionHistory(s);
             foreach (SkillInstance k in skills.Loadout.Actives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
             foreach (SkillInstance k in skills.Loadout.Passives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
             s.boosts = skills.RiftBoostCounts();
             s.fusions.AddRange(_fusions);
             s.rng = RunRandom.Capture();
             SaveSystem.Data.run = s;
+            SaveSystem.Save();
+        }
+
+        /// <summary>보상을 받았다고 스냅샷에 적고 바로 저장 (골드와 "받음"이 같이 남는다 → 껐다 켜도 다시 못 받는다)</summary>
+        private void MarkRewardTaken()
+        {
+            RunSnapshot run = SaveSystem.Data.run;
+            if (run != null && run.valid && run.room == _room) run.rewardTaken = true;
+            _resumeRewardTaken = true;
+            _resumeRoom = _room;
             SaveSystem.Save();
         }
 
@@ -186,6 +204,9 @@ namespace HistoryHeroes.Dungeon
             skills.ApplyRecord(s.skills, database);
             skills.RestoreRiftBoosts(s.boosts);
             skills.RestoreRunState(s.offersMade, s.choseLegendary);
+            skills.RestoreFusionHistory(s, database);
+            _resumeRewardTaken = s.rewardTaken;
+            _resumeRoom = room;
             experience.Level.Restore(s.level, s.experience);
             experience.RestoreKills(s.kills);
             player.Health.Revive(player.Health.Max * Mathf.Clamp(s.hpRatio, 0.05f, 1f));
@@ -402,7 +423,12 @@ namespace HistoryHeroes.Dungeon
             hud.SetRoomProgress(room - first, kinds);
             ApplyLayout(_layouts[room - 1]);
 
-            if (plan.kind == RoomKind.Reward) OpenRewardRoom();
+            if (plan.kind == RoomKind.Reward && _resumeRewardTaken && room == _resumeRoom)
+            {
+                _alive = 0; // 이미 받은 보상 방 → 바로 다음 방으로
+                OnRoomCleared();
+            }
+            else if (plan.kind == RoomKind.Reward) OpenRewardRoom();
             else if (plan.kind == RoomKind.Boss) StartCoroutine(SpawnRiftBoss(room));
             else StartCoroutine(SpawnRoom(plan, _encounters[room - 1]));
             RoomEntered?.Invoke(room);
@@ -556,6 +582,7 @@ namespace HistoryHeroes.Dungeon
                         break;
                 }
 
+                MarkRewardTaken();
                 if (!_finished) OnRoomCleared();
             });
         }
@@ -723,7 +750,7 @@ namespace HistoryHeroes.Dungeon
 
             SaveSystem.SaveIfDirty();
 
-            if (Modes.RiftRules.IsEliteFloor(_room) && rewardRoom != null)
+            if (Modes.RiftRules.IsEliteFloor(_room) && rewardRoom != null && !(_resumeRewardTaken && _room == _resumeRoom))
             {
                 int gold = 50 + 25 * Modes.RiftRules.ChapterFor(_room);
                 rewardRoom.Open(_rewardHeal, gold, choice =>
@@ -736,6 +763,7 @@ namespace HistoryHeroes.Dungeon
                         SaveSystem.MarkDirty();
                     }
 
+                    MarkRewardTaken();
                     door.SetOpen(true);
                 });
                 yield break;
@@ -798,7 +826,6 @@ namespace HistoryHeroes.Dungeon
             _finished = true;
             SaveSystem.Data.run = new RunSnapshot(); // 판이 끝났다 → 이어하기 없음
             SaveSystem.MarkDirty();
-            SaveSystem.RotateRunBackups();
             if (_rift)
             {
                 FinishRift();
@@ -875,7 +902,6 @@ namespace HistoryHeroes.Dungeon
         /// </summary>
         private void FinishTutorial(bool victory)
         {
-            SaveData save = SaveSystem.Data;
             var summary = new RunSummary
             {
                 Victory = victory,
@@ -901,10 +927,16 @@ namespace HistoryHeroes.Dungeon
                 return;
             }
 
+            if (!victory)
+            {
+                summary.RewardLines.Add("튜토리얼을 그만뒀어요 — 다시 하면 처음부터예요");
+                result.Show(summary, null);
+                return;
+            }
+
+            // 골드는 기록을 저장할 때 같이 준다 (저장 전에 앱이 꺼지면 튜토리얼 던전을 다시 하니까 두 번 받지 않게)
             var reward = new Reward { Gold = 300 };
-            Wallet.Grant(save, reward);
-            summary.RewardLines.Add(reward.ToString());
-            SaveSystem.Save();
+            summary.RewardLines.Add(reward + " (기록을 저장하면)");
 
             // 기록 용량이 꼭 한 칸 넘치게 (지금 빌드 비용 - 1) → 패시브 한 레벨만 빼면 된다 (핵심 스킬은 남는다)
             RecordDraft all = RecordDraft.FromLoadout(skills.Loadout, database, 999);
@@ -927,6 +959,8 @@ namespace HistoryHeroes.Dungeon
                         r.heroName = heroName;
                         r.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta));
                         made = r;
+                        SaveSystem.Data.tutorialRecordId = r.id; // 보스 전에 앱이 꺼져도 로비가 튜토리얼 보스로 보낸다
+                        Wallet.Grant(SaveSystem.Data, reward); // 기록과 같은 저장에 들어간다
                         return r;
                     }, "용량이 넘쳤어요! 뺄 스킬을 눌러 용량 안으로 맞춘 뒤 저장해요 → 이 기록으로 보스와 싸워요",
                     () => GameSession.StartTutorialBoss(made != null ? made.id : null));

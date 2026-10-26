@@ -107,6 +107,8 @@ namespace HistoryHeroes.Records
         // ---------------------------------------------------------------- v1.0 (구조 5)
         /// <summary>튜토리얼 보스를 깼다 → 출석부·신규 7일 미션·기록 보관함이 열린다 (Systems 3장)</summary>
         public bool tutorialDone;
+        /// <summary>튜토리얼 던전에서 남긴 기록 (보스 전에 앱이 꺼져도 튜토리얼 보스로 바로 간다)</summary>
+        public string tutorialRecordId;
         public AttendanceSave attendance = new AttendanceSave();
         public NewcomerSave newcomer = new NewcomerSave();
         public PatrolSave patrol = new PatrolSave();
@@ -365,6 +367,17 @@ namespace HistoryHeroes.Records
         public int offersMade;
         public bool choseLegendary;
         public int rerollsLeft = -1;
+        /// <summary>이 방의 보상(보상 방·균열 엘리트 층)을 이미 받았나 (껐다 켜서 다시 받기 방지)</summary>
+        public bool rewardTaken;
+        /// <summary>판을 시작할 때 하트를 썼나 (보스 첫 패배 하트 돌려주기)</summary>
+        public bool heartSpent;
+        /// <summary>판을 시작할 때의 판 밖 성장 (이어할 때 그대로 — 로비에서 바꾼 강화가 끼어들지 않게)</summary>
+        public bool hasMeta;
+        public MetaSnapshot meta;
+        /// <summary>조합 이력: 재료로 쓴 스킬 · 끝낸 조합 · 이번 판에 숨긴 조합</summary>
+        public List<string> consumed = new List<string>();
+        public List<string> completedFusions = new List<string>();
+        public List<string> hiddenFusions = new List<string>();
         /// <summary>난수 3갈래 상태 (방 · 적 · 카드)</summary>
         public List<string> rng = new List<string>();
         public long savedAt;
