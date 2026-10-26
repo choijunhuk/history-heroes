@@ -357,7 +357,9 @@ MonoBehaviour:
     m_Bits: 1024
   openingRing: {fileID: 8509630565904681476}
   minion: {fileID: 5576645427100197428, guid: 537f6b4890e94d540973403966c59fe2, type: 3}
-  maxMinions: 6
+  maxMinions: 5
+  minionHpScale: 0.5
+  minionAttackScale: 0.55
 --- !u!1 &6927754222033269095
 GameObject:
   m_ObjectHideFlags: 0

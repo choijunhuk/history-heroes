@@ -375,7 +375,7 @@ namespace HistoryHeroes.Enemy
 
         /// <summary>마법진 예고 → 졸개 소환 (ChildSpawner가 없으면 아무것도 안 함)</summary>
         /// <param name="into">소환된 졸개를 넣을 목록 (졸개 상한을 세는 보스)</param>
-        protected IEnumerator Summon(EnemyBase prefab, int count, float radius, float telegraph, float hpScale = 0.6f, List<EnemyBase> into = null)
+        protected IEnumerator Summon(EnemyBase prefab, int count, float radius, float telegraph, float hpScale = 0.6f, List<EnemyBase> into = null, float attackScale = 1f)
         {
             if (prefab == null || count <= 0) yield break;
             Enter(State.Telegraph);
@@ -394,7 +394,7 @@ namespace HistoryHeroes.Enemy
             if (ChildSpawner == null) yield break;
             foreach (Vector2 p in points)
             {
-                EnemyBase spawned = ChildSpawner(prefab, p, MinionHp * hpScale, MinionAttack);
+                EnemyBase spawned = ChildSpawner(prefab, p, MinionHp * hpScale, MinionAttack * attackScale);
                 if (spawned != null) into?.Add(spawned);
             }
         }

@@ -150,10 +150,29 @@ namespace HistoryHeroes.Dev
                 var pilot = boss.gameObject.AddComponent<TelegraphPilot>();
                 pilot.Begin(player, boss.Boss, run.Mode == "dps");
             }
+            // 무엇에 맞았나 (패턴·졸개별 받은 피해 — 보스 손볼 때 본다)
+            var taken = new Dictionary<string, float>();
+            Health playerHealth = player.Health;
+            void OnDamaged(Health target, DamageInfo info, float dealt)
+            {
+                if (target != playerHealth || dealt <= 0f) return;
+                string key = info.SourceId ?? "?";
+                taken.TryGetValue(key, out float sum);
+                taken[key] = sum + dealt;
+            }
+
+            Health.AnyDamaged += OnDamaged;
             GamePause.DevSpeed = _speed;
             float spawnedAt = Time.time;
 
             while (!boss.IsFinished && Time.time - spawnedAt < 400f) yield return null;
+            Health.AnyDamaged -= OnDamaged;
+            float takenTotal = 0f;
+            foreach (float v in taken.Values) takenTotal += v;
+            var parts = new List<KeyValuePair<string, float>>(taken);
+            parts.Sort((a, b) => b.Value.CompareTo(a.Value));
+            var takenParts = new List<string>();
+            for (int i = 0; i < parts.Count && i < 5; i++) takenParts.Add($"{parts[i].Key} {parts[i].Value / Mathf.Max(1f, takenTotal) * 100f:0}%");
 
             GamePause.DevSpeed = 1f;
             float seconds = Time.time - spawnedAt;
@@ -162,7 +181,7 @@ namespace HistoryHeroes.Dev
             float bossLeft = bossHealth != null ? bossHealth.Current / Mathf.Max(1f, bossHealth.Max) : 1f;
             float hpLeft = player.Health.Current / Mathf.Max(1f, player.Health.Max);
             string outcome = win ? "승" : boss.IsFinished ? $"패 (보스 {bossLeft * 100f:0}% 남음)" : "시간 초과";
-            _results.Add($"{(run.Label != null ? run.Label + " | " : string.Empty)}{(run.Chapter > 1 ? run.Chapter + "구간 | " : string.Empty)}{run.HeroId} | {run.Mode} | {outcome} | {seconds:0.0}초 | 피격 {boss.HitsTaken} | 남은 체력 {hpLeft * 100f:0}% | 기본 공격 {DamageLog.BasicShare * 100f:0}% | {Economy.RunText.TopDamage(_database, player.Hero, 4)}");
+            _results.Add($"{(run.Label != null ? run.Label + " | " : string.Empty)}{(run.Chapter > 1 ? run.Chapter + "구간 | " : string.Empty)}{run.HeroId} | {run.Mode} | {outcome} | {seconds:0.0}초 | 피격 {boss.HitsTaken} | 남은 체력 {hpLeft * 100f:0}% | 기본 공격 {DamageLog.BasicShare * 100f:0}% | {Economy.RunText.TopDamage(_database, player.Hero, 4)} | 받은 피해 {takenTotal / Mathf.Max(1f, player.Health.Max) * 100f:0}% ({string.Join(" · ", takenParts)})");
             yield return new WaitForSecondsRealtime(0.5f);
         }
 
