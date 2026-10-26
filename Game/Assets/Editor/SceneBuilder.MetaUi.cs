@@ -216,13 +216,10 @@ namespace HistoryHeroes.EditorTools
             TMP_Text info = Label("Info", panel, "", 26, TextAlignmentOptions.Center);
             Place(info.rectTransform, Center, Center, new Vector2(0f, 765f), new Vector2(1000f, 80f));
 
-            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 330f), new Vector2(1000f, 760f), 170f, 28f);
-            TMP_Text detail = Label("Detail", panel, "", 27, TextAlignmentOptions.Top);
-            Place(detail.rectTransform, Center, Center, new Vector2(0f, -330f), new Vector2(1000f, 480f));
-            detail.lineSpacing = 4f;
-            detail.enableAutoSizing = true;
-            detail.fontSizeMin = 20f;
-            detail.fontSizeMax = 27f;
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 420f), new Vector2(1000f, 560f), 128f, 30f);
+            TMP_Text detail = Label("Detail", panel, "", 32, TextAlignmentOptions.Top);
+            Place(detail.rectTransform, Center, Center, new Vector2(0f, -240f), new Vector2(1000f, 660f));
+            detail.lineSpacing = 8f;
 
             Button equip = Btn("PetEquip", panel, "장착", new Vector2(-250f, -660f), new Vector2(440f, 110f), ButtonGreen, out TMP_Text equipLabel);
             equipLabel.fontSize = 30;

@@ -127,14 +127,14 @@ namespace HistoryHeroes.UI
             var sb = new StringBuilder();
             if (!string.IsNullOrEmpty(_message)) sb.AppendLine(_message);
             sb.AppendLine($"<b>{pet.displayName}</b> — {pet.trigger}");
-            sb.AppendLine($"<size=88%>{pet.effect}</size>");
-            sb.AppendLine($"<size=82%><color={(level >= table.awakenFirst ? "#FFD966" : "#7F8A99")}>Lv{table.awakenFirst} 각성: {pet.awaken5}</color></size>");
-            sb.AppendLine($"<size=82%><color={(level >= table.awakenSecond ? "#FFD966" : "#7F8A99")}>Lv{table.awakenSecond} 각성: {pet.awaken10}</color></size>");
-            if (!string.IsNullOrEmpty(pet.fact)) sb.AppendLine($"<size=80%><color=#A9B4C2>[사실] {pet.fact}</color></size>");
-            if (!string.IsNullOrEmpty(pet.legend)) sb.AppendLine($"<size=80%><color=#A9B4C2>[전승] {pet.legend}</color></size>");
+            sb.AppendLine(pet.effect);
+            sb.AppendLine($"<size=92%><color={(level >= table.awakenFirst ? "#FFD966" : "#7F8A99")}>Lv{table.awakenFirst} 각성: {pet.awaken5}</color></size>");
+            sb.AppendLine($"<size=92%><color={(level >= table.awakenSecond ? "#FFD966" : "#7F8A99")}>Lv{table.awakenSecond} 각성: {pet.awaken10}</color></size>");
+            if (!string.IsNullOrEmpty(pet.fact)) sb.AppendLine($"<size=88%><color=#A9B4C2>[사실] {pet.fact}</color></size>");
+            if (!string.IsNullOrEmpty(pet.legend)) sb.AppendLine($"<size=88%><color=#A9B4C2>[전승] {pet.legend}</color></size>");
             string bondText = bond ? $" <color=#FF7A8A>(인연 +{table.bondBonus * 100f:0}% 포함)</color>" : $" <size=85%>(인연: {pet.bondHeroName})</size>";
-            if (level > 0) sb.Append($"<size=88%>지금 공격력·체력 +{table.Bonus(level, bond) * 100f:0.0#}%{bondText}</size>");
-            else sb.Append($"<size=88%><color=#FFB347>{pet.SourceText} 얻어요</color></size>");
+            if (level > 0) sb.Append($"<size=95%>지금 공격력·체력 +{table.Bonus(level, bond) * 100f:0.0#}%{bondText}</size>");
+            else sb.Append($"<size=95%><color=#FFB347>{pet.SourceText} 얻어요</color></size>");
             detailLabel.text = sb.ToString();
 
             bool owned = level > 0;
