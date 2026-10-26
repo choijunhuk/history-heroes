@@ -216,11 +216,11 @@ namespace HistoryHeroes.EditorTools
                 "몸 주위를 도는 칼날 2개\n(닿으면 공격력 40%)\n레벨마다 칼날 +1",
                 cooldown: 0f, damage: 0.4f, damagePerLevel: 0f, count: 2, countPerLevel: 1, radius: 1.5f);
             d.FlameField = Active("flame_field", "불꽃 장판", Rarity.Common, SkillTag.Fire, 5, 2,
-                "4초마다 발밑에 불꽃 장판 3초\n(초당 30%)\n레벨마다 범위 +15%",
-                cooldown: 4f, damage: 0.3f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 1.5f, radiusPerLevel: 0.15f, duration: 3f);
+                "4초마다 발밑에 불꽃 장판 3초\n(초당 40%)\n레벨마다 범위 +15%",
+                cooldown: 4f, damage: 0.4f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 1.5f, radiusPerLevel: 0.15f, duration: 3f);
             d.Lightning = Active("lightning", "낙뢰", Rarity.Rare, SkillTag.Lightning, 5, 3,
-                "3초마다 무작위 적에게 번개\n(120%)\n레벨마다 번개 +1",
-                cooldown: 3f, damage: 1.2f, damagePerLevel: 0f, count: 1, countPerLevel: 1);
+                "3초마다 무작위 적에게 번개\n(150%)\n레벨마다 번개 +1",
+                cooldown: 3f, damage: 1.5f, damagePerLevel: 0f, count: 1, countPerLevel: 1);
             // "Lv당 피해 +30%"는 Lv1 피해(150%)의 30% → 레벨마다 +45%p로 해석
             d.ArrowRain = Active("arrow_rain", "화살비", Rarity.Legendary, SkillTag.Projectile, 5, 6,
                 "6초마다 화면 안 모든 적에게 화살\n(150%)\n레벨마다 피해 +30%",
@@ -236,8 +236,8 @@ namespace HistoryHeroes.EditorTools
                 cooldown: 0f, damage: 0.5f, damagePerLevel: 0f, count: 8, countPerLevel: 0, radius: 1.5f, saveCostFirst: 10);
             // 합체 결과 Lv2 +25%, Lv3 +50% (Skills.md 4-3)
             d.ThunderFire = Active("thunder_fire", "뇌화 폭풍", Rarity.Rare, SkillTag.Lightning | SkillTag.Fire, 3, 3,
-                "3초마다 번개 3개 (각 130%)\n떨어진 자리에 불길 2초 (초당 30%)\nLv2 +25%, Lv3 +50%",
-                cooldown: 3f, damage: 1.3f, damagePerLevel: 0.325f, count: 3, countPerLevel: 0, saveCostFirst: 15);
+                "3초마다 번개 3개 (각 165%)\n떨어진 자리에 불길 2초 (초당 30%)\nLv2 +25%, Lv3 +50%",
+                cooldown: 3f, damage: 1.65f, damagePerLevel: 0.4125f, count: 3, countPerLevel: 0, saveCostFirst: 15);
 
             d.Recipes.Add(Recipe("steel_whirl", FusionType.Evolution, d.SpinBlade, 5, d.DefUp, 1, d.SteelWhirl));
             d.Recipes.Add(Recipe("thunder_fire", FusionType.Merge, d.Lightning, 3, d.FlameField, 3, d.ThunderFire));
@@ -247,8 +247,8 @@ namespace HistoryHeroes.EditorTools
                 "3초마다 가까운 적에게 파편 3개\n(각 50%, 둔화 30%)\n레벨마다 +1개",
                 cooldown: 3f, damage: 0.5f, damagePerLevel: 0f, count: 3, countPerLevel: 1);
             d.PoisonCloud = Active("poison_cloud", "독 구름", Rarity.Common, SkillTag.Poison, 5, 2,
-                "5초마다 적 자리에 독 구름 4초\n(초당 25%, 겹치면 중첩)\n레벨마다 지속 +1초",
-                cooldown: 5f, damage: 0.25f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 1.4f, duration: 4f);
+                "5초마다 적 자리에 독 구름 4초\n(초당 33%, 겹치면 중첩)\n레벨마다 지속 +1초",
+                cooldown: 5f, damage: 0.33f, damagePerLevel: 0f, count: 1, countPerLevel: 0, radius: 1.4f, duration: 4f);
             d.PoisonCloud.durationPerLevel = 1f;
             d.GuardShield = Active("guard_shield", "수호 방패", Rarity.Common, SkillTag.Survival | SkillTag.Defense, 5, 2,
                 "8초마다 최대체력 10% 보호막\n(레벨마다 +4%)",
