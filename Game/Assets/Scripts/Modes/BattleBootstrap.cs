@@ -67,6 +67,7 @@ namespace HistoryHeroes.Modes
 
         private void Awake()
         {
+            if (metaTable != null) Missions.MissionEvents.Configure(metaTable.missions, roster, database != null ? database.recipes.Count : 0);
             if (roster != null && player != null)
             {
                 HeroData hero = HeroForThisBattle(roster);

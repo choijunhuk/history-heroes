@@ -79,6 +79,12 @@ namespace HistoryHeroes.UI
             HeroData focus = FocusHero;
             SaveSystem.CommitResult r = SaveSystem.Commit(() => HeroUnlock.IsUnlocked(SaveSystem.Data, focus) && Meta.HeroGrowth.TryLevelUp(SaveSystem.Data, metaTable, focus.id));
             if (r == SaveSystem.CommitResult.Rejected) return;
+            if (r == SaveSystem.CommitResult.Saved)
+            {
+                Missions.MissionEvents.Raise(Missions.MissionEvents.HeroLevel);
+                SaveSystem.SaveIfDirty();
+            }
+
             if (messageLabel != null) messageLabel.text = r == SaveSystem.CommitResult.Saved ? $"<color=#7CE38B>{focus.displayName} Lv {SaveSystem.Data.Hero(focus.id).level}</color>" : SaveSystem.SaveFailedText;
             Render();
         }

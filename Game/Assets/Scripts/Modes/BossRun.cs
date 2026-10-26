@@ -119,6 +119,7 @@ namespace HistoryHeroes.Modes
             long now = Clock.UnixSeconds;
             string today = Clock.Today;
 
+            Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null); // 연습은 안 센다
             if (GameSession.Practice)
             {
                 lines.Add("연습이라 보상·별·해금은 없어요");

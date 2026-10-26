@@ -87,6 +87,10 @@ namespace HistoryHeroes.UI
             return image;
         }
 
+        private void OnEnable() => Missions.MissionEvents.Completed += OnMissionCompleted;
+        private void OnDisable() => Missions.MissionEvents.Completed -= OnMissionCompleted;
+        private void OnMissionCompleted(string line) => ShowNotice(line, 2.2f);
+
         /// <summary>잠깐 뜨는 알림 (방 클리어 때 기록 용량 등)</summary>
         public void ShowNotice(string text, float seconds = 1.8f)
         {

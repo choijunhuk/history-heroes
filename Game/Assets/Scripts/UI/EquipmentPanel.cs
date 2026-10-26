@@ -347,7 +347,12 @@ namespace HistoryHeroes.UI
             return r == SaveSystem.CommitResult.Saved;
         }
 
-        private void EquipSelected() => Apply(() => EquipmentInventory.Equip(SaveSystem.Data, Table, _heroId, _selected), "<color=#7CE38B>장착했어요</color>");
+        private void EquipSelected()
+        {
+            if (!Apply(() => EquipmentInventory.Equip(SaveSystem.Data, Table, _heroId, _selected), "<color=#7CE38B>장착했어요</color>")) return;
+            Missions.MissionEvents.Raise(Missions.MissionEvents.Equip); // 미션 "장비 1개 장착 바꾸기"
+            SaveSystem.SaveIfDirty();
+        }
 
         private void ToggleLock()
         {

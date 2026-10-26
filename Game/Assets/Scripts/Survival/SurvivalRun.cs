@@ -259,6 +259,7 @@ namespace HistoryHeroes.Survival
 
             SaveData save = SaveSystem.Data;
             string heroId = skills.HeroId;
+            Missions.MissionEvents.SurvivalFinished(_elapsed);
             int minutes = Mathf.FloorToInt(_elapsed / 60f);
             var lines = new List<string>();
 

@@ -60,7 +60,11 @@ namespace HistoryHeroes.Enemy
             body.gravityScale = 0f;
             body.freezeRotation = true;
             health.Died += OnDied;
+            health.Damaged += (info, dealt) => _lastHitBasic = info.Kind == DamageKind.BasicAttack;
         }
+
+        /// <summary>마지막으로 맞은 게 기본 공격인가 (업적 "멈춤의 달인", 미션 "기본 공격으로 처치")</summary>
+        private bool _lastHitBasic;
 
         /// <param name="hpMultiplier">구간·방 강화 (Stats.md 8장)</param>
         public virtual void Spawn(Transform target, float hpMultiplier, float atkMultiplier, bool elite)
@@ -144,6 +148,7 @@ namespace HistoryHeroes.Enemy
             status.NotifyDeath(transform.position); // 독 구름 안에서 죽었으면 번짐 (맹독 개화)
             _alive.Remove(this);
             body.linearVelocity = Vector2.zero;
+            Missions.MissionEvents.EnemyKilled(IsElite, _lastHitBasic);
             Killed?.Invoke(this);
             gameObject.SetActive(false);
         }

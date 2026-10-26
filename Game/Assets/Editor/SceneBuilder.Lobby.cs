@@ -76,6 +76,8 @@ namespace HistoryHeroes.EditorTools
             settingsLabel.fontSize = 30;
             Button shopButton = Btn("Shop", main, "상점", new Vector2(-430f, 820f), new Vector2(180f, 80f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text shopLabel);
             shopLabel.fontSize = 30;
+            Button missionButton = Btn("Missions", main, "미션", new Vector2(-430f, 725f), new Vector2(180f, 80f), new Color(0.2f, 0.42f, 0.3f), out TMP_Text missionLabel);
+            missionLabel.fontSize = 30;
             TMP_Text note = Label("Note", main, "그래픽은 아직 임시 도형이에요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
 
@@ -95,6 +97,7 @@ namespace HistoryHeroes.EditorTools
             TrainingPanel trainingPanel = BuildTrainingPanel(safe, meta);
             RunePanel runePanel = BuildRunePanel(safe, meta, database);
             PetPanel petPanel = BuildPetPanel(safe, meta);
+            MissionPanel missionPanel = BuildMissionPanel(safe, meta, roster);
             using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
@@ -111,7 +114,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("walletLabel", wallet).Ref("noticeLabel", notice)
                     .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("roster", roster).Ref("heroPanel", heroPanel)
                     .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel).Ref("metaTable", meta)
-                    .Ref("shopButton", shopButton).Ref("shop", shopPanel);
+                    .Ref("shopButton", shopButton).Ref("shop", shopPanel)
+                    .Ref("missionButton", missionButton).Ref("missionLabel", missionLabel).Ref("missions", missionPanel);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);

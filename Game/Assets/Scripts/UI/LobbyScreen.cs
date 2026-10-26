@@ -57,6 +57,10 @@ namespace HistoryHeroes.UI
         [SerializeField] private ShopPanel shop;
         [SerializeField] private Button settingsButton;
         [SerializeField] private SettingsPanel settings;
+        [Header("v0.5 미션")]
+        [SerializeField] private Button missionButton;
+        [SerializeField] private TMP_Text missionLabel;
+        [SerializeField] private MissionPanel missions;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -78,6 +82,17 @@ namespace HistoryHeroes.UI
             heroButton.onClick.AddListener(() => heroPanel.Open(Render));
             if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
             if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
+            if (missionButton != null) missionButton.onClick.AddListener(() => missions.Open(Render));
+
+            // 미션 (v0.5): 날·주가 바뀌었으면 새로, "게임 접속" 미션
+            if (metaTable != null && metaTable.missions != null)
+            {
+                Missions.MissionEvents.Configure(metaTable.missions, roster, codex.RecipeCount);
+                Missions.MissionEvents.Completed += OnMissionCompleted;
+                Missions.MissionEvents.EnsureCurrent();
+                Missions.MissionEvents.Raise(Missions.MissionEvents.Login);
+                SaveSystem.SaveIfDirty();
+            }
 
             // 놓친 별 상자가 있으면 여기서 받는다
             Reward box = Stars.ClaimBoxes(data);
@@ -129,6 +144,10 @@ namespace HistoryHeroes.UI
             SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
             Render();
         }
+
+        private void OnDestroy() => Missions.MissionEvents.Completed -= OnMissionCompleted;
+
+        private void OnMissionCompleted(string line) => ShowNotice(line);
 
         private void Update()
         {
@@ -209,6 +228,11 @@ namespace HistoryHeroes.UI
             bossButtonLabel.text = boss == null ? "보스 준비 중" : hasRecord ? "보스 도전" : "보스 도전 (기록이 있어야 해요)";
             archiveButtonLabel.text = $"기록 보관함  {records}/{data.recordSlots}";
             RenderSurvival(data);
+            if (missionLabel != null && metaTable != null && metaTable.missions != null)
+            {
+                int ready = Missions.MissionService.ClaimableCount(data, metaTable.missions, Missions.MissionEvents.Context);
+                missionLabel.text = ready > 0 ? $"미션 <color=#FFD966>●{ready}</color>" : "미션";
+            }
 
             int found = data.discoveredRecipes.Count;
             codexButtonLabel.text = $"조합 도감  {found}/{codex.RecipeCount}";

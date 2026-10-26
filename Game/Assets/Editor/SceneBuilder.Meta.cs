@@ -95,6 +95,7 @@ namespace HistoryHeroes.EditorTools
             meta.runes = runes;
             meta.relics = relics;
             meta.pets = CreatePets();
+            meta.missions = CreateMissions();
             EditorUtility.SetDirty(meta);
 
             // 상자 표 (Gacha 2장): 화면 확률과 추첨이 같이 읽는다. 숫자는 GachaTable 기본값

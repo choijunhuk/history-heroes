@@ -89,6 +89,9 @@ namespace HistoryHeroes.Records
 
         // ----- v0.5 펫 (Pets 4·5장) -----
         public PetSave pets = new PetSave();
+
+        // ----- v0.5 미션·업적 (Missions 2·3·7장) -----
+        public MissionSave missions = new MissionSave();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -273,6 +276,70 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+    }
+
+    // ---------------------------------------------------------------- v0.5 미션·업적
+
+    [Serializable]
+    public sealed class MissionSave
+    {
+        /// <summary>오늘 (05:00 기준 날짜). 다르면 새 일일 미션</summary>
+        public string dayKey;
+        public List<MissionProgress> daily = new List<MissionProgress>();
+        public int dailyPoints;
+        /// <summary>받은 일일 상자 (포인트 구간)</summary>
+        public List<int> dailyChests = new List<int>();
+        public bool rerollUsed;
+
+        /// <summary>이번 주 (월요일 05:00 기준 그 주 월요일)</summary>
+        public string weekKey;
+        public List<MissionProgress> weekly = new List<MissionProgress>();
+        public int weeklyPoints;
+        public List<int> weeklyChests = new List<int>();
+
+        /// <summary>업적용 누적 카운터 (영구)</summary>
+        public MissionCounters counters = new MissionCounters();
+        public List<AchievementClaim> achievements = new List<AchievementClaim>();
+    }
+
+    [Serializable]
+    public sealed class MissionProgress
+    {
+        public string id;
+        public string eventKey;
+        public string title;
+        public int target;
+        public int progress;
+        public int points;
+        /// <summary>이 값일 때만 센다 (오늘의 영웅 ID). 비면 아무거나</summary>
+        public string param;
+        /// <summary>서로 다른 값만 센다 ("서로 다른 영웅 2명")</summary>
+        public bool distinct;
+        public List<string> seen = new List<string>();
+        public bool done;
+    }
+
+    [Serializable]
+    public sealed class MissionCounters
+    {
+        public long basicKills;
+        public int noHitRooms;
+        public int elites;
+        public bool legendary;
+        /// <summary>전설 없이 클리어한 구간</summary>
+        public List<int> noLegendChapters = new List<int>();
+        /// <summary>3구간 이상을 클리어한 영웅 ("만능")</summary>
+        public List<string> chapter3Heroes = new List<string>();
+        /// <summary>보스를 이긴 기록 ID ("맞춤 전략")</summary>
+        public List<string> bossWinRecords = new List<string>();
+    }
+
+    [Serializable]
+    public sealed class AchievementClaim
+    {
+        public string id;
+        /// <summary>받은 단계 수</summary>
+        public int tiers;
     }
 
     // ---------------------------------------------------------------- v0.5 펫

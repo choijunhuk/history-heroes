@@ -16,6 +16,7 @@ MonoBehaviour:
   runes: {fileID: 11400000, guid: d765a581a77386d408d3b84105890cdd, type: 2}
   relics: {fileID: 11400000, guid: 60b8879d0a4632b48985552346a405d6, type: 2}
   pets: {fileID: 11400000, guid: 79eb7d2f1f9040c4dbd6df316465e04b, type: 2}
+  missions: {fileID: 11400000, guid: 17e1028b8605725418db63f5405055c2, type: 2}
   maxHeroLevel: 30
   levelPercent: 0.01
   levelCostPerLevel: 200
