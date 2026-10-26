@@ -578,6 +578,58 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Load_OldSaveWithOnlyDungeonRuns_FinishesTutorial()
+        {
+            // 폰에서 찾음: v0.3에서 던전만 몇 판 한 저장 (기록·별·레벨 없음) → 튜토리얼도 안 뜨고 출석부도 안 열렸다
+            var store = new SaveStore(_folder);
+            Directory.CreateDirectory(_folder);
+            File.WriteAllText(store.MainPath, "{\"schemaVersion\": 3, \"records\": [], \"unlockedChapter\": 1, \"dungeonRuns\": 3, \"gold\": 400}");
+
+            SaveData loaded = store.Load();
+
+            Assert.IsTrue(loaded.tutorialDone, "던전을 해 본 사람은 튜토리얼을 끝낸 것으로");
+            Assert.IsFalse(Progress.Tutorial.Needed(loaded));
+            Assert.IsTrue(Missions.Attendance.Unlocked(loaded));
+        }
+
+        [Test]
+        public void Load_SaveAlreadyStuckOnSchema5_FinishesTutorial()
+        {
+            // 고치기 전 버전이 이미 구조 5로 옮겨 써 버린 저장
+            var store = new SaveStore(_folder);
+            Directory.CreateDirectory(_folder);
+            var stuck = new SaveData { dungeonRuns = 2, tutorialDone = false };
+            File.WriteAllText(store.MainPath, SaveStore.Sign(JsonUtility.ToJson(stuck, true)));
+
+            Assert.IsTrue(store.Load().tutorialDone);
+        }
+
+        [Test]
+        public void Load_FreshAndMidTutorialSaves_StayInTutorial()
+        {
+            var store = new SaveStore(_folder);
+            Directory.CreateDirectory(_folder);
+
+            File.WriteAllText(store.MainPath, SaveStore.Sign(JsonUtility.ToJson(new SaveData(), true)));
+            SaveData fresh = store.Load();
+            Assert.IsFalse(fresh.tutorialDone);
+            Assert.IsTrue(Progress.Tutorial.Needed(fresh), "처음 깐 사람은 튜토리얼");
+
+            var mid = new SaveData { tutorialRecordId = "tut" };
+            mid.records.Add(new RunRecord { id = "tut" });
+            File.WriteAllText(store.MainPath, SaveStore.Sign(JsonUtility.ToJson(mid, true)));
+            SaveData midLoaded = store.Load();
+            Assert.IsFalse(midLoaded.tutorialDone, "튜토리얼 기록만 있으면 아직 튜토리얼 중");
+            Assert.IsTrue(Progress.Tutorial.BossPending(midLoaded));
+
+            var dangling = new SaveData { tutorialRecordId = "gone" };
+            File.WriteAllText(store.MainPath, SaveStore.Sign(JsonUtility.ToJson(dangling, true)));
+            SaveData danglingLoaded = store.Load();
+            Assert.IsNull(danglingLoaded.tutorialRecordId, "없는 기록을 가리키면 지운다");
+            Assert.IsTrue(Progress.Tutorial.Needed(danglingLoaded), "→ 튜토리얼을 처음부터");
+        }
+
+        [Test]
         public void Reselect_SavedEvolution_DoesNotRevertWhenRecipeChanged()
         {
             // 레시피가 바뀌어 필요한 패시브가 기록에 없어도, 이미 만든 진화는 그대로 (GameDesign 7-5)

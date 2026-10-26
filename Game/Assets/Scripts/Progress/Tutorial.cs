@@ -25,8 +25,8 @@ namespace HistoryHeroes.Progress
         /// <summary>쓰러질 만큼 맞으면 이만큼 체력으로 (지지 않게)</summary>
         public const float SaveHp = 0.5f;
 
-        /// <summary>처음 들어온 사람 (튜토리얼을 안 했고 진행한 것도 없다)</summary>
-        public static bool Needed(SaveData s) => !s.tutorialDone && s.unlockedChapter <= 1 && s.stars.Count == 0 && s.dungeonRuns == 0 && (s.records.Count == 0 || BossPending(s));
+        /// <summary>처음 들어온 사람 (튜토리얼을 안 했고 진행한 것도 없다). 진행한 흔적이 있으면 저장을 읽을 때 튜토리얼 끝으로 바뀐다</summary>
+        public static bool Needed(SaveData s) => !s.tutorialDone && !s.ProgressedWithoutTutorial() && (s.records.Count == 0 || BossPending(s));
 
         /// <summary>튜토리얼 기록은 남겼는데 보스를 아직 못 깼다 (앱이 꺼졌다) → 튜토리얼 보스로 바로</summary>
         public static bool BossPending(SaveData s) => !s.tutorialDone && !string.IsNullOrEmpty(s.tutorialRecordId) && s.FindRecord(s.tutorialRecordId) != null;

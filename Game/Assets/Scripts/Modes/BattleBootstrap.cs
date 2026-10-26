@@ -112,6 +112,7 @@ namespace HistoryHeroes.Modes
         private void Awake()
         {
             SettingsApplier.Apply(SaveSystem.Data.settings);
+            Screen.sleepTimeout = SleepTimeout.NeverSleep; // 멈춰서 쏘는 동안 화면을 안 만져도 꺼지지 않게 (로비에서 폰 설정으로 돌린다)
             SaveSystem.RotateRunBackups(); // 지난 판이 끝나고 저장된 상태를 판 백업으로 (끝날 때 돌리면 끝나기 전 상태가 들어간다)
             Audio.AudioManager.PlayMusic(Audio.AudioManager.MusicFor(GameSession.Mode, GameSession.Chapter));
             if (metaTable != null) Missions.MissionEvents.Configure(metaTable.missions, roster, database != null ? database.recipes.Count : 0);
