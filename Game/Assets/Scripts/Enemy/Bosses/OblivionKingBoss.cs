@@ -14,7 +14,10 @@ namespace HistoryHeroes.Enemy
     public sealed class OblivionKingBoss : PatternBoss
     {
         [SerializeField] private EnemyBase minion;
-        [SerializeField] private int maxMinions = 6;
+        [SerializeField] private int maxMinions = 5;
+        [Tooltip("졸개 체력·공격 배율 (보스맵 졸개는 구간마다 세져서 5구간이면 원래 체력 5.3배·공격 2.7배 — 졸개가 받은 피해의 2/3를 넣었다)")]
+        [SerializeField] private float minionHpScale = 0.5f;
+        [SerializeField] private float minionAttackScale = 0.55f;
 
         private readonly List<EnemyBase> _minions = new List<EnemyBase>();
         private int _step;
@@ -30,7 +33,7 @@ namespace HistoryHeroes.Enemy
                 case 0:
                 {
                     int want = Mathf.Min(3, maxMinions - _minions.Count);
-                    if (want > 0) yield return Summon(minion, want, 2.4f, 1f * Tele, 1f, _minions);
+                    if (want > 0) yield return Summon(minion, want, 2.4f, 1f * Tele, minionHpScale, _minions, minionAttackScale);
 
                     yield return Open(1.6f);
                     break;

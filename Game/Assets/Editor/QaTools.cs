@@ -448,6 +448,22 @@ namespace HistoryHeroes.EditorTools
                 case "aoe": // 광역 여럿 (조합 없이, 21pt): 낙뢰 + 불꽃 장판 + 독 구름
                     Add("lightning", 3); Add("flame_field", 2); Add("poison_cloud", 2); Add("atk_up", 3); Add("aspd_up", 1);
                     break;
+                // 완성 빌드 (27pt = 던전 클리어 기록 용량 34 × 0.8): 5구간 보스 확인용 (v0.6 검증 ⏳)
+                case "storm27":
+                    Add("thunder_fire", 2, true); Add("hp_up", 3); Add("atk_up", 3); Add("aspd_up", 3);
+                    break;
+                case "blade27":
+                    Add("steel_whirl", 1, true); Add("def_up", 3); Add("hp_up", 4); Add("atk_up", 4); Add("aspd_up", 3); Add("lifesteal", 1); Add("crit_rate", 1);
+                    break;
+                case "rapid27":
+                    Add("aspd_up", 5); Add("multishot", 3); Add("atk_up", 4); Add("lifesteal", 2); Add("lightning", 2); Add("crit_rate", 2);
+                    break;
+                case "balanced27":
+                    Add("aspd_up", 4); Add("multishot", 2); Add("atk_up", 4); Add("lifesteal", 2); Add("lightning", 2); Add("flame_field", 2); Add("hp_up", 1);
+                    break;
+                case "complete27": // 5구간 추천 "강점이 고른 빌드 (조합 1~2개 + 기본 공격)": 강철 회오리 + 기본 공격 패시브
+                    Add("steel_whirl", 1, true); Add("aspd_up", 3); Add("atk_up", 4); Add("multishot", 2); Add("lifesteal", 2); Add("hp_up", 2);
+                    break;
                 case "sloppy": // 대충 고른 빌드: 보스에 별 도움 안 되는 것들 (같은 크기 21pt)
                     Add("exp_up", 3); Add("move_up", 3); Add("regen", 3); Add("ice_shard", 2); Add("poison_cloud", 2); Add("guard_shield", 2);
                     break;
