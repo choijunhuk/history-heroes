@@ -60,6 +60,19 @@ namespace HistoryHeroes.Skills
             }
 
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
+            if (TutorialCards != null)
+            {
+                // 튜토리얼: 정해 둔 순서의 카드부터 (회전 칼날 · 방어력 → 조합 튜토리얼)
+                foreach (string id in TutorialCards)
+                {
+                    if (offer.Count >= cardsPerLevel) break;
+                    SkillCard forced = candidates.Find(c => c.Skill != null && c.Skill.id == id);
+                    if (forced == null) continue;
+                    offer.Add(forced);
+                    candidates.Remove(forced);
+                }
+            }
+
             offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable, WeightModifier, Loadout));
             if (_offersMade++ == 0) BoostExclusive(offer, candidates);
             ApplyRiftBoosts(offer);
@@ -250,6 +263,9 @@ namespace HistoryHeroes.Skills
 
         /// <summary>이번 판에 전설 스킬 카드를 골랐는가 (던전 ★3 "전설 없이 클리어", Modes 3-2)</summary>
         public bool ChoseLegendary { get; private set; }
+
+        /// <summary>튜토리얼: 이 순서의 카드를 먼저 보여 준다 (null = 보통 뽑기)</summary>
+        public string[] TutorialCards { get; set; }
 
         /// <summary>판 이어하기: 지금까지 카드를 보여 준 횟수 (첫 카드 전용 스킬 보정이 다시 걸리지 않게)</summary>
         public int OffersMade => _offersMade;

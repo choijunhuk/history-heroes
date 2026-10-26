@@ -81,13 +81,22 @@ namespace HistoryHeroes.Modes
             hud.SetBossMode();
             player.Teleport(playerStart.position);
             player.Health.Died += _ => Finish(victory: false);
+            if (GameSession.Tutorial)
+            {
+                // 튜토리얼 보스는 꼭 이긴다 (쓰러질 만큼 맞으면 체력 50%로)
+                player.Health.PreventDeath = () =>
+                {
+                    player.Health.Revive(player.Health.Max * Progress.Tutorial.SaveHp);
+                    return true;
+                };
+            }
             player.Health.Damaged += (_, dealt) =>
             {
                 if (dealt > 0f && !_finished) _hitsTaken++;
             };
             if (_info != null)
             {
-                bool challenge = !GameSession.Practice && !Stars.Has(SaveSystem.Data, _info.chapter, Stars.Boss, 2);
+                bool challenge = !GameSession.Practice && !GameSession.Tutorial && !Stars.Has(SaveSystem.Data, _info.chapter, Stars.Boss, 2);
                 hud.SetHitCounter(challenge, () => _hitsTaken, _info.star2MaxHits);
             }
 
@@ -116,7 +125,8 @@ namespace HistoryHeroes.Modes
 
             _childSpawner = SpawnMinion;
             EnemyBase.ChildSpawner = _childSpawner;
-            _boss.Spawn(player.transform, _info.hpMultiplier, _info.attackMultiplier, false);
+            // 판 배율 (튜토리얼 보스는 약하게, 보통은 1)
+            _boss.Spawn(player.transform, _info.hpMultiplier * GameSession.EnemyHpScale, _info.attackMultiplier * GameSession.EnemyAttackScale, false);
             _boss.Killed += _ => Finish(victory: true);
             _startTime = Time.time;
             if (bossHud != null) bossHud.Bind(_boss, _info.displayName);
@@ -142,8 +152,18 @@ namespace HistoryHeroes.Modes
             long now = Clock.UnixSeconds;
             string today = Clock.Today;
 
-            Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null); // 연습은 안 센다
-            if (GameSession.Practice)
+            if (!GameSession.Tutorial) Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null); // 연습은 안 센다
+            if (GameSession.Tutorial)
+            {
+                // 튜토리얼 보스 (UX 4장): 별·구간 해금·최초 격파 보상 없이 튜토리얼 끝 → 출석부·7일 미션·펫 칸이 열린다
+                if (victory)
+                {
+                    lines.AddRange(Progress.Tutorial.Complete(save));
+                    if (metaTable != null && metaTable.pets != null) lines.AddRange(Pets.PetService.CheckAll(save, metaTable.pets));
+                    GameSession.TutorialJustFinished = true;
+                }
+            }
+            else if (GameSession.Practice)
             {
                 lines.Add("연습이라 보상·별·해금은 없어요");
             }
@@ -213,6 +233,21 @@ namespace HistoryHeroes.Modes
         private IEnumerator ShowResultAfter(float seconds, BossSummary summary)
         {
             yield return new WaitForSeconds(seconds);
+            if (GameSession.Tutorial && summary.Victory)
+            {
+                // 튜토리얼 보스: 별·하트 이야기 없이 받은 것 + 다음 목표 (UX 4장 9:00 "로비 → 1구간 던전에 도전하세요")
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("기록서에 남긴 빌드로 강적을 이겼어요!");
+                sb.AppendLine("<size=85%>던전에서 빌드를 쌓고 → 기록으로 남기고 → 보스와 싸워요</size>");
+                sb.AppendLine();
+                sb.AppendLine("<color=#FFD966>받은 것</color>");
+                foreach (string line in summary.RewardLines) sb.AppendLine("  " + line);
+                sb.AppendLine();
+                sb.AppendLine("다음 목표: <b>1구간 던전</b>을 깨 보세요");
+                result.ShowText("튜토리얼 보스 격파!", sb.ToString(), "로비로", GameSession.ToLobby, "보스 다시 싸우기", () => GameSession.StartTutorialBoss(GameSession.BossRecordId));
+                yield break;
+            }
+
             result.ShowBoss(summary);
         }
 

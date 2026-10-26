@@ -47,6 +47,13 @@ namespace HistoryHeroes.Modes
                 if (record != null) return roster.Find(record.heroId);
             }
 
+            // 튜토리얼 던전: 칭기즈 칸 (UX 4장)
+            if (GameSession.Tutorial && GameSession.Mode == BattleMode.Dungeon)
+            {
+                HeroData khan = roster.Find(Progress.Tutorial.Hero);
+                if (khan != null) return khan;
+            }
+
             // 이어하기: 그 판의 영웅
             if (GameSession.Resuming != null && !string.IsNullOrEmpty(GameSession.Resuming.heroId))
             {

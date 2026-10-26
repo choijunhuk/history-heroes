@@ -101,7 +101,7 @@ namespace HistoryHeroes.EditorTools
             RecordSaveScreen reselect = BuildRecordSave(root, database);
             HeartPanel heartPanel = BuildHeartPanel(root);
             HeroPanel heroPanel = BuildHeroPanel(safe, roster);
-            SettingsPanel settingsPanel = BuildSettingsPanel(safe);
+            SettingsPanel settingsPanel = BuildSettingsPanel(safe, lobby: true);
             EquipmentPanel equipmentPanel = BuildEquipmentPanel(safe, meta);
             var gacha = UnityEditor.AssetDatabase.LoadAssetAtPath<HistoryHeroes.Equipment.GachaTable>($"{DataDir}/Equipment/GachaTable.asset");
             ShopPanel shopPanel = BuildShopPanel(safe, gacha);
@@ -112,6 +112,7 @@ namespace HistoryHeroes.EditorTools
             ChoicePanel choicePanel = BuildChoicePanel(safe);
             ModeInfoPanel modeInfo = BuildModeInfoPanel(safe);
             NewcomerPanel newcomerPanel = BuildNewcomerPanel(safe);
+            OpeningPanel opening = BuildOpeningPanel(root);
             using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
@@ -133,10 +134,35 @@ namespace HistoryHeroes.EditorTools
                     .Ref("choice", choicePanel)
                     .Ref("riftButton", rift).Ref("riftButtonLabel", riftLabel).Ref("dailyButton", daily).Ref("dailyButtonLabel", dailyLabel).Ref("modeInfo", modeInfo)
                     .Ref("newcomerButton", newcomerButton).Ref("newcomerLabel", newcomerLabel).Ref("newcomerPanel", newcomerPanel)
-                    .Ref("patrolButton", patrolButton).Ref("patrolLabel", patrolLabel);
+                    .Ref("patrolButton", patrolButton).Ref("patrolLabel", patrolLabel).Ref("opening", opening);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
+        }
+
+        /// <summary>v1.0 오프닝 컷 3장면 (화면 전체, 다음 · 건너뛰기)</summary>
+        private static OpeningPanel BuildOpeningPanel(Transform root)
+        {
+            RectTransform holder = Rect("Opening", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            var screen = holder.gameObject.AddComponent<OpeningPanel>();
+            RectTransform panel = Rect("Panel", holder, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            Image bg = Img(panel, new Color(0.08f, 0.06f, 0.12f), null);
+            bg.raycastTarget = true;
+            TMP_Text text = Label("Text", panel, "", 54, TextAlignmentOptions.Center);
+            Place(text.rectTransform, Center, Center, new Vector2(0f, 120f), new Vector2(960f, 900f));
+            text.lineSpacing = 12f;
+            TMP_Text page = Label("Page", panel, "1 / 3", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.5f));
+            Place(page.rectTransform, Center, Center, new Vector2(0f, -520f), new Vector2(400f, 60f));
+            Button next = Btn("OpeningNext", panel, "다음", new Vector2(0f, -660f), new Vector2(600f, 150f), ButtonGreen, out TMP_Text nextLabel);
+            nextLabel.fontSize = 52;
+            Button skip = Btn("OpeningSkip", panel, "건너뛰기", new Vector2(380f, 840f), new Vector2(260f, 90f), ButtonGray, out _);
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("background", bg).Ref("textLabel", text).Ref("pageLabel", page)
+                    .Ref("nextButton", next).Ref("nextLabel", nextLabel).Ref("skipButton", skip);
+            }
+
+            return screen;
         }
 
         /// <summary>v0.6 모드 안내 (무한의 균열 · 일일 도전): 제목 + 설명 + 버튼 2개 + 뒤로</summary>
@@ -358,7 +384,7 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
-        private static SettingsPanel BuildSettingsPanel(Transform parent)
+        private static SettingsPanel BuildSettingsPanel(Transform parent, bool lobby = false)
         {
             RectTransform panel = Overlay(parent, "SettingsPanel", out GameObject holder);
             var screen = holder.AddComponent<SettingsPanel>();
@@ -375,14 +401,17 @@ namespace HistoryHeroes.EditorTools
             Button patrol = Btn("NotifyPatrol", panel, "알림 · 순찰이 가득 차면: 켜기", new Vector2(0f, -160f), new Vector2(820f, 120f), new Color(0.25f, 0.35f, 0.25f), out TMP_Text patrolLabel);
             TMP_Text noticeHelp = Label("NoticeHelp", panel, "밤 9시~아침 8시에는 보내지 않아요", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
             Place(noticeHelp.rectTransform, Center, Center, new Vector2(0f, -255f), new Vector2(900f, 60f));
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -420f), new Vector2(400f, 110f), ButtonGray, out _);
+            Button replay = null;
+            if (lobby) replay = Btn("ReplayTutorial", panel, "튜토리얼 다시 보기 (보상 없음)", new Vector2(0f, -360f), new Vector2(820f, 110f), new Color(0.38f, 0.3f, 0.18f), out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, lobby ? -510f : -420f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("shakeButton", shake).Ref("shakeLabel", shakeLabel)
                     .Ref("numbersButton", numbers).Ref("numbersLabel", numbersLabel)
                     .Ref("flashButton", flash).Ref("flashLabel", flashLabel).Ref("backButton", back)
-                    .Ref("heartsButton", hearts).Ref("heartsLabel", heartsLabel).Ref("patrolButton", patrol).Ref("patrolLabel", patrolLabel);
+                    .Ref("heartsButton", hearts).Ref("heartsLabel", heartsLabel).Ref("patrolButton", patrol).Ref("patrolLabel", patrolLabel)
+                    .Ref("replayTutorialButton", replay);
             }
 
             return screen;

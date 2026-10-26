@@ -39,6 +39,9 @@ namespace HistoryHeroes.UI
 
         public bool IsOpen => root.activeSelf;
 
+        /// <summary>지금 카드에 조합 카드가 있나 (튜토리얼 안내)</summary>
+        public bool ShowsFusion => IsOpen && _current.Exists(c => c.Type == CardType.Fusion);
+
         /// <summary>판 이어하기: 남은 리롤 (껐다 켜서 리롤을 다시 채우지 못하게)</summary>
         public int RerollsLeft => _rerollsLeft;
 

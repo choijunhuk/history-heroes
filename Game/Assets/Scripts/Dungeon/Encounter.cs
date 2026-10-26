@@ -19,7 +19,9 @@ namespace HistoryHeroes.Dungeon
             var available = new List<EnemyCost>();
             foreach (EnemyCost e in chapter.enemies)
             {
-                if (e.prefab != null && e.cost > 0 && e.fromRoom <= room) available.Add(e);
+                if (e.prefab == null || e.cost <= 0 || e.fromRoom > room) continue;
+                if (!string.IsNullOrEmpty(plan.only) && (e.prefab.Data == null || e.prefab.Data.id != plan.only)) continue;
+                available.Add(e);
             }
 
             if (available.Count == 0) return result;

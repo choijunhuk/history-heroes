@@ -49,7 +49,7 @@ namespace HistoryHeroes.Pets
             {
                 switch (source)
                 {
-                    case PetSource.FirstDungeonClear: return "던전을 처음 깨면";
+                    case PetSource.FirstDungeonClear: return "튜토리얼 보스를 깨면";
                     case PetSource.BossFirstClear: return $"{sourceChapter}구간 보스를 처음 깨면";
                     case PetSource.SurvivalFirstClear: return "서바이벌을 처음 클리어하면";
                     default: return "";

@@ -144,6 +144,7 @@ namespace HistoryHeroes.Dungeon
         private void SaveSnapshot(int room)
         {
             if (_daily && GameSession.DailyOfficial) return;
+            if (GameSession.Tutorial) return; // 튜토리얼은 처음부터 다시
             var s = new RunSnapshot
             {
                 valid = true,
@@ -205,6 +206,18 @@ namespace HistoryHeroes.Dungeon
         {
             _enemyHp = GameSession.EnemyHpScale;
             _enemyAttack = GameSession.EnemyAttackScale;
+            if (GameSession.Tutorial)
+            {
+                // 튜토리얼: 지지 않는다 (쓰러질 만큼 맞으면 체력 50%로), 경험치 두 배, 카드는 정해 둔 순서부터
+                experience.ExpMultiplier = Progress.Tutorial.ExpMultiplier;
+                player.Health.PreventDeath = () =>
+                {
+                    player.Health.Revive(player.Health.Max * Progress.Tutorial.SaveHp);
+                    return true;
+                };
+                skills.TutorialCards = Progress.Tutorial.CardOrder;
+            }
+
             Stats.StatSheet stats = player.Stats;
             void Mod(Stats.StatType stat, Stats.ModifierKind kind, float value, Stats.StatTarget target = Stats.StatTarget.Both) =>
                 stats.Add(new Stats.StatModifier(stat, kind, value, Stats.ModifierSource.Skill, _modeOwner, target));
@@ -343,6 +356,11 @@ namespace HistoryHeroes.Dungeon
 
             System.Random rooms = RunRandom.Rooms;
             _layouts = Encounter.PickLayouts(_plans, dungeon.layouts, dungeon.specialLayout, rooms);
+            if (GameSession.Tutorial)
+            {
+                for (int i = 0; i < _layouts.Count; i++) _layouts[i] = dungeon.specialLayout; // 튜토리얼은 장애물·함정 없는 방
+            }
+
             _encounters = new List<List<SpawnEntry>>(_plans.Count);
             for (int i = 0; i < _plans.Count; i++) _encounters.Add(Encounter.Build(_chapter, _plans[i], i + 1, rooms));
         }
@@ -793,6 +811,12 @@ namespace HistoryHeroes.Dungeon
                 return;
             }
 
+            if (GameSession.Tutorial)
+            {
+                FinishTutorial(victory);
+                return;
+            }
+
             var summary = new RunSummary
             {
                 Victory = victory,
@@ -838,6 +862,75 @@ namespace HistoryHeroes.Dungeon
                     r.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)); // 이번 판 판 밖 성장을 고정 저장 (복사본, 7-5)
                     return r;
                 }, subtitle, GameSession.ToLobby);
+            }
+
+            result.Show(summary, saveRecord);
+        }
+
+        // ---------------------------------------------------------------- v1.0 튜토리얼 끝 (UX 4장)
+
+        /// <summary>
+        /// 튜토리얼 던전이 끝났다: 별·구간·미션은 없다. 기록 저장 튜토리얼 (용량이 꼭 넘친다 → 하나 빼기) → 저장하면 튜토리얼 보스로.
+        /// 다시 보기(연습)면 보상·기록 없이 결과만.
+        /// </summary>
+        private void FinishTutorial(bool victory)
+        {
+            SaveData save = SaveSystem.Data;
+            var summary = new RunSummary
+            {
+                Victory = victory,
+                Seconds = Time.time - _startTime,
+                Kills = experience.Kills,
+                Level = experience.Level.Level,
+                RoomReached = _room,
+                RoomCount = RoomCount,
+                Fusions = new List<string>(_fusions),
+                BasicAttackShare = DamageLog.BasicShare,
+                Skills = new List<string>(),
+                HitsTaken = _hitsTaken,
+                TopDamage = RunText.TopDamage(database, player.Hero),
+                RewardLines = new List<string>(),
+            };
+            foreach (SkillInstance s in skills.Loadout.Actives) summary.Skills.Add($"{s.Data.displayName} Lv{s.Level}");
+            foreach (SkillInstance s in skills.Loadout.Passives) summary.Skills.Add($"{s.Data.displayName} Lv{s.Level}");
+
+            if (GameSession.Practice)
+            {
+                summary.RewardLines.Add("튜토리얼 다시 보기라 보상·기록은 없어요");
+                result.Show(summary, null);
+                return;
+            }
+
+            var reward = new Reward { Gold = 300 };
+            Wallet.Grant(save, reward);
+            summary.RewardLines.Add(reward.ToString());
+            SaveSystem.Save();
+
+            // 기록 용량이 꼭 한 칸 넘치게 (지금 빌드 비용 - 1) → 패시브 한 레벨만 빼면 된다 (핵심 스킬은 남는다)
+            RecordDraft all = RecordDraft.FromLoadout(skills.Loadout, database, 999);
+            int capacity = Mathf.Max(3, Mathf.Min(RecordCapacity.For(RoomCount, RoomCount, true), all.TotalCost - 1));
+            summary.Capacity = capacity;
+            RecordDraft draft = RecordDraft.FromLoadout(skills.Loadout, database, capacity);
+            System.Action saveRecord = null;
+            if (recordSave != null && draft.Entries.Count > 0)
+            {
+                int balance = database != null ? database.balanceVersion : 0;
+                string heroName = player.Hero != null ? player.Hero.displayName : string.Empty;
+                RunRecord made = null;
+                recordSave.DamageShare = DamageLog.ShareOf;
+                saveRecord = () =>
+                {
+                    recordSave.AllowSkip = false;
+                    recordSave.Open(draft, d =>
+                    {
+                        RunRecord r = d.ToRecord(skills.HeroId, 1, RoomCount, RoomCount, true, balance);
+                        r.heroName = heroName;
+                        r.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta));
+                        made = r;
+                        return r;
+                    }, "용량이 넘쳤어요! 뺄 스킬을 눌러 용량 안으로 맞춘 뒤 저장해요 → 이 기록으로 보스와 싸워요",
+                    () => GameSession.StartTutorialBoss(made != null ? made.id : null));
+                };
             }
 
             result.Show(summary, saveRecord);
@@ -962,7 +1055,7 @@ namespace HistoryHeroes.Dungeon
         private void ShowHitCounter()
         {
             int chapter = GameSession.Chapter;
-            bool challenge = !_rift && !_daily && !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2); // 균열·일일 도전은 별이 없다
+            bool challenge = !_rift && !_daily && !GameSession.Tutorial && !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2); // 균열·일일 도전·튜토리얼은 별이 없다
             hud.SetHitCounter(challenge, () => _hitsTaken, Stars.DungeonHitLimit(chapter));
         }
 

@@ -56,6 +56,9 @@ namespace HistoryHeroes.UI
         private RecordDraft _draft;
         private Func<RecordDraft, RunRecord> _makeRecord;
         private Action _onDone;
+
+        /// <summary>"저장 안 함"을 보일까 (튜토리얼은 꼭 저장해야 보스로 간다). 닫으면 다시 true</summary>
+        public bool AllowSkip { get; set; } = true;
         private int _fixedSlot = -1;
 
         public bool IsOpen => root.activeSelf;
@@ -112,6 +115,7 @@ namespace HistoryHeroes.UI
             subtitleLabel.text = subtitle;
             subtitleLabel.color = new Color(1f, 1f, 1f, 0.75f);
             skipLabel.text = skip;
+            skipButton.gameObject.SetActive(AllowSkip);
             _draft.AutoFit(DamageShare); // 처음엔 추천값 (피해를 많이 낸 스킬을 남긴다)
             slotPanel.SetActive(false);
             root.SetActive(true);
@@ -272,6 +276,8 @@ namespace HistoryHeroes.UI
 
         private void Close()
         {
+            AllowSkip = true;
+            skipButton.gameObject.SetActive(true);
             slotPanel.SetActive(false);
             root.SetActive(false);
             GamePause.Resume(this);

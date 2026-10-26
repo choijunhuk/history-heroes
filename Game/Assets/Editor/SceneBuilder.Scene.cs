@@ -165,6 +165,11 @@ namespace HistoryHeroes.EditorTools
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
             }
 
+            using (var props = new Props(ui.Guide))
+            {
+                props.Ref("dungeon", run).Ref("boss", bossRun).Ref("levelUp", ui.LevelUp).Ref("recordSave", ui.RecordSave);
+            }
+
             // ----- 서바이벌: 80×80 열린 맵 + 10분 버티기 (GameDesign 8장) -----
             Survival.SurvivalData survivalData = CreateSurvivalData(d, p);
             Transform survivalStart = BuildSurvivalMap(survivalRoot);
@@ -318,6 +323,7 @@ namespace HistoryHeroes.EditorTools
             public CanvasGroup Fade;
             public RewardRoomPanel RewardRoom;
             public PauseMenu Pause;
+            public TutorialGuide Guide;
         }
 
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
@@ -413,7 +419,27 @@ namespace HistoryHeroes.EditorTools
             SettingsPanel settings = BuildSettingsPanel(root);
             ui.Pause = BuildPauseMenu(root, hudRect, settings);
             settings.transform.SetAsLastSibling(); // 설정이 일시정지 판 위에
+            ui.Guide = BuildTutorialGuide(root);
             return ui;
+        }
+
+        /// <summary>v1.0 튜토리얼 안내 (클리오 말풍선): 위쪽, 누르면 닫힌다</summary>
+        private static TutorialGuide BuildTutorialGuide(Transform root)
+        {
+            RectTransform holder = Rect("TutorialGuide", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            var guide = holder.gameObject.AddComponent<TutorialGuide>();
+            RectTransform banner = Rect("Banner", holder, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -400f), new Vector2(980f, 190f));
+            Img(banner, new Color(0.05f, 0.07f, 0.12f, 0.9f), null).raycastTarget = true;
+            Button button = banner.gameObject.AddComponent<Button>();
+            TMP_Text label = Label("Text", banner, "", 32, TextAlignmentOptions.Center);
+            Stretch(label.rectTransform);
+            label.rectTransform.offsetMin = new Vector2(24f, 12f);
+            label.rectTransform.offsetMax = new Vector2(-24f, -12f);
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 22f;
+            label.fontSizeMax = 32f;
+            using (var props = new Props(guide)) props.Ref("banner", banner.gameObject).Ref("label", label).Ref("bannerButton", button);
+            return guide;
         }
 
         /// <summary>v1.0 일시정지: HUD 왼쪽 위 버튼 + 계속 / 설정 / 판 포기</summary>

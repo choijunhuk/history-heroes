@@ -75,6 +75,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private NewcomerPanel newcomerPanel;
         [SerializeField] private Button patrolButton;
         [SerializeField] private TMP_Text patrolLabel;
+        [Header("v1.0 튜토리얼")]
+        [SerializeField] private OpeningPanel opening;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -170,6 +172,15 @@ namespace HistoryHeroes.UI
                 }
             }
 
+            // 튜토리얼 (UX 4장): 처음이면 오프닝 → 튜토리얼 던전. 방금 끝냈으면 다음 목표
+            bool tutorial = Progress.Tutorial.Needed(data) && opening != null;
+            if (tutorial) opening.Open(() => GameSession.StartTutorial(false));
+            if (GameSession.TutorialJustFinished)
+            {
+                GameSession.TutorialJustFinished = false;
+                ShowNotice("튜토리얼 끝! 이제 1구간 던전에 도전하세요 · 출석부·7일 미션·펫이 열렸어요");
+            }
+
             // 장비가 생기기 전에 깬 보스의 장비 보상 (v0.4)
             if (metaTable != null)
             {
@@ -180,9 +191,9 @@ namespace HistoryHeroes.UI
                     ShowNotice("보스 격파 보상: " + string.Join(", ", gear).Replace("장비  ", ""));
                 }
 
-                if (!OfferResume() && !OfferLegendaryChoice()) OfferNotifications();
+                if (!tutorial && !OfferResume() && !OfferLegendaryChoice()) OfferNotifications();
             }
-            else if (!OfferResume())
+            else if (!tutorial && !OfferResume())
             {
                 OfferNotifications();
             }

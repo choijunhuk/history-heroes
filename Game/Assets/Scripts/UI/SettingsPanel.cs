@@ -19,6 +19,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button flashButton;
         [SerializeField] private TMP_Text flashLabel;
         [SerializeField] private Button backButton;
+        [Header("v1.0 튜토리얼 다시 보기 (로비에만)")]
+        [SerializeField] private Button replayTutorialButton;
         [Header("v1.0 알림")]
         [SerializeField] private Button heartsButton;
         [SerializeField] private TMP_Text heartsLabel;
@@ -36,6 +38,7 @@ namespace HistoryHeroes.UI
             numbersButton.onClick.AddListener(() => Change(s => s.damageNumbers = !s.damageNumbers));
             flashButton.onClick.AddListener(() => Change(s => s.reduceFlashes = !s.reduceFlashes));
             backButton.onClick.AddListener(() => root.SetActive(false));
+            if (replayTutorialButton != null) replayTutorialButton.onClick.AddListener(() => Common.GameSession.StartTutorial(true));
             if (heartsButton != null) heartsButton.onClick.AddListener(() => ChangeNotice(s => s.notifyHearts = !s.notifyHearts));
             if (patrolButton != null) patrolButton.onClick.AddListener(() => ChangeNotice(s => s.notifyPatrol = !s.notifyPatrol));
         }

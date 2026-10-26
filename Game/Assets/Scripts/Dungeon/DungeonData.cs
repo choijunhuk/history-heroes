@@ -32,6 +32,8 @@ namespace HistoryHeroes.Dungeon
         public int minTypes = 1;
         public int maxTypes = 1;
         public int elites;
+        [Tooltip("이 적만 (적 데이터 id, 튜토리얼: \"archer\" · \"charger\"). 비우면 구간 적 전부")]
+        public string only;
 
         public RoomPlan Copy() => (RoomPlan)MemberwiseClone();
     }
