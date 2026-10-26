@@ -183,6 +183,14 @@ namespace HistoryHeroes.Records
             return created;
         }
 
+        /// <summary>
+        /// 튜토리얼 없이 진행한 흔적 (v1.0 전부터 하던 사람). 튜토리얼 판은 판 수·구간·별·계정 레벨을 바꾸지 않으므로
+        /// 이 중 하나라도 있으면 튜토리얼을 끝낸 것으로 친다 (튜토리얼도 안 뜨고 출석부도 안 열리는 상태가 없게).
+        /// </summary>
+        public bool ProgressedWithoutTutorial() =>
+            dungeonRuns > 0 || unlockedChapter > 1 || stars.Count > 0 || accountLevel > 1
+            || (records.Count > 0 && string.IsNullOrEmpty(tutorialRecordId));
+
         public RunRecord FindRecord(string recordId)
         {
             foreach (RunRecord r in records)

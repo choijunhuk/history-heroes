@@ -87,7 +87,8 @@ namespace HistoryHeroes.UI
             GamePause.ResetAll();
             SaveData data = SaveSystem.Data;
             SettingsApplier.Apply(data.settings);
-            _chapter = Mathf.Clamp(GameSession.Chapter, 1, MaxChapter(data));
+            Screen.sleepTimeout = SleepTimeout.SystemSetting; // 전투에서 막아 둔 화면 꺼짐을 폰 설정대로
+            _chapter =Mathf.Clamp(GameSession.Chapter, 1, MaxChapter(data));
 
             previousChapter.onClick.AddListener(() => ChangeChapter(-1));
             nextChapter.onClick.AddListener(() => ChangeChapter(+1));

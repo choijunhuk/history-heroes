@@ -353,7 +353,7 @@ namespace HistoryHeroes.Records
             if (data.schemaVersion < 5)
             {
                 // 4 → 5 (v1.0): 튜토리얼이 생겼다. 이미 진행한 사람은 튜토리얼을 끝낸 것으로 (출석·7일 미션이 바로 열린다)
-                data.tutorialDone = data.records.Count > 0 || data.unlockedChapter > 1 || data.stars.Count > 0 || data.accountLevel > 1;
+                data.tutorialDone = data.ProgressedWithoutTutorial();
                 data.attendance = new AttendanceSave();
                 data.newcomer = new NewcomerSave();
                 data.patrol = new PatrolSave();
@@ -484,6 +484,9 @@ namespace HistoryHeroes.Records
             if (data.unlockedChapter < 1) data.unlockedChapter = 1;
 
             data.records.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id));
+            if (!string.IsNullOrEmpty(data.tutorialRecordId) && data.FindRecord(data.tutorialRecordId) == null) data.tutorialRecordId = null;
+            // 구조 5로 옮길 때 판 수를 안 봐서 끼어 버린 저장 (던전만 몇 판 한 v0.3 저장)도 여기서 풀린다
+            if (!data.tutorialDone && data.ProgressedWithoutTutorial()) data.tutorialDone = true;
             foreach (RunRecord r in data.records)
             {
                 r.skills ??= new List<RecordSkill>();

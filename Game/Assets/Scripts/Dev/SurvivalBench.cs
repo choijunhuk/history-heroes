@@ -117,14 +117,19 @@ namespace HistoryHeroes.Dev
             float nextSample = 30f;
             int maxAlive = 0, maxProjectiles = 0, maxGems = 0;
             var experience = FindAnyObjectByType<Progress.ExperienceSystem>();
-            float frameSum = 0f;
-            int frames = 0;
+            float frameSum = 0f, frameMax = 0f;
+            int frames = 0, slowFrames = 0;
+            var allFrames = new List<float>(40000); // 판 전체 (1% 최저 fps)
             float limit = run.Data.duration + 180f;
             while (!run.IsFinished && run.Elapsed < limit)
             {
                 yield return null;
-                frameSum += Time.unscaledDeltaTime;
+                float dt = Time.unscaledDeltaTime;
+                frameSum += dt;
                 frames++;
+                allFrames.Add(dt);
+                if (dt > frameMax) frameMax = dt;
+                if (dt > SlowFrame) slowFrames++;
                 int alive = EnemyBase.Alive.Count;
                 if (alive > maxAlive) maxAlive = alive;
                 if (run.Elapsed < nextSample) continue;
@@ -135,9 +140,14 @@ namespace HistoryHeroes.Dev
                 if (projectiles > maxProjectiles) maxProjectiles = projectiles;
                 if (gems > maxGems) maxGems = gems;
                 float ms = frames > 0 ? frameSum / frames * 1000f : 0f;
+                string sample = $"{SurvivalRun.Format(run.Elapsed)} 적 {alive} 투사체 {projectiles} 보석 {gems} Lv{experience?.Level.Level} 체력 {player.Health.Current / Mathf.Max(1f, player.Health.Max) * 100f:0}% 처치 {experience?.Kills} " +
+                                $"프레임 {ms:0.0}ms 최악 {frameMax * 1000f:0}ms 느림 {slowFrames * 100f / Mathf.Max(1, frames):0.0}%";
                 frameSum = 0f;
+                frameMax = 0f;
                 frames = 0;
-                samples.Append($"\n  {SurvivalRun.Format(run.Elapsed)} 적 {alive} 투사체 {projectiles} 보석 {gems} Lv{experience?.Level.Level} 체력 {player.Health.Current / Mathf.Max(1f, player.Health.Max) * 100f:0}% 처치 {experience?.Kills} 프레임 {ms:0.0}ms");
+                slowFrames = 0;
+                samples.Append("\n  " + sample);
+                Debug.Log("[SurvivalBench] " + sample); // 폰에서는 logcat으로 바로 본다
             }
 
             GamePause.DevSpeed = 1f;
@@ -153,7 +163,30 @@ namespace HistoryHeroes.Dev
             bool win = run.IsFinished && !player.Health.IsDead;
             _results.Add($"{heroId} | {(win ? "생존·보스 격파" : run.IsFinished ? "쓰러짐" : "시간 초과")} {SurvivalRun.Format(run.Elapsed)} | 처치 {experience?.Kills} | Lv{experience?.Level.Level} | " +
                          $"기본 공격 {DamageLog.BasicShare * 100f:0}% | 골드 {gold} (분당 {gold / minutes:0}) | 최대 적 {maxAlive} 투사체 {maxProjectiles} 보석 {maxGems} | 멈춤 {pilot.StopShare * 100f:0}% | " +
-                         $"{Economy.RunText.TopDamage(_database, player.Hero, 4)} | 받은 피해 {takenTotal:0} ({string.Join(" · ", takenParts)}){samples}");
+                         $"{Economy.RunText.TopDamage(_database, player.Hero, 4)} | 받은 피해 {takenTotal:0} ({string.Join(" · ", takenParts)}) | {FrameSummary(allFrames)}{samples}");
+        }
+
+        /// <summary>이보다 긴 프레임은 "느림" (25fps 밑)</summary>
+        private const float SlowFrame = 1f / 25f;
+
+        /// <summary>판 전체 평균 fps · 1% 최저 fps (가장 느린 1% 프레임의 평균) · 느린 프레임 비율</summary>
+        private static string FrameSummary(List<float> frames)
+        {
+            if (frames.Count == 0) return "프레임 없음";
+            float sum = 0f;
+            int slow = 0;
+            foreach (float f in frames)
+            {
+                sum += f;
+                if (f > SlowFrame) slow++;
+            }
+
+            var sorted = new List<float>(frames);
+            sorted.Sort();
+            int worstCount = Mathf.Max(1, sorted.Count / 100);
+            float worstSum = 0f;
+            for (int i = sorted.Count - worstCount; i < sorted.Count; i++) worstSum += sorted[i];
+            return $"평균 {frames.Count / sum:0.0}fps · 1% 최저 {worstCount / worstSum:0.0}fps · 25fps 밑 {slow * 100f / frames.Count:0.00}%";
         }
 
         public static string Report()
