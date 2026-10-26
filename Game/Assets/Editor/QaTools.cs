@@ -210,6 +210,22 @@ namespace HistoryHeroes.EditorTools
 
         public static string BossBenchStatus() => Dev.BossBench.Report();
 
+        /// <summary>
+        /// v0.5 서바이벌 벤치: 영웅마다 10분 판을 자동 조종으로 (카드 무작위, 위험하면 피하고 여유 있으면 멈춰 쏘기).
+        /// god = 체력 계속 채움 (끝까지 가서 적 300·성능 확인). 예: SurvivalBench("khan,guan", 4f, false) → SurvivalBenchStatus()
+        /// </summary>
+        public static string SurvivalBench(string heroes = "khan,guan,napoleon,tesla", float speed = 4f, bool god = false)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            var list = new List<string>();
+            foreach (string h in heroes.Split(',')) list.Add(h.Trim());
+            return Dev.SurvivalBench.Begin(list, speed, god, db);
+        }
+
+        public static string SurvivalBenchStatus() => Dev.SurvivalBench.Report();
+
         // ---------------------------------------------------------------- v0.4 판 밖 성장
 
         /// <summary>

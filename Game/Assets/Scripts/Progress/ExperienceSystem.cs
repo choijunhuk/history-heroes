@@ -18,6 +18,9 @@ namespace HistoryHeroes.Progress
         private readonly List<ExperienceGem> _active = new List<ExperienceGem>();
 
         public PlayerLevel Level { get; } = new PlayerLevel();
+
+        /// <summary>살아 있는 보석 상한 (0 = 없음). 넘으면 새 보석을 가장 가까운 보석에 합친다 (서바이벌, GameDesign 8-5)</summary>
+        public int MaxGems { get; set; }
         public int Kills { get; private set; }
 
         public event Action<int> LeveledUp;
@@ -46,10 +49,32 @@ namespace HistoryHeroes.Progress
         {
             Kills++;
             float value = enemy.Data.experience * (enemy.IsElite ? 5f : 1f);
+            if (MaxGems > 0 && _active.Count >= MaxGems && MergeIntoNearest(enemy.transform.position, value)) return;
             ExperienceGem gem = _gems.Get(enemy.transform.position, Quaternion.identity);
             gem.Drop(player.transform, value, OnCollected);
             _active.Add(gem);
         }
+
+        private bool MergeIntoNearest(Vector2 at, float value)
+        {
+            ExperienceGem best = null;
+            float bestSqr = float.MaxValue;
+            foreach (ExperienceGem g in _active)
+            {
+                float d = ((Vector2)g.transform.position - at).sqrMagnitude;
+                if (d < bestSqr)
+                {
+                    bestSqr = d;
+                    best = g;
+                }
+            }
+
+            if (best == null) return false;
+            best.Absorb(value);
+            return true;
+        }
+
+        public int ActiveGems => _active.Count;
 
         private void OnCollected(ExperienceGem gem, float value)
         {

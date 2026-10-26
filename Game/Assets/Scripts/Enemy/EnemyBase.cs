@@ -33,6 +33,10 @@ namespace HistoryHeroes.Enemy
         public bool IsElite { get; private set; }
         public float Damage => data.damage * attackMultiplier;
 
+        /// <summary>공격 예고 중 / 공격 중 (화면에 보이는 예고선 그대로 — 벤치 조종 AI가 사람처럼 보고 피하는 데 쓴다)</summary>
+        public bool IsTelegraphing => state == State.Telegraph;
+        public bool IsAttacking => state == State.Attack;
+
         /// <summary>나폴레옹 총알에 밀리는가. 엘리트·보스는 밀리지 않는다</summary>
         public virtual bool CanBeKnockedBack => !IsElite;
 

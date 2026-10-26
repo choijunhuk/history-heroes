@@ -29,6 +29,14 @@ namespace HistoryHeroes.Skills
         private SkillLoadout _loadout;
         public SkillLoadout Loadout => _loadout ??= new SkillLoadout(activeSlots, passiveSlots);
 
+        /// <summary>모드마다 칸 수 (던전 4·4, 서바이벌 6·6 — GameDesign 6-1). 판이 시작하기 전(BattleBootstrap)에 부른다</summary>
+        public void ConfigureSlots(int actives, int passives)
+        {
+            activeSlots = Mathf.Max(1, actives);
+            passiveSlots = Mathf.Max(1, passives);
+            _loadout = null;
+        }
+
         /// <summary>조합을 처음 만들었을 때 (도감 기록·연출용)</summary>
         public event Action<FusionRecipe> FusionCompleted;
 

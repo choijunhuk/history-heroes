@@ -304,6 +304,10 @@ namespace HistoryHeroes.Records
             foreach (RelicStar r in data.relics.owned) r.stars = Math.Clamp(r.stars, 1, 3);
             data.relics.sourcesClaimed ??= new List<string>();
             data.relics.heroDungeonClears ??= new List<string>();
+            data.survival ??= new SurvivalSave();
+            data.survival.best ??= new List<HeroBest>();
+            data.survival.best.RemoveAll(b => b == null || string.IsNullOrEmpty(b.heroId));
+            data.survival.clearHeroes ??= new List<string>();
             if (string.IsNullOrEmpty(data.selectedHero)) data.selectedHero = "khan";
             if (data.accountLevel < 1) data.accountLevel = 1;
             if (data.hearts < 0) data.hearts = 0;

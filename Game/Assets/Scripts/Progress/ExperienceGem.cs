@@ -19,8 +19,19 @@ namespace HistoryHeroes.Progress
         {
             _player = player;
             _value = value;
+            transform.localScale = new Vector3(0.45f, 0.45f, 1f);
             _collected = collected;
             _attracted = false;
+        }
+
+        public float Value => _value;
+
+        /// <summary>다른 보석을 합친다 (값을 더하고 조금 커진다, 서바이벌에서 보석이 너무 많을 때)</summary>
+        public void Absorb(float value)
+        {
+            _value += value;
+            float scale = Mathf.Clamp(0.45f + Mathf.Sqrt(_value) * 0.08f, 0.45f, 1.4f);
+            transform.localScale = new Vector3(scale, scale, 1f);
         }
 
         /// <summary>방을 다 깨면 남은 보석을 한꺼번에 끌어온다.</summary>

@@ -15,6 +15,12 @@ namespace HistoryHeroes.Modes
     {
         [SerializeField] private GameObject dungeonRoot;
         [SerializeField] private GameObject bossRoot;
+        [Header("v0.5 서바이벌")]
+        [SerializeField] private GameObject survivalRoot;
+        [Tooltip("던전·보스가 같이 쓰는 방 벽 (서바이벌에서는 끈다)")]
+        [SerializeField] private GameObject arenaRoot;
+        [SerializeField] private CameraFollow cameraFollow;
+        [SerializeField] private Survival.SurvivalData survival;
         [SerializeField] private HeroRoster roster;
         [SerializeField] private PlayerController player;
         [Tooltip("판 밖 성장 표 (v0.4). 비어 있으면 판 밖 성장 없이 싸운다")]
@@ -64,16 +70,26 @@ namespace HistoryHeroes.Modes
                 player.SetHero(hero);
                 if (metaTable != null && hero != null) player.ApplyMeta(MetaForThisBattle(metaTable, hero.id), metaTable);
 
-                // 룬: 던전에서만 (보스맵은 레벨업이 없다, 기록에도 저장하지 않는다 — Runes 6장)
-                if (skills != null && metaTable != null && metaTable.runes != null && hero != null && GameSession.Mode == BattleMode.Dungeon)
+                // 룬: 던전·서바이벌만 (보스맵은 레벨업이 없다, 기록에도 저장하지 않는다 — Runes 6장)
+                if (skills != null && metaTable != null && metaTable.runes != null && hero != null && GameSession.Mode != BattleMode.Boss)
                 {
                     skills.WeightModifier = Runes.RuneService.ModifierFor(SaveSystem.Data, metaTable.runes, hero.id, database != null ? database.recipes : null);
                 }
             }
 
             bool boss = GameSession.Mode == BattleMode.Boss;
-            if (dungeonRoot != null) dungeonRoot.SetActive(!boss);
+            bool survive = GameSession.Mode == BattleMode.Survival;
+            if (dungeonRoot != null) dungeonRoot.SetActive(!boss && !survive);
             if (bossRoot != null) bossRoot.SetActive(boss);
+            if (survivalRoot != null) survivalRoot.SetActive(survive);
+            if (arenaRoot != null) arenaRoot.SetActive(!survive);
+            if (cameraFollow != null)
+            {
+                cameraFollow.enabled = survive;
+                if (survive && survival != null) cameraFollow.BoundsHalfSize = survival.mapHalfSize;
+            }
+
+            if (survive && skills != null && survival != null) skills.ConfigureSlots(survival.activeSlots, survival.passiveSlots); // 6·6
         }
     }
 }

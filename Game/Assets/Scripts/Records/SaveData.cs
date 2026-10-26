@@ -83,6 +83,9 @@ namespace HistoryHeroes.Records
         public ShopSave shop = new ShopSave();
         public RuneSave runes = new RuneSave();
         public RelicSave relics = new RelicSave();
+
+        // ----- v0.5 서바이벌 (GameDesign 8-3: 생존 시간 기록, 영웅별 최고 기록) -----
+        public SurvivalSave survival = new SurvivalSave();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -263,6 +266,48 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+    }
+
+    // ---------------------------------------------------------------- v0.5 서바이벌
+
+    [Serializable]
+    public sealed class SurvivalSave
+    {
+        public List<HeroBest> best = new List<HeroBest>();
+        /// <summary>서바이벌을 클리어한 영웅 (유물 "영웅 2명으로 클리어")</summary>
+        public List<string> clearHeroes = new List<string>();
+        public int clears;
+        public float longestSeconds;
+
+        /// <summary>영웅의 최고 생존 시간 (없으면 0, 목록을 바꾸지 않는다 — 화면 표시용)</summary>
+        public float SecondsOf(string heroId)
+        {
+            foreach (HeroBest b in best)
+            {
+                if (b.heroId == heroId) return b.seconds;
+            }
+
+            return 0f;
+        }
+
+        public HeroBest BestOf(string heroId)
+        {
+            foreach (HeroBest b in best)
+            {
+                if (b.heroId == heroId) return b;
+            }
+
+            var created = new HeroBest { heroId = heroId };
+            best.Add(created);
+            return created;
+        }
+    }
+
+    [Serializable]
+    public sealed class HeroBest
+    {
+        public string heroId;
+        public float seconds;
     }
 
     // ---------------------------------------------------------------- v0.4 유물 (Relics 8장)

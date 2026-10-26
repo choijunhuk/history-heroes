@@ -114,8 +114,16 @@ namespace HistoryHeroes.Relics
                         case "heroes4": return heroesUnlocked >= 4;
                         default: return false;
                     }
+                case RelicSource.Survival:
+                    switch (r.sourceValue)
+                    {
+                        case "survive5": return save.survival.longestSeconds >= 300f;
+                        case "clear10": return save.survival.clears > 0;
+                        case "two_heroes": return save.survival.clearHeroes.Count >= 2;
+                        default: return false;
+                    }
                 default:
-                    return false; // 서바이벌 마일스톤은 v0.5
+                    return false;
             }
         }
 

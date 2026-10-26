@@ -54,8 +54,21 @@ namespace HistoryHeroes.EditorTools
 
             Button dungeon = Btn("Dungeon", main, "던전 시작", new Vector2(0f, 50f), new Vector2(820f, 210f), ButtonGreen, out TMP_Text dungeonLabel);
             dungeonLabel.fontSize = 64;
-            Button boss = Btn("Boss", main, "보스 도전", new Vector2(0f, -190f), new Vector2(820f, 160f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text bossLabel);
-            bossLabel.fontSize = 44;
+            // 보스 | 서바이벌 (v0.5): 한 줄을 반씩
+            Button boss = Btn("Boss", main, "보스 도전", new Vector2(-212f, -190f), new Vector2(396f, 160f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text bossLabel);
+            bossLabel.fontSize = 38;
+            bossLabel.enableAutoSizing = true;
+            bossLabel.fontSizeMin = 22f;
+            bossLabel.fontSizeMax = 38f;
+            bossLabel.rectTransform.offsetMin = new Vector2(12f, 0f);
+            bossLabel.rectTransform.offsetMax = new Vector2(-12f, 0f);
+            Button survival = Btn("Survival", main, "서바이벌", new Vector2(212f, -190f), new Vector2(396f, 160f), new Color(0.6f, 0.38f, 0.14f), out TMP_Text survivalLabel);
+            survivalLabel.fontSize = 38;
+            survivalLabel.enableAutoSizing = true;
+            survivalLabel.fontSizeMin = 22f;
+            survivalLabel.fontSizeMax = 38f;
+            survivalLabel.rectTransform.offsetMin = new Vector2(12f, 0f);
+            survivalLabel.rectTransform.offsetMax = new Vector2(-12f, 0f);
             Button archive = Btn("Archive", main, "기록 보관함", new Vector2(0f, -380f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text archiveLabel);
             Button codex = Btn("Codex", main, "조합 도감", new Vector2(0f, -540f), new Vector2(820f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text codexLabel);
             Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -700f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
@@ -90,6 +103,7 @@ namespace HistoryHeroes.EditorTools
                 props.Refs("bosses", bosses).Ref("chapterLabel", chapter).Ref("chapterInfo", chapterInfo)
                     .Ref("previousChapter", prev).Ref("nextChapter", next)
                     .Ref("dungeonButton", dungeon).Ref("bossButton", boss).Ref("bossButtonLabel", bossLabel)
+                    .Ref("survivalButton", survival).Ref("survivalButtonLabel", survivalLabel)
                     .Ref("archiveButton", archive).Ref("archiveButtonLabel", archiveLabel)
                     .Ref("codexButton", codex).Ref("codexButtonLabel", codexLabel)
                     .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)

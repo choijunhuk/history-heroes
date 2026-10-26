@@ -31,8 +31,14 @@ namespace HistoryHeroes.EditorTools
         private static void BuildBattleScene(Scene scene, Data d, Prefabs p)
         {
             // ----- 카메라·빛 -----
+            // 받침(rig)이 플레이어를 따라가고(서바이벌만), 카메라는 받침 안에서 HUD 자리만큼 위로 올라가 있다.
+            // 흔들림은 카메라의 local 위치라 따라가기와 안 싸운다
+            var rig = new GameObject("CameraRig");
+            var cameraFollow = rig.AddComponent<CameraFollow>();
+            cameraFollow.enabled = false; // BattleBootstrap이 서바이벌에서만 켠다
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
-            cameraObject.transform.position = new Vector3(0f, 1f, -10f); // 위쪽 HUD 자리만큼 올림
+            cameraObject.transform.SetParent(rig.transform, false);
+            cameraObject.transform.localPosition = new Vector3(0f, 1f, -10f); // 위쪽 HUD 자리만큼 올림
             var camera = cameraObject.AddComponent<Camera>();
             camera.orthographic = true;
             camera.clearFlags = CameraClearFlags.SolidColor;
@@ -51,6 +57,7 @@ namespace HistoryHeroes.EditorTools
             // ----- 모드별 묶음: 장면이 열릴 때 BattleBootstrap이 한쪽만 켠다 -----
             var dungeonRoot = new GameObject("DungeonMode").transform;
             var bossRoot = new GameObject("BossMode").transform;
+            var survivalRoot = new GameObject("SurvivalMode").transform;
 
             // ----- 방: 바닥, 벽, 문 (벽은 두 모드가 같이 쓴다) -----
             var arena = new GameObject("Arena").transform;
@@ -96,6 +103,7 @@ namespace HistoryHeroes.EditorTools
             }
 
             using (var props = new Props(playerObject.AddComponent<StopIndicator>())) props.Ref("player", player).Ref("fill", stopFill);
+            using (var props = new Props(cameraFollow)) props.Ref("target", playerObject.transform).Ref("viewCamera", camera).Float("boundsHalfSize", SurvivalHalf);
 
             // ----- 시스템 -----
             var systems = new GameObject("Systems");
@@ -144,12 +152,28 @@ namespace HistoryHeroes.EditorTools
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
             }
 
+            // ----- 서바이벌: 80×80 열린 맵 + 10분 버티기 (GameDesign 8장) -----
+            Survival.SurvivalData survivalData = CreateSurvivalData(d, p);
+            Transform survivalStart = BuildSurvivalMap(survivalRoot);
+            var survivalRunObject = new GameObject("SurvivalRun");
+            survivalRunObject.transform.SetParent(survivalRoot, false);
+            var survivalRun = survivalRunObject.AddComponent<Survival.SurvivalRun>();
+            using (var props = new Props(survivalRun))
+            {
+                props.Ref("data", survivalData).Ref("database", d.Database).Ref("player", player).Ref("experience", experience).Ref("skills", skills)
+                    .Ref("playerStart", survivalStart).Ref("metaTable", d.Meta)
+                    .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
+            }
+
             var bootstrap = systems.AddComponent<BattleBootstrap>();
             using (var props = new Props(bootstrap))
             {
                 props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player).Ref("metaTable", d.Meta)
-                    .Ref("skills", Object.FindAnyObjectByType<SkillManager>(FindObjectsInactive.Include)).Ref("database", d.Database);
+                    .Ref("skills", Object.FindAnyObjectByType<SkillManager>(FindObjectsInactive.Include)).Ref("database", d.Database)
+                    .Ref("survivalRoot", survivalRoot.gameObject).Ref("arenaRoot", arena.gameObject).Ref("cameraFollow", cameraFollow).Ref("survival", survivalData);
             }
+
+            survivalRoot.gameObject.SetActive(false); // 던전이 기본 (BattleBootstrap이 모드대로 켠다)
 
             using (var props = new Props(Object.FindAnyObjectByType<DungeonRun>(FindObjectsInactive.Include)))
             {

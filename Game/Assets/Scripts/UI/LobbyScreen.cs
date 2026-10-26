@@ -35,6 +35,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button dungeonButton;
         [SerializeField] private Button bossButton;
         [SerializeField] private TMP_Text bossButtonLabel;
+        [SerializeField] private Button survivalButton;
+        [SerializeField] private TMP_Text survivalButtonLabel;
         [SerializeField] private Button archiveButton;
         [SerializeField] private TMP_Text archiveButtonLabel;
         [SerializeField] private Button codexButton;
@@ -70,6 +72,7 @@ namespace HistoryHeroes.UI
             nextChapter.onClick.AddListener(() => ChangeChapter(+1));
             dungeonButton.onClick.AddListener(StartDungeon);
             bossButton.onClick.AddListener(OpenBoss);
+            if (survivalButton != null) survivalButton.onClick.AddListener(StartSurvival);
             archiveButton.onClick.AddListener(() => archive.Open(Render));
             codexButton.onClick.AddListener(() => codex.Open());
             heroButton.onClick.AddListener(() => heroPanel.Open(Render));
@@ -147,6 +150,17 @@ namespace HistoryHeroes.UI
             if (!GameSession.TryStartDungeon(_chapter)) hearts.Open(Render);
         }
 
+        private void StartSurvival()
+        {
+            if (!GameSession.SurvivalUnlocked(SaveSystem.Data))
+            {
+                ShowNotice("2구간 보스를 깨면 서바이벌이 열려요");
+                return;
+            }
+
+            if (!GameSession.TryStartSurvival()) hearts.Open(Render);
+        }
+
         private static int MaxChapter(SaveData data) => Mathf.Clamp(data.unlockedChapter, 1, ChapterNames.Length);
 
         private void ChangeChapter(int delta)
@@ -183,12 +197,30 @@ namespace HistoryHeroes.UI
             bossButton.interactable = boss != null && hasRecord;
             bossButtonLabel.text = boss == null ? "보스 준비 중" : hasRecord ? "보스 도전" : "보스 도전 (기록이 있어야 해요)";
             archiveButtonLabel.text = $"기록 보관함  {records}/{data.recordSlots}";
+            RenderSurvival(data);
 
             int found = data.discoveredRecipes.Count;
             codexButtonLabel.text = $"조합 도감  {found}/{codex.RecipeCount}";
             HeroData hero = HeroUnlock.Selected(data, roster);
             heroButtonLabel.text = hero != null ? $"영웅  {hero.displayName} ({hero.ClassLabel})" : "영웅";
             RenderWallet();
+        }
+
+        /// <summary>서바이벌 버튼: 잠김 / 하트 2 + 고른 영웅의 최고 기록</summary>
+        private void RenderSurvival(SaveData data)
+        {
+            if (survivalButton == null || survivalButtonLabel == null) return;
+            if (!GameSession.SurvivalUnlocked(data))
+            {
+                survivalButtonLabel.text = "서바이벌\n<size=60%>2구간 보스를 깨면 열려요</size>";
+                return;
+            }
+
+            HeroData hero = HeroUnlock.Selected(data, roster);
+            float best = hero != null ? data.survival.SecondsOf(hero.id) : 0f;
+            string dev = GameSession.SurvivalUnlockedByProgress(data) ? "" : " · 개발용 해금";
+            string record = best > 0f ? $"최고 {Survival.SurvivalRun.Format(best)}" : "10분 버티기";
+            survivalButtonLabel.text = $"서바이벌\n<size=60%>{record} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
         }
 
         private void OpenBoss()

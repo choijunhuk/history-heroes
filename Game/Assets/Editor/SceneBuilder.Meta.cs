@@ -66,7 +66,7 @@ namespace HistoryHeroes.EditorTools
             // 1. 발명의 시대
             relics.relics.Add(Relic("tesla_notes", "테슬라의 연구 노트", 0, "테슬라는 교류 전기와 무선 송전을 연구했다", Hero, 0, "tesla", "니콜라 테슬라로 던전 첫 클리어"));
             relics.relics.Add(Relic("davinci_sketch", "다빈치의 비행기계 스케치", 0, "레오나르도 다빈치는 새의 날개를 본뜬 비행 장치를 스케치로 남겼다", Achievement, 0, "recipes5", "조합 5종 발견"));
-            relics.relics.Add(Relic("galileo_telescope", "갈릴레이의 망원경", 0, "갈릴레이는 망원경으로 목성의 위성을 관찰했다", Survival, 0, "two_heroes", "서바이벌을 영웅 2명으로 클리어 (서바이벌은 v0.5)"));
+            relics.relics.Add(Relic("galileo_telescope", "갈릴레이의 망원경", 0, "갈릴레이는 망원경으로 목성의 위성을 관찰했다", Survival, 0, "two_heroes", "서바이벌을 영웅 2명으로 클리어"));
             relics.relics.Add(Relic("antikythera", "안티키테라 기계", 0, "고대 그리스의 천체 계산 장치. 톱니바퀴로 이루어졌다", Boss, 3, null, "3구간 보스 최초 격파"));
             // 2. 기록과 문자
             relics.relics.Add(Relic("rosetta_fragment", "로제타석 조각", 1, "같은 내용이 세 가지 문자로 새겨져 이집트 문자 해독의 열쇠가 되었다", Boss, 2, null, "2구간 보스 최초 격파"));
@@ -86,8 +86,8 @@ namespace HistoryHeroes.EditorTools
             // 5. 하늘과 시간
             relics.relics.Add(Relic("rain_gauge", "측우기", 4, "조선 시대에 비의 양을 재던 기구", Boss, 1, null, "1구간 보스 최초 격파"));
             relics.relics.Add(Relic("armillary_sphere", "혼천의", 4, "하늘의 움직임을 나타낸 천문 기구", StarsSource, 4, null, "4구간 별 6개"));
-            relics.relics.Add(Relic("sundial", "앙부일구", 4, "그림자로 시각을 알려준 조선의 해시계", Survival, 0, "survive5", "서바이벌 5분 생존 (v0.5)"));
-            relics.relics.Add(Relic("astrolabe", "아스트롤라베", 4, "별의 높이를 재던 천문·항해 도구", Survival, 0, "clear10", "서바이벌 10분 클리어 (v0.5)"));
+            relics.relics.Add(Relic("sundial", "앙부일구", 4, "그림자로 시각을 알려준 조선의 해시계", Survival, 0, "survive5", "서바이벌 5분 생존"));
+            relics.relics.Add(Relic("astrolabe", "아스트롤라베", 4, "별의 높이를 재던 천문·항해 도구", Survival, 0, "clear10", "서바이벌 10분 클리어"));
             EditorUtility.SetDirty(relics);
 
             var meta = AssetUtil.LoadOrCreate<MetaTable>($"{DataDir}/Meta/MetaTable.asset");
