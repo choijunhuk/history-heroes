@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Survival.SurvivalData
   duration: 600
   mapHalfSize: 40
+  cameraArea: {x: 13.5, y: 24}
   maxAlive: 300
   charger: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
   archer: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}

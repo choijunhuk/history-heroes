@@ -86,7 +86,12 @@ namespace HistoryHeroes.Modes
             if (cameraFollow != null)
             {
                 cameraFollow.enabled = survive;
-                if (survive && survival != null) cameraFollow.BoundsHalfSize = survival.mapHalfSize;
+                if (survive && survival != null)
+                {
+                    cameraFollow.BoundsHalfSize = survival.mapHalfSize;
+                    CameraFit fit = cameraFollow.GetComponentInChildren<CameraFit>();
+                    if (fit != null) fit.Area = survival.cameraArea;
+                }
             }
 
             if (survive && skills != null && survival != null) skills.ConfigureSlots(survival.activeSlots, survival.passiveSlots); // 6·6

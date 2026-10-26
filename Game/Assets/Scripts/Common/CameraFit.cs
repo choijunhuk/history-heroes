@@ -14,6 +14,13 @@ namespace HistoryHeroes.Common
 
         private Camera _camera;
 
+        /// <summary>꼭 보여야 하는 영역 (서바이벌은 넓게 — 몰려오는 무리가 벽처럼 보이지 않게)</summary>
+        public Vector2 Area
+        {
+            get => area;
+            set => area = value;
+        }
+
         private void LateUpdate()
         {
             if (_camera == null) _camera = GetComponent<Camera>();
