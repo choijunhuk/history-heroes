@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bffa178e5cfa3bc4da7564d67027bb57, type: 3}
+  m_Name: Relic_sundial
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
+  id: sundial
+  displayName: "\uC559\uBD80\uC77C\uAD6C"
+  set: 4
+  fact: "\uADF8\uB9BC\uC790\uB85C \uC2DC\uAC01\uC744 \uC54C\uB824\uC900 \uC870\uC120\uC758
+    \uD574\uC2DC\uACC4"
+  source: 3
+  sourceChapter: 0
+  sourceValue: survive5
+  howToGet: "\uC11C\uBC14\uC774\uBC8C 5\uBD84 \uC0DD\uC874 (v0.5)"

@@ -206,6 +206,31 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        private static RelicPanel BuildRelicPanel(Transform parent, HistoryHeroes.Relics.RelicTable relics)
+        {
+            RectTransform panel = Overlay(parent, "RelicPanel", out GameObject holder);
+            var screen = holder.AddComponent<RelicPanel>();
+
+            TMP_Text title = Label("Title", panel, "유물 도감", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 850f), new Vector2(900f, 80f));
+            TMP_Text summary = Label("Summary", panel, "", 26, TextAlignmentOptions.Center);
+            Place(summary.rectTransform, Center, Center, new Vector2(0f, 760f), new Vector2(1000f, 100f));
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 90f), new Vector2(1000f, 1180f), 100f, 27f);
+            TMP_Text detail = Label("Detail", panel, "", 26, TextAlignmentOptions.Center);
+            Place(detail.rectTransform, Center, Center, new Vector2(0f, -575f), new Vector2(1000f, 110f));
+            Button action = Btn("RelicAction", panel, "★ 올리기", new Vector2(-220f, -720f), new Vector2(400f, 110f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text actionLabel);
+            actionLabel.fontSize = 28;
+            Button back = Btn("Back", panel, "뒤로", new Vector2(220f, -720f), new Vector2(400f, 110f), ButtonGray, out _);
+
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("table", relics).Ref("summaryLabel", summary).Ref("list", list)
+                    .Ref("detailLabel", detail).Ref("actionButton", action).Ref("actionLabel", actionLabel).Ref("backButton", back);
+            }
+
+            return screen;
+        }
+
         private static TrainingPanel BuildTrainingPanel(Transform parent, MetaTable meta)
         {
             RectTransform panel = Overlay(parent, "TrainingPanel", out GameObject holder);

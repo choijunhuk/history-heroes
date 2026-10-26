@@ -278,6 +278,13 @@ namespace HistoryHeroes.Dungeon
             Reward box = Stars.ClaimBoxes(save);
             if (!box.IsEmpty) lines.Add("별 상자  " + box);
 
+            // 유물 (Relics 4장): 그 영웅으로 던전 첫 클리어, 구간 별 6개 등
+            if (metaTable != null && metaTable.relics != null)
+            {
+                if (victory) Relics.RelicService.MarkHeroClear(save, skills.HeroId);
+                lines.AddRange(Relics.RelicService.CheckAll(save, metaTable.relics));
+            }
+
             SaveSystem.Save();
             return lines;
         }

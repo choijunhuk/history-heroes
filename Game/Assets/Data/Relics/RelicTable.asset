@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3581f50d119a57342923d07917726a62, type: 3}
+  m_Name: RelicTable
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicTable
+  relics:
+  - {fileID: 11400000, guid: cb010d3a48fc9244587293bd253a5851, type: 2}
+  - {fileID: 11400000, guid: 497dac695f134634486648d1a2c5a3a9, type: 2}
+  - {fileID: 11400000, guid: b6557719ee824864ca9aab82e6212f60, type: 2}
+  - {fileID: 11400000, guid: c33e6e34f201d9343bf1d4b9c3028bda, type: 2}
+  - {fileID: 11400000, guid: 64311dd48a1e59a4fb935054fec19fcd, type: 2}
+  - {fileID: 11400000, guid: d3f6ac1d2ed2dcf4d9a9343d13406e12, type: 2}
+  - {fileID: 11400000, guid: 10d43e293e5da6e42a3ed8f31f993f2a, type: 2}
+  - {fileID: 11400000, guid: f87af9ce83f3f934082fded78b7f7060, type: 2}
+  - {fileID: 11400000, guid: 60db6d0dba4732a49890f07ec8248f6e, type: 2}
+  - {fileID: 11400000, guid: 9c9afb1a80923aa4eaf43cfc1977922e, type: 2}
+  - {fileID: 11400000, guid: d699d12515c59e74b8f5e421ec3aff08, type: 2}
+  - {fileID: 11400000, guid: f5aa9c9ff24db8a47b1c8312516effcb, type: 2}
+  - {fileID: 11400000, guid: 7cd9309254efbd54192d299dd9beed70, type: 2}
+  - {fileID: 11400000, guid: 4d0172367e760ba4fac21844ef65a353, type: 2}
+  - {fileID: 11400000, guid: 1b682f2a14b24ef43a92d482706b26bf, type: 2}
+  - {fileID: 11400000, guid: 872ce73d362f64d4f87419911d73880a, type: 2}
+  - {fileID: 11400000, guid: 22549cf1ad212e34ab0e9a4d7cd5effa, type: 2}
+  - {fileID: 11400000, guid: e5fb1898872b32b4486272d8e1c82f14, type: 2}
+  - {fileID: 11400000, guid: 8c7152afec4942b49b1ba24bbd884a12, type: 2}
+  - {fileID: 11400000, guid: 2395b66250025eb42a725ad0d8250786, type: 2}
+  setNames:
+  - "\uBC1C\uBA85\uC758 \uC2DC\uB300"
+  - "\uAE30\uB85D\uACFC \uBB38\uC790"
+  - "\uBC14\uB2E4\uC640 \uD56D\uD574"
+  - "\uC7A5\uC218\uC758 \uC720\uD488"
+  - "\uD558\uB298\uACFC \uC2DC\uAC04"
+  perStar: 0.001
+  setBonus: 0.008
+  setDamageReduction: 0.008
+  starCosts: 1e00000050000000
+  exchangeCost: 120
+  bossRepeatShards: 5

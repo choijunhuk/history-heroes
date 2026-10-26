@@ -231,6 +231,7 @@ namespace HistoryHeroes.Records
                 data.gacha = new GachaSave();
                 data.shop = new ShopSave();
                 data.runes = new RuneSave();
+                data.relics = new RelicSave();
                 foreach (RunRecord r in data.records ?? new List<RunRecord>()) r.meta = new MetaSnapshot();
             }
 
@@ -296,6 +297,12 @@ namespace HistoryHeroes.Records
             }
 
             data.runes.choicesTaken ??= new List<string>();
+            data.relics ??= new RelicSave();
+            data.relics.owned ??= new List<RelicStar>();
+            data.relics.owned.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id) || r.stars <= 0);
+            foreach (RelicStar r in data.relics.owned) r.stars = Math.Clamp(r.stars, 1, 3);
+            data.relics.sourcesClaimed ??= new List<string>();
+            data.relics.heroDungeonClears ??= new List<string>();
             if (string.IsNullOrEmpty(data.selectedHero)) data.selectedHero = "khan";
             if (data.accountLevel < 1) data.accountLevel = 1;
             if (data.hearts < 0) data.hearts = 0;
@@ -311,6 +318,7 @@ namespace HistoryHeroes.Records
                 r.meta ??= new MetaSnapshot();
                 r.meta.equipment ??= new List<EquippedItem>();
                 r.meta.training ??= new List<int>();
+                r.meta.relics ??= new List<RelicStar>();
                 if (r.meta.heroLevel < 1) r.meta.heroLevel = 1;
                 if (r.meta.heroStars < 1) r.meta.heroStars = 1;
                 r.skills.RemoveAll(s => s == null || string.IsNullOrEmpty(s.id));

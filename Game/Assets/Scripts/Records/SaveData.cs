@@ -82,6 +82,7 @@ namespace HistoryHeroes.Records
         public GachaSave gacha = new GachaSave();
         public ShopSave shop = new ShopSave();
         public RuneSave runes = new RuneSave();
+        public RelicSave relics = new RelicSave();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -210,6 +211,8 @@ namespace HistoryHeroes.Records
         /// <summary>장착 장비 (칸마다 하나, 비면 빠짐). level = 그 칸의 강화값을 장비 등급 상한으로 자른 값</summary>
         public List<EquippedItem> equipment = new List<EquippedItem>();
         public List<int> training = new List<int>();
+        /// <summary>효과가 있던 유물과 별 (유물 탭이 열린 뒤에만, 결정 53 "기록 당시 값")</summary>
+        public List<RelicStar> relics = new List<RelicStar>();
     }
 
     [Serializable]
@@ -260,6 +263,27 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+    }
+
+    // ---------------------------------------------------------------- v0.4 유물 (Relics 8장)
+
+    [Serializable]
+    public sealed class RelicSave
+    {
+        public List<RelicStar> owned = new List<RelicStar>();
+        /// <summary>원래 획득처를 이미 채운 유물 (교환소로 먼저 얻었으면 그때 🏺 돌려받음)</summary>
+        public List<string> sourcesClaimed = new List<string>();
+        /// <summary>던전을 클리어해 본 영웅 (영웅 유물)</summary>
+        public List<string> heroDungeonClears = new List<string>();
+        /// <summary>새로 남긴 기록 수 (업적 "기록 10개 저장")</summary>
+        public int recordsSavedTotal;
+    }
+
+    [Serializable]
+    public sealed class RelicStar
+    {
+        public string id;
+        public int stars;
     }
 
     // ---------------------------------------------------------------- v0.4 룬 (Runes 9장)

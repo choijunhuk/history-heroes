@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bffa178e5cfa3bc4da7564d67027bb57, type: 3}
+  m_Name: Relic_viking_sunstone
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
+  id: viking_sunstone
+  displayName: "\uBC14\uC774\uD0B9\uC758 \uD0DC\uC591\uC11D"
+  set: 2
+  fact: "\uD750\uB9B0 \uB0A0 \uD574\uC758 \uC704\uCE58\uB97C \uCC3E\uC558\uB2E4\uACE0
+    \uC804\uD574\uC9C0\uB294 \uAD11\uBB3C (\uC804\uC2B9)"
+  source: 1
+  sourceChapter: 4
+  sourceValue: 
+  howToGet: "4\uAD6C\uAC04 \uBCF4\uC2A4 \uCD5C\uCD08 \uACA9\uD30C"

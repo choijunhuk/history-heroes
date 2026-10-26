@@ -26,6 +26,7 @@ namespace HistoryHeroes.Meta
             snap.heroStars = Mathf.Clamp(hero.stars, 1, 5);
             if (table.equipment != null && EquipmentInventory.Unlocked(save)) snap.equipment = EquipmentInventory.Snapshot(save, table.equipment, heroId);
             snap.training = new List<int>(save.training);
+            snap.relics = Relics.RelicService.Active(save);
             return snap;
         }
 
@@ -76,6 +77,19 @@ namespace HistoryHeroes.Meta
                     int lv = Mathf.Clamp(snap.training[i], 0, row.maxLevel);
                     if (lv > 0) list.Add(new StatModifier(row.stat, row.kind, lv * row.perLevel, ModifierSource.Training, owner));
                 }
+            }
+
+            // 유물 컬렉션: ★ 합 × 0.1% + 완성 세트 × 0.8% (공격력·체력), 세트마다 피해 감소 0.8%
+            if (table.relics != null && snap.relics != null && snap.relics.Count > 0)
+            {
+                Relics.RelicService.Bonus relic = Relics.RelicService.Calculate(snap.relics, table.relics);
+                if (relic.AttackHp > 0f)
+                {
+                    list.Add(new StatModifier(StatType.Attack, ModifierKind.Percent, relic.AttackHp, ModifierSource.Relic, owner));
+                    list.Add(new StatModifier(StatType.MaxHp, ModifierKind.Percent, relic.AttackHp, ModifierSource.Relic, owner));
+                }
+
+                if (relic.DamageReduction > 0f) list.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, relic.DamageReduction, ModifierSource.Relic, owner));
             }
 
             return list;

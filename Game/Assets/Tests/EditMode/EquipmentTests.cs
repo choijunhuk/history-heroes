@@ -127,7 +127,7 @@ namespace HistoryHeroes.Tests
             Assert.LessOrEqual(aspd, 0.08f + 1e-5f);
         }
 
-        /// <summary>Stats 4장: 판 밖 전부(영웅 레벨 + 각성 + 수련 + 장비) 최대에서 공격력 ≤ +85% (유물 10 + 펫 5는 따로)</summary>
+        /// <summary>Stats 4장: 판 밖 전부(영웅 레벨 + 각성 + 수련 + 장비, 유물은 RelicTests) 최대에서 공격력 ≤ +85% (유물 10 + 펫 5 = 100%)</summary>
         [Test]
         public void Budget_AllMetaSourcesAtMax_AttackAndHpWithinStatsTable()
         {

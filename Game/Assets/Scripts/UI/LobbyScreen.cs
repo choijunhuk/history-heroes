@@ -84,6 +84,23 @@ namespace HistoryHeroes.UI
                 ShowNotice("별 상자를 열었어요: " + box);
             }
 
+            // 유물 (업적·별·보스 — 늦게 채운 조건도 여기서 확인, v0.4)
+            if (metaTable != null && metaTable.relics != null)
+            {
+                int heroes = 0;
+                foreach (HeroData h in roster.heroes)
+                {
+                    if (HeroUnlock.IsUnlocked(data, h)) heroes++;
+                }
+
+                List<string> relics = Relics.RelicService.CheckAll(data, metaTable.relics, heroes);
+                if (relics.Count > 0)
+                {
+                    SaveSystem.Save();
+                    ShowNotice(string.Join(" · ", relics));
+                }
+            }
+
             // 장비가 생기기 전에 깬 보스의 장비 보상 (v0.4)
             if (metaTable != null)
             {

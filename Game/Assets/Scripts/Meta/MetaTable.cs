@@ -36,6 +36,7 @@ namespace HistoryHeroes.Meta
     {
         public EquipmentTable equipment;
         public Runes.RuneTable runes;
+        public Relics.RelicTable relics;
 
         [Header("영웅 레벨 (Lv1~30, 레벨당 공격력·체력 +1%, Lv1 = +0%)")]
         public int maxHeroLevel = 30;

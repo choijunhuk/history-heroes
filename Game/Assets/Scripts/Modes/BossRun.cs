@@ -138,6 +138,12 @@ namespace HistoryHeroes.Modes
                     Wallet.Grant(save, reward);
                     lines.Add(reward.IsEmpty ? "오늘 반복 격파 보상은 다 받았어요 (하루 3번)" : reward.ToString());
                     if (firstClear && metaTable != null) lines.AddRange(Equipment.EquipmentInventory.GrantBossRewards(save, metaTable.equipment));
+                    // 보스 반복 격파 🏺 5 (하루 3회 보상 안에서, Relics 5장)
+                    if (!firstClear && !reward.IsEmpty && metaTable != null && metaTable.relics != null)
+                    {
+                        save.AddItem(Relics.RelicTable.AncientShard, metaTable.relics.bossRepeatShards);
+                        lines.Add($"고대 파편 +{metaTable.relics.bossRepeatShards}");
+                    }
                 }
                 else if (!save.defeatedBosses.Contains(_info.id) && GameSession.HeartSpent)
                 {
@@ -157,6 +163,7 @@ namespace HistoryHeroes.Modes
 
                     Reward box = Stars.ClaimBoxes(save);
                     if (!box.IsEmpty) lines.Add("별 상자  " + box);
+                    if (metaTable != null && metaTable.relics != null) lines.AddRange(Relics.RelicService.CheckAll(save, metaTable.relics));
                 }
             }
 

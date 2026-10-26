@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Meta.MetaTable
   equipment: {fileID: 11400000, guid: 81901e08a28f8464bad8fe59dabba203, type: 2}
   runes: {fileID: 11400000, guid: d765a581a77386d408d3b84105890cdd, type: 2}
+  relics: {fileID: 11400000, guid: 60b8879d0a4632b48985552346a405d6, type: 2}
   maxHeroLevel: 30
   levelPercent: 0.01
   levelCostPerLevel: 200

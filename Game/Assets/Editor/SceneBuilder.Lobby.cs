@@ -70,6 +70,8 @@ namespace HistoryHeroes.EditorTools
             BossIntroPanel bossIntro = BuildBossIntroPanel(safe, database);
             RecordArchivePanel archivePanel = BuildArchivePanel(safe, database);
             CodexPanel codexPanel = BuildCodexPanel(safe, database);
+            RelicPanel relicPanel = BuildRelicPanel(safe, meta != null ? meta.relics : null);
+            using (var props = new Props(codexPanel)) props.Ref("relics", relicPanel).Ref("relicButton", codexPanel.transform.Find("Panel/Relics").GetComponent<Button>());
             RecordSaveScreen reselect = BuildRecordSave(root, database);
             HeartPanel heartPanel = BuildHeartPanel(root);
             HeroPanel heroPanel = BuildHeroPanel(safe, roster);
@@ -321,7 +323,8 @@ namespace HistoryHeroes.EditorTools
             scroll.horizontal = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 40f;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -720f), new Vector2(400f, 110f), ButtonGray, out _);
+            Button relicButton = Btn("Relics", panel, "유물 도감", new Vector2(-220f, -720f), new Vector2(400f, 110f), new Color(0.45f, 0.32f, 0.12f), out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(220f, -720f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {

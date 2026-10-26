@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bffa178e5cfa3bc4da7564d67027bb57, type: 3}
+  m_Name: Relic_tesla_notes
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
+  id: tesla_notes
+  displayName: "\uD14C\uC2AC\uB77C\uC758 \uC5F0\uAD6C \uB178\uD2B8"
+  set: 0
+  fact: "\uD14C\uC2AC\uB77C\uB294 \uAD50\uB958 \uC804\uAE30\uC640 \uBB34\uC120 \uC1A1\uC804\uC744
+    \uC5F0\uAD6C\uD588\uB2E4"
+  source: 0
+  sourceChapter: 0
+  sourceValue: tesla
+  howToGet: "\uB2C8\uCF5C\uB77C \uD14C\uC2AC\uB77C\uB85C \uB358\uC804 \uCCAB \uD074\uB9AC\uC5B4"
