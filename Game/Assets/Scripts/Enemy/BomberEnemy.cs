@@ -34,7 +34,7 @@ namespace HistoryHeroes.Enemy
                     {
                         _blastCenter = player.position;
                         ShowMarker(true);
-                        Enter(State.Telegraph, data.telegraphTime);
+                        Enter(State.Telegraph, data.telegraphTime * TelegraphScale);
                     }
                     break;
 

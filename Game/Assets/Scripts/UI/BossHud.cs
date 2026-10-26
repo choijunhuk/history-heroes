@@ -23,7 +23,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text introBody;
 
         private EnemyBase _boss;
-        private RiftWardenBoss _warden;
+        private IPhasedBoss _warden;
         private int _phase = -1;
 
         private void Awake()
@@ -62,7 +62,7 @@ namespace HistoryHeroes.UI
         public void Bind(EnemyBase boss, string bossName)
         {
             _boss = boss;
-            _warden = boss as RiftWardenBoss;
+            _warden = boss as IPhasedBoss;
             _phase = -1;
             nameLabel.text = bossName;
             root.SetActive(true);

@@ -42,6 +42,13 @@ namespace HistoryHeroes.EditorTools
                 return "카드 고름 | " + State();
             }
 
+            // v0.6 보상 방: 카드 번호로 고른다 (0 회복 · 1 카드 · 2 골드)
+            if (run.RewardRoom != null && run.RewardRoom.IsOpen)
+            {
+                run.RewardRoom.Choose((RewardRoomPanel.Choice)Mathf.Clamp(cardIndex, 0, 2));
+                return "보상 고름 | " + State();
+            }
+
             if (EnemyBase.Alive.Count > 0)
             {
                 Dev.DevCheats.KillAll();

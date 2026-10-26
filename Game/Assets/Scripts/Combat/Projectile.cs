@@ -92,6 +92,13 @@ namespace HistoryHeroes.Combat
 
             if (((1 << hit.collider.gameObject.layer) & _wallMask) != 0)
             {
+                if (hit.collider.TryGetComponent(out Dungeon.Breakable breakable))
+                {
+                    breakable.Hit(); // 부서지는 장애물: 튕기지 않고 피해만 (Modes 2-3)
+                    Release();
+                    return;
+                }
+
                 if (_ricochetLeft <= 0)
                 {
                     Release();
@@ -109,6 +116,9 @@ namespace HistoryHeroes.Combat
             transform.position = hit.centroid;
             _lastHit = hit.collider;
 
+            _damage.Direction = _direction;
+            _damage.HasDirection = true;
+            _damage.Piercing = _pierceLeft > 0;
             if (hit.collider.TryGetComponent(out Health health) && health.TryTakeDamage(_damage, out float dealt))
             {
                 _onHit?.Invoke(_damage, dealt);

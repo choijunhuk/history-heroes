@@ -37,6 +37,7 @@ namespace HistoryHeroes.Common
         {
             HeartSpent = false;
             Practice = true;
+            ClearSpecialRun();
             Mode = BattleMode.Boss;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = recordId;
@@ -57,6 +58,25 @@ namespace HistoryHeroes.Common
             if (!TrySpendHeart()) return false;
             StartBoss(chapter, recordId);
             return true;
+        }
+
+        /// <summary>판 시드 (0 = 아무거나). 일일 도전은 날짜로 정한다 (Modes 5장)</summary>
+        public static int RunSeed { get; set; }
+
+        /// <summary>던전 방 구성을 바꿔 끼울 때 (일일 도전 7방). null = 던전 15방</summary>
+        public static System.Collections.Generic.IReadOnlyList<Dungeon.RoomPlan> CustomPlan { get; set; }
+
+        /// <summary>오늘의 변형 규칙 등 (적 체력·공격력 배수)</summary>
+        public static float EnemyHpScale { get; set; } = 1f;
+        public static float EnemyAttackScale { get; set; } = 1f;
+
+        /// <summary>던전·보스·서바이벌을 새로 시작할 때 특수 판 설정을 지운다</summary>
+        public static void ClearSpecialRun()
+        {
+            RunSeed = 0;
+            CustomPlan = null;
+            EnemyHpScale = 1f;
+            EnemyAttackScale = 1f;
         }
 
         /// <summary>이번 모드의 하트 (던전·보스 1, 서바이벌 2 — Modes 8장)</summary>
@@ -81,6 +101,7 @@ namespace HistoryHeroes.Common
         public static void StartSurvival()
         {
             Practice = false;
+            ClearSpecialRun();
             Mode = BattleMode.Survival;
             BossRecordId = null;
             Load(BattleScene);
@@ -112,6 +133,7 @@ namespace HistoryHeroes.Common
         public static void StartDungeon(int chapter)
         {
             Practice = false;
+            ClearSpecialRun();
             Mode = BattleMode.Dungeon;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = null;
@@ -121,6 +143,7 @@ namespace HistoryHeroes.Common
         public static void StartBoss(int chapter, string recordId)
         {
             Practice = false;
+            ClearSpecialRun();
             Mode = BattleMode.Boss;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = recordId;
@@ -146,6 +169,7 @@ namespace HistoryHeroes.Common
             BossRecordId = null;
             HeartSpent = false;
             Practice = false;
+            ClearSpecialRun();
         }
     }
 }

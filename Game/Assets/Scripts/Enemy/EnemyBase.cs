@@ -42,6 +42,19 @@ namespace HistoryHeroes.Enemy
 
         public event Action<EnemyBase> Killed;
 
+        /// <summary>
+        /// 판(던전·보스·서바이벌·무한)이 넣어 주는 "적 하나 더 내기" (소환사·분열체·보스 소환).
+        /// (프리팹, 자리, 체력 배수, 공격력 배수) → 나온 적 (못 내면 null). 판이 끝나면 비운다.
+        /// </summary>
+        public static Func<EnemyBase, Vector2, float, float, EnemyBase> ChildSpawner;
+
+        /// <summary>이 적의 체력·공격력 배수 (소환한 졸개가 같은 구간 강도를 따라가게)</summary>
+        public float HpMultiplierUsed { get; private set; } = 1f;
+        public float AttackMultiplierUsed => attackMultiplier;
+
+        /// <summary>예고 시간 배수 (5구간 강화형은 빨라진다)</summary>
+        public float TelegraphScale { get; set; } = 1f;
+
         private static readonly List<EnemyBase> _alive = new List<EnemyBase>();
 
         /// <summary>지금 살아 있는 적 (액티브 스킬 표적 고르기용). 물리 검사보다 싸다.</summary>
@@ -49,7 +62,11 @@ namespace HistoryHeroes.Enemy
 
         // "도메인 다시 불러오기"를 끈 Play 모드에서도 지난 판의 목록이 남지 않게
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => _alive.Clear();
+        private static void ResetStatics()
+        {
+            _alive.Clear();
+            ChildSpawner = null;
+        }
 
         protected virtual void Awake()
         {
@@ -70,11 +87,14 @@ namespace HistoryHeroes.Enemy
         public virtual void Spawn(Transform target, float hpMultiplier, float atkMultiplier, bool elite)
         {
             player = target;
+            HpMultiplierUsed = hpMultiplier;
+            TelegraphScale = 1f;
             attackMultiplier = atkMultiplier * (elite ? 1.5f : 1f);
             IsElite = elite;
             health.Init(Team.Enemy, data.maxHp * hpMultiplier * (elite ? 5f : 1f));
             health.IncomingModifier = null; // 풀에서 다시 쓸 때 지난 표식이 남지 않게
-            transform.localScale = Vector3.one * (elite ? 1.5f : 1f);
+            health.Guard = null;
+            transform.localScale = Vector3.one * (data.scale > 0f ? data.scale : 1f) * (elite ? 1.5f : 1f);
             status.Clear();
             if (!_alive.Contains(this)) _alive.Add(this);
             Enter(State.Approach);

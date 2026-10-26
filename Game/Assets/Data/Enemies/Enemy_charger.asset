@@ -21,3 +21,4 @@ MonoBehaviour:
   telegraphTime: 0.8
   recoverTime: 1.2
   color: {r: 0.85, g: 0.25, b: 0.25, a: 1}
+  scale: 1

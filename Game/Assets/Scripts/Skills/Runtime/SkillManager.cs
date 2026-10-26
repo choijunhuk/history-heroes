@@ -55,7 +55,7 @@ namespace HistoryHeroes.Skills
             List<FusionRecipe> fusions = FusionFinder.FindAvailableFusions(Loadout, recipes, HeroId);
             if (fusions.Count > 0)
             {
-                FusionRecipe chosen = fusions[UnityEngine.Random.Range(0, fusions.Count)];
+                FusionRecipe chosen = fusions[Common.RunRandom.CardRange(0, fusions.Count)];
                 offer.Add(new SkillCard { Type = CardType.Fusion, Recipe = chosen });
             }
 
@@ -71,7 +71,7 @@ namespace HistoryHeroes.Skills
             SkillData exclusive = player.Hero != null ? player.Hero.exclusiveActive : null;
             if (exclusive == null || offer.Exists(c => c.Skill == exclusive)) return;
             SkillCard card = candidates.Find(c => c.Skill == exclusive);
-            if (card == null || UnityEngine.Random.value > firstOfferExclusiveChance) return;
+            if (card == null || Common.RunRandom.Card01() > firstOfferExclusiveChance) return;
 
             for (int i = offer.Count - 1; i >= 0; i--)
             {
@@ -107,7 +107,7 @@ namespace HistoryHeroes.Skills
             List<FusionRecipe> fusions = FusionFinder.FindAvailableFusions(Loadout, recipes, HeroId);
             if (fusions.Count > 0)
             {
-                result.Insert(0, new SkillCard { Type = CardType.Fusion, Recipe = fusions[UnityEngine.Random.Range(0, fusions.Count)] });
+                result.Insert(0, new SkillCard { Type = CardType.Fusion, Recipe = fusions[Common.RunRandom.CardRange(0, fusions.Count)] });
                 return result;
             }
 

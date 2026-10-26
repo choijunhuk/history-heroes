@@ -25,7 +25,7 @@ namespace HistoryHeroes.Enemy
                 case State.Approach:
                     if (distance > preferredMax) MoveToward(ToPlayer, data.moveSpeed);
                     else if (distance < preferredMin) MoveToward(-ToPlayer, data.moveSpeed);
-                    else Enter(State.Telegraph, data.telegraphTime);
+                    else Enter(State.Telegraph, data.telegraphTime * TelegraphScale);
                     break;
 
                 case State.Telegraph:

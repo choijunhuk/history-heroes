@@ -19,5 +19,7 @@ namespace HistoryHeroes.Enemy
 
         [Header("화면 (임시 도형)")]
         public Color color = new Color(0.85f, 0.25f, 0.25f);
+        [Tooltip("몸 크기 (작은 분열체·졸개는 작게)")]
+        public float scale = 1f;
     }
 }

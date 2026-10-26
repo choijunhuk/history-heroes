@@ -14,6 +14,10 @@ namespace HistoryHeroes.EditorTools
             public Projectile PlayerArrow, EnemyArrow;
             public ExperienceGem Gem;
             public EnemyBase Charger, Archer, Bomber;
+            public EnemyBase Shield, Splitter, SplitterSmall, Summoner, Minion;
+            // 중간 보스 (Modes 2-8) · 보스맵 보스 (Content 3장)
+            public EnemyBase MidBison, MidTorch, MidGolem, MidHunter, MidExecutor;
+            public EnemyBase WraithLord, SteelColossus, ShadowTwins, OblivionKing;
             public EnemyBase RiftWarden;
             public Projectile Bullet, Orb, SwordWave;
             public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower;
@@ -40,6 +44,24 @@ namespace HistoryHeroes.EditorTools
             p.Charger = EnemyPrefab<ChargerEnemy>("Enemy_Charger", d.Charger, _circle, line, withBlastMarker: false);
             p.Archer = EnemyPrefab<ArcherEnemy>("Enemy_Archer", d.Archer, _square, line, withBlastMarker: false);
             p.Bomber = EnemyPrefab<BomberEnemy>("Enemy_Bomber", d.Bomber, _circle, line, withBlastMarker: true);
+
+            // v0.6 적 (Content 4장)
+            p.Shield = EnemyPrefab<ShieldEnemy>("Enemy_Shield", d.Shield, _square, line, withBlastMarker: false, extra: (go, props) =>
+            {
+                // 앞을 막는 방패 (판자 모양). 방패를 내리면 흐려진다
+                var shield = new GameObject("Shield");
+                shield.transform.SetParent(go.transform, false);
+                var sr = shield.AddComponent<SpriteRenderer>();
+                sr.sprite = _square;
+                sr.color = new Color(0.85f, 0.88f, 0.95f, 0.95f);
+                sr.sortingOrder = 3;
+                shield.transform.localScale = new Vector3(0.22f, 1.05f, 1f);
+                props.Ref("shieldVisual", sr);
+            });
+            p.SplitterSmall = EnemyPrefab<SplitterEnemy>("Enemy_SplitterSmall", d.SplitterSmall, _circle, line, withBlastMarker: false);
+            p.Splitter = EnemyPrefab<SplitterEnemy>("Enemy_Splitter", d.Splitter, _circle, line, withBlastMarker: false, extra: (go, props) => props.Ref("smallPrefab", p.SplitterSmall));
+            p.Minion = EnemyPrefab<ChargerEnemy>("Enemy_Minion", d.Minion, _circle, line, withBlastMarker: false);
+            p.Summoner = EnemyPrefab<SummonerEnemy>("Enemy_Summoner", d.Summoner, _square, line, withBlastMarker: false, extra: (go, props) => props.Ref("minion", p.Minion));
             p.RiftWarden = EnemyPrefab<RiftWardenBoss>("Boss_RiftWarden", d.WardenEnemy, _circle, line, withBlastMarker: false, extra: (go, props) =>
             {
                 // 내려찍기 예고 원 (보스를 따라가지 않게 Awake에서 떼어 낸다)

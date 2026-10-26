@@ -437,7 +437,20 @@ namespace HistoryHeroes.Player
                 if (to.sqrMagnitude > 0.5f && Vector2.Angle(aim, to) > half) continue;
 
                 DamageInfo damage = DamageCalculator.Roll(Stats, coefficient, DamageKind.BasicAttack);
+                damage.Direction = to.sqrMagnitude > 0.0001f ? to.normalized : aim;
+                damage.HasDirection = true;
                 if (h.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
+            }
+
+            // 부서지는 장애물 (Modes 2-3): 근접도 깎는다
+            _overlap.Clear();
+            Physics2D.OverlapCircle(origin, reach, new ContactFilter2D { useLayerMask = true, layerMask = wallMask }, _overlap);
+            for (int i = 0; i < _overlap.Count; i++)
+            {
+                if (!_overlap[i].TryGetComponent(out Dungeon.Breakable b)) continue;
+                Vector2 to = (Vector2)b.transform.position - origin;
+                if (to.sqrMagnitude > 0.5f && Vector2.Angle(aim, to) > half) continue;
+                b.Hit();
             }
         }
 

@@ -21,6 +21,9 @@ namespace HistoryHeroes.Combat
         /// <summary>맞기 직전에 피해를 바꾼다 (사냥매 사냥 표식처럼 "이 적에게만" 붙는 효과). 적은 다시 나올 때 비운다</summary>
         public Func<DamageInfo, DamageInfo> IncomingModifier { get; set; }
 
+        /// <summary>몸이 막는 피해 (방패병의 방패). IncomingModifier보다 먼저. 피해를 0으로 돌려주면 "막음"</summary>
+        public Func<DamageInfo, DamageInfo> Guard { get; set; }
+
         /// <summary>실제로 깎인 양과 함께 알린다.</summary>
         public event Action<DamageInfo, float> Damaged;
         public event Action<Health> Died;
@@ -58,6 +61,12 @@ namespace HistoryHeroes.Combat
         {
             dealt = 0f;
             if (IsDead || info.AttackerTeam == team) return false;
+            if (Guard != null)
+            {
+                info = Guard(info);
+                if (info.Amount <= 0f) return false; // 막았다
+            }
+
             if (IncomingModifier != null) info = IncomingModifier(info); // 사냥매 표식: 기본 공격 치명타 확률 +25%
             if (Invulnerable || Time.time < _invulnerableUntil) return false;
 

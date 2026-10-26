@@ -26,6 +26,12 @@ namespace HistoryHeroes.Combat
 
         /// <summary>어느 스킬의 피해인가 (스킬 ID, 기본 공격 "basic", 영웅 대표 효과 "sig_영웅ID"). 스킬별 피해 비율용</summary>
         public string SourceId;
+
+        /// <summary>날아온 방향 (투사체·베기). 방패병이 정면 공격을 막는 데 쓴다. 범위 피해는 방향이 없다</summary>
+        public Vector2 Direction;
+        public bool HasDirection;
+        /// <summary>관통하는 투사체 (방패를 뚫는다, Content 4장 "튕김·관통")</summary>
+        public bool Piercing;
     }
 
     /// <summary>

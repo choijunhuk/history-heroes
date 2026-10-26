@@ -10,12 +10,15 @@ using HistoryHeroes.Records;
 using HistoryHeroes.Skills;
 using HistoryHeroes.UI;
 using UnityEngine;
+using Func = System.Func<HistoryHeroes.Enemy.EnemyBase, UnityEngine.Vector2, float, float, HistoryHeroes.Enemy.EnemyBase>;
 
 namespace HistoryHeroes.Dungeon
 {
     /// <summary>
     /// 던전 한 판의 흐름: 방 입장 → 적 등장(예고 표시) → 전멸하면 문 열림 → 문으로 다음 방 → 마지막 방을 깨면 결과.
-    /// 엘리트를 잡으면 확정 레벨업. 플레이어가 쓰러지면 바로 결과. (Content.md 2-2, 2-4)
+    /// 엘리트를 잡으면 확정 레벨업. 플레이어가 쓰러지면 바로 결과. (Content 2-2, 2-4)
+    /// v0.6: 방 15개 (보상 방 6·11, 중간 보스 15). 판 시드(RunRandom.Rooms)로 방마다 레이아웃과 적 편성을 판 시작에 정한다
+    /// → 같은 시드 = 같은 판 (일일 도전). 소환사·분열체의 졸개는 EnemyBase.ChildSpawner로 받아서 방 전멸 판정에 넣는다.
     /// </summary>
     public sealed class DungeonRun : MonoBehaviour
     {
@@ -37,6 +40,11 @@ namespace HistoryHeroes.Dungeon
         [SerializeField] private RunResultScreen result;
         [SerializeField] private RecordSaveScreen recordSave;
         [SerializeField] private CanvasGroup fade;
+        [Tooltip("중간 보스 체력 막대 (v0.6)")]
+        [SerializeField] private BossHud bossHud;
+        [SerializeField] private RewardRoomPanel rewardRoom;
+        [Tooltip("레이아웃 장애물·함정을 놓는 곳")]
+        [SerializeField] private Transform layoutRoot;
 
         [Header("등장")]
         [Tooltip("적이 나올 수 있는 영역 (월드 좌표)")]
@@ -57,14 +65,28 @@ namespace HistoryHeroes.Dungeon
         private bool _finished;
         private float _startTime;
 
+        private List<RoomPlan> _plans;
+        private List<RoomLayout> _layouts;
+        private List<List<SpawnEntry>> _encounters;
+        private ChapterData _chapter;
+        private Func _childSpawner;
+        private readonly List<GameObject> _layoutObjects = new List<GameObject>();
+        private static int _obstacleMask = -1;
+
         public int Room => _room;
+        public ChapterData Chapter => _chapter;
+        public RoomPlan CurrentPlan => _plans != null && _room >= 1 && _room <= _plans.Count ? _plans[_room - 1] : null;
+        public RoomLayout CurrentLayout => _layouts != null && _room >= 1 && _room <= _layouts.Count ? _layouts[_room - 1] : null;
+        public IReadOnlyList<SpawnEntry> EncounterOf(int room) => _encounters != null && room >= 1 && room <= _encounters.Count ? _encounters[room - 1] : null;
+        public IReadOnlyList<RoomLayout> Layouts => _layouts;
+        public RewardRoomPanel RewardRoom => rewardRoom;
 
         /// <summary>새 방에 들어갔다 (방 번호). 흰 비둘기 보물 찾기 등</summary>
         public event System.Action<int> RoomEntered;
 
         /// <summary>적이 나오는 영역 (방 안쪽)</summary>
         public Rect SpawnArea => spawnArea;
-        public int RoomCount => dungeon.rooms.Count;
+        public int RoomCount => _plans != null ? _plans.Count : dungeon.plan.Count;
         public bool IsFinished => _finished;
 
         private void Start()
@@ -72,6 +94,9 @@ namespace HistoryHeroes.Dungeon
             GamePause.ResetAll();
             DamageLog.Reset();
             _startTime = Time.time;
+            PlanRun();
+            _childSpawner = SpawnChild;
+            EnemyBase.ChildSpawner = _childSpawner;
             player.Health.Died += _ => Finish(victory: false);
             player.Health.Damaged += (_, dealt) =>
             {
@@ -84,28 +109,48 @@ namespace HistoryHeroes.Dungeon
             EnterRoom(1);
         }
 
+        /// <summary>판 시작: 시드(일일 도전은 날짜)로 방마다 레이아웃과 적 편성을 정한다</summary>
+        private void PlanRun()
+        {
+            if (GameSession.RunSeed != 0) RunRandom.Begin(GameSession.RunSeed);
+            else RunRandom.BeginRandom();
+            _chapter = dungeon.Chapter(GameSession.Chapter);
+            _plans = GameSession.CustomPlan != null ? new List<RoomPlan>(GameSession.CustomPlan) : new List<RoomPlan>(dungeon.plan);
+            System.Random rooms = RunRandom.Rooms;
+            _layouts = Encounter.PickLayouts(_plans, dungeon.layouts, dungeon.specialLayout, rooms);
+            _encounters = new List<List<SpawnEntry>>(_plans.Count);
+            for (int i = 0; i < _plans.Count; i++) _encounters.Add(Encounter.Build(_chapter, _plans[i], i + 1, rooms));
+        }
+
         private void EnterRoom(int room)
         {
             _room = room;
             _hitsAtRoomStart = _hitsTaken;
             levelUp.Floor = room;
-            RoomData data = dungeon.rooms[room - 1];
+            RoomPlan plan = _plans[room - 1];
             string chapter = GameSession.Chapter > 1 ? $"{GameSession.Chapter}구간 " : string.Empty;
-            hud.RoomText = data.kind == RoomKind.Elite ? $"{chapter}방 {room}/{RoomCount}  엘리트" : $"{chapter}방 {room}/{RoomCount}";
+            string tag = plan.kind == RoomKind.Elite ? "  엘리트" : plan.kind == RoomKind.Reward ? "  보상" : plan.kind == RoomKind.MidBoss ? "  중간 보스" : string.Empty;
+            hud.RoomText = $"{chapter}방 {room}/{RoomCount}{tag}";
             door.SetOpen(false);
-            var elite = new List<bool>(RoomCount);
-            foreach (RoomData r in dungeon.rooms) elite.Add(r.kind == RoomKind.Elite);
-            hud.SetRoomProgress(room, elite);
-            StartCoroutine(SpawnRoom(data));
+            var kinds = new List<RoomKind>(RoomCount);
+            foreach (RoomPlan r in _plans) kinds.Add(r.kind);
+            hud.SetRoomProgress(room, kinds);
+            ApplyLayout(_layouts[room - 1]);
+
+            if (plan.kind == RoomKind.Reward) OpenRewardRoom();
+            else StartCoroutine(SpawnRoom(plan, _encounters[room - 1]));
             RoomEntered?.Invoke(room);
         }
 
-        private IEnumerator SpawnRoom(RoomData data)
+        private IEnumerator SpawnRoom(RoomPlan plan, List<SpawnEntry> spawns)
         {
             _alive = 0;
-            foreach (SpawnEntry entry in data.spawns) _alive += entry.prefab != null ? entry.count : 0;
+            foreach (SpawnEntry entry in spawns) _alive += entry.prefab != null ? entry.count : 0;
+            bool midBoss = plan.kind == RoomKind.MidBoss && _chapter != null && _chapter.midBoss != null;
+            if (midBoss) _alive++;
 
-            foreach (SpawnEntry entry in data.spawns)
+            if (midBoss) StartCoroutine(SpawnMidBoss());
+            foreach (SpawnEntry entry in spawns)
             {
                 if (entry.prefab == null) continue;
                 for (int i = 0; i < entry.count; i++)
@@ -114,6 +159,151 @@ namespace HistoryHeroes.Dungeon
                     yield return new WaitForSeconds(spawnStagger);
                 }
             }
+
+            if (_alive <= 0 && !_finished) OnRoomCleared(); // 적이 없는 방 (데이터가 비었을 때)
+        }
+
+        /// <summary>중간 보스 (Modes 2-8): 위쪽 가운데에 1.2초 예고 → 등장, 체력 막대</summary>
+        private IEnumerator SpawnMidBoss()
+        {
+            Vector2 at = new Vector2(spawnArea.center.x, spawnArea.yMax - 1.5f);
+            SpriteRenderer marker = GetMarker(at, true);
+            marker.transform.localScale = Vector3.one * 2.6f;
+            yield return new WaitForSeconds(1.2f);
+            marker.gameObject.SetActive(false);
+            if (_finished) yield break;
+
+            EnemyBase boss = GetEnemy(_chapter.midBoss);
+            boss.transform.position = at;
+            boss.gameObject.SetActive(true);
+            float hp = RoomHpMultiplier() * _chapter.midBossHp;
+            float atk = RoomAttackMultiplier() * _chapter.midBossAttack;
+            if (boss is PatternBoss pattern)
+            {
+                pattern.MinionHp = RoomHpMultiplier();
+                pattern.MinionAttack = RoomAttackMultiplier();
+            }
+
+            boss.Spawn(player.transform, hp, atk, false);
+            if (_chapter.enhanced) boss.TelegraphScale = _chapter.enhancedTelegraph;
+            experience.Register(boss);
+            boss.Killed -= OnEnemyKilled;
+            boss.Killed += OnEnemyKilled;
+            if (bossHud != null) bossHud.Bind(boss, string.IsNullOrEmpty(_chapter.midBossName) ? "중간 보스" : _chapter.midBossName);
+        }
+
+        private float RoomHpMultiplier()
+        {
+            int chapter = GameSession.Chapter;
+            float enhanced = _chapter != null && _chapter.enhanced ? _chapter.enhancedHp : 1f;
+            return dungeon.RoomHp(_room) * dungeon.ChapterHpMultiplier(chapter) * enhanced * GameSession.EnemyHpScale;
+        }
+
+        private float RoomAttackMultiplier() => dungeon.RoomAttack(_room) * dungeon.ChapterAttackMultiplier(GameSession.Chapter) * GameSession.EnemyAttackScale;
+
+        /// <summary>소환사·분열체·보스 졸개: 바로 나오고, 방 전멸 판정에 들어간다</summary>
+        private EnemyBase SpawnChild(EnemyBase prefab, Vector2 at, float hp, float atk)
+        {
+            if (_finished || prefab == null) return null;
+            EnemyBase enemy = GetEnemy(prefab);
+            enemy.transform.position = at;
+            enemy.gameObject.SetActive(true);
+            enemy.Spawn(player.transform, hp, atk, false);
+            if (_chapter != null && _chapter.enhanced) enemy.TelegraphScale = _chapter.enhancedTelegraph;
+            experience.Register(enemy);
+            enemy.Killed -= OnEnemyKilled;
+            enemy.Killed += OnEnemyKilled;
+            _alive++;
+            return enemy;
+        }
+
+        // ---------------------------------------------------------------- 보상 방
+
+        private void OpenRewardRoom()
+        {
+            _alive = 0;
+            int chapter = Mathf.Max(1, GameSession.Chapter);
+            int gold = 50 + 25 * chapter;
+            if (rewardRoom == null)
+            {
+                OnRoomCleared();
+                return;
+            }
+
+            rewardRoom.Open(0.3f, gold, choice =>
+            {
+                switch (choice)
+                {
+                    case RewardRoomPanel.Choice.Heal:
+                        player.Health.Heal(player.Health.Max * 0.3f);
+                        hud.ShowNotice("체력 회복 +30%");
+                        break;
+                    case RewardRoomPanel.Choice.Card:
+                        experience.GrantLevelUp();
+                        break;
+                    case RewardRoomPanel.Choice.Gold:
+                        Wallet.Grant(SaveSystem.Data, new Reward { Gold = gold });
+                        SaveSystem.MarkDirty();
+                        hud.ShowNotice($"골드 +{gold}");
+                        break;
+                }
+
+                if (!_finished) OnRoomCleared();
+            });
+        }
+
+        // ---------------------------------------------------------------- 레이아웃
+
+        /// <summary>장애물·함정을 새로 놓는다 (방마다 30초쯤이라 다시 만들어도 싸다)</summary>
+        private void ApplyLayout(RoomLayout layout)
+        {
+            foreach (GameObject go in _layoutObjects)
+            {
+                if (go != null) Destroy(go);
+            }
+
+            _layoutObjects.Clear();
+            if (layout == null || layoutRoot == null) return;
+
+            foreach (ObstacleDef o in layout.obstacles) _layoutObjects.Add(Obstacle(o));
+
+            TrapKind trap = _chapter != null ? _chapter.trap : TrapKind.None;
+            if (trap == TrapKind.None || layout.traps.Count == 0) return;
+            float damage = 45f * dungeon.ChapterAttackMultiplier(GameSession.Chapter) * GameSession.EnemyAttackScale;
+            for (int i = 0; i < layout.traps.Count; i++)
+            {
+                TrapSpot spot = layout.traps[i];
+                var go = new GameObject($"Trap {i + 1}");
+                go.transform.SetParent(layoutRoot, false);
+                var areaObject = new GameObject("Area");
+                areaObject.transform.SetParent(go.transform, false);
+                var sr = areaObject.AddComponent<SpriteRenderer>();
+                sr.sprite = PlaceholderSprites.Square;
+                sr.sortingOrder = -9;
+                var zone = go.AddComponent<TrapZone>();
+                zone.SetArea(sr);
+                zone.Setup(TrapZone.EffectFor(trap, i), spot.position, spot.size, spot.angle, damage, i * 0.9f);
+                _layoutObjects.Add(go);
+            }
+        }
+
+        private GameObject Obstacle(ObstacleDef o)
+        {
+            var go = new GameObject(o.kind.ToString());
+            go.transform.SetParent(layoutRoot, false);
+            go.transform.position = o.position;
+            go.transform.localScale = new Vector3(o.size.x, o.size.y, 1f);
+            go.layer = o.kind == ObstacleKind.Low ? 0 : LayerMask.NameToLayer("Wall");
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = o.circle ? PlaceholderSprites.Circle : PlaceholderSprites.Square;
+            sr.sortingOrder = -6;
+            sr.color = o.kind == ObstacleKind.High ? new Color(0.42f, 0.38f, 0.33f)
+                : o.kind == ObstacleKind.Low ? new Color(0.12f, 0.14f, 0.2f, 0.95f)
+                : new Color(0.62f, 0.45f, 0.25f);
+            if (o.circle) go.AddComponent<CircleCollider2D>().radius = 0.5f;
+            else go.AddComponent<BoxCollider2D>();
+            if (o.kind == ObstacleKind.Breakable) go.AddComponent<Breakable>().Setup(o.hits, sr);
+            return go;
         }
 
         private IEnumerator SpawnOne(SpawnEntry entry, Vector2 point)
@@ -126,9 +316,8 @@ namespace HistoryHeroes.Dungeon
             EnemyBase enemy = GetEnemy(entry.prefab);
             enemy.transform.position = point;
             enemy.gameObject.SetActive(true);
-            int chapter = GameSession.Chapter;
-            enemy.Spawn(player.transform, dungeon.HpMultiplier(_room) * dungeon.ChapterHpMultiplier(chapter),
-                dungeon.AttackMultiplier(_room) * dungeon.ChapterAttackMultiplier(chapter), entry.elite);
+            enemy.Spawn(player.transform, RoomHpMultiplier(), RoomAttackMultiplier(), entry.elite);
+            if (_chapter != null && _chapter.enhanced) enemy.TelegraphScale = _chapter.enhancedTelegraph;
             experience.Register(enemy);
             enemy.Killed -= OnEnemyKilled;
             enemy.Killed += OnEnemyKilled;
@@ -140,10 +329,13 @@ namespace HistoryHeroes.Dungeon
             Vector2 best = spawnArea.center;
             float bestDistance = -1f;
 
-            // 플레이어와 충분히 떨어진 자리를 몇 번 찾아보고, 못 찾으면 그중 가장 먼 자리
-            for (int i = 0; i < 12; i++)
+            // 플레이어와 충분히 떨어지고 장애물 위가 아닌 자리 (근접 도달 검사, Modes 2-2). 못 찾으면 그중 가장 먼 빈자리
+            if (_obstacleMask < 0) _obstacleMask = LayerMask.GetMask("Wall") | 1;
+            System.Random random = RunRandom.Enemies;
+            for (int i = 0; i < 24; i++)
             {
-                var p = new Vector2(Random.Range(spawnArea.xMin, spawnArea.xMax), Random.Range(spawnArea.yMin, spawnArea.yMax));
+                var p = new Vector2(RunRandom.Range(random, spawnArea.xMin, spawnArea.xMax), RunRandom.Range(random, spawnArea.yMin, spawnArea.yMax));
+                if (Physics2D.OverlapCircle(p, 0.55f, _obstacleMask) != null) continue;
                 float d = Vector2.Distance(p, from);
                 if (d >= minDistanceFromPlayer) return p;
                 if (d > bestDistance) { bestDistance = d; best = p; }
@@ -309,6 +501,11 @@ namespace HistoryHeroes.Dungeon
             int chapter = GameSession.Chapter;
             bool challenge = !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2);
             hud.SetHitCounter(challenge, () => _hitsTaken, Stars.DungeonHitLimit(chapter));
+        }
+
+        private void OnDestroy()
+        {
+            if (EnemyBase.ChildSpawner == _childSpawner) EnemyBase.ChildSpawner = null;
         }
 
         private EnemyBase GetEnemy(EnemyBase prefab)
