@@ -311,6 +311,8 @@ namespace HistoryHeroes.Records
         public int level = 1;
         public float experience;
         public List<RecordSkill> skills = new List<RecordSkill>();
+        /// <summary>균열 강화를 고른 횟수 (공격력 / 체력 / 공격속도 순서)</summary>
+        public List<int> boosts = new List<int>();
     }
 
     [Serializable]
@@ -318,6 +320,8 @@ namespace HistoryHeroes.Records
     {
         public string dayKey;
         public bool officialDone;
+        /// <summary>공식 도전을 시작했다 (끝나기 전에 앱을 꺼도 다시 못 한다 → 로비에서 0점으로 정리)</summary>
+        public bool officialStarted;
         public int officialScore;
         public int bestPractice;
         /// <summary>공식 도전한 날 수 (업적 "매일의 도전자")</summary>

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using HistoryHeroes.Combat;
 using UnityEngine;
 
 namespace HistoryHeroes.Enemy
@@ -9,7 +10,8 @@ namespace HistoryHeroes.Enemy
     /// - 망령 부르기: 마법진 → 졸개 3/4/5마리 (살아 있는 졸개는 최대 8) → 부른 뒤 빈틈
     /// - 저주 고리: 몸이 빛나다가 사방으로 탄 (2단계부터 두 겹)
     /// - 혼 빨아들이기 (3단계): 플레이어 자리 원 2번
-    /// 졸개를 빨리 치우지 못하면 경기장이 졸개로 가득 찬다 → 광역 기록이 유리하다.
+    /// - 망령의 가호: 살아 있는 졸개 1마리마다 받는 피해 -12% (최대 -60%), 보스 둘레에 푸른 막으로 보인다
+    /// 졸개를 빨리 치우지 못하면 보스가 단단해지고 경기장이 졸개로 가득 찬다 → 광역 기록이 유리하다 (v0.6 역할 벤치).
     /// </summary>
     public sealed class WraithLordBoss : PatternBoss
     {
@@ -17,11 +19,52 @@ namespace HistoryHeroes.Enemy
         [SerializeField] private int maxMinions = 8;
         [SerializeField] private int ringShards = 10;
         [SerializeField] private float ringSpeed = 4.5f;
+        [Tooltip("살아 있는 졸개 1마리마다 받는 피해 감소")]
+        [SerializeField] private float wardPerMinion = 0.12f;
+        [SerializeField] private float wardMax = 0.6f;
+
+        private static readonly Color WardColor = new Color(0.55f, 0.45f, 1f, 0.3f); // 푸른 막 (위험 예고와 다른 색)
+        private SpriteRenderer _ward;
 
         private readonly List<EnemyBase> _minions = new List<EnemyBase>();
         private int _step;
 
-        protected override void OnTick() => _minions.RemoveAll(m => m == null || m.Health.IsDead || !m.gameObject.activeInHierarchy);
+        /// <summary>지금 받는 피해 감소 (졸개 수)</summary>
+        public float WardReduction => Mathf.Min(wardMax, _minions.Count * wardPerMinion);
+
+        protected override void OnSpawned()
+        {
+            _minions.Clear();
+            _step = 0;
+            _ward = null;
+            health.Guard = Ward;
+        }
+
+        private DamageInfo Ward(DamageInfo info)
+        {
+            float cut = WardReduction;
+            if (cut > 0f) info.Amount *= 1f - cut;
+            return info;
+        }
+
+        protected override void OnTick()
+        {
+            _minions.RemoveAll(m => m == null || m.Health.IsDead || !m.gameObject.activeInHierarchy);
+            float cut = WardReduction;
+            if (cut > 0f)
+            {
+                if (_ward == null || !_ward.gameObject.activeSelf) _ward = Show(Telegraphs.Circle(Pos, transform.localScale.x * 0.8f, WardColor, 1));
+                _ward.transform.position = Pos;
+                Color c = WardColor;
+                c.a = 0.12f + cut * 0.5f; // 졸개가 많을수록 진하게
+                _ward.color = c;
+            }
+            else if (_ward != null)
+            {
+                HideShown(_ward);
+                _ward = null;
+            }
+        }
 
         protected override IEnumerator Cycle()
         {
@@ -29,17 +72,7 @@ namespace HistoryHeroes.Enemy
             if (_step % 2 == 1)
             {
                 int want = Mathf.Min(2 + phase, maxMinions - _minions.Count);
-                if (want > 0)
-                {
-                    int before = EnemyBase.Alive.Count;
-                    yield return Summon(minion, want, 2.4f, 1f * Tele, 1f);
-                    // 새로 나온 졸개를 센다 (살아 있는 적 목록 끝에 붙는다)
-                    IReadOnlyList<EnemyBase> alive = EnemyBase.Alive;
-                    for (int i = before; i < alive.Count; i++)
-                    {
-                        if (alive[i] != this) _minions.Add(alive[i]);
-                    }
-                }
+                if (want > 0) yield return Summon(minion, want, 2.4f, 1f * Tele, 1f, _minions);
 
                 Blink(Random.insideUnitCircle * 2.4f);
                 yield return Open(1.8f);

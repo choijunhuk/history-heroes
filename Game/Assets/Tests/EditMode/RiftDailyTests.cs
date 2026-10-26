@@ -220,6 +220,28 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Daily_InterruptedOfficialCountsAsZero()
+        {
+            var heroes = new List<string> { "khan", "guan", "napoleon", "tesla" };
+            var save = new SaveData();
+            DailyRules.EnsureDay(save, At(10, 27, 12));
+            Assert.IsTrue(DailyRules.OfficialAvailable(save));
+            Assert.AreEqual(0, DailyRules.SettleInterrupted(save, heroes).Count, "시작 안 했으면 정리할 것 없음");
+
+            DailyRules.MarkOfficialStarted(save); // 시작 → 앱을 꺼 버림
+            Assert.IsFalse(DailyRules.OfficialAvailable(save), "시작했으면 다시 못 한다");
+            Assert.AreEqual(1, DailyRules.SettleInterrupted(save, heroes).Count);
+            Assert.IsTrue(save.dailyChallenge.officialDone);
+            Assert.AreEqual(0, save.dailyChallenge.officialScore);
+            Assert.AreEqual(1, save.dailyChallenge.participations, "참여는 인정");
+            Assert.AreEqual(DailyRules.HeroFor(save.dailyChallenge.dayKey, heroes), save.dailyChallenge.history[0].heroId);
+            Assert.AreEqual(0, DailyRules.SettleInterrupted(save, heroes).Count, "두 번 정리하지 않는다");
+
+            DailyRules.EnsureDay(save, At(10, 28, 6));
+            Assert.IsTrue(DailyRules.OfficialAvailable(save), "다음 날 다시 열린다");
+        }
+
+        [Test]
         public void Daily_FixedSetIsFair()
         {
             MetaSnapshot set = DailyRules.FixedSet();

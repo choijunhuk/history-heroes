@@ -120,7 +120,7 @@ namespace HistoryHeroes.Common
             SaveData data = SaveSystem.Data;
             if (!Modes.DailyRules.Unlocked(data) && !Debug.isDebugBuild) return false;
             Modes.DailyRules.EnsureDay(data, Clock.Now());
-            if (official && data.dailyChallenge.officialDone) return false;
+            if (official && !Modes.DailyRules.OfficialAvailable(data)) return false;
             StartDaily(official);
             return true;
         }
@@ -130,6 +130,12 @@ namespace HistoryHeroes.Common
             ClearSpecialRun();
             Practice = !official;
             DailyOfficial = official;
+            if (official)
+            {
+                Modes.DailyRules.MarkOfficialStarted(SaveSystem.Data);
+                SaveSystem.Save();
+            }
+
             Mode = BattleMode.Daily;
             string day = Modes.DailyRules.DayKey(Clock.Now());
             RunSeed = Modes.DailyRules.Seed(day);

@@ -87,6 +87,9 @@ namespace HistoryHeroes.Dungeon
         private LayoutKind? _lastRiftLayout;
         private EnemyBase _riftBoss;
         private bool _riftFloor5;
+        /// <summary>이 판이 속한 주 (월요일 05:00을 넘기면 이 판의 층 보상·체크포인트는 거기까지)</summary>
+        private string _riftWeek;
+        private bool _riftSeasonNoticed;
 
         public bool IsRift => _rift;
         public bool IsDaily => _daily;
@@ -147,6 +150,7 @@ namespace HistoryHeroes.Dungeon
             {
                 SaveData save = SaveSystem.Data;
                 Modes.RiftRules.EnsureWeek(save, Clock.Now());
+                _riftWeek = save.rift.weekKey;
                 Modes.RiftRules.Variant v = Modes.RiftRules.VariantFor(save.rift.weekKey);
                 switch (v)
                 {
@@ -213,6 +217,7 @@ namespace HistoryHeroes.Dungeon
             if (!GameSession.RiftContinue || !cp.valid) return 1;
             EnsureRiftFloor(cp.floor + 1);
             skills.ApplyRecord(cp.skills, database);
+            skills.RestoreRiftBoosts(cp.boosts);
             experience.Level.Restore(cp.level, cp.experience);
             player.Health.Revive(player.Health.Max * Mathf.Clamp(cp.hpRatio, 0.2f, 1f));
             _roomsCleared = cp.floor;
@@ -600,17 +605,40 @@ namespace HistoryHeroes.Dungeon
             else door.SetOpen(true);
         }
 
-        /// <summary>균열 층을 깼다: 이번 주 최고 층·층 보상, 보스 층이면 체크포인트, 엘리트 층이면 보상 방 선택 → 문</summary>
-        private void OnRiftFloorCleared()
+        /// <summary>판이 시작된 주가 끝났나 (진행 중에 월요일 05:00을 넘겼다)</summary>
+        private bool RiftSeasonOver => _riftWeek != Modes.RiftRules.WeekKey(Clock.Now());
+
+        private void OnRiftFloorCleared() => StartCoroutine(RiftFloorCleared());
+
+        /// <summary>
+        /// 균열 층을 깼다: 보석을 다 줍고 레벨업 카드를 고른 뒤 (체크포인트에 그 레벨·카드가 들어가게)
+        /// 이번 주 최고 층·층 보상, 보스 층이면 체크포인트, 엘리트 층이면 보상 방 선택 → 문.
+        /// </summary>
+        private IEnumerator RiftFloorCleared()
         {
+            int floor = _room;
+            float until = Time.realtimeSinceStartup + 6f;
+            while (Time.realtimeSinceStartup < until && !_finished && (experience.ActiveGems > 0 || levelUp.IsOpen)) yield return null;
+            if (_finished) yield break;
+
             SaveData save = SaveSystem.Data;
-            foreach (string line in Modes.RiftRules.ReachFloor(save, _room))
+            if (RiftSeasonOver)
             {
-                _modeLines.Add(line);
-                hud.ShowNotice(line, 2.5f);
+                // 새 주가 시작됐다: 지난주 판으로 새 주 보상·체크포인트를 채우지 않는다 (판은 계속 할 수 있다)
+                if (!_riftSeasonNoticed) hud.ShowNotice("새 주가 시작돼서 이 판의 층 보상·체크포인트는 여기까지예요", 3f);
+                _riftSeasonNoticed = true;
+            }
+            else
+            {
+                foreach (string line in Modes.RiftRules.ReachFloor(save, floor))
+                {
+                    _modeLines.Add(line);
+                    hud.ShowNotice(line, 2.5f);
+                }
+
+                if (Modes.RiftRules.IsBossFloor(floor)) SaveCheckpoint();
             }
 
-            if (Modes.RiftRules.IsBossFloor(_room)) SaveCheckpoint();
             SaveSystem.SaveIfDirty();
 
             if (Modes.RiftRules.IsEliteFloor(_room) && rewardRoom != null)
@@ -628,7 +656,7 @@ namespace HistoryHeroes.Dungeon
 
                     door.SetOpen(true);
                 });
-                return;
+                yield break;
             }
 
             door.SetOpen(true);
@@ -649,6 +677,7 @@ namespace HistoryHeroes.Dungeon
             };
             foreach (SkillInstance s in skills.Loadout.Actives) cp.skills.Add(new RecordSkill(s.Data.id, s.Level, s.IsFusionResult));
             foreach (SkillInstance s in skills.Loadout.Passives) cp.skills.Add(new RecordSkill(s.Data.id, s.Level, s.IsFusionResult));
+            cp.boosts = skills.RiftBoostCounts();
             SaveSystem.Data.rift.checkpoint = cp;
             hud.ShowNotice($"체크포인트 저장 ({_room}층)", 2f);
             SaveSystem.Save();
@@ -784,8 +813,7 @@ namespace HistoryHeroes.Dungeon
             int rooms = victory ? RoomCount : _roomsCleared;
             int score = Modes.DailyRules.Score(rooms, experience.Kills, victory ? hp : 0f, victory, seconds);
             var lines = new List<string>();
-            bool official = GameSession.DailyOfficial;
-            Modes.DailyRules.EnsureDay(save, Clock.Now());
+            bool official = GameSession.DailyOfficial; // 날짜는 시작한 날 기준 (자정·05:00을 넘겨도 그날 기록)
             if (official)
             {
                 lines.AddRange(Modes.DailyRules.RecordOfficial(save, skills.HeroId, score, victory));

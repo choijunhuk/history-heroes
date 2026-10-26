@@ -30,13 +30,7 @@ namespace HistoryHeroes.Enemy
                 case 0:
                 {
                     int want = Mathf.Min(3, maxMinions - _minions.Count);
-                    int before = EnemyBase.Alive.Count;
-                    if (want > 0) yield return Summon(minion, want, 2.4f, 1f * Tele, 1f);
-                    IReadOnlyList<EnemyBase> alive = EnemyBase.Alive;
-                    for (int i = before; i < alive.Count; i++)
-                    {
-                        if (alive[i] != this) _minions.Add(alive[i]);
-                    }
+                    if (want > 0) yield return Summon(minion, want, 2.4f, 1f * Tele, 1f, _minions);
 
                     yield return Open(1.6f);
                     break;

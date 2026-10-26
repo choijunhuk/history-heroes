@@ -115,9 +115,27 @@ namespace HistoryHeroes.Modes
             if (save.dailyChallenge.dayKey == day) return false;
             save.dailyChallenge.dayKey = day;
             save.dailyChallenge.officialDone = false;
+            save.dailyChallenge.officialStarted = false;
             save.dailyChallenge.officialScore = 0;
             save.dailyChallenge.bestPractice = 0;
             return true;
+        }
+
+        /// <summary>오늘 공식 도전을 할 수 있나 (끝냈거나, 시작했다가 중간에 끊겼으면 못 한다)</summary>
+        public static bool OfficialAvailable(SaveData save) => !save.dailyChallenge.officialDone && !save.dailyChallenge.officialStarted;
+
+        /// <summary>공식 도전 시작: 첫 시도만 기록이라 시작할 때 바로 표시한다 (앱을 꺼서 다시 하기 방지)</summary>
+        public static void MarkOfficialStarted(SaveData save) => save.dailyChallenge.officialStarted = true;
+
+        /// <summary>
+        /// 공식 도전 중에 앱이 꺼졌으면 (시작했는데 기록이 없다) 0점으로 기록한다. 참여·보상은 인정 (죽은 것과 같게).
+        /// 날이 바뀌기 전에 불러야 그날 기록으로 남는다.
+        /// </summary>
+        public static List<string> SettleInterrupted(SaveData save, IReadOnlyList<string> heroOrder)
+        {
+            DailySave d = save.dailyChallenge;
+            if (!d.officialStarted || d.officialDone) return new List<string>();
+            return RecordOfficial(save, HeroFor(d.dayKey, heroOrder), 0, false);
         }
 
         /// <summary>공식 도전 기록 (첫 시도만). 처음이면 보상 줄을 돌려준다</summary>

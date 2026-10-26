@@ -96,6 +96,13 @@ namespace HistoryHeroes.UI
 
             // 균열 주간 시즌 · 일일 도전 날짜가 바뀌었으면 새로
             if (RiftRules.EnsureWeek(data, Clock.Now())) SaveSystem.MarkDirty();
+            List<string> interrupted = DailyRules.SettleInterrupted(data, roster.heroes.ConvertAll(h => h.id));
+            if (interrupted.Count > 0)
+            {
+                SaveSystem.MarkDirty();
+                ShowNotice("공식 도전이 중간에 끝나 0점으로 기록했어요 · " + string.Join(" · ", interrupted));
+            }
+
             if (DailyRules.EnsureDay(data, Clock.Now())) SaveSystem.MarkDirty();
 
             // 미션 (v0.5): 날·주가 바뀌었으면 새로, "게임 접속" 미션
@@ -407,7 +414,8 @@ namespace HistoryHeroes.UI
                 }
             }
 
-            modeInfo.Open("일일 도전", sb.ToString(), daily.officialDone ? "공식 도전 (오늘 완료)" : "공식 도전", !daily.officialDone, () => GameSession.TryStartDaily(true),
+            bool available = DailyRules.OfficialAvailable(data);
+            modeInfo.Open("일일 도전", sb.ToString(), available ? "공식 도전" : "공식 도전 (오늘 완료)", available, () => GameSession.TryStartDaily(true),
                 "연습\n<size=60%>기록·보상 없음</size>", true, () => GameSession.TryStartDaily(false), Render);
         }
 

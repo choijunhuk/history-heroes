@@ -210,6 +210,32 @@ namespace HistoryHeroes.Skills
             (Stats.StatType.Attack, 0.03f), (Stats.StatType.MaxHp, 0.03f), (Stats.StatType.AttackSpeed, 0.02f),
         };
 
+        private readonly int[] _riftBoostCounts = new int[3];
+
+        /// <summary>균열 강화 종류별 횟수 (공격력 / 체력 / 공격속도) — 체크포인트에 남긴다</summary>
+        public List<int> RiftBoostCounts() => new List<int>(_riftBoostCounts);
+
+        /// <summary>균열 이어하기: 저장해 둔 균열 강화를 다시 건다</summary>
+        public void RestoreRiftBoosts(IReadOnlyList<int> counts)
+        {
+            if (counts == null) return;
+            for (int k = 0; k < RiftBoostKinds.Length && k < counts.Count; k++)
+            {
+                for (int n = 0; n < counts[k]; n++) AddRiftBoost(k);
+            }
+        }
+
+        private void AddRiftBoost(int kind)
+        {
+            if (kind < 0 || kind >= RiftBoostKinds.Length) return;
+            var (stat, value) = RiftBoostKinds[kind];
+            // 공격속도는 기본 공격에만, 공격력·체력은 전체 (무한 중첩)
+            Stats.StatTarget target = stat == Stats.StatType.AttackSpeed ? Stats.StatTarget.BasicAttack : Stats.StatTarget.Both;
+            player.Stats.Add(new Stats.StatModifier(stat, Stats.ModifierKind.Percent, value, Stats.ModifierSource.Skill, _riftBoostOwner, target));
+            _riftBoostCounts[kind]++;
+            RiftBoostCount++;
+        }
+
         private void ApplyRiftBoosts(List<SkillCard> offer)
         {
             if (!RiftBoosts) return;
@@ -255,10 +281,7 @@ namespace HistoryHeroes.Skills
                     break;
 
                 case CardType.RiftBoost:
-                    // 공격속도는 기본 공격에만, 공격력·체력은 전체 (무한 중첩)
-                    Stats.StatTarget target = card.BoostStat == Stats.StatType.AttackSpeed ? Stats.StatTarget.BasicAttack : Stats.StatTarget.Both;
-                    player.Stats.Add(new Stats.StatModifier(card.BoostStat, Stats.ModifierKind.Percent, card.BoostValue, Stats.ModifierSource.Skill, _riftBoostOwner, target));
-                    RiftBoostCount++;
+                    AddRiftBoost(System.Array.FindIndex(RiftBoostKinds, k => k.stat == card.BoostStat));
                     break;
             }
 

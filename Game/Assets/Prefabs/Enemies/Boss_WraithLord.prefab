@@ -218,6 +218,8 @@ MonoBehaviour:
   maxMinions: 8
   ringShards: 10
   ringSpeed: 4.5
+  wardPerMinion: 0.12
+  wardMax: 0.6
 --- !u!1 &1100568824202605425
 GameObject:
   m_ObjectHideFlags: 0

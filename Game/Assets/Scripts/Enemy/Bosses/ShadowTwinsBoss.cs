@@ -23,12 +23,14 @@ namespace HistoryHeroes.Enemy
         private Vector2 _twinDash;
         private float _twinDashUntil;
         private bool _twinHit;
+        private bool _twinHold; // 돌진 예고 중 (예고선에서 출발해야 한다)
 
         protected override void OnSpawned()
         {
             if (twin == null) return;
             twin.transform.SetParent(null, true);
             _twinPos = Pos + new Vector2(2.5f, 0f);
+            _twinHold = false;
             twin.enabled = true;
         }
 
@@ -40,7 +42,7 @@ namespace HistoryHeroes.Enemy
                 _twinPos += _twinDash * 11f * Time.deltaTime;
                 if (!_twinHit) _twinHit = HitPlayerIn(_twinPos, 0.6f, 1.2f, "boss_twins_dash");
             }
-            else
+            else if (!_twinHold)
             {
                 Vector2 to = (Vector2)player.position - _twinPos;
                 if (to.magnitude > 2.4f) _twinPos += to.normalized * twinSpeed * Time.deltaTime;
@@ -57,6 +59,7 @@ namespace HistoryHeroes.Enemy
             if (_step % 2 == 1)
             {
                 // 엇갈려 돌진: 그림자 쪽도 예고선을 보여 준 뒤 둘이 동시에
+                _twinHold = true;
                 Vector2 twinDir = ((Vector2)player.position - _twinPos).normalized;
                 SpriteRenderer line = Show(Telegraphs.Line(_twinPos, _twinPos + twinDir * 9f, 0.5f, Telegraphs.Danger));
                 float telegraph = 0.85f * Tele;
@@ -69,6 +72,7 @@ namespace HistoryHeroes.Enemy
                 }
 
                 HideShown(line);
+                _twinHold = false;
                 _twinDash = twinDir;
                 _twinDashUntil = bossTime + 0.7f;
                 _twinHit = false;

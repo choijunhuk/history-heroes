@@ -222,6 +222,33 @@ namespace HistoryHeroes.EditorTools
         public static string BossBenchStatus() => Dev.BossBench.Report();
 
         /// <summary>
+        /// v0.6 역할 벤치 (Content 3장 "보스가 시험하는 것"): 구간마다 빌드 여럿을 같은 판 밖 성장으로 붙인다.
+        /// 2구간 망령 군주 = 광역(storm), 3구간 강철 거상 = 칼날 탱커(blade), 4구간 그림자 쌍둥이 = 단일 화력(rapid), 5구간 = 완성 빌드(balanced).
+        /// 예: RoleBench(4f, "khan", "month", "2,3,4,5", "storm,blade,rapid,balanced", "play") → BossBenchStatus()
+        /// </summary>
+        public static string RoleBench(float speed = 4f, string hero = "khan", string meta = "month", string chapters = "2,3,4,5", string builds = "storm,blade,rapid,balanced", string mode = "play")
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            var runs = new List<Dev.BossBench.Run>();
+            foreach (string c in chapters.Split(','))
+            {
+                int ch = int.TryParse(c.Trim(), out int v) ? v : 1;
+                foreach (string b in builds.Split(','))
+                {
+                    string build = b.Trim();
+                    runs.Add(new Dev.BossBench.Run { HeroId = hero, Mode = mode, Chapter = ch, Build = BenchBuild(build), Meta = MetaPreset(meta), Label = $"{build}/{meta}" });
+                }
+            }
+
+            Dev.BossBench.ChargerPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Charger.prefab");
+            Dev.BossBench.ArcherPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Archer.prefab");
+            Dev.BossBench.BomberPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Bomber.prefab");
+            return Dev.BossBench.Begin(runs, BenchBuild("balanced"), speed, db);
+        }
+
+        /// <summary>
         /// v0.5 서바이벌 벤치: 영웅마다 10분 판을 자동 조종으로 (카드 무작위, 위험하면 피하고 여유 있으면 멈춰 쏘기).
         /// god = 체력 계속 채움 (끝까지 가서 적 300·성능 확인). 예: SurvivalBench("khan,guan", 4f, false) → SurvivalBenchStatus()
         /// </summary>
