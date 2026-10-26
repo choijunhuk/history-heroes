@@ -69,6 +69,12 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button dailyButton;
         [SerializeField] private TMP_Text dailyButtonLabel;
         [SerializeField] private ModeInfoPanel modeInfo;
+        [Header("v1.0 신규 7일 미션 · 출석 · 순찰")]
+        [SerializeField] private Button newcomerButton;
+        [SerializeField] private TMP_Text newcomerLabel;
+        [SerializeField] private NewcomerPanel newcomerPanel;
+        [SerializeField] private Button patrolButton;
+        [SerializeField] private TMP_Text patrolLabel;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -91,8 +97,21 @@ namespace HistoryHeroes.UI
             if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
             if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
             if (missionButton != null) missionButton.onClick.AddListener(() => missions.Open(Render));
+            if (newcomerButton != null) newcomerButton.onClick.AddListener(() => newcomerPanel.Open(Render, ShowNotice));
+            if (patrolButton != null) patrolButton.onClick.AddListener(ClaimPatrol);
             if (riftButton != null) riftButton.onClick.AddListener(OpenRift);
             if (dailyButton != null) dailyButton.onClick.AddListener(OpenDaily);
+
+            // v1.0: 신규 7일 미션 시작 · 오늘 출석 · 순찰 시계
+            if (Missions.Newcomer.EnsureStarted(data, Clock.Now())) SaveSystem.MarkDirty();
+            List<string> attended = Missions.Attendance.CheckIn(data, Clock.Now());
+            if (attended.Count > 0)
+            {
+                SaveSystem.MarkDirty();
+                ShowNotice(string.Join(" · ", attended));
+            }
+
+            if (Patrol.Ensure(data, Clock.UnixSeconds)) SaveSystem.MarkDirty();
 
             // 균열 주간 시즌 · 일일 도전 날짜가 바뀌었으면 새로
             if (RiftRules.EnsureWeek(data, Clock.Now())) SaveSystem.MarkDirty();
@@ -264,6 +283,7 @@ namespace HistoryHeroes.UI
         private void RenderWallet()
         {
             _nextWallet = Time.unscaledTime + 0.5f;
+            RenderPatrol(SaveSystem.Data);
             if (walletLabel == null) return;
             SaveData d = SaveSystem.Data;
             int next = Hearts.SecondsToNext(d, Clock.UnixSeconds);
@@ -326,6 +346,7 @@ namespace HistoryHeroes.UI
             archiveButtonLabel.text = $"기록 보관함  {records}/{data.recordSlots}";
             RenderSurvival(data);
             RenderRiftAndDaily(data);
+            RenderNewcomer(data);
             if (missionLabel != null && metaTable != null && metaTable.missions != null)
             {
                 int ready = Missions.MissionService.ClaimableCount(data, metaTable.missions, Missions.MissionEvents.Context);
@@ -354,6 +375,40 @@ namespace HistoryHeroes.UI
             string dev = GameSession.SurvivalUnlockedByProgress(data) ? "" : " · 개발용 해금";
             string record = best > 0f ? $"최고 {Survival.SurvivalRun.Format(best)}" : "10분 버티기";
             survivalButtonLabel.text = $"서바이벌\n<size=60%>{record} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
+        }
+
+        // ---------------------------------------------------------------- v1.0 신규 7일 미션 · 순찰
+
+        private void RenderNewcomer(SaveData data)
+        {
+            if (newcomerButton == null) return;
+            bool visible = Missions.Newcomer.Visible(data, Clock.Now());
+            newcomerButton.gameObject.SetActive(visible);
+            if (!visible) return;
+            int ready = Missions.Newcomer.Claimable(data, Clock.Now());
+            newcomerLabel.text = ready > 0 ? $"7일 <color=#FFD966>●{ready}</color>" : "7일 미션";
+        }
+
+        private void RenderPatrol(SaveData data)
+        {
+            if (patrolButton == null) return;
+            bool open = Patrol.Unlocked(data);
+            patrolButton.gameObject.SetActive(open);
+            if (!open) return;
+            long now = Clock.UnixSeconds;
+            int gold = Patrol.Pending(data, now);
+            string full = Patrol.Full(data, now) ? "<color=#FFD966>가득</color>" : Wallet.Format(gold);
+            patrolLabel.text = $"순찰\n<size=70%>{full}</size>";
+        }
+
+        private void ClaimPatrol()
+        {
+            int gold = 0;
+            SaveSystem.CommitResult r = SaveSystem.Commit(() => (gold = Patrol.Claim(SaveSystem.Data, Clock.UnixSeconds)) > 0);
+            if (r == SaveSystem.CommitResult.Saved) ShowNotice($"순찰 보상  골드 +{Wallet.Format(gold)} (최대 {Patrol.MaxHours}시간까지 쌓여요)");
+            else if (r == SaveSystem.CommitResult.SaveFailed) ShowNotice(SaveSystem.SaveFailedText);
+            else ShowNotice($"순찰 중이에요 · 시간당 골드 {Patrol.GoldPerHour(SaveSystem.Data)} (최대 {Patrol.MaxHours}시간)");
+            RenderWallet();
         }
 
         // ---------------------------------------------------------------- v0.6 무한의 균열 · 일일 도전

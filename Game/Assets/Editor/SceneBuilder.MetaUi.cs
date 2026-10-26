@@ -206,6 +206,21 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        /// <summary>v1.0 신규 7일 미션 + 출석부</summary>
+        private static NewcomerPanel BuildNewcomerPanel(Transform parent)
+        {
+            RectTransform panel = Overlay(parent, "NewcomerPanel", out GameObject holder);
+            var screen = holder.AddComponent<NewcomerPanel>();
+            TMP_Text title = Label("Title", panel, "신규 7일 미션", 60, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 840f), new Vector2(900f, 90f));
+            TMP_Text attendance = Label("Attendance", panel, "", 32, TextAlignmentOptions.Center);
+            Place(attendance.rectTransform, Center, Center, new Vector2(0f, 730f), new Vector2(1000f, 110f));
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, -20f), new Vector2(1000f, 1340f), 150f, 28f);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -790f), new Vector2(400f, 100f), ButtonGray, out _);
+            using (var props = new Props(screen)) props.Ref("root", panel.gameObject).Ref("attendanceLabel", attendance).Ref("list", list).Ref("backButton", back);
+            return screen;
+        }
+
         private static ChoicePanel BuildChoicePanel(Transform parent)
         {
             RectTransform panel = Overlay(parent, "ChoicePanel", out GameObject holder);

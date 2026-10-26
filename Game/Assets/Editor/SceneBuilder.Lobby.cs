@@ -84,6 +84,11 @@ namespace HistoryHeroes.EditorTools
             shopLabel.fontSize = 30;
             Button missionButton = Btn("Missions", main, "미션", new Vector2(-430f, 725f), new Vector2(180f, 80f), new Color(0.2f, 0.42f, 0.3f), out TMP_Text missionLabel);
             missionLabel.fontSize = 30;
+            // v1.0: 신규 7일 미션 (왼쪽, 미션 아래) · 순찰 (오른쪽, 설정 아래)
+            Button newcomerButton = Btn("Newcomer", main, "7일 미션", new Vector2(-430f, 630f), new Vector2(180f, 80f), new Color(0.45f, 0.3f, 0.12f), out TMP_Text newcomerLabel);
+            newcomerLabel.fontSize = 28;
+            Button patrolButton = Btn("Patrol", main, "순찰", new Vector2(430f, 715f), new Vector2(180f, 100f), new Color(0.25f, 0.35f, 0.2f), out TMP_Text patrolLabel);
+            patrolLabel.fontSize = 28;
             TMP_Text note = Label("Note", main, "그래픽은 아직 임시 도형이에요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
 
@@ -106,6 +111,7 @@ namespace HistoryHeroes.EditorTools
             MissionPanel missionPanel = BuildMissionPanel(safe, meta, roster);
             ChoicePanel choicePanel = BuildChoicePanel(safe);
             ModeInfoPanel modeInfo = BuildModeInfoPanel(safe);
+            NewcomerPanel newcomerPanel = BuildNewcomerPanel(safe);
             using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
@@ -125,7 +131,9 @@ namespace HistoryHeroes.EditorTools
                     .Ref("shopButton", shopButton).Ref("shop", shopPanel)
                     .Ref("missionButton", missionButton).Ref("missionLabel", missionLabel).Ref("missions", missionPanel)
                     .Ref("choice", choicePanel)
-                    .Ref("riftButton", rift).Ref("riftButtonLabel", riftLabel).Ref("dailyButton", daily).Ref("dailyButtonLabel", dailyLabel).Ref("modeInfo", modeInfo);
+                    .Ref("riftButton", rift).Ref("riftButtonLabel", riftLabel).Ref("dailyButton", daily).Ref("dailyButtonLabel", dailyLabel).Ref("modeInfo", modeInfo)
+                    .Ref("newcomerButton", newcomerButton).Ref("newcomerLabel", newcomerLabel).Ref("newcomerPanel", newcomerPanel)
+                    .Ref("patrolButton", patrolButton).Ref("patrolLabel", patrolLabel);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
