@@ -341,6 +341,16 @@ namespace HistoryHeroes.Records
                 }
             }
 
+            if (data.schemaVersion < 5)
+            {
+                // 4 → 5 (v1.0): 튜토리얼이 생겼다. 이미 진행한 사람은 튜토리얼을 끝낸 것으로 (출석·7일 미션이 바로 열린다)
+                data.tutorialDone = data.records.Count > 0 || data.unlockedChapter > 1 || data.stars.Count > 0 || data.accountLevel > 1;
+                data.attendance = new AttendanceSave();
+                data.newcomer = new NewcomerSave();
+                data.patrol = new PatrolSave();
+                data.titles = new List<string>();
+            }
+
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -415,6 +425,13 @@ namespace HistoryHeroes.Records
             data.rift.checkpoint ??= new RiftCheckpoint();
             data.rift.checkpoint.skills ??= new List<RecordSkill>();
             data.rift.checkpoint.boosts ??= new List<int>();
+            data.attendance ??= new AttendanceSave();
+            data.newcomer ??= new NewcomerSave();
+            data.newcomer.counts ??= new List<NamedCount>();
+            data.newcomer.counts.RemoveAll(c => c == null || string.IsNullOrEmpty(c.id));
+            data.newcomer.claimedDays ??= new List<int>();
+            data.patrol ??= new PatrolSave();
+            data.titles ??= new List<string>();
             data.run ??= new RunSnapshot();
             data.run.skills ??= new List<RecordSkill>();
             data.run.boosts ??= new List<int>();

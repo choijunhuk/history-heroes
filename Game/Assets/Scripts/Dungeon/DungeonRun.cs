@@ -814,6 +814,7 @@ namespace HistoryHeroes.Dungeon
             summary.HitsTaken = _hitsTaken;
             summary.TopDamage = RunText.TopDamage(database, player.Hero);
             Missions.MissionEvents.DungeonFinished(skills.HeroId, GameSession.Chapter, victory, skills.ChoseLegendary);
+            if (victory && _hitsTaken <= 10) Missions.MissionEvents.Raise(Missions.Newcomer.LowHitEvent); // 신규 7일 미션 "피격 10회 이하로 클리어"
             summary.RewardLines = GrantRewards(victory, roomsCleared);
 
             // 기록 용량 = 기준 × 0.8 × (깬 방 ÷ 전체 방), 클리어 = 1 (GameDesign 7-2)

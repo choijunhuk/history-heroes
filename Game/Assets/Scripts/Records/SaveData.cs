@@ -13,7 +13,7 @@ namespace HistoryHeroes.Records
         /// <summary>저장 구조가 바뀌면 올린다. 읽을 때 옛 구조면 옮겨 담고(Migrate), 더 새 구조면 읽지 않고 원본을 보존한다.</summary>
         /// 1: v0.2 기록·도감·구간 / 2: v0.2b 재화·하트·계정 레벨·별 / 3: v0.4 장비·영웅 성장·수련·상자·상점
         /// <summary>4 (v0.5): 서바이벌·펫·미션 — 빈 상태로 시작 (Normalize가 채운다). 옛 빌드는 더 새 파일을 읽지 않고 멈춘다</summary>
-        public const int CurrentSchemaVersion = 4;
+        public const int CurrentSchemaVersion = 5;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -103,6 +103,15 @@ namespace HistoryHeroes.Records
         public DailySave dailyChallenge = new DailySave();
         /// <summary>v1.0 판 이어하기 (방 시작마다)</summary>
         public RunSnapshot run = new RunSnapshot();
+
+        // ---------------------------------------------------------------- v1.0 (구조 5)
+        /// <summary>튜토리얼 보스를 깼다 → 출석부·신규 7일 미션·기록 보관함이 열린다 (Systems 3장)</summary>
+        public bool tutorialDone;
+        public AttendanceSave attendance = new AttendanceSave();
+        public NewcomerSave newcomer = new NewcomerSave();
+        public PatrolSave patrol = new PatrolSave();
+        /// <summary>얻은 칭호 (꾸미기는 v1.0 상점과 함께 — 지금은 모으기만)</summary>
+        public List<string> titles = new List<string>();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -616,6 +625,49 @@ namespace HistoryHeroes.Records
         public bool damageNumbers = true;
         /// <summary>번쩍임 줄이기: 화면을 크게 덮는 섬광을 옅게, 1초에 3번 이하로 (WCAG 2.3.1)</summary>
         public bool reduceFlashes;
+        /// <summary>로컬 알림 (LiveOps 9장): 하트 가득 · 순찰 가득. 종류별로 끈다</summary>
+        public bool notifyHearts = true;
+        public bool notifyPatrol = true;
+        /// <summary>안드로이드 13 알림 권한을 물어봤나 (첫 판이 끝난 뒤 한 번)</summary>
+        public bool notifyAsked;
+    }
+
+    // ---------------------------------------------------------------- v1.0 출석부 · 신규 7일 미션 · 순찰
+
+    /// <summary>출석부 (Missions 5장): 출석한 날 수로 센다 (연속 아님)</summary>
+    [Serializable]
+    public sealed class AttendanceSave
+    {
+        /// <summary>마지막으로 출석한 날 (05:00 기준)</summary>
+        public string lastDay;
+        /// <summary>지금까지 출석한 날 수</summary>
+        public int days;
+    }
+
+    /// <summary>신규 7일 미션 (Missions 6장)</summary>
+    [Serializable]
+    public sealed class NewcomerSave
+    {
+        /// <summary>시작한 날 (튜토리얼 보스 격파한 날, 05:00 기준). 비어 있으면 아직</summary>
+        public string startDay;
+        /// <summary>사건으로 세는 미션의 카운터 ("fusion", "hero_dungeon:guan" …)</summary>
+        public List<NamedCount> counts = new List<NamedCount>();
+        public List<int> claimedDays = new List<int>();
+        public bool bonusClaimed;
+    }
+
+    [Serializable]
+    public sealed class NamedCount
+    {
+        public string id;
+        public int value;
+    }
+
+    /// <summary>순찰 (LiveOps 8장): 마지막으로 받은 때부터 쌓인다 (최대 12시간)</summary>
+    [Serializable]
+    public sealed class PatrolSave
+    {
+        public long lastClaimAt;
     }
 
     /// <summary>하루 한도 (자정에 새로)</summary>
