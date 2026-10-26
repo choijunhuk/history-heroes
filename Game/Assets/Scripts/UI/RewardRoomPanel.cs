@@ -43,7 +43,8 @@ namespace HistoryHeroes.UI
         {
             _onChosen = onChosen;
             titleLabel.text = "보상 방 — 하나를 고르세요";
-            labels[0].text = $"체력 회복\n<size=75%>최대 체력의 {Mathf.RoundToInt(healPercent * 100f)}%</size>";
+            labels[0].text = healPercent > 0f ? $"체력 회복\n<size=75%>최대 체력의 {Mathf.RoundToInt(healPercent * 100f)}%</size>" : "체력 회복\n<size=75%>오늘은 회복 없음</size>";
+            buttons[0].interactable = healPercent > 0f;
             labels[1].text = "스킬 카드 1장 더\n<size=75%>레벨업 한 번</size>";
             labels[2].text = $"골드\n<size=75%>+{gold}</size>";
             root.SetActive(true);

@@ -141,7 +141,8 @@ namespace HistoryHeroes.EditorTools
                 props.Ref("dungeon", d.Dungeon).Ref("database", d.Database).Ref("player", player).Ref("experience", experience).Ref("skills", skills)
                     .Ref("door", door).Ref("playerStart", playerStart)
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("result", ui.Result).Ref("recordSave", ui.RecordSave).Ref("fade", ui.Fade)
-                    .Ref("bossHud", ui.BossHud).Ref("rewardRoom", ui.RewardRoom).Ref("layoutRoot", layoutRoot);
+                    .Ref("bossHud", ui.BossHud).Ref("rewardRoom", ui.RewardRoom).Ref("layoutRoot", layoutRoot)
+                    .Refs("riftBosses", AllBosses(d.RiftWarden)); // 균열 10층마다 (1~5구간 순서)
             }
 
             // ----- 보스맵: 원형 경기장 + 보스 (Modes 2-9) -----

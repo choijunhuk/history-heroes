@@ -319,6 +319,13 @@ namespace HistoryHeroes.Records
             foreach (RelicStar r in data.relics.owned) r.stars = Math.Clamp(r.stars, 1, 3);
             data.relics.sourcesClaimed ??= new List<string>();
             data.relics.heroDungeonClears ??= new List<string>();
+            data.rift ??= new RiftSave();
+            data.rift.rewardsClaimed ??= new List<int>();
+            data.rift.checkpoint ??= new RiftCheckpoint();
+            data.rift.checkpoint.skills ??= new List<RecordSkill>();
+            data.dailyChallenge ??= new DailySave();
+            data.dailyChallenge.history ??= new List<DailyResult>();
+            data.dailyChallenge.history.RemoveAll(h => h == null);
             data.missions ??= new MissionSave();
             data.missions.daily ??= new List<MissionProgress>();
             data.missions.daily.RemoveAll(m => m == null || string.IsNullOrEmpty(m.id));

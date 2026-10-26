@@ -62,6 +62,7 @@ namespace HistoryHeroes.Skills
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
             offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable, WeightModifier, Loadout));
             if (_offersMade++ == 0) BoostExclusive(offer, candidates);
+            ApplyRiftBoosts(offer);
             return offer;
         }
 
@@ -199,6 +200,28 @@ namespace HistoryHeroes.Skills
             }
         }
 
+        /// <summary>무한의 균열: 뽑을 스킬이 없으면 "기본 카드" 대신 균열 강화 (Modes 4-2)</summary>
+        public bool RiftBoosts { get; set; }
+        private readonly object _riftBoostOwner = new object();
+        public int RiftBoostCount { get; private set; }
+
+        private static readonly (Stats.StatType stat, float value)[] RiftBoostKinds =
+        {
+            (Stats.StatType.Attack, 0.03f), (Stats.StatType.MaxHp, 0.03f), (Stats.StatType.AttackSpeed, 0.02f),
+        };
+
+        private void ApplyRiftBoosts(List<SkillCard> offer)
+        {
+            if (!RiftBoosts) return;
+            int k = 0;
+            for (int i = 0; i < offer.Count; i++)
+            {
+                if (offer[i].Type != CardType.Fallback) continue;
+                var (stat, value) = RiftBoostKinds[k++ % RiftBoostKinds.Length];
+                offer[i] = new SkillCard { Type = CardType.RiftBoost, BoostStat = stat, BoostValue = value };
+            }
+        }
+
         /// <summary>이번 판에 전설 스킬 카드를 골랐는가 (던전 ★3 "전설 없이 클리어", Modes 3-2)</summary>
         public bool ChoseLegendary { get; private set; }
 
@@ -229,6 +252,13 @@ namespace HistoryHeroes.Skills
 
                 case CardType.Fallback:
                     player.Health.Heal(player.Health.Max * fallbackHeal);
+                    break;
+
+                case CardType.RiftBoost:
+                    // 공격속도는 기본 공격에만, 공격력·체력은 전체 (무한 중첩)
+                    Stats.StatTarget target = card.BoostStat == Stats.StatType.AttackSpeed ? Stats.StatTarget.BasicAttack : Stats.StatTarget.Both;
+                    player.Stats.Add(new Stats.StatModifier(card.BoostStat, Stats.ModifierKind.Percent, card.BoostValue, Stats.ModifierSource.Skill, _riftBoostOwner, target));
+                    RiftBoostCount++;
                     break;
             }
 

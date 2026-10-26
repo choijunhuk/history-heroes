@@ -6,6 +6,7 @@ namespace HistoryHeroes.Skills
         LevelUp,
         Fusion,
         Fallback, // 기본 카드 (체력 회복 등). 중복해서 나와도 된다.
+        RiftBoost, // 무한의 균열: 스킬이 다 MAX면 "균열 강화" (공격력 +3% / 체력 +3% / 공격속도 +2%, 무한 중첩, Modes 4-2)
     }
 
     /// <summary>레벨업 화면에 뜨는 카드 한 장.</summary>
@@ -17,6 +18,10 @@ namespace HistoryHeroes.Skills
         public int NextLevel;        // NewSkill이면 1
         /// <summary>룬 덕분에 같은 등급 안에서 더 잘 뽑힌 카드 (카드에 작은 룬 표시, Runes 8장)</summary>
         public bool RuneBoosted;
+
+        /// <summary>균열 강화 능력치·크기 (RiftBoost)</summary>
+        public Stats.StatType BoostStat;
+        public float BoostValue;
 
         public static SkillCard Fallback() => new SkillCard { Type = CardType.Fallback };
     }

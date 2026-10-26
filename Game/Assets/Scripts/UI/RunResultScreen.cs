@@ -116,6 +116,15 @@ namespace HistoryHeroes.UI
             foreach (string line in lines) sb.AppendLine("  " + line);
         }
 
+        /// <summary>무한의 균열·일일 도전 결과 (기록 저장 없음): 제목 + 본문 + 버튼 2개</summary>
+        public void ShowText(string title, string body, string primary, Action onPrimary, string secondary, Action onSecondary)
+        {
+            Open();
+            titleLabel.text = title;
+            bodyLabel.text = body;
+            SetButtons(primary, onPrimary ?? Retry, secondary, onSecondary ?? GameSession.ToLobby);
+        }
+
         private void Retry()
         {
             if (GameSession.TryRetry()) return;

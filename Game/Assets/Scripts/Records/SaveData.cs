@@ -93,6 +93,10 @@ namespace HistoryHeroes.Records
 
         // ----- v0.5 미션·업적 (Missions 2·3·7장) -----
         public MissionSave missions = new MissionSave();
+
+        // ----- v0.6 무한의 균열 (Modes 4장) · 일일 도전 (Modes 5장) -----
+        public RiftSave rift = new RiftSave();
+        public DailySave dailyChallenge = new DailySave();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -279,6 +283,56 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+    }
+
+    // ---------------------------------------------------------------- v0.6 무한의 균열 · 일일 도전
+
+    [Serializable]
+    public sealed class RiftSave
+    {
+        /// <summary>이번 주 (월요일 05:00 기준 그 주 월요일)</summary>
+        public string weekKey;
+        public int weeklyBest;
+        public int bestEver;
+        /// <summary>이번 주 받은 층 보상 (10·20·30·40·50)</summary>
+        public List<int> rewardsClaimed = new List<int>();
+        public RiftCheckpoint checkpoint = new RiftCheckpoint();
+    }
+
+    /// <summary>10층 보스를 깰 때마다 남기는 이어하기 (빌드·체력·시드·레벨, 주간 시즌 안에서)</summary>
+    [Serializable]
+    public sealed class RiftCheckpoint
+    {
+        public bool valid;
+        public int floor;
+        public int seed;
+        public string heroId;
+        public float hpRatio = 1f;
+        public int level = 1;
+        public float experience;
+        public List<RecordSkill> skills = new List<RecordSkill>();
+    }
+
+    [Serializable]
+    public sealed class DailySave
+    {
+        public string dayKey;
+        public bool officialDone;
+        public int officialScore;
+        public int bestPractice;
+        /// <summary>공식 도전한 날 수 (업적 "매일의 도전자")</summary>
+        public int participations;
+        /// <summary>최근 공식 기록 (14일)</summary>
+        public List<DailyResult> history = new List<DailyResult>();
+    }
+
+    [Serializable]
+    public sealed class DailyResult
+    {
+        public string dayKey;
+        public string heroId;
+        public int score;
+        public bool cleared;
     }
 
     // ---------------------------------------------------------------- v0.5 미션·업적

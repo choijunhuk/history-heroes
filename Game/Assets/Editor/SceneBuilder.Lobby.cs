@@ -52,26 +52,32 @@ namespace HistoryHeroes.EditorTools
             Place(chapterInfo.rectTransform, Center, Center, new Vector2(0f, 262f), new Vector2(940f, 150f));
             chapterInfo.lineSpacing = 10f;
 
-            Button dungeon = Btn("Dungeon", main, "던전 시작", new Vector2(0f, 50f), new Vector2(820f, 210f), ButtonGreen, out TMP_Text dungeonLabel);
+            Button dungeon = Btn("Dungeon", main, "던전 시작", new Vector2(0f, 60f), new Vector2(820f, 200f), ButtonGreen, out TMP_Text dungeonLabel);
             dungeonLabel.fontSize = 64;
-            // 보스 | 서바이벌 (v0.5): 한 줄을 반씩
-            Button boss = Btn("Boss", main, "보스 도전", new Vector2(-212f, -190f), new Vector2(396f, 160f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text bossLabel);
-            bossLabel.fontSize = 38;
-            bossLabel.enableAutoSizing = true;
-            bossLabel.fontSizeMin = 22f;
-            bossLabel.fontSizeMax = 38f;
-            bossLabel.rectTransform.offsetMin = new Vector2(12f, 0f);
-            bossLabel.rectTransform.offsetMax = new Vector2(-12f, 0f);
-            Button survival = Btn("Survival", main, "서바이벌", new Vector2(212f, -190f), new Vector2(396f, 160f), new Color(0.6f, 0.38f, 0.14f), out TMP_Text survivalLabel);
-            survivalLabel.fontSize = 38;
-            survivalLabel.enableAutoSizing = true;
-            survivalLabel.fontSizeMin = 22f;
-            survivalLabel.fontSizeMax = 38f;
-            survivalLabel.rectTransform.offsetMin = new Vector2(12f, 0f);
-            survivalLabel.rectTransform.offsetMax = new Vector2(-12f, 0f);
-            Button archive = Btn("Archive", main, "기록 보관함", new Vector2(0f, -380f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text archiveLabel);
-            Button codex = Btn("Codex", main, "조합 도감", new Vector2(0f, -540f), new Vector2(820f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text codexLabel);
-            Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -700f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
+            // 반쪽 버튼 두 줄 (v0.6): 보스 | 서바이벌, 균열 | 일일 도전, 그 아래 보관함 | 도감
+            void Half(TMP_Text label)
+            {
+                label.fontSize = 38;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 22f;
+                label.fontSizeMax = 38f;
+                label.rectTransform.offsetMin = new Vector2(12f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-12f, 0f);
+            }
+
+            Button boss = Btn("Boss", main, "보스 도전", new Vector2(-212f, -150f), new Vector2(396f, 150f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text bossLabel);
+            Half(bossLabel);
+            Button survival = Btn("Survival", main, "서바이벌", new Vector2(212f, -150f), new Vector2(396f, 150f), new Color(0.6f, 0.38f, 0.14f), out TMP_Text survivalLabel);
+            Half(survivalLabel);
+            Button rift = Btn("Rift", main, "무한의 균열", new Vector2(-212f, -320f), new Vector2(396f, 150f), new Color(0.3f, 0.2f, 0.55f), out TMP_Text riftLabel);
+            Half(riftLabel);
+            Button daily = Btn("Daily", main, "일일 도전", new Vector2(212f, -320f), new Vector2(396f, 150f), new Color(0.15f, 0.42f, 0.45f), out TMP_Text dailyLabel);
+            Half(dailyLabel);
+            Button archive = Btn("Archive", main, "기록 보관함", new Vector2(-212f, -485f), new Vector2(396f, 130f), ButtonBlue, out TMP_Text archiveLabel);
+            Half(archiveLabel);
+            Button codex = Btn("Codex", main, "조합 도감", new Vector2(212f, -485f), new Vector2(396f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text codexLabel);
+            Half(codexLabel);
+            Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -645f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
             Button settingsButton = Btn("Settings", main, "설정", new Vector2(430f, 820f), new Vector2(180f, 80f), ButtonGray, out TMP_Text settingsLabel);
             settingsLabel.fontSize = 30;
             Button shopButton = Btn("Shop", main, "상점", new Vector2(-430f, 820f), new Vector2(180f, 80f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text shopLabel);
@@ -99,6 +105,7 @@ namespace HistoryHeroes.EditorTools
             PetPanel petPanel = BuildPetPanel(safe, meta);
             MissionPanel missionPanel = BuildMissionPanel(safe, meta, roster);
             ChoicePanel choicePanel = BuildChoicePanel(safe);
+            ModeInfoPanel modeInfo = BuildModeInfoPanel(safe);
             using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
@@ -117,10 +124,49 @@ namespace HistoryHeroes.EditorTools
                     .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel).Ref("metaTable", meta)
                     .Ref("shopButton", shopButton).Ref("shop", shopPanel)
                     .Ref("missionButton", missionButton).Ref("missionLabel", missionLabel).Ref("missions", missionPanel)
-                    .Ref("choice", choicePanel);
+                    .Ref("choice", choicePanel)
+                    .Ref("riftButton", rift).Ref("riftButtonLabel", riftLabel).Ref("dailyButton", daily).Ref("dailyButtonLabel", dailyLabel).Ref("modeInfo", modeInfo);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
+        }
+
+        /// <summary>v0.6 모드 안내 (무한의 균열 · 일일 도전): 제목 + 설명 + 버튼 2개 + 뒤로</summary>
+        private static ModeInfoPanel BuildModeInfoPanel(Transform parent)
+        {
+            RectTransform panel = Overlay(parent, "ModeInfoPanel", out GameObject holder);
+            var screen = holder.AddComponent<ModeInfoPanel>();
+            TMP_Text title = Label("Title", panel, "", 60, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 820f), new Vector2(900f, 100f));
+            TMP_Text body = Label("Body", panel, "", 42, TextAlignmentOptions.Top);
+            Place(body.rectTransform, Center, Center, new Vector2(0f, 60f), new Vector2(1000f, 1360f));
+            body.lineSpacing = 10f;
+            body.enableAutoSizing = true; // 글이 길면 줄인다 (읽기 쉬운 크기 우선)
+            body.fontSizeMin = 26f;
+            body.fontSizeMax = 42f;
+            Button primary = Btn("ModePrimary", panel, "", new Vector2(-250f, -660f), new Vector2(440f, 140f), ButtonGreen, out TMP_Text primaryLabel);
+            Half(primaryLabel);
+            Button secondary = Btn("ModeSecondary", panel, "", new Vector2(250f, -660f), new Vector2(440f, 140f), new Color(0.3f, 0.2f, 0.55f), out TMP_Text secondaryLabel);
+            Half(secondaryLabel);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -810f), new Vector2(400f, 100f), ButtonGray, out _);
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("bodyLabel", body)
+                    .Ref("primaryButton", primary).Ref("primaryLabel", primaryLabel)
+                    .Ref("secondaryButton", secondary).Ref("secondaryLabel", secondaryLabel).Ref("backButton", back);
+            }
+
+            return screen;
+
+            void Half(TMP_Text label)
+            {
+                label.fontSize = 36;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 22f;
+                label.fontSizeMax = 36f;
+                label.rectTransform.offsetMin = new Vector2(12f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-12f, 0f);
+            }
         }
 
         /// <summary>패널 공통: 컴포넌트를 단 부모(늘 켜짐) + 덮는 판(root, 끄고 켬)</summary>

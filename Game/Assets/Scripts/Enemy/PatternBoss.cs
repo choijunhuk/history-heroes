@@ -40,6 +40,9 @@ namespace HistoryHeroes.Enemy
 
         public int Phase => phase;
         public bool IsOpen => state == State.Recover;
+
+        /// <summary>무한의 균열 버전: 2단계 패턴을 1단계부터 쓴다 (v0.6-Plan [제안] "패턴 1개 추가")</summary>
+        public bool RiftVersion { get; set; }
         public override bool CanBeKnockedBack => false;
         public event Action<int> PhaseChanged;
 
@@ -59,7 +62,7 @@ namespace HistoryHeroes.Enemy
         {
             base.Spawn(target, hpMultiplier, atkMultiplier, false);
             transform.localScale = Vector3.one * bossScale;
-            phase = 1;
+            phase = RiftVersion ? 2 : 1;
             bossTime = 0f;
             _stack.Clear();
             _started = false;

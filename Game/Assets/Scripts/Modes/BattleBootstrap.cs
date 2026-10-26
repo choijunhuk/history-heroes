@@ -1,4 +1,5 @@
 using HistoryHeroes.Common;
+using HistoryHeroes.Economy;
 using HistoryHeroes.Heroes;
 using HistoryHeroes.Player;
 using HistoryHeroes.Records;
@@ -46,6 +47,21 @@ namespace HistoryHeroes.Modes
                 if (record != null) return roster.Find(record.heroId);
             }
 
+            // 일일 도전: 오늘의 영웅 (해금 안 했어도 빌려 쓴다, Modes 5장)
+            if (GameSession.Mode == BattleMode.Daily)
+            {
+                var order = roster.heroes.ConvertAll(h => h.id);
+                HeroData today = roster.Find(DailyRules.HeroFor(DailyRules.DayKey(Clock.Now()), order));
+                if (today != null) return today;
+            }
+
+            // 균열 이어하기: 체크포인트의 영웅
+            if (GameSession.Mode == BattleMode.Rift && GameSession.RiftContinue && save.rift.checkpoint.valid)
+            {
+                HeroData saved = roster.Find(save.rift.checkpoint.heroId);
+                if (saved != null) return saved;
+            }
+
             return HeroUnlock.Selected(save, roster);
         }
 
@@ -62,6 +78,7 @@ namespace HistoryHeroes.Modes
                 return record != null && record.meta != null ? record.meta : new MetaSnapshot();
             }
 
+            if (GameSession.Mode == BattleMode.Daily) return DailyRules.FixedSet(); // 공정한 고정 세트 (펫·유물·수련 없음)
             return Meta.MetaStats.FromAccount(save, table, heroId);
         }
 
@@ -74,8 +91,8 @@ namespace HistoryHeroes.Modes
                 player.SetHero(hero);
                 if (metaTable != null && hero != null) player.ApplyMeta(MetaForThisBattle(metaTable, hero.id), metaTable);
 
-                // 룬: 던전·서바이벌만 (보스맵은 레벨업이 없다, 기록에도 저장하지 않는다 — Runes 6장)
-                if (skills != null && metaTable != null && metaTable.runes != null && hero != null && GameSession.Mode != BattleMode.Boss)
+                // 룬: 던전·서바이벌·균열만 (보스맵은 레벨업이 없다, 일일 도전은 고정 세트 — Runes 6장)
+                if (skills != null && metaTable != null && metaTable.runes != null && hero != null && GameSession.Mode != BattleMode.Boss && GameSession.Mode != BattleMode.Daily)
                 {
                     skills.WeightModifier = Runes.RuneService.ModifierFor(SaveSystem.Data, metaTable.runes, hero.id, database != null ? database.recipes : null);
                 }

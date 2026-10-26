@@ -45,6 +45,8 @@ namespace HistoryHeroes.Dungeon
         [SerializeField] private RewardRoomPanel rewardRoom;
         [Tooltip("레이아웃 장애물·함정을 놓는 곳")]
         [SerializeField] private Transform layoutRoot;
+        [Tooltip("무한의 균열 10층마다 나오는 보스맵 보스 (1~5구간 순서)")]
+        [SerializeField] private List<Modes.BossData> riftBosses = new List<Modes.BossData>();
 
         [Header("등장")]
         [Tooltip("적이 나올 수 있는 영역 (월드 좌표)")]
@@ -73,6 +75,22 @@ namespace HistoryHeroes.Dungeon
         private readonly List<GameObject> _layoutObjects = new List<GameObject>();
         private static int _obstacleMask = -1;
 
+        // v0.6 무한의 균열 · 일일 도전
+        private bool _rift;
+        private bool _daily;
+        private float _enemyHp = 1f;
+        private float _enemyAttack = 1f;
+        private float _budgetScale = 1f;
+        private float _rewardHeal = 0.3f;
+        private readonly object _modeOwner = new object();
+        private readonly List<string> _modeLines = new List<string>();
+        private LayoutKind? _lastRiftLayout;
+        private EnemyBase _riftBoss;
+        private bool _riftFloor5;
+
+        public bool IsRift => _rift;
+        public bool IsDaily => _daily;
+
         public int Room => _room;
         public ChapterData Chapter => _chapter;
         public RoomPlan CurrentPlan => _plans != null && _room >= 1 && _room <= _plans.Count ? _plans[_room - 1] : null;
@@ -86,7 +104,8 @@ namespace HistoryHeroes.Dungeon
 
         /// <summary>적이 나오는 영역 (방 안쪽)</summary>
         public Rect SpawnArea => spawnArea;
-        public int RoomCount => _plans != null ? _plans.Count : dungeon.plan.Count;
+        /// <summary>던전 15, 일일 도전 7. 무한의 균열은 끝이 없다 (아주 큰 수)</summary>
+        public int RoomCount => _rift ? 9999 : _plans != null ? _plans.Count : dungeon.plan.Count;
         public bool IsFinished => _finished;
 
         private void Start()
@@ -94,9 +113,13 @@ namespace HistoryHeroes.Dungeon
             GamePause.ResetAll();
             DamageLog.Reset();
             _startTime = Time.time;
+            _rift = GameSession.Mode == BattleMode.Rift;
+            _daily = GameSession.Mode == BattleMode.Daily;
+            ApplyModeRules();
             PlanRun();
             _childSpawner = SpawnChild;
             EnemyBase.ChildSpawner = _childSpawner;
+            skills.RiftBoosts = _rift;
             player.Health.Died += _ => Finish(victory: false);
             player.Health.Damaged += (_, dealt) =>
             {
@@ -106,7 +129,123 @@ namespace HistoryHeroes.Dungeon
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
             door.Entered += () => StartCoroutine(GoToNextRoom());
             if (fade != null) fade.alpha = 0f;
-            EnterRoom(1);
+            EnterRoom(_rift ? ResumeRift() : 1);
+        }
+
+        // ---------------------------------------------------------------- v0.6 모드 규칙
+
+        /// <summary>무한 주간 변형 1개 · 일일 도전 변형 2개 (적 배수는 이 판 안에서만, 플레이어 보정은 이 판 출처로)</summary>
+        private void ApplyModeRules()
+        {
+            _enemyHp = GameSession.EnemyHpScale;
+            _enemyAttack = GameSession.EnemyAttackScale;
+            Stats.StatSheet stats = player.Stats;
+            void Mod(Stats.StatType stat, Stats.ModifierKind kind, float value, Stats.StatTarget target = Stats.StatTarget.Both) =>
+                stats.Add(new Stats.StatModifier(stat, kind, value, Stats.ModifierSource.Skill, _modeOwner, target));
+
+            if (_rift)
+            {
+                SaveData save = SaveSystem.Data;
+                Modes.RiftRules.EnsureWeek(save, Clock.Now());
+                Modes.RiftRules.Variant v = Modes.RiftRules.VariantFor(save.rift.weekKey);
+                switch (v)
+                {
+                    case Modes.RiftRules.Variant.ToughEnemiesMoreExp:
+                        _enemyHp *= 1.3f;
+                        experience.ExpMultiplier = 1.3f;
+                        break;
+                    case Modes.RiftRules.Variant.FierceEnemiesStronger:
+                        _enemyAttack *= 1.25f;
+                        Mod(Stats.StatType.Attack, Stats.ModifierKind.Percent, 0.15f);
+                        break;
+                    case Modes.RiftRules.Variant.FastArrowsFastFeet:
+                        EnemyProjectiles.SpeedScale = 1.2f;
+                        Mod(Stats.StatType.MoveSpeed, Stats.ModifierKind.Percent, 0.1f);
+                        break;
+                    default:
+                        Mod(Stats.StatType.CooldownReduction, Stats.ModifierKind.Flat, 0.2f);
+                        Mod(Stats.StatType.Attack, Stats.ModifierKind.Percent, -0.15f, Stats.StatTarget.BasicAttack);
+                        break;
+                }
+
+                hud.ShowNotice(Modes.RiftRules.VariantText(v), 3f);
+            }
+
+            if (_daily)
+            {
+                string day = Modes.DailyRules.DayKey(Clock.Now());
+                foreach (Modes.DailyRules.Modifier m in Modes.DailyRules.ModifiersFor(day))
+                {
+                    switch (m)
+                    {
+                        case Modes.DailyRules.Modifier.DoubleEnemiesNoHeal:
+                            _budgetScale = 2f;
+                            _rewardHeal = 0f;
+                            break;
+                        case Modes.DailyRules.Modifier.FastSkillsWeakShots:
+                            Mod(Stats.StatType.CooldownReduction, Stats.ModifierKind.Flat, 0.3f);
+                            Mod(Stats.StatType.Attack, Stats.ModifierKind.Percent, -0.3f, Stats.StatTarget.BasicAttack);
+                            break;
+                        case Modes.DailyRules.Modifier.ToughEnemiesStronger:
+                            _enemyHp *= 1.4f;
+                            Mod(Stats.StatType.Attack, Stats.ModifierKind.Percent, 0.2f);
+                            break;
+                        case Modes.DailyRules.Modifier.FastArrows:
+                            EnemyProjectiles.SpeedScale = 1.25f;
+                            break;
+                        case Modes.DailyRules.Modifier.StrongShotsWeakSkills:
+                            Mod(Stats.StatType.Attack, Stats.ModifierKind.Percent, 0.4f, Stats.StatTarget.BasicAttack);
+                            Mod(Stats.StatType.ActiveDamage, Stats.ModifierKind.Flat, -0.3f);
+                            break;
+                        default:
+                            Mod(Stats.StatType.MoveSpeed, Stats.ModifierKind.Percent, 0.2f);
+                            Mod(Stats.StatType.DamageReduction, Stats.ModifierKind.Flat, -0.2f);
+                            break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>균열 이어하기: 체크포인트의 빌드·레벨·체력으로 다음 층부터 (그 층까지 방 난수를 같은 순서로 돌려 같은 판을 잇는다)</summary>
+        private int ResumeRift()
+        {
+            RiftCheckpoint cp = SaveSystem.Data.rift.checkpoint;
+            if (!GameSession.RiftContinue || !cp.valid) return 1;
+            EnsureRiftFloor(cp.floor + 1);
+            skills.ApplyRecord(cp.skills, database);
+            experience.Level.Restore(cp.level, cp.experience);
+            player.Health.Revive(player.Health.Max * Mathf.Clamp(cp.hpRatio, 0.2f, 1f));
+            _roomsCleared = cp.floor;
+            hud.ShowNotice($"균열 {cp.floor + 1}층부터 이어서", 2.5f);
+            return cp.floor + 1;
+        }
+
+        /// <summary>균열 층 계획을 floor까지 만든다 (방 난수를 층 순서대로 쓴다 → 같은 시드면 같은 층)</summary>
+        private void EnsureRiftFloor(int floor)
+        {
+            System.Random rooms = RunRandom.Rooms;
+            while (_plans.Count < floor)
+            {
+                int f = _plans.Count + 1;
+                RoomPlan plan = Modes.RiftRules.PlanFor(f);
+                ChapterData chapter = dungeon.Chapter(Modes.RiftRules.ChapterFor(f));
+                RoomLayout layout = dungeon.specialLayout;
+                if (plan.kind == RoomKind.Normal && dungeon.layouts.Count > 0)
+                {
+                    var options = dungeon.layouts.FindAll(l => l != null && l.kind != _lastRiftLayout);
+                    layout = options.Count > 0 ? options[rooms.Next(options.Count)] : dungeon.layouts[0];
+                    _lastRiftLayout = layout.kind;
+                }
+                else
+                {
+                    _lastRiftLayout = null;
+                }
+
+                _plans.Add(plan);
+                _layouts.Add(layout);
+                // 새 적이 나오는 층 감각: 그 구간 안에서 몇 번째 층인가
+                _encounters.Add(Encounter.Build(chapter, plan, (f - 1) % 10 + 1, rooms));
+            }
         }
 
         /// <summary>판 시작: 시드(일일 도전은 날짜)로 방마다 레이아웃과 적 편성을 정한다</summary>
@@ -115,7 +254,25 @@ namespace HistoryHeroes.Dungeon
             if (GameSession.RunSeed != 0) RunRandom.Begin(GameSession.RunSeed);
             else RunRandom.BeginRandom();
             _chapter = dungeon.Chapter(GameSession.Chapter);
+            if (_rift)
+            {
+                _plans = new List<RoomPlan>();
+                _layouts = new List<RoomLayout>();
+                _encounters = new List<List<SpawnEntry>>();
+                return; // 층은 들어갈 때 만든다 (끝이 없다)
+            }
+
             _plans = GameSession.CustomPlan != null ? new List<RoomPlan>(GameSession.CustomPlan) : new List<RoomPlan>(dungeon.plan);
+            if (_budgetScale != 1f)
+            {
+                for (int i = 0; i < _plans.Count; i++)
+                {
+                    RoomPlan copy = _plans[i].Copy();
+                    copy.budget = Mathf.RoundToInt(copy.budget * _budgetScale);
+                    _plans[i] = copy;
+                }
+            }
+
             System.Random rooms = RunRandom.Rooms;
             _layouts = Encounter.PickLayouts(_plans, dungeon.layouts, dungeon.specialLayout, rooms);
             _encounters = new List<List<SpawnEntry>>(_plans.Count);
@@ -127,19 +284,79 @@ namespace HistoryHeroes.Dungeon
             _room = room;
             _hitsAtRoomStart = _hitsTaken;
             levelUp.Floor = room;
+            if (_rift)
+            {
+                EnsureRiftFloor(room + 9); // 진행 바에 보일 층까지
+                _chapter = dungeon.Chapter(Modes.RiftRules.ChapterFor(room));
+                if (room >= 5 && !_riftFloor5)
+                {
+                    _riftFloor5 = true;
+                    Missions.MissionEvents.Raise(Missions.MissionEvents.RiftFloor5); // 일일 미션 "균열 5층 이상"
+                }
+            }
+
             RoomPlan plan = _plans[room - 1];
-            string chapter = GameSession.Chapter > 1 ? $"{GameSession.Chapter}구간 " : string.Empty;
-            string tag = plan.kind == RoomKind.Elite ? "  엘리트" : plan.kind == RoomKind.Reward ? "  보상" : plan.kind == RoomKind.MidBoss ? "  중간 보스" : string.Empty;
-            hud.RoomText = $"{chapter}방 {room}/{RoomCount}{tag}";
+            string tag = plan.kind == RoomKind.Elite ? "  엘리트" : plan.kind == RoomKind.Reward ? "  보상" : plan.kind == RoomKind.MidBoss ? "  중간 보스" : plan.kind == RoomKind.Boss ? "  보스" : string.Empty;
+            if (_rift)
+            {
+                hud.RoomText = $"무한의 균열 {room}층{tag}";
+            }
+            else
+            {
+                string chapter = _daily ? "일일 도전 " : GameSession.Chapter > 1 ? $"{GameSession.Chapter}구간 " : string.Empty;
+                hud.RoomText = $"{chapter}방 {room}/{RoomCount}{tag}";
+            }
+
             door.SetOpen(false);
-            var kinds = new List<RoomKind>(RoomCount);
-            foreach (RoomPlan r in _plans) kinds.Add(r.kind);
-            hud.SetRoomProgress(room, kinds);
+            var kinds = new List<RoomKind>();
+            int first = _rift ? (room - 1) / 10 * 10 : 0; // 균열: 지금 10층 묶음만
+            int count = _rift ? 10 : _plans.Count;
+            for (int i = first; i < first + count && i < _plans.Count; i++) kinds.Add(_plans[i].kind);
+            hud.SetRoomProgress(room - first, kinds);
             ApplyLayout(_layouts[room - 1]);
 
             if (plan.kind == RoomKind.Reward) OpenRewardRoom();
+            else if (plan.kind == RoomKind.Boss) StartCoroutine(SpawnRiftBoss(room));
             else StartCoroutine(SpawnRoom(plan, _encounters[room - 1]));
             RoomEntered?.Invoke(room);
+        }
+
+        /// <summary>균열 10층마다: 보스맵 보스 (균열 버전 — 2단계 패턴부터)</summary>
+        private IEnumerator SpawnRiftBoss(int floor)
+        {
+            _alive = 1;
+            int index = Modes.RiftRules.BossIndex(floor);
+            Modes.BossData info = index < riftBosses.Count ? riftBosses[index] : null;
+            Vector2 at = new Vector2(spawnArea.center.x, spawnArea.yMax - 1.5f);
+            SpriteRenderer marker = GetMarker(at, true);
+            marker.transform.localScale = Vector3.one * 3f;
+            hud.ShowNotice(info != null ? $"균열의 {info.displayName}!" : "균열 보스!", 1.5f);
+            yield return new WaitForSeconds(1.5f);
+            marker.gameObject.SetActive(false);
+            if (_finished) yield break;
+            if (info == null || info.prefab == null)
+            {
+                _alive = 0;
+                OnRoomCleared();
+                yield break;
+            }
+
+            if (_riftBoss != null) Destroy(_riftBoss.gameObject);
+            _riftBoss = Instantiate(info.prefab, at, Quaternion.identity, transform);
+            if (_riftBoss is PatternBoss pattern)
+            {
+                pattern.RiftVersion = true;
+                pattern.MinionHp = RoomHpMultiplier();
+                pattern.MinionAttack = RoomAttackMultiplier();
+            }
+
+            if (_riftBoss is RiftWardenBoss warden) warden.RiftVersion = true;
+            float hp = info.hpMultiplier * Modes.RiftRules.BossHpFactor * Modes.RiftRules.HpScale(floor) * _enemyHp;
+            float atk = info.attackMultiplier * Modes.RiftRules.BossAttackFactor * Modes.RiftRules.AttackScale(floor) * _enemyAttack;
+            _riftBoss.Spawn(player.transform, hp, atk, false);
+            _riftBoss.Killed -= OnEnemyKilled;
+            _riftBoss.Killed += OnEnemyKilled;
+            if (bossHud != null) bossHud.Bind(_riftBoss, info.displayName + " (균열)");
         }
 
         private IEnumerator SpawnRoom(RoomPlan plan, List<SpawnEntry> spawns)
@@ -194,12 +411,16 @@ namespace HistoryHeroes.Dungeon
 
         private float RoomHpMultiplier()
         {
-            int chapter = GameSession.Chapter;
             float enhanced = _chapter != null && _chapter.enhanced ? _chapter.enhancedHp : 1f;
-            return dungeon.RoomHp(_room) * dungeon.ChapterHpMultiplier(chapter) * enhanced * GameSession.EnemyHpScale;
+            if (_rift) return Modes.RiftRules.HpScale(_room) * enhanced * _enemyHp; // 1.06^층 (Modes 4-3)
+            return dungeon.RoomHp(_room) * dungeon.ChapterHpMultiplier(GameSession.Chapter) * enhanced * _enemyHp;
         }
 
-        private float RoomAttackMultiplier() => dungeon.RoomAttack(_room) * dungeon.ChapterAttackMultiplier(GameSession.Chapter) * GameSession.EnemyAttackScale;
+        private float RoomAttackMultiplier()
+        {
+            if (_rift) return Modes.RiftRules.AttackScale(_room) * _enemyAttack; // 1.04^층
+            return dungeon.RoomAttack(_room) * dungeon.ChapterAttackMultiplier(GameSession.Chapter) * _enemyAttack;
+        }
 
         /// <summary>소환사·분열체·보스 졸개: 바로 나오고, 방 전멸 판정에 들어간다</summary>
         private EnemyBase SpawnChild(EnemyBase prefab, Vector2 at, float hp, float atk)
@@ -230,7 +451,7 @@ namespace HistoryHeroes.Dungeon
                 return;
             }
 
-            rewardRoom.Open(0.3f, gold, choice =>
+            rewardRoom.Open(_rewardHeal, gold, choice =>
             {
                 switch (choice)
                 {
@@ -356,6 +577,11 @@ namespace HistoryHeroes.Dungeon
             _roomsCleared = Mathf.Max(_roomsCleared, _room);
             experience.AttractAll();
             if (_hitsTaken == _hitsAtRoomStart) Missions.MissionEvents.Raise(Missions.MissionEvents.NoHitRoom); // 피격 없이 방 클리어
+            if (_rift)
+            {
+                OnRiftFloorCleared();
+                return;
+            }
 
             // 지금 끝나면 남길 수 있는 기록 용량 / 클리어하면 (조사 A7: "한 방만 더"의 동기)
             if (_room < RoomCount)
@@ -372,6 +598,60 @@ namespace HistoryHeroes.Dungeon
                 StartCoroutine(FinishAfter(1.5f));
             }
             else door.SetOpen(true);
+        }
+
+        /// <summary>균열 층을 깼다: 이번 주 최고 층·층 보상, 보스 층이면 체크포인트, 엘리트 층이면 보상 방 선택 → 문</summary>
+        private void OnRiftFloorCleared()
+        {
+            SaveData save = SaveSystem.Data;
+            foreach (string line in Modes.RiftRules.ReachFloor(save, _room))
+            {
+                _modeLines.Add(line);
+                hud.ShowNotice(line, 2.5f);
+            }
+
+            if (Modes.RiftRules.IsBossFloor(_room)) SaveCheckpoint();
+            SaveSystem.SaveIfDirty();
+
+            if (Modes.RiftRules.IsEliteFloor(_room) && rewardRoom != null)
+            {
+                int gold = 50 + 25 * Modes.RiftRules.ChapterFor(_room);
+                rewardRoom.Open(_rewardHeal, gold, choice =>
+                {
+                    if (choice == RewardRoomPanel.Choice.Heal) player.Health.Heal(player.Health.Max * _rewardHeal);
+                    else if (choice == RewardRoomPanel.Choice.Card) experience.GrantLevelUp();
+                    else
+                    {
+                        Wallet.Grant(SaveSystem.Data, new Reward { Gold = gold });
+                        SaveSystem.MarkDirty();
+                    }
+
+                    door.SetOpen(true);
+                });
+                return;
+            }
+
+            door.SetOpen(true);
+        }
+
+        /// <summary>10층 보스를 깰 때마다: 빌드·레벨·체력·시드를 남긴다 (나갔다가 여기서 이어하기, 주간 시즌 안에서)</summary>
+        private void SaveCheckpoint()
+        {
+            var cp = new RiftCheckpoint
+            {
+                valid = true,
+                floor = _room,
+                seed = RunRandom.Seed,
+                heroId = skills.HeroId,
+                hpRatio = player.Health.Current / Mathf.Max(1f, player.Health.Max),
+                level = experience.Level.Level,
+                experience = experience.Level.Experience,
+            };
+            foreach (SkillInstance s in skills.Loadout.Actives) cp.skills.Add(new RecordSkill(s.Data.id, s.Level, s.IsFusionResult));
+            foreach (SkillInstance s in skills.Loadout.Passives) cp.skills.Add(new RecordSkill(s.Data.id, s.Level, s.IsFusionResult));
+            SaveSystem.Data.rift.checkpoint = cp;
+            hud.ShowNotice($"체크포인트 저장 ({_room}층)", 2f);
+            SaveSystem.Save();
         }
 
         private IEnumerator GoToNextRoom()
@@ -405,6 +685,17 @@ namespace HistoryHeroes.Dungeon
         {
             if (_finished) return;
             _finished = true;
+            if (_rift)
+            {
+                FinishRift();
+                return;
+            }
+
+            if (_daily)
+            {
+                FinishDaily(victory);
+                return;
+            }
 
             var summary = new RunSummary
             {
@@ -455,6 +746,82 @@ namespace HistoryHeroes.Dungeon
             result.Show(summary, saveRecord);
         }
 
+        // ---------------------------------------------------------------- 균열·일일 도전 결과 (기록은 남기지 않는다)
+
+        private void FinishRift()
+        {
+            SaveData save = SaveSystem.Data;
+            float seconds = Time.time - _startTime;
+            int floor = _room;
+            Missions.MissionEvents.Raise(Missions.MissionEvents.Run);
+            Missions.MissionEvents.Raise(Missions.MissionEvents.SurvivalSeconds, Mathf.FloorToInt(seconds)); // 주간 "서바이벌 또는 균열 20분"
+            AccountLevel.Result level = AccountLevel.AddExp(save, Mathf.Min(120, _roomsCleared * 4), Clock.UnixSeconds);
+            SaveSystem.Save();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"도달한 층  {floor}  (깬 층 {_roomsCleared})");
+            sb.AppendLine($"이번 주 최고  {save.rift.weeklyBest}층   ·   역대 최고  {save.rift.bestEver}층");
+            sb.AppendLine($"처치 {experience.Kills}   ·   레벨 {experience.Level.Level}   ·   {Mathf.FloorToInt(seconds / 60f)}분 {Mathf.FloorToInt(seconds % 60f)}초");
+            if (skills.RiftBoostCount > 0) sb.AppendLine($"균열 강화 {skills.RiftBoostCount}번");
+            sb.AppendLine($"<size=85%>피해  {RunText.TopDamage(database, player.Hero)}</size>");
+            sb.AppendLine();
+            sb.AppendLine("<color=#FFD966>받은 것</color>");
+            foreach (string line in _modeLines) sb.AppendLine("  " + line);
+            sb.AppendLine("  " + RunText.Level(level));
+            sb.AppendLine("<size=85%><color=#A9B4C2>무한의 균열은 기록을 남기지 않아요 (빌드는 매번 1층부터)</color></size>");
+
+            RiftCheckpoint cp = save.rift.checkpoint;
+            string primary = cp.valid ? $"{cp.floor + 1}층부터 이어하기" : "1층부터 다시";
+            System.Action onPrimary = cp.valid ? () => GameSession.StartRift(true) : (System.Action)(() => GameSession.StartRift(false));
+            StartCoroutine(ShowTextAfter(0.8f, $"균열 {floor}층", sb.ToString(), primary, onPrimary));
+        }
+
+        private void FinishDaily(bool victory)
+        {
+            SaveData save = SaveSystem.Data;
+            float seconds = Time.time - _startTime;
+            float hp = player.Health.Current / Mathf.Max(1f, player.Health.Max);
+            int rooms = victory ? RoomCount : _roomsCleared;
+            int score = Modes.DailyRules.Score(rooms, experience.Kills, victory ? hp : 0f, victory, seconds);
+            var lines = new List<string>();
+            bool official = GameSession.DailyOfficial;
+            Modes.DailyRules.EnsureDay(save, Clock.Now());
+            if (official)
+            {
+                lines.AddRange(Modes.DailyRules.RecordOfficial(save, skills.HeroId, score, victory));
+                Missions.MissionEvents.Raise(Missions.MissionEvents.Run);
+                Missions.MissionEvents.Raise(Missions.MissionEvents.DailyChallenge);
+            }
+            else
+            {
+                save.dailyChallenge.bestPractice = Mathf.Max(save.dailyChallenge.bestPractice, score);
+            }
+
+            SaveSystem.Save();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine(official ? "<color=#FFD966>공식 도전 기록</color>" : "<color=#A9B4C2>연습 (기록·보상 없음)</color>");
+            sb.AppendLine($"점수  <b>{score}</b>");
+            sb.AppendLine($"<size=85%>깬 방 {rooms} × 100 · 처치 {experience.Kills} · 남은 체력 {Mathf.RoundToInt(hp * 100f)}% × 2{(victory ? $" · 클리어 500 · 시간 보너스 {Mathf.Max(0, 600 - Mathf.CeilToInt(seconds)) * 2}" : string.Empty)}</size>");
+            if (save.dailyChallenge.officialDone) sb.AppendLine($"오늘의 공식 기록  {save.dailyChallenge.officialScore}점");
+            if (save.dailyChallenge.bestPractice > 0) sb.AppendLine($"<size=85%>연습 최고  {save.dailyChallenge.bestPractice}점</size>");
+            sb.AppendLine($"<size=85%>오늘의 변형: {string.Join(" / ", Modes.DailyRules.ModifiersFor(save.dailyChallenge.dayKey).ConvertAll(Modes.DailyRules.ModifierText))}</size>");
+            if (lines.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("<color=#FFD966>받은 것</color>");
+                foreach (string line in lines) sb.AppendLine("  " + line);
+            }
+
+            StartCoroutine(ShowTextAfter(victory ? 1.2f : 0.8f, victory ? "일일 도전 클리어!" : "일일 도전 끝", sb.ToString(), "연습 한 번 더", () => GameSession.StartDaily(false)));
+        }
+
+        private IEnumerator ShowTextAfter(float seconds, string title, string body, string primary, System.Action onPrimary)
+        {
+            yield return new WaitForSeconds(seconds);
+            result.ShowText(title, body, primary, onPrimary, "로비로", GameSession.ToLobby);
+        }
+
         /// <summary>골드 (Economy 4장), 계정 경험치 (Stats 7장), 별 (Modes 3-2), 별 상자</summary>
         private List<string> GrantRewards(bool victory, int roomsCleared)
         {
@@ -499,7 +866,7 @@ namespace HistoryHeroes.Dungeon
         private void ShowHitCounter()
         {
             int chapter = GameSession.Chapter;
-            bool challenge = !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2);
+            bool challenge = !_rift && !_daily && !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2); // 균열·일일 도전은 별이 없다
             hud.SetHitCounter(challenge, () => _hitsTaken, Stars.DungeonHitLimit(chapter));
         }
 

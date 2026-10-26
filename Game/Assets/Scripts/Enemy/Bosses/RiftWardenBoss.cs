@@ -68,6 +68,9 @@ namespace HistoryHeroes.Enemy
         private float _secondRingTimer;
 
         public int Phase => _phase;
+
+        /// <summary>무한의 균열 버전: 2단계(파동)부터</summary>
+        public bool RiftVersion { get; set; }
         public override bool CanBeKnockedBack => false;
         public Pattern CurrentPattern => _pattern;
 
@@ -107,7 +110,7 @@ namespace HistoryHeroes.Enemy
         {
             base.Spawn(target, hpMultiplier, atkMultiplier, false);
             transform.localScale = Vector3.one * bossScale;
-            _phase = 1;
+            _phase = RiftVersion ? 2 : 1;
             _step = 0;
             Enter(State.Approach, walkTime);
         }

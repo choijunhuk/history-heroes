@@ -189,7 +189,7 @@ MonoBehaviour:
     eventKey: rift_floor5
     target: 1
     points: 20
-    gate: 4
+    gate: 5
     modeMission: 1
     days: 64
     distinct: 0
@@ -200,7 +200,7 @@ MonoBehaviour:
     eventKey: daily_challenge
     target: 1
     points: 15
-    gate: 4
+    gate: 5
     modeMission: 1
     days: 127
     distinct: 0
@@ -265,7 +265,8 @@ MonoBehaviour:
     heroOfDay: 0
     fallbackId: fusion3
   - id: survival20
-    title: "\uC11C\uBC14\uC774\uBC8C \uD569\uACC4 20\uBD84 \uD50C\uB808\uC774"
+    title: "\uC11C\uBC14\uC774\uBC8C\xB7\uBB34\uD55C\uC758 \uADE0\uC5F4 \uD569\uACC4
+      20\uBD84 \uD50C\uB808\uC774"
     eventKey: survival_sec
     target: 1200
     points: 20
@@ -467,6 +468,20 @@ MonoBehaviour:
     kind: 13
     targets: 010000000a000000
     gems: 3200000064000000
+  - id: rift
+    title: "\uADE0\uC5F4 \uD0D0\uD5D8\uAC00"
+    category: "\uBAA8\uB4DC"
+    goal: "\uBB34\uD55C\uC758 \uADE0\uC5F4 {0}\uCE35"
+    kind: 14
+    targets: 14000000280000003c00000050000000
+    gems: 1e0000003c0000006400000096000000
+  - id: daily
+    title: "\uB9E4\uC77C\uC758 \uB3C4\uC804\uC790"
+    category: "\uBAA8\uB4DC"
+    goal: "\uC77C\uC77C \uB3C4\uC804 \uCC38\uC5EC {0}\uC77C"
+    kind: 15
+    targets: 070000001e00000064000000
+    gems: 1e0000005000000096000000
   heroOrder:
   - khan
   - guan

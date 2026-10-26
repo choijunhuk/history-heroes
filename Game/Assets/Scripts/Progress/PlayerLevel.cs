@@ -27,6 +27,13 @@ namespace HistoryHeroes.Progress
             _baseRequirement = baseRequirement;
         }
 
+        /// <summary>균열 이어하기: 레벨·경험치를 그대로 되살린다 (레벨업 알림 없이)</summary>
+        public void Restore(int level, float experience)
+        {
+            Level = Mathf.Max(1, level);
+            Experience = Mathf.Max(0f, experience);
+        }
+
         /// <summary>확정 레벨업 (엘리트 처치 보상, Content.md 2-2). 남은 필요량만큼 채워서 1레벨 올린다.</summary>
         public void GrantLevel()
         {

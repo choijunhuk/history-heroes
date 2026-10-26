@@ -63,6 +63,12 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button missionButton;
         [SerializeField] private TMP_Text missionLabel;
         [SerializeField] private MissionPanel missions;
+        [Header("v0.6 무한의 균열 · 일일 도전")]
+        [SerializeField] private Button riftButton;
+        [SerializeField] private TMP_Text riftButtonLabel;
+        [SerializeField] private Button dailyButton;
+        [SerializeField] private TMP_Text dailyButtonLabel;
+        [SerializeField] private ModeInfoPanel modeInfo;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -85,6 +91,12 @@ namespace HistoryHeroes.UI
             if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
             if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
             if (missionButton != null) missionButton.onClick.AddListener(() => missions.Open(Render));
+            if (riftButton != null) riftButton.onClick.AddListener(OpenRift);
+            if (dailyButton != null) dailyButton.onClick.AddListener(OpenDaily);
+
+            // 균열 주간 시즌 · 일일 도전 날짜가 바뀌었으면 새로
+            if (RiftRules.EnsureWeek(data, Clock.Now())) SaveSystem.MarkDirty();
+            if (DailyRules.EnsureDay(data, Clock.Now())) SaveSystem.MarkDirty();
 
             // 미션 (v0.5): 날·주가 바뀌었으면 새로, "게임 접속" 미션
             if (metaTable != null && metaTable.missions != null)
@@ -258,6 +270,7 @@ namespace HistoryHeroes.UI
             bossButtonLabel.text = boss == null ? "보스 준비 중" : hasRecord ? "보스 도전" : "보스 도전 (기록이 있어야 해요)";
             archiveButtonLabel.text = $"기록 보관함  {records}/{data.recordSlots}";
             RenderSurvival(data);
+            RenderRiftAndDaily(data);
             if (missionLabel != null && metaTable != null && metaTable.missions != null)
             {
                 int ready = Missions.MissionService.ClaimableCount(data, metaTable.missions, Missions.MissionEvents.Context);
@@ -286,6 +299,116 @@ namespace HistoryHeroes.UI
             string dev = GameSession.SurvivalUnlockedByProgress(data) ? "" : " · 개발용 해금";
             string record = best > 0f ? $"최고 {Survival.SurvivalRun.Format(best)}" : "10분 버티기";
             survivalButtonLabel.text = $"서바이벌\n<size=60%>{record} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
+        }
+
+        // ---------------------------------------------------------------- v0.6 무한의 균열 · 일일 도전
+
+        /// <summary>3구간 보스를 깨야 열린다 (개발 빌드는 늘 열림)</summary>
+        private static bool ModeOpen(SaveData data) => RiftRules.Unlocked(data) || Debug.isDebugBuild;
+
+        private void RenderRiftAndDaily(SaveData data)
+        {
+            bool progress = RiftRules.Unlocked(data);
+            string dev = progress ? string.Empty : " · 개발용 해금";
+            if (riftButtonLabel != null)
+            {
+                riftButtonLabel.text = !ModeOpen(data) ? "무한의 균열\n<size=60%>3구간 보스를 깨면 열려요</size>"
+                    : data.rift.weeklyBest > 0 ? $"무한의 균열\n<size=60%>이번 주 {data.rift.weeklyBest}층{dev}</size>"
+                    : $"무한의 균열\n<size=60%>하트 없음 · 끝없는 층{dev}</size>";
+            }
+
+            if (dailyButtonLabel != null)
+            {
+                dailyButtonLabel.text = !ModeOpen(data) ? "일일 도전\n<size=60%>3구간 보스를 깨면 열려요</size>"
+                    : data.dailyChallenge.officialDone ? $"일일 도전\n<size=60%>오늘 {data.dailyChallenge.officialScore}점{dev}</size>"
+                    : $"일일 도전\n<size=60%><color=#FFD966>오늘 도전 가능</color>{dev}</size>";
+            }
+        }
+
+        private void OpenRift()
+        {
+            SaveData data = SaveSystem.Data;
+            if (!ModeOpen(data))
+            {
+                ShowNotice("3구간 보스를 깨면 무한의 균열이 열려요");
+                return;
+            }
+
+            RiftRules.EnsureWeek(data, Clock.Now());
+            RiftSave rift = data.rift;
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("<size=85%>층마다 방 1개 · 5층마다 엘리트 (깨면 보상 고르기) · 10층마다 보스 (체크포인트)");
+            sb.AppendLine("적은 층마다 강해져요 · 하트 없음 · 기록은 남지 않아요");
+            sb.AppendLine("스킬을 다 키우면 \"균열 강화\" 카드가 끝없이 나와요</size>");
+            sb.AppendLine();
+            sb.AppendLine($"이번 주 최고  <b>{rift.weeklyBest}층</b>   ·   역대 최고  {rift.bestEver}층");
+            sb.AppendLine($"<color=#FFD966>{RiftRules.VariantText(RiftRules.VariantFor(rift.weekKey))}</color>");
+            sb.AppendLine();
+            sb.AppendLine("이번 주 층 보상 (주 1회씩)");
+            foreach (int m in RiftRules.Milestones)
+            {
+                Reward r = RiftRules.RewardFor(m, out int shards);
+                string text = r.ToString();
+                if (shards > 0) text += (text.Length > 0 ? " · " : string.Empty) + $"고대 파편 {shards}";
+                string state = rift.rewardsClaimed.Contains(m) ? "<color=#7FD17F>받음</color>" : "<color=#A9B4C2>아직</color>";
+                sb.AppendLine($"  {m}층  {text}   {state}");
+            }
+
+            sb.AppendLine();
+            RiftCheckpoint cp = rift.checkpoint;
+            HeroData cpHero = cp.valid ? roster.Find(cp.heroId) : null;
+            sb.AppendLine(cp.valid ? $"체크포인트  {cp.floor}층 보스 격파 ({(cpHero != null ? cpHero.displayName : cp.heroId)}, Lv {cp.level})" : "체크포인트  없음 (10층 보스를 깨면 생겨요)");
+            sb.AppendLine("<size=85%><color=#A9B4C2>매주 월요일 05:00에 이번 주 기록·체크포인트가 초기화돼요</color></size>");
+
+            HeroData hero = HeroUnlock.Selected(data, roster);
+            string start = hero != null ? $"1층부터 ({hero.displayName})" : "1층부터";
+            modeInfo.Open("무한의 균열", sb.ToString(), start, true, () => GameSession.TryStartRift(false),
+                cp.valid ? $"{cp.floor + 1}층부터 이어하기" : "이어하기 (없음)", cp.valid, () => GameSession.TryStartRift(true), Render);
+        }
+
+        private void OpenDaily()
+        {
+            SaveData data = SaveSystem.Data;
+            if (!ModeOpen(data))
+            {
+                ShowNotice("3구간 보스를 깨면 일일 도전이 열려요");
+                return;
+            }
+
+            DailyRules.EnsureDay(data, Clock.Now());
+            DailySave daily = data.dailyChallenge;
+            string day = daily.dayKey;
+            HeroData hero = roster.Find(DailyRules.HeroFor(day, roster.heroes.ConvertAll(h => h.id)));
+            int chapter = DailyRules.ChapterFor(day);
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"오늘의 영웅  <b>{(hero != null ? $"{hero.displayName} ({hero.ClassLabel})" : "?")}</b>");
+            sb.AppendLine($"{ChapterTitle(chapter)}  ·  방 7개");
+            sb.AppendLine("<size=85%>일반 4 · 엘리트 · 보상 · 중간 보스 — 모두 같은 판이에요</size>");
+            sb.AppendLine("<size=85%>고정 세트: 영웅 Lv15 ★1 · 고급 장비 (강화 0) · 수련·유물·펫·룬 없음</size>");
+            sb.AppendLine();
+            sb.AppendLine("<color=#FFD966>오늘의 변형</color>");
+            foreach (DailyRules.Modifier m in DailyRules.ModifiersFor(day)) sb.AppendLine("  · " + DailyRules.ModifierText(m));
+            sb.AppendLine();
+            sb.AppendLine($"공식 도전 하루 1번 (첫 시도가 기록) → 골드 {Wallet.Format(DailyRules.RewardGold)} + 영웅 조각 {DailyRules.RewardHeroShards}");
+            sb.AppendLine(daily.officialDone ? $"오늘 공식 기록  <b>{daily.officialScore}점</b>" : "오늘 공식 기록  아직");
+            if (daily.bestPractice > 0) sb.AppendLine($"<size=85%>연습 최고  {daily.bestPractice}점</size>");
+            sb.AppendLine($"<size=85%>점수 = 깬 방 ×100 + 처치 + 남은 체력% ×2 + 클리어 500 + 빨리 깬 보너스</size>");
+            if (daily.history.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"지난 기록 (참여 {daily.participations}일)");
+                for (int i = 0; i < daily.history.Count && i < 5; i++)
+                {
+                    DailyResult r = daily.history[i];
+                    HeroData h = roster.Find(r.heroId);
+                    string date = r.dayKey != null && r.dayKey.Length >= 10 ? r.dayKey.Substring(5) : r.dayKey;
+                    sb.AppendLine($"<size=85%>  {date}  {(h != null ? h.displayName : r.heroId)}  {r.score}점{(r.cleared ? "  클리어" : string.Empty)}</size>");
+                }
+            }
+
+            modeInfo.Open("일일 도전", sb.ToString(), daily.officialDone ? "공식 도전 (오늘 완료)" : "공식 도전", !daily.officialDone, () => GameSession.TryStartDaily(true),
+                "연습\n<size=60%>기록·보상 없음</size>", true, () => GameSession.TryStartDaily(false), Render);
         }
 
         private void OpenBoss()

@@ -36,7 +36,7 @@ MonoBehaviour:
   trap: 5
   midBoss: {fileID: 6894294411169155086, guid: e418707f1ec2d5f4bae5dc59f2b8ffc6, type: 3}
   midBossName: "\uB9DD\uAC01\uC758 \uC9D1\uD589\uC790"
-  midBossHp: 18
+  midBossHp: 100
   midBossAttack: 1.2
   enhanced: 1
   enhancedHp: 1.25
