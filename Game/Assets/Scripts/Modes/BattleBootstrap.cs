@@ -79,8 +79,19 @@ namespace HistoryHeroes.Modes
             }
 
             if (GameSession.Mode == BattleMode.Daily) return DailyRules.FixedSet(); // 공정한 고정 세트 (펫·유물·수련 없음)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (DevMeta != null) return DevMeta; // 벤치: 정해 둔 판 밖 성장
+#endif
             return Meta.MetaStats.FromAccount(save, table, heroId);
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>벤치용: 던전·서바이벌·균열의 판 밖 성장을 이 값으로 (null = 계정 그대로)</summary>
+        public static MetaSnapshot DevMeta;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDev() => DevMeta = null;
+#endif
 
         private void Awake()
         {

@@ -133,6 +133,72 @@ namespace HistoryHeroes.Enemy
             body.linearVelocity = status.IsPulled ? Vector2.zero : direction.normalized * speed * status.SpeedMultiplier;
         }
 
+        // ---------------------------------------------------------------- 걷기 (장애물 돌아가기, v0.6 레이아웃)
+
+        private static readonly RaycastHit2D[] SteerHits = new RaycastHit2D[2];
+        private static ContactFilter2D _steerFilter;
+        private static bool _steerReady;
+        private Vector2 _steerWant, _steerDir;
+        private float _steerUntil;
+        private int _steerSide = 1;
+
+        /// <summary>
+        /// 걸어서 다가가기·물러나기: 앞에 기둥·벽이 있으면 옆으로 미끄러져 돌아간다 (길찾기 없이, 0.15초마다 다시 본다).
+        /// 돌진·덮치기·밀치기는 MoveToward 그대로 (예고선과 같은 길).
+        /// </summary>
+        protected void Walk(Vector2 direction, float speed)
+        {
+            if (direction.sqrMagnitude < 0.0001f)
+            {
+                MoveToward(direction, speed);
+                return;
+            }
+
+            Vector2 want = direction.normalized;
+            if (Time.time >= _steerUntil || Vector2.Dot(want, _steerWant) < 0.9f)
+            {
+                _steerWant = want;
+                _steerDir = Steer(want);
+                _steerUntil = Time.time + 0.15f;
+            }
+
+            MoveToward(_steerDir, speed);
+        }
+
+        private Vector2 Steer(Vector2 dir)
+        {
+            if (!_steerReady)
+            {
+                _steerFilter = new ContactFilter2D { useLayerMask = true, layerMask = LayerMask.GetMask("Wall") | 1, useTriggers = false };
+                _steerReady = true;
+            }
+
+            float radius = Mathf.Max(0.2f, 0.4f * transform.localScale.x);
+            if (Clear(dir, radius)) return dir;
+            for (int k = 1; k <= 3; k++)
+            {
+                Vector2 a = Rotate(dir, 40f * k * _steerSide);
+                if (Clear(a, radius)) return a;
+                Vector2 b = Rotate(dir, -40f * k * _steerSide);
+                if (Clear(b, radius))
+                {
+                    _steerSide = -_steerSide; // 그쪽으로 계속 돌아간다 (왔다 갔다 하지 않게)
+                    return b;
+                }
+            }
+
+            return dir;
+        }
+
+        private bool Clear(Vector2 dir, float radius) => Physics2D.CircleCast(body.position, radius, dir, _steerFilter, SteerHits, 0.7f) == 0;
+
+        private static Vector2 Rotate(Vector2 v, float degrees)
+        {
+            float r = degrees * Mathf.Deg2Rad;
+            float c = Mathf.Cos(r), s = Mathf.Sin(r);
+            return new Vector2(v.x * c - v.y * s, v.x * s + v.y * c);
+        }
+
         private static int _wallMask = -1;
 
         /// <summary>from에서 direction으로 maxDistance까지 가되 벽에 닿으면 그 자리 (예고선이 벽 밖·HUD까지 뻗지 않게)</summary>

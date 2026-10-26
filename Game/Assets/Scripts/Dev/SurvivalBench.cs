@@ -200,6 +200,10 @@ namespace HistoryHeroes.Dev
         private float _stopped, _total;
         private Vector2 _lastMove = Vector2.up;
         private int _wallMask;
+        private int _highWallMask;
+
+        /// <summary>방(던전·균열)용: 위험이 없는데 사거리 안에 적이 없으면 가까운 적에게 다가간다 (서바이벌은 적이 알아서 온다)</summary>
+        public bool Approach { get; set; }
 
         /// <summary>판 전체에서 멈춰 있던 비율</summary>
         public float StopShare => _total > 0f ? _stopped / _total : 0f;
@@ -212,6 +216,7 @@ namespace HistoryHeroes.Dev
             _god = god;
             _random = new System.Random(seed);
             _wallMask = LayerMask.GetMask("Wall") | 1; // 바위 + 연못(Default)
+            _highWallMask = LayerMask.GetMask("Wall"); // 쏜 것을 막는 벽
         }
 
         private void Update()
@@ -303,12 +308,20 @@ namespace HistoryHeroes.Dev
                 // 근접 영웅은 무리 속으로 들어가 베야 한다 → 몰림 기준을 사거리에 맞춰 높인다
                 float crowd = CrowdThreshold * Mathf.Clamp(4f / Mathf.Max(1f, range), 1f, 2.5f);
                 bool danger = closest < tooClose || push.magnitude > crowd;
-                if (!danger) return Vector2.zero; // 여유 → 멈춰서 쏜다
-
-                Vector2 away = push.sqrMagnitude > 0.0001f ? push.normalized : _lastMove;
-                // 그냥 뒤로만 가면 구석에 몰린다 → 옆으로 조금 돌면서
-                Vector2 side = new Vector2(-away.y, away.x);
-                dir = (away + side * 0.6f).normalized;
+                if (!danger)
+                {
+                    Vector2 target = Approach ? NearestEnemyOffset(me) : Vector2.zero;
+                    bool seen = target == Vector2.zero || Physics2D.Raycast(me, target.normalized, target.magnitude, _highWallMask).collider == null;
+                    if (target.magnitude < range * 0.85f && seen) return Vector2.zero; // 여유 → 멈춰서 쏜다
+                    dir = target.normalized; // 사거리 밖이거나 높은 벽에 가렸다 → 다가간다
+                }
+                else
+                {
+                    Vector2 away = push.sqrMagnitude > 0.0001f ? push.normalized : _lastMove;
+                    // 그냥 뒤로만 가면 구석에 몰린다 → 옆으로 조금 돌면서
+                    Vector2 side = new Vector2(-away.y, away.x);
+                    dir = (away + side * 0.6f).normalized;
+                }
             }
 
             // 맵 가장자리에서는 가운데 쪽으로
@@ -326,6 +339,26 @@ namespace HistoryHeroes.Dev
 
             _lastMove = dir;
             return dir;
+        }
+
+        private static Vector2 NearestEnemyOffset(Vector2 me)
+        {
+            Vector2 best = Vector2.zero;
+            float bestSqr = float.MaxValue;
+            IReadOnlyList<EnemyBase> alive = EnemyBase.Alive;
+            for (int i = 0; i < alive.Count; i++)
+            {
+                EnemyBase e = alive[i];
+                if (e == null || e.Health.IsDead) continue;
+                Vector2 d = (Vector2)e.transform.position - me;
+                if (d.sqrMagnitude < bestSqr)
+                {
+                    bestSqr = d.sqrMagnitude;
+                    best = d;
+                }
+            }
+
+            return best;
         }
 
         /// <summary>가까운 보석 쪽 (없으면 0 = 계속 멈춤)</summary>

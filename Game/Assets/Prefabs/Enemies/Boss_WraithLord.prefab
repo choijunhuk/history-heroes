@@ -215,11 +215,12 @@ MonoBehaviour:
     m_Bits: 1024
   openingRing: {fileID: 1657371422582669229}
   minion: {fileID: 5576645427100197428, guid: 537f6b4890e94d540973403966c59fe2, type: 3}
-  maxMinions: 8
+  maxMinions: 12
+  minionHpScale: 0.35
   ringShards: 10
   ringSpeed: 4.5
-  wardPerMinion: 0.12
-  wardMax: 0.6
+  wardPerMinion: 0.15
+  wardMax: 0.9
 --- !u!1 &1100568824202605425
 GameObject:
   m_ObjectHideFlags: 0

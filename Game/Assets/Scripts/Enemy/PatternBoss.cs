@@ -154,7 +154,7 @@ namespace HistoryHeroes.Enemy
             float end = bossTime + seconds;
             while (bossTime < end)
             {
-                if (ToPlayer.magnitude > keepDistance) MoveToward(ToPlayer, data.moveSpeed);
+                if (ToPlayer.magnitude > keepDistance) Walk(ToPlayer, data.moveSpeed);
                 else body.linearVelocity = Vector2.zero;
                 yield return null;
             }

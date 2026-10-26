@@ -37,8 +37,8 @@ namespace HistoryHeroes.Enemy
             {
                 case State.Approach:
                     float d = ToPlayer.magnitude;
-                    if (d < fleeDistance) MoveToward(-ToPlayer, data.moveSpeed);
-                    else if (d > approachDistance) MoveToward(ToPlayer, data.moveSpeed);
+                    if (d < fleeDistance) Walk(-ToPlayer, data.moveSpeed);
+                    else if (d > approachDistance) Walk(ToPlayer, data.moveSpeed);
                     else body.linearVelocity = Vector2.zero;
 
                     _cooldown -= Time.deltaTime;

@@ -51,7 +51,7 @@ namespace HistoryHeroes.Enemy
             {
                 case State.Approach:
                     Turn(ToPlayer, turnSpeed);
-                    MoveToward(_facing, data.moveSpeed);
+                    Walk(_facing, data.moveSpeed);
                     if (ToPlayer.magnitude <= bashRange) Enter(State.Telegraph, data.telegraphTime * TelegraphScale);
                     break;
 

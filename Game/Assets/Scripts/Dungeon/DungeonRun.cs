@@ -351,8 +351,8 @@ namespace HistoryHeroes.Dungeon
             if (_riftBoss is PatternBoss pattern)
             {
                 pattern.RiftVersion = true;
-                pattern.MinionHp = RoomHpMultiplier();
-                pattern.MinionAttack = RoomAttackMultiplier();
+                pattern.MinionHp = RoomHpMultiplier() * Modes.RiftRules.BossMinionHpFactor;
+                pattern.MinionAttack = RoomAttackMultiplier() * Modes.RiftRules.BossMinionAttackFactor;
             }
 
             if (_riftBoss is RiftWardenBoss warden) warden.RiftVersion = true;

@@ -21,8 +21,12 @@ namespace HistoryHeroes.Modes
         public static float AttackScale(int floor) => Mathf.Pow(1.04f, Mathf.Max(0, floor));
 
         /// <summary>균열 보스 체력 = 보스맵 배수 × 이 값 × 1.06^층 (보스맵은 완성된 기록, 균열은 그 층의 빌드라서)</summary>
-        public const float BossHpFactor = 0.25f;
+        public const float BossHpFactor = 0.22f;
         public const float BossAttackFactor = 0.7f;
+
+        /// <summary>균열 보스 졸개 = 그 층 일반 적 배수 × 이 값 (균열 벤치: 20층 망령 군주에서 셋 중 셋이 졸개에 쓰러짐)</summary>
+        public const float BossMinionHpFactor = 0.8f;
+        public const float BossMinionAttackFactor = 0.75f;
 
         public static bool IsBossFloor(int floor) => floor > 0 && floor % 10 == 0;
         public static bool IsEliteFloor(int floor) => floor > 0 && floor % 5 == 0 && !IsBossFloor(floor);

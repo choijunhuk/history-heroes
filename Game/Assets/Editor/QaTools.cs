@@ -264,6 +264,22 @@ namespace HistoryHeroes.EditorTools
 
         public static string SurvivalBenchStatus() => Dev.SurvivalBench.Report();
 
+        /// <summary>
+        /// v0.6 무한의 균열 벤치: 영웅마다 1층부터 자동 조종으로 쓰러질 때까지 (Modes 4-3 목표 20~30층).
+        /// meta: MetaPreset 이름 (none/week/month/max). 예: RiftBench("khan,guan,napoleon,tesla", "month", 4f, 60) → RiftBenchStatus()
+        /// </summary>
+        public static string RiftBench(string heroes = "khan,guan,napoleon,tesla", string meta = "month", float speed = 4f, int maxFloor = 60, int dungeonChapter = 0)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            var list = new List<string>();
+            foreach (string h in heroes.Split(',')) list.Add(h.Trim());
+            return Dev.RiftBench.Begin(list, MetaPreset(meta), speed, maxFloor, db, dungeonChapter);
+        }
+
+        public static string RiftBenchStatus() => Dev.RiftBench.Report();
+
         // ---------------------------------------------------------------- v0.4 판 밖 성장
 
         /// <summary>
@@ -428,6 +444,9 @@ namespace HistoryHeroes.EditorTools
                     break;
                 case "storm": // 번개 광역형
                     Add("thunder_fire", 1, true); Add("hp_up", 3); Add("atk_up", 2); Add("aspd_up", 1);
+                    break;
+                case "aoe": // 광역 여럿 (조합 없이, 21pt): 낙뢰 + 불꽃 장판 + 독 구름
+                    Add("lightning", 3); Add("flame_field", 2); Add("poison_cloud", 2); Add("atk_up", 3); Add("aspd_up", 1);
                     break;
                 case "sloppy": // 대충 고른 빌드: 보스에 별 도움 안 되는 것들 (같은 크기 21pt)
                     Add("exp_up", 3); Add("move_up", 3); Add("regen", 3); Add("ice_shard", 2); Add("poison_cloud", 2); Add("guard_shield", 2);

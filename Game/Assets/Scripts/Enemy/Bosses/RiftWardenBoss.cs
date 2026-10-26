@@ -135,7 +135,7 @@ namespace HistoryHeroes.Enemy
             switch (state)
             {
                 case State.Approach:
-                    if (ToPlayer.magnitude > keepDistance) MoveToward(ToPlayer, data.moveSpeed);
+                    if (ToPlayer.magnitude > keepDistance) Walk(ToPlayer, data.moveSpeed);
                     else body.linearVelocity = Vector2.zero;
                     if (stateTimer <= 0f) BeginPattern(NextPattern());
                     break;

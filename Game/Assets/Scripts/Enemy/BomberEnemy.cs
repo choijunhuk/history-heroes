@@ -28,7 +28,7 @@ namespace HistoryHeroes.Enemy
                 case State.Approach:
                     if (ToPlayer.magnitude > throwDistance)
                     {
-                        MoveToward(ToPlayer, data.moveSpeed);
+                        Walk(ToPlayer, data.moveSpeed);
                     }
                     else
                     {

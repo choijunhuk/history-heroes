@@ -195,9 +195,15 @@ namespace HistoryHeroes.Dungeon
             int n = Overlap(transform.position, _size, _angle);
             for (int i = 0; i < n; i++)
             {
-                if (_hits[i].attachedRigidbody != null) _hits[i].attachedRigidbody.position += dir * 2.2f * dt;
+                if (_hits[i].attachedRigidbody == null) continue;
+                // 적은 약하게 민다: 느린 적(방패병 1.3 · 증기 골렘 1.1)도 거슬러 건널 수 있게 (2.2로 밀면 띠 끝에 영영 붙는다)
+                bool enemy = _hits[i].TryGetComponent(out Health h) && h.Team == Team.Enemy;
+                _hits[i].attachedRigidbody.position += dir * ConveyorSpeed * (enemy ? EnemyConveyorScale : 1f) * dt;
             }
         }
+
+        private const float ConveyorSpeed = 2.2f;
+        private const float EnemyConveyorScale = 0.35f;
 
         private void TickRockfall(float t)
         {
