@@ -333,5 +333,115 @@ namespace HistoryHeroes.Tests
                 Directory.Delete(folder, true);
             }
         }
+
+        [Test]
+        public void BossRewards_GivenOnceEvenForOldSaves()
+        {
+            Make("weapon_general_r", EquipSlot.Weapon, EquipRarity.Rare, StatType.CritDamage, 0.10f);
+            var save = new SaveData { unlockedChapter = 2 }; // 장비가 생기기 전에 1구간 보스를 깬 저장
+            save.defeatedBosses.Add("rift_warden");
+            List<string> lines = EquipmentInventory.GrantBossRewards(save, _table);
+            Assert.AreEqual(1, lines.Count);
+            Assert.IsTrue(EquipmentInventory.Owns(save, "weapon_general_r"));
+            Assert.AreEqual(0, EquipmentInventory.GrantBossRewards(save, _table).Count, "한 번만");
+            Assert.AreEqual(0, EquipmentInventory.GrantBossRewards(new SaveData(), _table).Count, "보스를 안 깼으면 없음");
+        }
+
+        // ---------------------------------------------------------------- 상자 (Gacha 2장)
+
+        private GachaTable Gacha()
+        {
+            var g = ScriptableObject.CreateInstance<GachaTable>();
+            g.equipment = _table;
+            return g;
+        }
+
+        private static System.Func<float> Always(float v) => () => v;
+
+        [Test]
+        public void Premium_FiftiethPullIsLegendary_PityResets()
+        {
+            SaveData save = Unlocked();
+            GachaTable g = Gacha();
+            List<GachaService.Pull> pulls = GachaService.Open(save, g, g.premium, 49, 0, Always(0.1f)); // 0.1 = 일반
+            Assert.IsFalse(pulls.Exists(p => p.Data.rarity == EquipRarity.Legendary));
+            Assert.AreEqual(49, save.gacha.premiumPity);
+            Assert.AreEqual(1, GachaService.PullsUntilPity(save, g.premium), "전설 확정까지 1회");
+
+            GachaService.Pull fiftieth = GachaService.Open(save, g, g.premium, 1, 0, Always(0.1f))[0];
+            Assert.AreEqual(EquipRarity.Legendary, fiftieth.Data.rarity);
+            Assert.IsTrue(fiftieth.FromPity);
+            Assert.AreEqual(0, save.gacha.premiumPity, "전설이 나오면 0으로");
+
+            // 운 좋게 나온 전설도 카운터를 0으로
+            save.gacha.premiumPity = 20;
+            Assert.AreEqual(EquipRarity.Legendary, GachaService.Open(save, g, g.premium, 1, 0, Always(0.99f))[0].Data.rarity);
+            Assert.AreEqual(0, save.gacha.premiumPity);
+        }
+
+        [Test]
+        public void Premium_TenPull_GuaranteesRareOrBetter_PityComesFirst()
+        {
+            SaveData save = Unlocked();
+            GachaTable g = Gacha();
+            List<GachaService.Pull> ten = GachaService.Open(save, g, g.premium, 10, 0, Always(0.1f));
+            Assert.AreEqual(10, ten.Count);
+            Assert.IsTrue(ten[9].FromTenGuarantee);
+            Assert.AreEqual(EquipRarity.Rare, ten[9].Data.rarity, "보장 표에서 0.1 = 희귀");
+
+            // 도중에 천장에 닿으면 그 장이 전설 → 10번째 보장은 필요 없다
+            save.gacha.premiumPity = 45;
+            ten = GachaService.Open(save, g, g.premium, 10, 0, Always(0.1f));
+            Assert.IsTrue(ten[4].FromPity);
+            Assert.AreEqual(EquipRarity.Legendary, ten[4].Data.rarity);
+            Assert.IsFalse(ten[9].FromTenGuarantee);
+            Assert.AreEqual(5, save.gacha.premiumPity, "전설 뒤 5장");
+        }
+
+        [Test]
+        public void Normal_NoPity_NoLegendary_FreeOncePerDay()
+        {
+            SaveData save = Unlocked();
+            GachaTable g = Gacha();
+            Assert.AreEqual(EquipRarity.Rare, GachaService.Open(save, g, g.normal, 1, 0, Always(0.995f))[0].Data.rarity, "일반 상자엔 전설이 없다");
+            Assert.AreEqual(0, save.gacha.premiumPity, "일반 상자는 천장 카운터를 안 쓴다");
+            Assert.AreEqual(-1, GachaService.PullsUntilPity(save, g.normal));
+
+            Assert.IsTrue(GachaService.TryPay(save, g, g.normal, 1, GachaService.Pay.FreeAd, "2026-10-26"));
+            Assert.IsFalse(GachaService.TryPay(save, g, g.normal, 1, GachaService.Pay.FreeAd, "2026-10-26"), "하루 1번");
+            Assert.IsTrue(GachaService.TryPay(save, g, g.normal, 1, GachaService.Pay.FreeAd, "2026-10-27"));
+            Assert.IsFalse(GachaService.TryPay(save, g, g.premium, 1, GachaService.Pay.FreeAd, "2026-10-28"), "고급 상자는 무료로 주지 않는다");
+        }
+
+        [Test]
+        public void Pay_GemsTicketsGold()
+        {
+            SaveData save = Unlocked();
+            GachaTable g = Gacha();
+            save.gemsFree = 2500;
+            Assert.IsTrue(GachaService.TryPay(save, g, g.premium, 10, GachaService.Pay.Gems, "d"));
+            Assert.AreEqual(250, save.gemsFree, "10연 2,250");
+            Assert.IsTrue(GachaService.TryPay(save, g, g.premium, 1, GachaService.Pay.Gems, "d"));
+            Assert.IsFalse(GachaService.TryPay(save, g, g.premium, 1, GachaService.Pay.Gems, "d"), "보석 부족");
+            Assert.IsFalse(GachaService.TryPay(save, g, g.premium, 1, GachaService.Pay.Ticket, "d"), "소환권 없음");
+            save.AddItem(Wallet.Ticket, 1);
+            Assert.IsTrue(GachaService.TryPay(save, g, g.premium, 1, GachaService.Pay.Ticket, "d"));
+            Assert.IsFalse(GachaService.TryPay(save, g, g.premium, 10, GachaService.Pay.Ticket, "d"), "소환권은 1회씩");
+            save.gold = 5000;
+            Assert.IsTrue(GachaService.TryPay(save, g, g.normal, 1, GachaService.Pay.Gold, "d"));
+            Assert.AreEqual(0, save.gold);
+        }
+
+        [Test]
+        public void RatesText_ComesFromTheSameTable()
+        {
+            GachaTable g = Gacha();
+            string text = GachaService.RatesText(g, g.premium);
+            StringAssert.Contains("전설 2%", text);
+            StringAssert.Contains("장비마다 0.333%", text, "전설 6종: 2% ÷ 6");
+            StringAssert.Contains("50번째", text);
+            g.premium.rarity = new[] { 0.48f, 0.35f, 0.13f, 0.04f };
+            StringAssert.Contains("전설 4%", GachaService.RatesText(g, g.premium), "표를 바꾸면 보이는 확률도 같이 바뀐다");
+        }
     }
 }

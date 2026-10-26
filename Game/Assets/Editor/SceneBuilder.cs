@@ -59,7 +59,8 @@ namespace HistoryHeroes.EditorTools
             var database = AssetDatabase.LoadAssetAtPath<Skills.SkillDatabase>($"{DataDir}/Skills/SkillDatabase.asset");
             var warden = AssetDatabase.LoadAssetAtPath<Modes.BossData>($"{DataDir}/Bosses/Boss_RiftWarden.asset");
             var roster = AssetDatabase.LoadAssetAtPath<Heroes.HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            BuildLobbyScene(lobby, database, new[] { warden }, roster);
+            var meta = AssetDatabase.LoadAssetAtPath<HistoryHeroes.Meta.MetaTable>($"{DataDir}/Meta/MetaTable.asset");
+            BuildLobbyScene(lobby, database, new[] { warden }, roster, meta);
             AssetDatabase.SaveAssets();
 
             // 앱은 로비에서 시작한다

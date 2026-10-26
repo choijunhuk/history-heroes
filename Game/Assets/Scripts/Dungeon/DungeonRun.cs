@@ -24,6 +24,8 @@ namespace HistoryHeroes.Dungeon
 
         [Header("장면")]
         [SerializeField] private PlayerController player;
+        [Tooltip("장비 드랍 (v0.4)")]
+        [SerializeField] private Meta.MetaTable metaTable;
         [SerializeField] private ExperienceSystem experience;
         [SerializeField] private SkillManager skills;
         [SerializeField] private Door door;
@@ -264,6 +266,13 @@ namespace HistoryHeroes.Dungeon
 
             AccountLevel.Result level = AccountLevel.AddExp(save, AccountLevel.DungeonExp(roomsCleared), Clock.UnixSeconds);
             lines.Add(RunText.Level(level));
+
+            // 장비 드랍 (Equipment 8장): 클리어하면 30%, 1구간 보스 격파 뒤부터
+            if (victory && metaTable != null && metaTable.equipment != null)
+            {
+                Equipment.EquipmentData drop = Equipment.EquipmentInventory.RollDungeonDrop(save, metaTable.equipment);
+                if (drop != null) lines.Add(Equipment.EquipmentInventory.AddLine(Equipment.EquipmentInventory.Add(save, metaTable.equipment, drop), drop));
+            }
 
             foreach (string star in Stars.EvaluateDungeon(save, chapter, victory, _hitsTaken, skills.ChoseLegendary)) lines.Add("새 별  " + star);
             Reward box = Stars.ClaimBoxes(save);

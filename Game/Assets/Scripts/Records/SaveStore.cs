@@ -267,6 +267,7 @@ namespace HistoryHeroes.Records
             }
 
             if (data.equipment.nextUid < 1) data.equipment.nextUid = 1;
+            data.equipment.bossRewardsGiven ??= new List<string>();
             data.heroProgress ??= new List<HeroProgress>();
             data.heroProgress.RemoveAll(h => h == null || string.IsNullOrEmpty(h.heroId));
             foreach (HeroProgress h in data.heroProgress)

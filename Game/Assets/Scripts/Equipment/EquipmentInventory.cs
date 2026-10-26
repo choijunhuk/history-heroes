@@ -271,6 +271,49 @@ namespace HistoryHeroes.Equipment
             return r;
         }
 
+        // ---------------------------------------------------------------- 보스 최초 격파 보상 (Equipment 8장)
+
+        /// <summary>구간 보스 최초 격파 장비 보상: 1구간 희귀 무기, 3구간 희귀 갑옷 (5구간 전설 선택은 5구간 보스가 생길 때)</summary>
+        public static string BossRewardFor(int chapter)
+        {
+            switch (chapter)
+            {
+                case 1: return "weapon_general_r";
+                case 3: return "armor_general_r";
+                default: return null;
+            }
+        }
+
+        /// <summary>
+        /// 깬 구간 보스의 장비 보상 중 아직 안 받은 것을 준다 (보스전 직후, 그리고 로비에서 한 번 더 — 옛 저장 대비).
+        /// 받은 줄 글자 목록을 돌려준다.
+        /// </summary>
+        public static List<string> GrantBossRewards(SaveData save, EquipmentTable table)
+        {
+            var lines = new List<string>();
+            if (table == null) return lines;
+            for (int chapter = 1; chapter < save.unlockedChapter; chapter++)
+            {
+                string key = "ch" + chapter;
+                string id = BossRewardFor(chapter);
+                if (id == null || save.equipment.bossRewardsGiven.Contains(key)) continue;
+                EquipmentData data = table.Find(id);
+                if (data == null) continue;
+                save.equipment.bossRewardsGiven.Add(key);
+                lines.Add(AddLine(Add(save, table, data), data));
+            }
+
+            return lines;
+        }
+
+        /// <summary>"장비  장군의 무기 (희귀)" / 자동 분해·가방이 찼으면 "장비 조각 +10"</summary>
+        public static string AddLine(AddResult r, EquipmentData data)
+        {
+            string name = $"<color={EquipmentText.RarityColor(data.rarity)}>{data.displayName} ({EquipmentText.RarityName(data.rarity)})</color>";
+            if (r.Item != null) return "장비  " + name;
+            return r.InventoryFull ? $"장비  {name} → 가방이 차서 장비 조각 +{r.Shards}" : $"장비  {name} → 중복이라 장비 조각 +{r.Shards}";
+        }
+
         // ---------------------------------------------------------------- 기록 스냅샷
 
         /// <summary>그 영웅이 지금 낀 장비 + 칸 강화 (등급 상한으로 자름). 기록에 고정 저장한다 (GameDesign 7-5)</summary>

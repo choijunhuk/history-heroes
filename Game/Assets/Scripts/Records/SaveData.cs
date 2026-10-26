@@ -231,6 +231,8 @@ namespace HistoryHeroes.Records
         public int nextUid = 1;
         /// <summary>희귀·전설 중복을 얻자마자 조각으로 (Equipment 9장 기본값 켜짐)</summary>
         public bool autoDismantle = true;
+        /// <summary>장비 보상을 받은 구간 보스 ("ch1" …). 장비가 생기기 전에 보스를 깬 저장도 로비에서 받게</summary>
+        public List<string> bossRewardsGiven = new List<string>();
     }
 
     [Serializable]

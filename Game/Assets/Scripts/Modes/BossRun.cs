@@ -22,6 +22,8 @@ namespace HistoryHeroes.Modes
     {
         [SerializeField] private List<BossData> bosses = new List<BossData>();
         [SerializeField] private SkillDatabase database;
+        [Tooltip("보스 최초 격파 장비 보상 (v0.4)")]
+        [SerializeField] private Meta.MetaTable metaTable;
 
         [Header("장면")]
         [SerializeField] private PlayerController player;
@@ -135,6 +137,7 @@ namespace HistoryHeroes.Modes
                     Reward reward = firstClear ? RunRewards.BossFirstClear(skills.HeroId) : RunRewards.BossRepeat(save, today);
                     Wallet.Grant(save, reward);
                     lines.Add(reward.IsEmpty ? "오늘 반복 격파 보상은 다 받았어요 (하루 3번)" : reward.ToString());
+                    if (firstClear && metaTable != null) lines.AddRange(Equipment.EquipmentInventory.GrantBossRewards(save, metaTable.equipment));
                 }
                 else if (!save.defeatedBosses.Contains(_info.id) && GameSession.HeartSpent)
                 {

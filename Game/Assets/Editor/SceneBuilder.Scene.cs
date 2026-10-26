@@ -150,6 +150,16 @@ namespace HistoryHeroes.EditorTools
                 props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player).Ref("metaTable", d.Meta);
             }
 
+            using (var props = new Props(Object.FindAnyObjectByType<DungeonRun>(FindObjectsInactive.Include)))
+            {
+                props.Ref("metaTable", d.Meta);
+            }
+
+            using (var props = new Props(Object.FindAnyObjectByType<BossRun>(FindObjectsInactive.Include)))
+            {
+                props.Ref("metaTable", d.Meta);
+            }
+
             var cheats = systems.AddComponent<Dev.DevCheats>();
             using (var props = new Props(cheats)) props.Ref("experience", experience).Ref("levelUp", ui.LevelUp).Ref("skills", skills);
             SetPresets(cheats, d);

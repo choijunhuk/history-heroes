@@ -12,7 +12,7 @@ namespace HistoryHeroes.EditorTools
     /// <summary>v0.2 로비 장면: 구간 고르기, 던전 / 보스 도전 / 기록 보관함 / 조합 도감 (UX.md 1장 축소판).</summary>
     public static partial class SceneBuilder
     {
-        private static void BuildLobbyScene(Scene scene, SkillDatabase database, BossData[] bosses, Heroes.HeroRoster roster)
+        private static void BuildLobbyScene(Scene scene, SkillDatabase database, BossData[] bosses, Heroes.HeroRoster roster, HistoryHeroes.Meta.MetaTable meta)
         {
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
             cameraObject.transform.position = new Vector3(0f, 0f, -10f);
@@ -84,7 +84,7 @@ namespace HistoryHeroes.EditorTools
                     .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)
                     .Ref("walletLabel", wallet).Ref("noticeLabel", notice)
                     .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("roster", roster).Ref("heroPanel", heroPanel)
-                    .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel);
+                    .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel).Ref("metaTable", meta);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
