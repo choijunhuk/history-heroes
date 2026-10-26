@@ -74,6 +74,14 @@ namespace HistoryHeroes.Enemy
         /// <summary>빈틈인가 (멈춰서 쏠 때)</summary>
         public bool IsOpen => state == State.Recover;
 
+        // 읽기만: 검증 벤치의 피하기 AI가 화면 예고와 같은 정보를 본다 (사람이 보는 원·선과 같음)
+        public bool IsTelegraphing => state == State.Telegraph;
+        public bool IsAttacking => state == State.Attack;
+        public Vector2 SlamCenter => _slamCenter;
+        public float SlamRadius => slamRadius;
+        public Vector2 ChargeDirection => _chargeDirection;
+        public float ChargeHitRadius => chargeHitRadius * transform.localScale.x;
+
         public event Action<int> PhaseChanged;
 
         protected override void Awake()

@@ -27,6 +27,19 @@ namespace HistoryHeroes.Common
 
         public static bool IsPaused => Requesters.Count > 0;
 
+        /// <summary>개발용 배속 (검증 벤치). 멈춤·느리게 규칙 위에 곱한다. 출시 빌드에서는 늘 1</summary>
+        public static float DevSpeed
+        {
+            get => _devSpeed;
+            set
+            {
+                _devSpeed = Mathf.Clamp(value, 0.1f, 8f);
+                Apply();
+            }
+        }
+
+        private static float _devSpeed = 1f;
+
         public static void Pause(object requester)
         {
             Requesters.Add(requester);
@@ -57,7 +70,7 @@ namespace HistoryHeroes.Common
         {
             Requesters.Clear();
             Slows.Clear();
-            Time.timeScale = 1f;
+            Time.timeScale = _devSpeed; // 개발용 배속은 장면이 바뀌어도 유지 (벤치가 끝나면 1로)
         }
 
         private static void Tick()
@@ -85,7 +98,7 @@ namespace HistoryHeroes.Common
 
             float scale = 1f;
             foreach (Slow slow in Slows.Values) scale = Mathf.Min(scale, slow.Scale);
-            Time.timeScale = scale;
+            Time.timeScale = scale * _devSpeed;
         }
 
         private static void EnsureRunner()
@@ -109,6 +122,7 @@ namespace HistoryHeroes.Common
             Requesters.Clear();
             Slows.Clear();
             _runner = null;
+            _devSpeed = 1f;
             Time.timeScale = 1f;
         }
     }

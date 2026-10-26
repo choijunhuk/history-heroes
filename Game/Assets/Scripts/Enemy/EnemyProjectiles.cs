@@ -15,6 +15,11 @@ namespace HistoryHeroes.Enemy
         private ComponentPool<Projectile> _pool;
         private readonly List<Projectile> _active = new List<Projectile>();
 
+        private static readonly List<Projectile> Empty = new List<Projectile>();
+
+        /// <summary>날아가는 적 투사체 (읽기만, 검증 벤치의 피하기 AI용)</summary>
+        public static IReadOnlyList<Projectile> Active => _instance != null ? _instance._active : Empty;
+
         private void Awake()
         {
             _instance = this;
