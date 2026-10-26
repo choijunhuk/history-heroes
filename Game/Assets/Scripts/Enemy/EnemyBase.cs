@@ -119,6 +119,13 @@ namespace HistoryHeroes.Enemy
 
         protected virtual void OnDied(Health h)
         {
+            if (IsElite)
+            {
+                // 손맛 (조사 A9): 엘리트는 잠깐 멈춤 + 흔들림
+                Common.HitStop.Freeze(Common.HitStop.EliteKill);
+                Common.CameraShake.Add(Common.CameraShake.EliteKill);
+            }
+
             status.NotifyDeath(transform.position); // 독 구름 안에서 죽었으면 번짐 (맹독 개화)
             _alive.Remove(this);
             body.linearVelocity = Vector2.zero;

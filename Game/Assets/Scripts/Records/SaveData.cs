@@ -69,6 +69,9 @@ namespace HistoryHeroes.Records
         // ---------------- v0.3 영웅 (Heroes.md) ----------------
         /// <summary>로비에서 고른 영웅 (던전에 들고 들어감)</summary>
         public string selectedHero = "khan";
+
+        // 설정 (판 밖, 조사 A9 · UX 5장 접근성)
+        public GameSettings settings = new GameSettings();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -181,6 +184,17 @@ namespace HistoryHeroes.Records
     {
         public string id;
         public int count;
+    }
+
+    /// <summary>설정 (UX 5장 접근성, 조사 A9)</summary>
+    [Serializable]
+    public sealed class GameSettings
+    {
+        /// <summary>화면 흔들림: 0 끄기, 1 약하게(50%), 2 보통</summary>
+        public int shake = 2;
+        public bool damageNumbers = true;
+        /// <summary>번쩍임 줄이기: 화면을 크게 덮는 섬광을 옅게, 1초에 3번 이하로 (WCAG 2.3.1)</summary>
+        public bool reduceFlashes;
     }
 
     /// <summary>하루 한도 (자정에 새로)</summary>

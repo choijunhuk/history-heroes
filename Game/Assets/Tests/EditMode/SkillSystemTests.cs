@@ -411,5 +411,48 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual((1, 0), FusionHints.CountFor(lightning, new[] { a, b }, known.Contains));
             Assert.AreEqual((0, 0), FusionHints.CountFor(Make<PassiveSkillData>("none"), new[] { a, b }, known.Contains));
         }
+
+        // ---------------- 손맛 (조사 A9) ----------------
+
+        [Test]
+        public void GamePause_PauseAlwaysBeatsSlow_AndResumeReturnsToSlow()
+        {
+            object card = new object();
+            object hit = new object();
+            try
+            {
+                HistoryHeroes.Common.GamePause.ResetAll();
+                HistoryHeroes.Common.GamePause.RequestSlow(hit, 0.3f, 10f);
+                Assert.AreEqual(0.3f, Time.timeScale, 1e-4f, "느리게 요청 중 가장 작은 값");
+
+                HistoryHeroes.Common.GamePause.Pause(card);
+                Assert.AreEqual(0f, Time.timeScale, "멈춤(레벨업 창)이 언제나 이긴다");
+                HistoryHeroes.Common.GamePause.RequestSlow(new object(), 0.5f, 10f);
+                Assert.AreEqual(0f, Time.timeScale, "멈춘 동안 새 느리게 요청이 와도 0");
+
+                HistoryHeroes.Common.GamePause.Resume(card);
+                Assert.AreEqual(0.3f, Time.timeScale, 1e-4f, "창을 닫으면 남은 느리게로 돌아간다");
+                Assert.IsFalse(HistoryHeroes.Common.GamePause.IsPaused, "느리게는 멈춤이 아니다 (스킬 판정은 계속)");
+            }
+            finally
+            {
+                HistoryHeroes.Common.GamePause.ResetAll();
+            }
+
+            Assert.AreEqual(1f, Time.timeScale);
+        }
+
+        [Test]
+        public void DamageNumbers_FormatAndShakeSetting()
+        {
+            Assert.AreEqual("1", DamageNumbers.Format(0.2f), "0이 아니라 1부터");
+            Assert.AreEqual("1234", DamageNumbers.Format(1234.4f));
+            Assert.AreEqual("1.2만", DamageNumbers.Format(12345f));
+            Assert.AreEqual("12만", DamageNumbers.Format(123456f));
+
+            Assert.AreEqual(0f, HistoryHeroes.Common.CameraShake.SettingMultiplier(0));
+            Assert.AreEqual(0.5f, HistoryHeroes.Common.CameraShake.SettingMultiplier(1));
+            Assert.AreEqual(1f, HistoryHeroes.Common.CameraShake.SettingMultiplier(2));
+        }
     }
 }

@@ -362,6 +362,27 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Load_OldSaveWithoutSettings_GetsDefaults()
+        {
+            var store = new SaveStore(_folder);
+            store.Save(SampleSave());
+            // 설정이 생기기 전 파일 흉내: settings 칸을 지운다
+            string json = File.ReadAllText(store.MainPath);
+            int at = json.IndexOf("\"settings\"", StringComparison.Ordinal);
+            Assert.Greater(at, 0, "저장 파일에 설정이 들어간다");
+            SaveData old = JsonUtility.FromJson<SaveData>(json);
+            old.settings = null;
+            File.WriteAllText(store.MainPath, JsonUtility.ToJson(old, true).Replace("\"settings\"", "\"settings_removed\""));
+
+            SaveData loaded = store.Load();
+
+            Assert.IsNotNull(loaded.settings);
+            Assert.AreEqual(2, loaded.settings.shake, "흔들림 기본은 보통");
+            Assert.IsTrue(loaded.settings.damageNumbers);
+            Assert.IsFalse(loaded.settings.reduceFlashes);
+        }
+
+        [Test]
         public void Load_CrashDuringTempWrite_KeepsPreviousSave()
         {
             var store = new SaveStore(_folder);

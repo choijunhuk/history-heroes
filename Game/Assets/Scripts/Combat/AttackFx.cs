@@ -45,9 +45,29 @@ namespace HistoryHeroes.Combat
                 new Vector2(delta.magnitude, width), color, duration, 7, Pool.Release);
         }
 
+        /// <summary>이 반지름 이상 폭발은 화면을 크게 덮는 섬광으로 본다 (번쩍임 줄이기 대상)</summary>
+        public const float BigBurstRadius = 2.5f;
+        private const int MaxBigBurstsPerSecond = 3;
+        private static float _bigWindowStart;
+        private static int _bigInWindow;
+
         /// <summary>원 폭발 (포탄, 회전 베기)</summary>
         public static void Burst(Vector2 center, float radius, Color color, float duration = 0.18f)
         {
+            if (radius >= BigBurstRadius && Records.SaveSystem.Data.settings.reduceFlashes)
+            {
+                // 번쩍임 줄이기 (조사 A9, WCAG 2.3.1): 옅게, 1초에 3번까지만
+                float now = Time.unscaledTime;
+                if (now - _bigWindowStart >= 1f)
+                {
+                    _bigWindowStart = now;
+                    _bigInWindow = 0;
+                }
+
+                if (++_bigInWindow > MaxBigBurstsPerSecond) return;
+                color.a *= 0.4f;
+            }
+
             Pool.Get(center, Quaternion.identity).Play(PlaceholderSprites.Circle, center, 0f,
                 Vector2.one * radius * 1.6f, color, duration, 5, Pool.Release, 1.25f);
         }
@@ -57,6 +77,8 @@ namespace HistoryHeroes.Combat
         {
             _pool = null;
             _root = null;
+            _bigWindowStart = 0f;
+            _bigInWindow = 0;
         }
     }
 }

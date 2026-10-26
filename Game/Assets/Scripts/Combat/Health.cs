@@ -22,6 +22,12 @@ namespace HistoryHeroes.Combat
         public event Action<DamageInfo, float> Damaged;
         public event Action<Health> Died;
 
+        /// <summary>누군가 피해를 받았을 때 (피해 숫자·화면 흔들림, 조사 A9). 장면마다 듣는 쪽이 붙고 뗀다</summary>
+        public static event Action<Health, DamageInfo, float> AnyDamaged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => AnyDamaged = null;
+
         /// <param name="stats">피해 감소·회피를 읽을 능력치. 적은 null이어도 된다.</param>
         /// <param name="invulnerableDuration">맞은 뒤 무적 시간. 플레이어 0.5초.</param>
         public void Init(Team owner, float maxHp, StatSheet stats = null, float invulnerableDuration = 0f)
@@ -77,6 +83,7 @@ namespace HistoryHeroes.Combat
                 // 불굴: 죽지 않았다 (체력은 PreventDeath가 정함)
                 if (_invulnerableDuration > 0f) _invulnerableUntil = Time.time + _invulnerableDuration;
                 Damaged?.Invoke(info, dealt);
+                AnyDamaged?.Invoke(this, info, dealt);
                 return true;
             }
 
@@ -85,6 +92,7 @@ namespace HistoryHeroes.Combat
 
             if (team == Team.Enemy) DamageLog.Record(info, dealt);
             Damaged?.Invoke(info, dealt);
+            AnyDamaged?.Invoke(this, info, dealt);
             if (IsDead) Died?.Invoke(this);
             return true;
         }

@@ -31,6 +31,7 @@ namespace HistoryHeroes.UI
         {
             root.SetActive(true);
             Render();
+            listLabel.rectTransform.anchoredPosition = Vector2.zero; // 늘 맨 위부터
         }
 
         private void Render()

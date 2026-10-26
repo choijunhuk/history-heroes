@@ -38,6 +38,11 @@ namespace HistoryHeroes.EditorTools
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.07f, 0.08f, 0.1f);
             cameraObject.AddComponent<CameraFit>();
+            cameraObject.AddComponent<CameraShake>(); // 손맛: 화면 흔들림 (조사 A9)
+
+            // 손맛: 피해 숫자 (조사 A9). 글꼴은 한국어 TMP 글꼴을 같이 쓴다
+            var numbers = new GameObject("DamageNumbers").AddComponent<DamageNumbers>();
+            using (var props = new Props(numbers)) props.Ref("font", _font);
 
             var light = new GameObject("Global Light 2D").AddComponent<Light2D>();
             light.lightType = Light2D.LightType.Global;

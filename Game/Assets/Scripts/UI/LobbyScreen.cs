@@ -49,6 +49,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private CodexPanel codex;
         [SerializeField] private HeartPanel hearts;
         [SerializeField] private HeroPanel heroPanel;
+        [SerializeField] private Button settingsButton;
+        [SerializeField] private SettingsPanel settings;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -67,6 +69,7 @@ namespace HistoryHeroes.UI
             archiveButton.onClick.AddListener(() => archive.Open(Render));
             codexButton.onClick.AddListener(() => codex.Open());
             heroButton.onClick.AddListener(() => heroPanel.Open(Render));
+            if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
 
             // 놓친 별 상자가 있으면 여기서 받는다
             Reward box = Stars.ClaimBoxes(data);
