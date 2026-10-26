@@ -104,6 +104,16 @@ namespace HistoryHeroes.Enemy
             body.linearVelocity = status.IsPulled ? Vector2.zero : direction.normalized * speed * status.SpeedMultiplier;
         }
 
+        private static int _wallMask = -1;
+
+        /// <summary>from에서 direction으로 maxDistance까지 가되 벽에 닿으면 그 자리 (예고선이 벽 밖·HUD까지 뻗지 않게)</summary>
+        protected static Vector2 UntilWall(Vector2 from, Vector2 direction, float maxDistance)
+        {
+            if (_wallMask < 0) _wallMask = LayerMask.GetMask("Wall");
+            RaycastHit2D hit = Physics2D.Raycast(from, direction, maxDistance, _wallMask);
+            return hit.collider != null ? hit.point : from + direction * maxDistance;
+        }
+
         protected void DrawTelegraphLine(Vector2 from, Vector2 to)
         {
             if (telegraphLine == null) return;
