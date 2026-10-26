@@ -109,6 +109,7 @@ namespace HistoryHeroes.Modes
 
         private void Awake()
         {
+            SettingsApplier.Apply(SaveSystem.Data.settings);
             if (metaTable != null) Missions.MissionEvents.Configure(metaTable.missions, roster, database != null ? database.recipes.Count : 0);
             if (roster != null && player != null)
             {

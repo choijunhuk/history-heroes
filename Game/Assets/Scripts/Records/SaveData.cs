@@ -630,6 +630,14 @@ namespace HistoryHeroes.Records
         public bool notifyPatrol = true;
         /// <summary>안드로이드 13 알림 권한을 물어봤나 (첫 판이 끝난 뒤 한 번)</summary>
         public bool notifyAsked;
+        /// <summary>프레임: true 60 / false 30 (배터리 절약)</summary>
+        public bool frame60 = true;
+        /// <summary>조이스틱: false = 누른 자리에 생김 (기본, UX 2장) / true = 아래 가운데 고정</summary>
+        public bool joystickFixed;
+        /// <summary>조이스틱 크기: 0 작게 · 1 보통 · 2 크게</summary>
+        public int joystickSize = 1;
+        /// <summary>조이스틱 진하기: 0 연하게 · 1 보통 · 2 진하게</summary>
+        public int joystickOpacity = 1;
     }
 
     // ---------------------------------------------------------------- v1.0 출석부 · 신규 7일 미션 · 순찰

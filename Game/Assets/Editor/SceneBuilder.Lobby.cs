@@ -390,20 +390,54 @@ namespace HistoryHeroes.EditorTools
             var screen = holder.AddComponent<SettingsPanel>();
 
             TMP_Text title = Label("Title", panel, "설정", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(900f, 100f));
-            Button shake = Btn("Shake", panel, "화면 흔들림: 보통", new Vector2(0f, 500f), new Vector2(820f, 120f), ButtonBlue, out TMP_Text shakeLabel);
-            Button numbers = Btn("DamageNumbers", panel, "피해 숫자: 켜기", new Vector2(0f, 360f), new Vector2(820f, 120f), ButtonBlue, out TMP_Text numbersLabel);
-            Button flash = Btn("ReduceFlashes", panel, "번쩍임 줄이기: 끄기", new Vector2(0f, 220f), new Vector2(820f, 120f), ButtonBlue, out TMP_Text flashLabel);
-            TMP_Text help = Label("Help", panel, "번쩍임 줄이기: 화면을 크게 덮는 섬광을 옅게, 1초에 3번까지만 보여줘요", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(help.rectTransform, Center, Center, new Vector2(0f, 120f), new Vector2(900f, 70f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 800f), new Vector2(900f, 100f));
+            // 두 칸 (왼쪽 · 오른쪽), 묶음마다 제목
+            Vector2 half = new Vector2(450f, 110f);
+            const float left = -235f, right = 235f;
+            TMP_Text Section(string name, string text, float y)
+            {
+                TMP_Text t = Label(name, panel, text, 34, TextAlignmentOptions.Left, new Color(1f, 0.85f, 0.35f));
+                Place(t.rectTransform, Center, Center, new Vector2(0f, y), new Vector2(940f, 50f));
+                return t;
+            }
+
+            Button Half(string name, string text, float x, float y, Color color, out TMP_Text label)
+            {
+                Button b = Btn(name, panel, text, new Vector2(x, y), half, color, out label);
+                label.fontSize = 28;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 20f;
+                label.fontSizeMax = 28f;
+                label.rectTransform.offsetMin = new Vector2(10f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-10f, 0f);
+                return b;
+            }
+
+            Section("SectionScreen", "화면", 700f);
+            Button shake = Half("Shake", "화면 흔들림: 보통", left, 620f, ButtonBlue, out TMP_Text shakeLabel);
+            Button numbers = Half("DamageNumbers", "피해 숫자: 켜기", right, 620f, ButtonBlue, out TMP_Text numbersLabel);
+            Button flash = Half("ReduceFlashes", "번쩍임 줄이기: 끄기", left, 495f, ButtonBlue, out TMP_Text flashLabel);
+            Button frame = Half("Frame", "프레임: 60", right, 495f, ButtonBlue, out TMP_Text frameLabel);
+            TMP_Text help = Label("Help", panel, "번쩍임 줄이기: 화면을 크게 덮는 섬광을 옅게, 1초에 3번까지만", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            Place(help.rectTransform, Center, Center, new Vector2(0f, 415f), new Vector2(940f, 50f));
+
+            Section("SectionControl", "조작", 345f);
+            Color control = new Color(0.3f, 0.27f, 0.42f);
+            Button joyMode = Half("JoystickMode", "조이스틱: 누른 자리", left, 265f, control, out TMP_Text joyModeLabel);
+            Button joySize = Half("JoystickSize", "조이스틱 크기: 보통", right, 265f, control, out TMP_Text joySizeLabel);
+            Button joyOpacity = Half("JoystickOpacity", "조이스틱 진하기: 보통", left, 140f, control, out TMP_Text joyOpacityLabel);
+
             // v1.0 알림 (LiveOps 9장: 종류별로 끈다)
-            Button hearts = Btn("NotifyHearts", panel, "알림 · 하트가 다 차면: 켜기", new Vector2(0f, -20f), new Vector2(820f, 120f), new Color(0.25f, 0.35f, 0.25f), out TMP_Text heartsLabel);
-            Button patrol = Btn("NotifyPatrol", panel, "알림 · 순찰이 가득 차면: 켜기", new Vector2(0f, -160f), new Vector2(820f, 120f), new Color(0.25f, 0.35f, 0.25f), out TMP_Text patrolLabel);
-            TMP_Text noticeHelp = Label("NoticeHelp", panel, "밤 9시~아침 8시에는 보내지 않아요", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(noticeHelp.rectTransform, Center, Center, new Vector2(0f, -255f), new Vector2(900f, 60f));
+            Section("SectionNotice", "알림", 60f);
+            Color notice = new Color(0.25f, 0.35f, 0.25f);
+            Button hearts = Half("NotifyHearts", "하트가 다 차면: 켜기", left, -20f, notice, out TMP_Text heartsLabel);
+            Button patrol = Half("NotifyPatrol", "순찰이 가득 차면: 켜기", right, -20f, notice, out TMP_Text patrolLabel);
+            TMP_Text noticeHelp = Label("NoticeHelp", panel, "밤 9시~아침 8시에는 보내지 않아요 · 하루 2번까지", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            Place(noticeHelp.rectTransform, Center, Center, new Vector2(0f, -100f), new Vector2(940f, 50f));
+
             Button replay = null;
-            if (lobby) replay = Btn("ReplayTutorial", panel, "튜토리얼 다시 보기 (보상 없음)", new Vector2(0f, -360f), new Vector2(820f, 110f), new Color(0.38f, 0.3f, 0.18f), out _);
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, lobby ? -510f : -420f), new Vector2(400f, 110f), ButtonGray, out _);
+            if (lobby) replay = Btn("ReplayTutorial", panel, "튜토리얼 다시 보기 (보상 없음)", new Vector2(0f, -230f), new Vector2(920f, 110f), new Color(0.38f, 0.3f, 0.18f), out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -420f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
@@ -411,7 +445,11 @@ namespace HistoryHeroes.EditorTools
                     .Ref("numbersButton", numbers).Ref("numbersLabel", numbersLabel)
                     .Ref("flashButton", flash).Ref("flashLabel", flashLabel).Ref("backButton", back)
                     .Ref("heartsButton", hearts).Ref("heartsLabel", heartsLabel).Ref("patrolButton", patrol).Ref("patrolLabel", patrolLabel)
-                    .Ref("replayTutorialButton", replay);
+                    .Ref("replayTutorialButton", replay)
+                    .Ref("frameButton", frame).Ref("frameLabel", frameLabel)
+                    .Ref("joystickModeButton", joyMode).Ref("joystickModeLabel", joyModeLabel)
+                    .Ref("joystickSizeButton", joySize).Ref("joystickSizeLabel", joySizeLabel)
+                    .Ref("joystickOpacityButton", joyOpacity).Ref("joystickOpacityLabel", joyOpacityLabel);
             }
 
             return screen;

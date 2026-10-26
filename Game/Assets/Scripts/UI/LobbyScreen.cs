@@ -86,6 +86,7 @@ namespace HistoryHeroes.UI
         {
             GamePause.ResetAll();
             SaveData data = SaveSystem.Data;
+            SettingsApplier.Apply(data.settings);
             _chapter = Mathf.Clamp(GameSession.Chapter, 1, MaxChapter(data));
 
             previousChapter.onClick.AddListener(() => ChangeChapter(-1));
