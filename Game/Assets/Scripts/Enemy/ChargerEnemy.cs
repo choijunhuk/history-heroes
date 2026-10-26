@@ -17,6 +17,11 @@ namespace HistoryHeroes.Enemy
         private Vector2 _dashDirection;
         private bool _hitThisDash;
 
+        /// <summary>예고선 방향·길이·맞는 반지름 (화면의 예고선 그대로, 벤치 조종 AI가 피하는 데 쓴다)</summary>
+        public Vector2 DashDirection => _dashDirection;
+        public float DashLength => dashSpeed * dashDuration;
+        public float HitRadius => hitRadius * transform.localScale.x;
+
         protected override void Tick()
         {
             switch (state)
@@ -57,7 +62,7 @@ namespace HistoryHeroes.Enemy
             Collider2D hit = Physics2D.OverlapCircle(transform.position, hitRadius * transform.localScale.x, playerMask);
             if (hit != null && hit.TryGetComponent(out Health target))
             {
-                _hitThisDash = target.TryTakeDamage(DamageCalculator.Enemy(Damage));
+                _hitThisDash = target.TryTakeDamage(DamageCalculator.Enemy(Damage, data.id));
             }
         }
     }

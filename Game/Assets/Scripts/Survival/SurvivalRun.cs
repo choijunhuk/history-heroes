@@ -64,6 +64,7 @@ namespace HistoryHeroes.Survival
             player.Health.Died += _ => Finish(victory: false);
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
             experience.MaxGems = data.maxGems;
+            experience.ExpMultiplier = data.expMultiplier;
 
             hud.SetSurvivalMode();
             levelUp.Floor = 1;
@@ -105,6 +106,15 @@ namespace HistoryHeroes.Survival
             float left = Mathf.Max(0f, data.duration - _elapsed);
             hud.RoomText = $"서바이벌  {Format(left)} 남음";
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>개발용: 경과 시간을 건너뛴다 (후반 밀도·성능을 바로 보려고). 지난 엘리트는 건너뛴다</summary>
+        public void DevSkipTo(float seconds)
+        {
+            _elapsed = Mathf.Clamp(seconds, 0f, data.duration - 1f);
+            while (_nextElite < data.eliteTimes.Length && data.eliteTimes[_nextElite] <= _elapsed) _nextElite++;
+        }
+#endif
 
         // ---------------------------------------------------------------- 적 생성
 
@@ -152,8 +162,8 @@ namespace HistoryHeroes.Survival
         private EnemyBase PickEnemy()
         {
             float r = Random.value;
-            if (_elapsed >= data.bomberFrom && r < 0.15f) return data.bomber;
-            if (_elapsed >= data.archerFrom && r < 0.45f) return data.archer;
+            if (_elapsed >= data.bomberFrom && r < data.bomberShare) return data.bomber;
+            if (_elapsed >= data.archerFrom && r < data.bomberShare + data.archerShare) return data.archer;
             return data.charger;
         }
 

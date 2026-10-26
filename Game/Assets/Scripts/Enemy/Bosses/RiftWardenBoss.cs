@@ -250,7 +250,7 @@ namespace HistoryHeroes.Enemy
             if (slamMarker != null) slamMarker.enabled = false;
 
             Collider2D hit = Physics2D.OverlapCircle(_slamCenter, slamRadius, playerMask);
-            if (hit != null && hit.TryGetComponent(out Health target)) target.TryTakeDamage(DamageCalculator.Enemy(Damage * slamDamage));
+            if (hit != null && hit.TryGetComponent(out Health target)) target.TryTakeDamage(DamageCalculator.Enemy(Damage * slamDamage, "boss_slam"));
             StrikeFlash(_slamCenter, slamRadius);
             Common.CameraShake.Add(Common.CameraShake.BossImpact);
 
@@ -294,7 +294,7 @@ namespace HistoryHeroes.Enemy
                 Collider2D hit = Physics2D.OverlapCircle(transform.position, radius, playerMask);
                 if (hit != null && hit.TryGetComponent(out Health target))
                 {
-                    _chargeHit = target.TryTakeDamage(DamageCalculator.Enemy(Damage * chargeDamage));
+                    _chargeHit = target.TryTakeDamage(DamageCalculator.Enemy(Damage * chargeDamage, "boss_charge"));
                 }
             }
 
@@ -339,7 +339,7 @@ namespace HistoryHeroes.Enemy
             {
                 float angle = (i + offset) * step * Mathf.Deg2Rad;
                 var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-                EnemyProjectiles.Fire((Vector2)transform.position + direction * 0.9f, direction, waveSpeed, DamageCalculator.Enemy(Damage * waveDamage), playerMask);
+                EnemyProjectiles.Fire((Vector2)transform.position + direction * 0.9f, direction, waveSpeed, DamageCalculator.Enemy(Damage * waveDamage, "boss_wave"), playerMask);
             }
         }
 

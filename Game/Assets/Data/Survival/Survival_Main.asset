@@ -20,6 +20,8 @@ MonoBehaviour:
   bomber: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
   archerFrom: 60
   bomberFrom: 180
+  archerShare: 0.25
+  bomberShare: 0.1
   aliveCurve:
   - {x: 0, y: 8}
   - {x: 1, y: 22}
@@ -50,6 +52,7 @@ MonoBehaviour:
   activeSlots: 6
   passiveSlots: 6
   maxGems: 150
+  expMultiplier: 0.4
   goldPerMinute: 50
   accountExpPerMinute: 10
   shardsPerTwoMinutes: 1

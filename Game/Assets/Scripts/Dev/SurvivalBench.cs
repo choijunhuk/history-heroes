@@ -7,6 +7,7 @@ using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
 using HistoryHeroes.Enemy;
 using HistoryHeroes.Player;
+using HistoryHeroes.Progress;
 using HistoryHeroes.Records;
 using HistoryHeroes.Survival;
 using HistoryHeroes.UI;
@@ -96,8 +97,20 @@ namespace HistoryHeroes.Dev
                 yield break;
             }
 
+            // 무엇에 맞았나 (적 ID·보스 패턴별 받은 피해)
+            var taken = new Dictionary<string, float>();
+            Health playerHealth = player.Health;
+            void OnDamaged(Health target, DamageInfo info, float dealt)
+            {
+                if (target != playerHealth || dealt <= 0f) return;
+                string key = info.SourceId ?? "?";
+                taken.TryGetValue(key, out float sum);
+                taken[key] = sum + dealt;
+            }
+
+            Health.AnyDamaged += OnDamaged;
             var pilot = run.gameObject.AddComponent<SurvivalPilot>();
-            pilot.Begin(player, FindAnyObjectByType<LevelUpScreen>(), _god, heroId.GetHashCode());
+            pilot.Begin(player, FindAnyObjectByType<LevelUpScreen>(), FindAnyObjectByType<Progress.ExperienceSystem>(), _god, heroId.GetHashCode());
             GamePause.DevSpeed = _speed;
 
             var samples = new StringBuilder();
@@ -129,13 +142,18 @@ namespace HistoryHeroes.Dev
 
             GamePause.DevSpeed = 1f;
             FloatingJoystick.DevOverride = null;
+            Health.AnyDamaged -= OnDamaged;
+            float takenTotal = 0f;
+            foreach (float v in taken.Values) takenTotal += v;
+            var takenParts = new List<string>();
+            foreach (KeyValuePair<string, float> pair in taken) takenParts.Add($"{pair.Key} {pair.Value / Mathf.Max(1f, takenTotal) * 100f:0}%");
             yield return new WaitForSecondsRealtime(2f); // 결과·저장까지
             long gold = SaveSystem.Data.gold - goldBefore;
             float minutes = Mathf.Max(0.01f, run.Elapsed / 60f);
             bool win = run.IsFinished && !player.Health.IsDead;
             _results.Add($"{heroId} | {(win ? "생존·보스 격파" : run.IsFinished ? "쓰러짐" : "시간 초과")} {SurvivalRun.Format(run.Elapsed)} | 처치 {experience?.Kills} | Lv{experience?.Level.Level} | " +
                          $"기본 공격 {DamageLog.BasicShare * 100f:0}% | 골드 {gold} (분당 {gold / minutes:0}) | 최대 적 {maxAlive} 투사체 {maxProjectiles} 보석 {maxGems} | 멈춤 {pilot.StopShare * 100f:0}% | " +
-                         $"{Economy.RunText.TopDamage(_database, player.Hero, 4)}{samples}");
+                         $"{Economy.RunText.TopDamage(_database, player.Hero, 4)} | 받은 피해 {takenTotal:0} ({string.Join(" · ", takenParts)}){samples}");
         }
 
         public static string Report()
@@ -157,9 +175,10 @@ namespace HistoryHeroes.Dev
 
     /// <summary>
     /// 서바이벌 조종 AI (벤치용, 보통 플레이어 흉내). 사람이 보는 것만 본다:
-    /// 1) 돌진 예고선이 나를 향하면 옆으로 비킨다 (예고 → 회피, 던전과 같은 판단)
+    /// 1) 돌진 예고선이 나를 향하거나 화살이 몸으로 날아오면 옆으로 비킨다 (예고 → 회피, 던전과 같은 판단)
     /// 2) 너무 가깝거나(사거리의 절반, 최대 2.4) 무리가 몰려오면 반대쪽으로 돌며 빠진다
-    /// 3) 여유가 있으면 **멈춰서 쏜다**. 맵 가장자리·바위·연못은 피한다. 카드는 무작위 (고정 씨앗).
+    /// 3) 여유가 있으면 **멈춰서 쏜다**. 1.2초 넘게 멈춰 있었고 6칸 안에 보석이 있으면 주우러 간다.
+    ///    맵 가장자리·바위·연못은 피한다. 카드는 무작위 (고정 씨앗).
     /// </summary>
     public sealed class SurvivalPilot : MonoBehaviour
     {
@@ -167,9 +186,15 @@ namespace HistoryHeroes.Dev
         private const float SenseRadius = 6f;
         private const float CrowdThreshold = 1.1f;
         private const float ChargeSense = 6.5f; // 돌진 거리 5.6 + 몸
+        private const float ArrowSense = 4.5f;
+
+        private const float GemSense = 6f;
+        private const float StillBeforeGems = 1.2f;
 
         private PlayerController _player;
         private LevelUpScreen _levelUp;
+        private Progress.ExperienceSystem _experience;
+        private float _still;
         private bool _god;
         private System.Random _random;
         private float _stopped, _total;
@@ -179,10 +204,11 @@ namespace HistoryHeroes.Dev
         /// <summary>판 전체에서 멈춰 있던 비율</summary>
         public float StopShare => _total > 0f ? _stopped / _total : 0f;
 
-        public void Begin(PlayerController player, LevelUpScreen levelUp, bool god, int seed)
+        public void Begin(PlayerController player, LevelUpScreen levelUp, Progress.ExperienceSystem experience, bool god, int seed)
         {
             _player = player;
             _levelUp = levelUp;
+            _experience = experience;
             _god = god;
             _random = new System.Random(seed);
             _wallMask = LayerMask.GetMask("Wall") | 1; // 바위 + 연못(Default)
@@ -202,6 +228,16 @@ namespace HistoryHeroes.Dev
             if (_god) _player.Health.Heal(1e9f);
 
             Vector2 move = Decide();
+            if (move == Vector2.zero)
+            {
+                _still += Time.deltaTime;
+                if (_still > StillBeforeGems) move = TowardGem();
+            }
+            else
+            {
+                _still = 0f;
+            }
+
             _total += Time.deltaTime;
             if (move == Vector2.zero) _stopped += Time.deltaTime;
             FloatingJoystick.DevOverride = move == Vector2.zero ? (Vector2?)null : move.normalized;
@@ -222,17 +258,37 @@ namespace HistoryHeroes.Dev
                 float dist = d.magnitude;
                 if (dist < 0.001f) continue;
 
-                // 돌진 예고·돌진 중인 돌진병이 나를 향하면 그 선에서 옆으로 (예고선은 예고 시작 때 내 쪽을 향한다)
-                if (e is ChargerEnemy && (e.IsTelegraphing || e.IsAttacking) && dist < ChargeSense)
+                // 돌진 예고선이 내 자리를 지나가면 (선과의 거리 < 맞는 반지름 + 몸 + 여유) 선에서 멀어지는 쪽으로 비킨다
+                if (e is ChargerEnemy charger && (e.IsTelegraphing || e.IsAttacking) && dist < ChargeSense)
                 {
-                    Vector2 line = -d / dist;
-                    Vector2 perpendicular = new Vector2(-line.y, line.x);
-                    sidestep += Vector2.Dot(perpendicular, _lastMove) >= 0f ? perpendicular : -perpendicular;
+                    Vector2 line = charger.DashDirection;
+                    float along = Vector2.Dot(d, line); // d = 돌진병 → 나
+                    Vector2 off = d - line * along;
+                    if (along > -0.5f && along < charger.DashLength + 1f && off.magnitude < charger.HitRadius + 0.4f + 0.45f)
+                    {
+                        Vector2 perpendicular = off.sqrMagnitude > 0.0004f ? off.normalized : new Vector2(-line.y, line.x);
+                        sidestep += perpendicular;
+                    }
                 }
 
                 if (dist > SenseRadius) continue;
                 if (dist < closest) closest = dist;
                 push += d / (dist * dist);
+            }
+
+            // 날아오는 화살: 내 쪽으로 오고 선이 몸에 닿으면 선에서 멀어지는 쪽으로 (사람이 보는 화살 그대로)
+            IReadOnlyList<Projectile> arrows = EnemyProjectiles.Active;
+            for (int i = 0; i < arrows.Count; i++)
+            {
+                Projectile a = arrows[i];
+                if (a == null) continue;
+                Vector2 toMe = me - (Vector2)a.transform.position;
+                if (toMe.sqrMagnitude > ArrowSense * ArrowSense) continue;
+                Vector2 flight = a.transform.right;
+                float along = Vector2.Dot(toMe, flight);
+                if (along <= 0f) continue; // 이미 지나감
+                Vector2 off = toMe - flight * along;
+                if (off.magnitude < 0.9f) sidestep += off.sqrMagnitude > 0.0004f ? off.normalized : new Vector2(-flight.y, flight.x);
             }
 
             Vector2 dir;
@@ -244,7 +300,9 @@ namespace HistoryHeroes.Dev
             {
                 float range = _player.Stats.Get(Stats.StatType.Range);
                 float tooClose = Mathf.Min(DangerRadius, range * 0.5f);
-                bool danger = closest < tooClose || push.magnitude > CrowdThreshold;
+                // 근접 영웅은 무리 속으로 들어가 베야 한다 → 몰림 기준을 사거리에 맞춰 높인다
+                float crowd = CrowdThreshold * Mathf.Clamp(4f / Mathf.Max(1f, range), 1f, 2.5f);
+                bool danger = closest < tooClose || push.magnitude > crowd;
                 if (!danger) return Vector2.zero; // 여유 → 멈춰서 쏜다
 
                 Vector2 away = push.sqrMagnitude > 0.0001f ? push.normalized : _lastMove;
@@ -268,6 +326,28 @@ namespace HistoryHeroes.Dev
 
             _lastMove = dir;
             return dir;
+        }
+
+        /// <summary>가까운 보석 쪽 (없으면 0 = 계속 멈춤)</summary>
+        private Vector2 TowardGem()
+        {
+            if (_experience == null) return Vector2.zero;
+            Vector2 me = _player.transform.position;
+            Vector2 best = Vector2.zero;
+            float bestSqr = GemSense * GemSense;
+            IReadOnlyList<ExperienceGem> gems = _experience.Gems;
+            for (int i = 0; i < gems.Count; i++)
+            {
+                Vector2 d = (Vector2)gems[i].transform.position - me;
+                float sqr = d.sqrMagnitude;
+                if (sqr < bestSqr)
+                {
+                    bestSqr = sqr;
+                    best = d;
+                }
+            }
+
+            return best.sqrMagnitude > 0.04f ? best.normalized : Vector2.zero;
         }
 
         private void OnDestroy() => FloatingJoystick.DevOverride = null;
