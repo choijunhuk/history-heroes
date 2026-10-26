@@ -57,6 +57,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private ShopPanel shop;
         [SerializeField] private Button settingsButton;
         [SerializeField] private SettingsPanel settings;
+        [Header("v0.6 고르기 (5구간 전설 장비)")]
+        [SerializeField] private ChoicePanel choice;
         [Header("v0.5 미션")]
         [SerializeField] private Button missionButton;
         [SerializeField] private TMP_Text missionLabel;
@@ -139,6 +141,8 @@ namespace HistoryHeroes.UI
                     SaveSystem.Save();
                     ShowNotice("보스 격파 보상: " + string.Join(", ", gear).Replace("장비  ", ""));
                 }
+
+                OfferLegendaryChoice();
             }
 
             SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
@@ -146,6 +150,32 @@ namespace HistoryHeroes.UI
         }
 
         private void OnDestroy() => Missions.MissionEvents.Completed -= OnMissionCompleted;
+
+        /// <summary>5구간 보스 최초 격파: 전설 장비 1개 고르기 (Equipment 8장). "나중에"를 누르면 다음에 로비에서 또</summary>
+        private void OfferLegendaryChoice()
+        {
+            SaveData data = SaveSystem.Data;
+            if (choice == null || metaTable == null || metaTable.equipment == null || !Equipment.EquipmentInventory.LegendaryChoicePending(data)) return;
+            var options = new List<ChoicePanel.Option>();
+            foreach (Equipment.EquipmentData e in Equipment.EquipmentInventory.LegendaryOptions(metaTable.equipment))
+            {
+                string id = e.id;
+                string second = e.hasSecondary ? " · " + e.SecondaryText : string.Empty;
+                options.Add(new ChoicePanel.Option
+                {
+                    Text = $"<b>{e.displayName}</b>  <size=85%>{Equipment.EquipmentText.SlotName(e.slot)}{second}</size>",
+                    OnChosen = () =>
+                    {
+                        string line = null;
+                        SaveSystem.CommitResult r = SaveSystem.Commit(() => (line = Equipment.EquipmentInventory.TakeLegendaryChoice(SaveSystem.Data, metaTable.equipment, id)) != null);
+                        ShowNotice(r == SaveSystem.CommitResult.Saved ? "5구간 보스 보상: " + line.Replace("장비  ", "") : SaveSystem.SaveFailedText);
+                        Render();
+                    },
+                });
+            }
+
+            if (options.Count > 0) choice.Open("5구간 보스 보상", "전설 장비 1개를 골라요 (한 번만)", options);
+        }
 
         private void OnMissionCompleted(string line) => ShowNotice(line);
 

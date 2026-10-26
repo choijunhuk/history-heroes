@@ -206,6 +206,24 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        private static ChoicePanel BuildChoicePanel(Transform parent)
+        {
+            RectTransform panel = Overlay(parent, "ChoicePanel", out GameObject holder);
+            var screen = holder.AddComponent<ChoicePanel>();
+            TMP_Text title = Label("Title", panel, "", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 820f), new Vector2(900f, 90f));
+            TMP_Text info = Label("Info", panel, "", 30, TextAlignmentOptions.Center);
+            Place(info.rectTransform, Center, Center, new Vector2(0f, 730f), new Vector2(1000f, 70f));
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 40f), new Vector2(1000f, 1240f), 120f, 30f);
+            Button later = Btn("Later", panel, "나중에", new Vector2(0f, -760f), new Vector2(400f, 100f), ButtonGray, out _);
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("infoLabel", info).Ref("list", list).Ref("laterButton", later);
+            }
+
+            return screen;
+        }
+
         private static PetPanel BuildPetPanel(Transform parent, MetaTable meta)
         {
             RectTransform panel = Overlay(parent, "PetPanel", out GameObject holder);

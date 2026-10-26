@@ -38,7 +38,7 @@ namespace HistoryHeroes.Dungeon
         public EnemyBase midBoss;
         public string midBossName;
         [Tooltip("적 데이터 체력 × 이 값 (구간·방 배수 위에)")]
-        public float midBossHp = 18f;
+        public float midBossHp = 100f;
         public float midBossAttack = 1.2f;
 
         [Header("5구간: 전부 강화형 (Content 3장)")]

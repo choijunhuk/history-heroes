@@ -158,7 +158,7 @@ namespace HistoryHeroes.EditorTools
             var bossRun = bossRunObject.AddComponent<BossRun>();
             using (var props = new Props(bossRun))
             {
-                props.Refs("bosses", new[] { d.RiftWarden }).Ref("database", d.Database).Ref("player", player).Ref("skills", skills)
+                props.Refs("bosses", AllBosses(d.RiftWarden)).Ref("database", d.Database).Ref("player", player).Ref("skills", skills)
                     .Ref("playerStart", bossStart).Ref("bossSpawn", bossSpawn)
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
             }

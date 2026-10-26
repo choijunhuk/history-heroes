@@ -393,6 +393,7 @@ namespace HistoryHeroes.EditorTools
             d.RiftWarden.hpMultiplier = 300f; // 120 × 300 = 36,000. 대표 기록으로 제자리에서 약 1분 30초 → 피하면서 2~3분
             d.RiftWarden.attackMultiplier = 1.5f; // Stats.md 8장 (패턴 배수는 보스 쪽)
             d.RiftWarden.star2MaxHits = 8;
+            CreateBossData(); // v0.6 중간 보스 5 · 보스맵 보스 4 (SceneBuilder.Bosses)
             d.Meta = CreateMetaData();
             return d;
         }
@@ -545,6 +546,7 @@ namespace HistoryHeroes.EditorTools
         private static void LinkData(Data d, Prefabs p)
         {
             d.RiftWarden.prefab = p.RiftWarden;
+            LinkBosses(p);
             d.Guan.projectilePrefab = p.SwordWave;
             d.Napoleon.projectilePrefab = p.Bullet;
             d.Tesla.projectilePrefab = p.Orb;

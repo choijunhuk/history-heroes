@@ -251,6 +251,8 @@ namespace HistoryHeroes.Records
         public bool autoDismantle = true;
         /// <summary>장비 보상을 받은 구간 보스 ("ch1" …). 장비가 생기기 전에 보스를 깬 저장도 로비에서 받게</summary>
         public List<string> bossRewardsGiven = new List<string>();
+        /// <summary>5구간 보스 최초 격파 보상 "전설 1개 선택"을 받았나 (Equipment 8장)</summary>
+        public bool legendaryChoiceTaken;
     }
 
     [Serializable]

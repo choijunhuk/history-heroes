@@ -85,6 +85,20 @@ namespace HistoryHeroes.Enemy
             return sr;
         }
 
+        /// <summary>지금 보이는 예고 (읽기만: 벤치 조종 AI가 사람처럼 화면 예고를 보고 피한다)</summary>
+        public static void CollectActive(List<SpriteRenderer> result)
+        {
+            result.Clear();
+            if (_root == null) return;
+            foreach (SpriteRenderer sr in _pool)
+            {
+                if (sr != null && sr.gameObject.activeSelf) result.Add(sr);
+            }
+        }
+
+        public static bool IsCircle(SpriteRenderer sr) => sr.sprite == PlaceholderSprites.Circle;
+        public static bool IsFan(SpriteRenderer sr) => sr.sprite != null && sr.sprite.texture != null && sr.sprite.texture.name.StartsWith("Fan");
+
         public static void Hide(SpriteRenderer sr)
         {
             if (sr != null) sr.gameObject.SetActive(false);

@@ -98,6 +98,7 @@ namespace HistoryHeroes.EditorTools
             RunePanel runePanel = BuildRunePanel(safe, meta, database);
             PetPanel petPanel = BuildPetPanel(safe, meta);
             MissionPanel missionPanel = BuildMissionPanel(safe, meta, roster);
+            ChoicePanel choicePanel = BuildChoicePanel(safe);
             using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
@@ -115,7 +116,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("roster", roster).Ref("heroPanel", heroPanel)
                     .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel).Ref("metaTable", meta)
                     .Ref("shopButton", shopButton).Ref("shop", shopPanel)
-                    .Ref("missionButton", missionButton).Ref("missionLabel", missionLabel).Ref("missions", missionPanel);
+                    .Ref("missionButton", missionButton).Ref("missionLabel", missionLabel).Ref("missions", missionPanel)
+                    .Ref("choice", choicePanel);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);

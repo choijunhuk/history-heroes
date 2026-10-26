@@ -62,6 +62,7 @@ namespace HistoryHeroes.EditorTools
             p.Splitter = EnemyPrefab<SplitterEnemy>("Enemy_Splitter", d.Splitter, _circle, line, withBlastMarker: false, extra: (go, props) => props.Ref("smallPrefab", p.SplitterSmall));
             p.Minion = EnemyPrefab<ChargerEnemy>("Enemy_Minion", d.Minion, _circle, line, withBlastMarker: false);
             p.Summoner = EnemyPrefab<SummonerEnemy>("Enemy_Summoner", d.Summoner, _square, line, withBlastMarker: false, extra: (go, props) => props.Ref("minion", p.Minion));
+            CreateBossPrefabs(p, line);
             p.RiftWarden = EnemyPrefab<RiftWardenBoss>("Boss_RiftWarden", d.WardenEnemy, _circle, line, withBlastMarker: false, extra: (go, props) =>
             {
                 // 내려찍기 예고 원 (보스를 따라가지 않게 Awake에서 떼어 낸다)

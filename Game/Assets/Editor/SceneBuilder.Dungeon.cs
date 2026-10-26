@@ -71,7 +71,7 @@ namespace HistoryHeroes.EditorTools
             c.trap = trap;
             c.midBoss = midBoss;
             c.midBossName = midBossName;
-            c.midBossHp = 18f;
+            c.midBossHp = 100f; // 120 × 100 × 방 15 (×1.6) = 1구간 약 19,000 — 그 판의 빌드로 약 1분 (Content 2-2 "60~90초")
             c.midBossAttack = 1.2f;
             c.enhanced = enhanced;
             c.enemies = new List<EnemyCost>(enemies);

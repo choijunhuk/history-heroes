@@ -39,6 +39,8 @@ namespace HistoryHeroes.Modes
         [SerializeField] private float introSeconds = 1.5f;
 
         private BossData _info;
+        private System.Func<EnemyBase, Vector2, float, float, EnemyBase> _childSpawner;
+        private readonly Dictionary<EnemyBase, List<EnemyBase>> _minionPools = new Dictionary<EnemyBase, List<EnemyBase>>();
         private List<string> _foughtActives = new List<string>();
         private EnemyBase _boss;
         private RunRecord _record;
@@ -96,6 +98,16 @@ namespace HistoryHeroes.Modes
             }
 
             _boss = Instantiate(_info.prefab, bossSpawn.position, Quaternion.identity, transform);
+            if (_boss is PatternBoss pattern)
+            {
+                // 졸개는 그 구간 15번 방 수준 (보스 체력 배수가 졸개에게 가지 않게)
+                int chapter = Mathf.Max(1, _info.chapter);
+                pattern.MinionHp = Mathf.Pow(1.35f, chapter - 1) * 1.6f;
+                pattern.MinionAttack = Mathf.Pow(1.2f, chapter - 1) * 1.3f;
+            }
+
+            _childSpawner = SpawnMinion;
+            EnemyBase.ChildSpawner = _childSpawner;
             _boss.Spawn(player.transform, _info.hpMultiplier, _info.attackMultiplier, false);
             _boss.Killed += _ => Finish(victory: true);
             _startTime = Time.time;
@@ -209,6 +221,34 @@ namespace HistoryHeroes.Modes
             List<RunRecord> records = SaveSystem.Data.records;
             return records.Count > 0 ? records[records.Count - 1] : null;
         }
+
+        /// <summary>보스 졸개 (망령 군주·망각의 왕): 풀에서 꺼내 바로 낸다. 보스맵은 레벨업이 없어서 경험치는 없다</summary>
+        private EnemyBase SpawnMinion(EnemyBase prefab, Vector2 at, float hp, float atk)
+        {
+            if (_finished || prefab == null) return null;
+            if (!_minionPools.TryGetValue(prefab, out List<EnemyBase> pool))
+            {
+                pool = new List<EnemyBase>();
+                _minionPools[prefab] = pool;
+            }
+
+            EnemyBase enemy = pool.Find(e => e != null && !e.gameObject.activeSelf);
+            if (enemy == null)
+            {
+                enemy = Instantiate(prefab, transform);
+                pool.Add(enemy);
+            }
+
+            enemy.transform.position = at;
+            enemy.gameObject.SetActive(true);
+            enemy.Spawn(player.transform, hp, atk, false);
+            return enemy;
+        }
+
+        private void OnDestroy()
+        {
+            if (EnemyBase.ChildSpawner == _childSpawner) EnemyBase.ChildSpawner = null;
+        }
     }
 
     /// <summary>보스전 결과 화면에 보여줄 요약</summary>
@@ -224,5 +264,6 @@ namespace HistoryHeroes.Modes
         public float BasicAttackShare;
         public string RecordLabel;
         public List<string> RewardLines;
+
     }
 }

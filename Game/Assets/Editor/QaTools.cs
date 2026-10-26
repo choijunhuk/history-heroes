@@ -188,7 +188,7 @@ namespace HistoryHeroes.EditorTools
         /// modes: "dps", "play"(보스) / "swarm", "barrage"(던전 잡몹). 예: BossBench("balanced", 3f, "swarm,barrage")
         /// 끝나면 BossBenchStatus()로 결과. 예: BossBench("balanced", 3f)
         /// </summary>
-        public static string BossBench(string build = "balanced", float speed = 3f, string modes = "dps,play", string heroes = "khan,guan,napoleon,tesla")
+        public static string BossBench(string build = "balanced", float speed = 3f, string modes = "dps,play", string heroes = "khan,guan,napoleon,tesla", string chapters = "1")
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
             KeepRunning();
@@ -204,9 +204,13 @@ namespace HistoryHeroes.EditorTools
             }
 
             var runs = new List<Dev.BossBench.Run>();
-            foreach (string mode in modes.Split(','))
+            foreach (string chapter in chapters.Split(','))
             {
-                foreach (string hero in heroes.Split(',')) runs.Add(new Dev.BossBench.Run { HeroId = hero.Trim(), Mode = mode.Trim() });
+                int ch = int.TryParse(chapter.Trim(), out int c) ? c : 1;
+                foreach (string mode in modes.Split(','))
+                {
+                    foreach (string hero in heroes.Split(',')) runs.Add(new Dev.BossBench.Run { HeroId = hero.Trim(), Mode = mode.Trim(), Chapter = ch });
+                }
             }
 
             Dev.BossBench.ChargerPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Charger.prefab");

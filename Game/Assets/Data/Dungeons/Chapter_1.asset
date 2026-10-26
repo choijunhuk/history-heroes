@@ -22,7 +22,7 @@ MonoBehaviour:
     cost: 2
     fromRoom: 2
   trap: 1
-  midBoss: {fileID: 0}
+  midBoss: {fileID: 5013067583048451430, guid: 6c8dda452501ddc488f1b4f2f9540fcd, type: 3}
   midBossName: "\uB4E4\uC18C \uB9DD\uB839"
   midBossHp: 18
   midBossAttack: 1.2

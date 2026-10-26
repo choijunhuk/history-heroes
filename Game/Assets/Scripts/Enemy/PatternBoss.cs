@@ -257,6 +257,74 @@ namespace HistoryHeroes.Enemy
             return wall.collider != null ? wall.centroid : Pos + dir * distance;
         }
 
+        /// <summary>부채꼴 휘두르기: 앞쪽 부채꼴 예고 (끝 0.2초 방향 고정) → 그 안의 플레이어에게 피해</summary>
+        protected IEnumerator ArcStrike(float radius, float degrees, float telegraph, float damage, string source)
+        {
+            Enter(State.Telegraph);
+            body.linearVelocity = Vector2.zero;
+            Vector2 aim = ToPlayer.normalized;
+            SpriteRenderer fan = Show(Telegraphs.Circle(Pos, radius, Telegraphs.Danger, -2));
+            fan.sprite = PlaceholderSprites.Fan(Mathf.RoundToInt(degrees));
+            float start = bossTime;
+            while (bossTime < start + telegraph)
+            {
+                if (bossTime < start + telegraph - 0.2f) aim = ToPlayer.normalized;
+                fan.transform.position = Pos;
+                fan.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg);
+                Telegraphs.Fill(fan, Telegraphs.Danger, (bossTime - start) / Mathf.Max(0.01f, telegraph));
+                yield return null;
+            }
+
+            HideShown(fan);
+            Enter(State.Attack);
+            AttackFx.Arc(Pos, aim, radius, degrees, new Color(1f, 0.6f, 0.25f, 0.7f), 0.15f);
+            Collider2D hit = Physics2D.OverlapCircle(Pos, radius, playerMask);
+            if (hit != null && Vector2.Angle(aim, (Vector2)hit.transform.position - Pos) <= degrees * 0.5f && hit.TryGetComponent(out Health target))
+            {
+                target.TryTakeDamage(DamageCalculator.Enemy(Damage * damage, source));
+            }
+        }
+
+        /// <summary>from에서 플레이어 쪽 부채꼴 탄 (분신·쌍둥이가 쏠 때)</summary>
+        protected void FanFrom(Vector2 from, int count, float spreadDegrees, float speed, float damage, string source)
+        {
+            Vector2 aim = ((Vector2)player.position - from).normalized;
+            float start = -spreadDegrees * 0.5f;
+            float step = count > 1 ? spreadDegrees / (count - 1) : 0f;
+            for (int i = 0; i < count; i++)
+            {
+                Vector2 d = Quaternion.Euler(0f, 0f, count > 1 ? start + step * i : 0f) * aim;
+                EnemyProjectiles.Fire(from + d * 0.6f, d, speed, DamageCalculator.Enemy(Damage * damage, source), playerMask, this);
+            }
+        }
+
+        /// <summary>플레이어를 한쪽으로 민다 (증기 골렘의 컨베이어). 바닥 띠가 깜빡인다</summary>
+        protected IEnumerator PushPlayer(Vector2 direction, float speed, float seconds, Color color)
+        {
+            SpriteRenderer band = Show(Telegraphs.Box(Vector2.zero, new Vector2(30f, 30f), Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg, color, -9));
+            Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
+            float end = bossTime + seconds;
+            while (bossTime < end)
+            {
+                Color c = color;
+                c.a = color.a * (0.6f + 0.4f * Mathf.Sin(bossTime * 10f));
+                band.color = c;
+                if (rb != null) rb.position += direction.normalized * speed * Time.deltaTime;
+                yield return null;
+            }
+
+            HideShown(band);
+        }
+
+        /// <summary>순간 이동 (보랏빛 깜빡임). 경기장 안 자리로</summary>
+        protected void Blink(Vector2 to)
+        {
+            AttackFx.Burst(Pos, 0.8f, new Color(0.6f, 0.3f, 0.9f, 0.6f), 0.2f);
+            body.position = Inside(to);
+            transform.position = body.position;
+            AttackFx.Burst(body.position, 0.8f, new Color(0.6f, 0.3f, 0.9f, 0.6f), 0.2f);
+        }
+
         /// <summary>몸이 빛나는 예고 (사방 탄 등)</summary>
         protected IEnumerator Glow(float seconds, Color color)
         {
