@@ -182,5 +182,35 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(0, Patrol.Pending(s, 50_000));
             Assert.AreEqual(250, Patrol.Pending(s, 53_600));
         }
+
+        // ---------------------------------------------------------------- 로컬 알림 (LiveOps 9장)
+
+        [Test]
+        public void Notices_QuietHoursMoveTo0800()
+        {
+            Assert.AreEqual(new DateTimeOffset(2026, 11, 3, 8, 0, 0, Kst), Common.LocalNotices.OutOfQuiet(new DateTimeOffset(2026, 11, 2, 22, 30, 0, Kst)));
+            Assert.AreEqual(new DateTimeOffset(2026, 11, 2, 8, 0, 0, Kst), Common.LocalNotices.OutOfQuiet(new DateTimeOffset(2026, 11, 2, 3, 0, 0, Kst)));
+            var noon = new DateTimeOffset(2026, 11, 2, 12, 0, 0, Kst);
+            Assert.AreEqual(noon, Common.LocalNotices.OutOfQuiet(noon), "낮에는 그대로");
+        }
+
+        [Test]
+        public void Notices_PlanHeartsAndPatrol_RespectToggles()
+        {
+            DateTimeOffset now = new DateTimeOffset(2026, 11, 2, 10, 0, 0, Kst);
+            long unix = now.ToUnixTimeSeconds();
+            var s = new SaveData { hearts = 3, heartsUpdatedAt = unix, unlockedChapter = 2 };
+            s.patrol.lastClaimAt = unix;
+            var plan = Common.LocalNotices.Plan(s, now);
+            Assert.AreEqual(2, plan.Count, "하루 최대 2번 (종류마다 하나)");
+            var hearts = plan.Find(p => p.Id == Common.LocalNotices.HeartsId);
+            Assert.AreEqual(now.AddSeconds(2 * Hearts.RegenSeconds), hearts.At, "하트 2개 = 40분 뒤");
+            var patrol = plan.Find(p => p.Id == Common.LocalNotices.PatrolId);
+            Assert.AreEqual(new DateTimeOffset(2026, 11, 3, 8, 0, 0, Kst), patrol.At, "12시간 뒤 22:00 → 다음 날 08:00");
+
+            s.settings.notifyHearts = false;
+            s.settings.notifyPatrol = false;
+            Assert.AreEqual(0, Common.LocalNotices.Plan(s, now).Count);
+        }
     }
 }

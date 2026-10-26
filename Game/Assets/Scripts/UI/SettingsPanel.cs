@@ -19,6 +19,11 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button flashButton;
         [SerializeField] private TMP_Text flashLabel;
         [SerializeField] private Button backButton;
+        [Header("v1.0 알림")]
+        [SerializeField] private Button heartsButton;
+        [SerializeField] private TMP_Text heartsLabel;
+        [SerializeField] private Button patrolButton;
+        [SerializeField] private TMP_Text patrolLabel;
 
         private static readonly string[] ShakeNames = { "끄기", "약하게", "보통" };
 
@@ -31,6 +36,8 @@ namespace HistoryHeroes.UI
             numbersButton.onClick.AddListener(() => Change(s => s.damageNumbers = !s.damageNumbers));
             flashButton.onClick.AddListener(() => Change(s => s.reduceFlashes = !s.reduceFlashes));
             backButton.onClick.AddListener(() => root.SetActive(false));
+            if (heartsButton != null) heartsButton.onClick.AddListener(() => ChangeNotice(s => s.notifyHearts = !s.notifyHearts));
+            if (patrolButton != null) patrolButton.onClick.AddListener(() => ChangeNotice(s => s.notifyPatrol = !s.notifyPatrol));
         }
 
         public void Open()
@@ -40,6 +47,21 @@ namespace HistoryHeroes.UI
         }
 
         public void Close() => root.SetActive(false);
+
+        /// <summary>알림을 켜면 그때 권한도 묻는다 (처음 물었을 때 "괜찮아요"를 골랐어도)</summary>
+        private void ChangeNotice(System.Action<GameSettings> change)
+        {
+            GameSettings s = SaveSystem.Data.settings;
+            change(s);
+            if (s.notifyHearts || s.notifyPatrol)
+            {
+                s.notifyAsked = true;
+                Common.LocalNotices.RequestPermission();
+            }
+
+            SaveSystem.Save();
+            Render();
+        }
 
         private void Change(System.Action<GameSettings> change)
         {
@@ -54,6 +76,8 @@ namespace HistoryHeroes.UI
             shakeLabel.text = $"화면 흔들림: {ShakeNames[Mathf.Clamp(s.shake, 0, 2)]}";
             numbersLabel.text = $"피해 숫자: {(s.damageNumbers ? "켜기" : "끄기")}";
             flashLabel.text = $"번쩍임 줄이기: {(s.reduceFlashes ? "켜기" : "끄기")}";
+            if (heartsLabel != null) heartsLabel.text = $"알림 · 하트가 다 차면: {(s.notifyHearts ? "켜기" : "끄기")}";
+            if (patrolLabel != null) patrolLabel.text = $"알림 · 순찰이 가득 차면: {(s.notifyPatrol ? "켜기" : "끄기")}";
         }
     }
 }

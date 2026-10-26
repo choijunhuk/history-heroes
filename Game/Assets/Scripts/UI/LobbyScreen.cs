@@ -180,11 +180,11 @@ namespace HistoryHeroes.UI
                     ShowNotice("보스 격파 보상: " + string.Join(", ", gear).Replace("장비  ", ""));
                 }
 
-                if (!OfferResume()) OfferLegendaryChoice();
+                if (!OfferResume() && !OfferLegendaryChoice()) OfferNotifications();
             }
-            else
+            else if (!OfferResume())
             {
-                OfferResume();
+                OfferNotifications();
             }
 
             SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
@@ -194,10 +194,10 @@ namespace HistoryHeroes.UI
         private void OnDestroy() => Missions.MissionEvents.Completed -= OnMissionCompleted;
 
         /// <summary>5구간 보스 최초 격파: 전설 장비 1개 고르기 (Equipment 8장). "나중에"를 누르면 다음에 로비에서 또</summary>
-        private void OfferLegendaryChoice()
+        private bool OfferLegendaryChoice()
         {
             SaveData data = SaveSystem.Data;
-            if (choice == null || metaTable == null || metaTable.equipment == null || !Equipment.EquipmentInventory.LegendaryChoicePending(data)) return;
+            if (choice == null || metaTable == null || metaTable.equipment == null || !Equipment.EquipmentInventory.LegendaryChoicePending(data)) return false;
             var options = new List<ChoicePanel.Option>();
             foreach (Equipment.EquipmentData e in Equipment.EquipmentInventory.LegendaryOptions(metaTable.equipment))
             {
@@ -216,7 +216,9 @@ namespace HistoryHeroes.UI
                 });
             }
 
-            if (options.Count > 0) choice.Open("5구간 보스 보상", "전설 장비 1개를 골라요 (한 번만)", options);
+            if (options.Count == 0) return false;
+            choice.Open("5구간 보스 보상", "전설 장비 1개를 골라요 (한 번만)", options);
+            return true;
         }
 
         /// <summary>
@@ -260,6 +262,43 @@ namespace HistoryHeroes.UI
                 },
             };
             choice.Open("끝나지 않은 판이 있어요", "앱이 꺼져서 멈춘 판을 이어할 수 있어요", options);
+            return true;
+        }
+
+        /// <summary>
+        /// 알림 받을지 묻기 (LiveOps 9장): 첫 판이 끝난 뒤 한 번, 이유를 먼저 보여 주고 OS 권한 창(안드로이드 13+)을 띄운다.
+        /// </summary>
+        private bool OfferNotifications()
+        {
+            SaveData data = SaveSystem.Data;
+            bool playedOnce = data.records.Count > 0 || data.accountExp > 0 || data.accountLevel > 1;
+            if (choice == null || data.settings.notifyAsked || !data.tutorialDone || !playedOnce) return false;
+            var options = new List<ChoicePanel.Option>
+            {
+                new ChoicePanel.Option
+                {
+                    Text = "<b>받을게요</b>  <size=80%>하트가 다 차면 · 순찰이 가득 차면</size>",
+                    OnChosen = () =>
+                    {
+                        SaveSystem.Data.settings.notifyAsked = true;
+                        SaveSystem.Save();
+                        Common.LocalNotices.RequestPermission();
+                    },
+                },
+                new ChoicePanel.Option
+                {
+                    Text = "<b>괜찮아요</b>  <size=80%>설정에서 언제든 켤 수 있어요</size>",
+                    OnChosen = () =>
+                    {
+                        GameSettings s = SaveSystem.Data.settings;
+                        s.notifyAsked = true;
+                        s.notifyHearts = false;
+                        s.notifyPatrol = false;
+                        SaveSystem.Save();
+                    },
+                },
+            };
+            choice.Open("알림을 받을까요?", "밤 9시~아침 8시에는 보내지 않아요 · 하루 2번까지", options);
             return true;
         }
 

@@ -364,19 +364,25 @@ namespace HistoryHeroes.EditorTools
             var screen = holder.AddComponent<SettingsPanel>();
 
             TMP_Text title = Label("Title", panel, "설정", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 600f), new Vector2(900f, 100f));
-            Button shake = Btn("Shake", panel, "화면 흔들림: 보통", new Vector2(0f, 330f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text shakeLabel);
-            Button numbers = Btn("DamageNumbers", panel, "피해 숫자: 켜기", new Vector2(0f, 170f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text numbersLabel);
-            Button flash = Btn("ReduceFlashes", panel, "번쩍임 줄이기: 끄기", new Vector2(0f, 10f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text flashLabel);
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(900f, 100f));
+            Button shake = Btn("Shake", panel, "화면 흔들림: 보통", new Vector2(0f, 500f), new Vector2(820f, 120f), ButtonBlue, out TMP_Text shakeLabel);
+            Button numbers = Btn("DamageNumbers", panel, "피해 숫자: 켜기", new Vector2(0f, 360f), new Vector2(820f, 120f), ButtonBlue, out TMP_Text numbersLabel);
+            Button flash = Btn("ReduceFlashes", panel, "번쩍임 줄이기: 끄기", new Vector2(0f, 220f), new Vector2(820f, 120f), ButtonBlue, out TMP_Text flashLabel);
             TMP_Text help = Label("Help", panel, "번쩍임 줄이기: 화면을 크게 덮는 섬광을 옅게, 1초에 3번까지만 보여줘요", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(help.rectTransform, Center, Center, new Vector2(0f, -110f), new Vector2(900f, 90f));
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -300f), new Vector2(400f, 110f), ButtonGray, out _);
+            Place(help.rectTransform, Center, Center, new Vector2(0f, 120f), new Vector2(900f, 70f));
+            // v1.0 알림 (LiveOps 9장: 종류별로 끈다)
+            Button hearts = Btn("NotifyHearts", panel, "알림 · 하트가 다 차면: 켜기", new Vector2(0f, -20f), new Vector2(820f, 120f), new Color(0.25f, 0.35f, 0.25f), out TMP_Text heartsLabel);
+            Button patrol = Btn("NotifyPatrol", panel, "알림 · 순찰이 가득 차면: 켜기", new Vector2(0f, -160f), new Vector2(820f, 120f), new Color(0.25f, 0.35f, 0.25f), out TMP_Text patrolLabel);
+            TMP_Text noticeHelp = Label("NoticeHelp", panel, "밤 9시~아침 8시에는 보내지 않아요", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            Place(noticeHelp.rectTransform, Center, Center, new Vector2(0f, -255f), new Vector2(900f, 60f));
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -420f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("shakeButton", shake).Ref("shakeLabel", shakeLabel)
                     .Ref("numbersButton", numbers).Ref("numbersLabel", numbersLabel)
-                    .Ref("flashButton", flash).Ref("flashLabel", flashLabel).Ref("backButton", back);
+                    .Ref("flashButton", flash).Ref("flashLabel", flashLabel).Ref("backButton", back)
+                    .Ref("heartsButton", hearts).Ref("heartsLabel", heartsLabel).Ref("patrolButton", patrol).Ref("patrolLabel", patrolLabel);
             }
 
             return screen;

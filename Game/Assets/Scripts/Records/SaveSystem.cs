@@ -136,7 +136,9 @@ namespace HistoryHeroes.Records
 
             private void OnApplicationPause(bool paused)
             {
-                if (paused) SaveIfDirty();
+                if (!paused) return;
+                SaveIfDirty();
+                Common.LocalNotices.Reschedule(Data); // 하트·순찰 알림 다시 예약 (v1.0)
             }
 
             private void OnApplicationFocus(bool focused)
@@ -144,7 +146,11 @@ namespace HistoryHeroes.Records
                 if (!focused) SaveIfDirty();
             }
 
-            private void OnApplicationQuit() => SaveIfDirty();
+            private void OnApplicationQuit()
+            {
+                SaveIfDirty();
+                Common.LocalNotices.Reschedule(Data);
+            }
 
             [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
             private static void ResetStatics() => _instance = null;
