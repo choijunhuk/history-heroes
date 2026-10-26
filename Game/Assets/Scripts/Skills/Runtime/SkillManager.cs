@@ -285,6 +285,8 @@ namespace HistoryHeroes.Skills
             {
                 ChoseLegendary = true;
                 LegendaryChosen?.Invoke();
+                Audio.AudioManager.Play("legendary");
+                Audio.Haptics.Double();
                 Missions.MissionEvents.Raise(Missions.MissionEvents.Legendary); // 업적 "전설의 순간"
             }
 
@@ -382,6 +384,8 @@ namespace HistoryHeroes.Skills
             RecipeBook.Discover(recipe);
             Missions.MissionEvents.Raise(Missions.MissionEvents.Fusion);
             FusionCompleted?.Invoke(recipe);
+            Audio.AudioManager.Play("fusion");
+            Audio.Haptics.Double();
         }
     }
 }

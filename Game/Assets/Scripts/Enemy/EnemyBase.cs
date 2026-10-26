@@ -119,6 +119,7 @@ namespace HistoryHeroes.Enemy
 
         protected void Enter(State next, float duration = 0f)
         {
+            if (next == State.Telegraph && state != State.Telegraph) Audio.AudioManager.Play("telegraph", 0.3f, 0.05f); // 예고 소리 (같은 소리 4개까지)
             state = next;
             stateTimer = duration;
             if (telegraphLine != null) telegraphLine.enabled = next == State.Telegraph;
@@ -232,6 +233,7 @@ namespace HistoryHeroes.Enemy
             }
 
             status.NotifyDeath(transform.position); // 독 구름 안에서 죽었으면 번짐 (맹독 개화)
+            Audio.AudioManager.Play("enemy_die", IsElite ? 1f : 0.55f);
             _alive.Remove(this);
             body.linearVelocity = Vector2.zero;
             if (_lastHitKind != DamageKind.Enemy) Missions.MissionEvents.EnemyKilled(IsElite, _lastHitKind == DamageKind.BasicAttack);

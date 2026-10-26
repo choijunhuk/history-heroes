@@ -195,6 +195,7 @@ namespace HistoryHeroes.Enemy
             }
 
             foreach (SpriteRenderer m in markers) HideShown(m);
+            Audio.AudioManager.Play("slam", 0.7f);
             CameraShake.Add(midBoss ? CameraShake.PlayerHit : CameraShake.BossImpact);
         }
 

@@ -213,6 +213,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(cheats)) props.Ref("experience", experience).Ref("levelUp", ui.LevelUp).Ref("skills", skills);
             SetPresets(cheats, d);
 
+            AddUiSounds(ui.Hud.transform.root); // v1.0 버튼 소리
             EditorSceneManager.SaveScene(scene, BattleScenePath);
         }
 

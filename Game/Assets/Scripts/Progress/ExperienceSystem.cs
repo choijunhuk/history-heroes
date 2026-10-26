@@ -85,6 +85,7 @@ namespace HistoryHeroes.Progress
 
         private void OnCollected(ExperienceGem gem, float value)
         {
+            Audio.AudioManager.Play("gem", 0.25f, 0.15f);
             _active.Remove(gem);
             _gems.Release(gem);
             Level.Add(value, player.Stats.Get(StatType.ExpGain));

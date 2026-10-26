@@ -175,6 +175,7 @@ namespace HistoryHeroes.UI
 
             // 튜토리얼 (UX 4장): 처음이면 오프닝 → 튜토리얼 던전. 방금 끝냈으면 다음 목표
             bool tutorial = Progress.Tutorial.Needed(data) && opening != null;
+            Audio.AudioManager.PlayMusic(tutorial ? "opening" : "lobby");
             if (tutorial) opening.Open(() => GameSession.StartTutorial(false));
             if (GameSession.TutorialJustFinished)
             {
@@ -473,6 +474,7 @@ namespace HistoryHeroes.UI
         {
             int gold = 0;
             SaveSystem.CommitResult r = SaveSystem.Commit(() => (gold = Patrol.Claim(SaveSystem.Data, Clock.UnixSeconds)) > 0);
+            if (r == SaveSystem.CommitResult.Saved) Audio.AudioManager.Play("coin");
             if (r == SaveSystem.CommitResult.Saved) ShowNotice($"순찰 보상  골드 +{Wallet.Format(gold)} (최대 {Patrol.MaxHours}시간까지 쌓여요)");
             else if (r == SaveSystem.CommitResult.SaveFailed) ShowNotice(SaveSystem.SaveFailedText);
             else ShowNotice($"순찰 중이에요 · 시간당 골드 {Patrol.GoldPerHour(SaveSystem.Data)} (최대 {Patrol.MaxHours}시간)");

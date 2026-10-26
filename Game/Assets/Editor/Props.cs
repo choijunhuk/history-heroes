@@ -28,6 +28,7 @@ namespace HistoryHeroes.EditorTools
         public Props Float(string name, float value) { Find(name).floatValue = value; return this; }
         public Props Int(string name, int value) { Find(name).intValue = value; return this; }
         public Props Bool(string name, bool value) { Find(name).boolValue = value; return this; }
+        public Props String(string name, string value) { Find(name).stringValue = value; return this; }
         public Props Color(string name, Color value) { Find(name).colorValue = value; return this; }
         public Props Vector2(string name, Vector2 value) { Find(name).vector2Value = value; return this; }
         public Props Mask(string name, int layerMask) { Find(name).intValue = layerMask; return this; }

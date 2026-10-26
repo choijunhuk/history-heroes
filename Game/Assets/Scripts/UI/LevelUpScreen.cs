@@ -63,6 +63,7 @@ namespace HistoryHeroes.UI
 
         private void OnLeveledUp(int level)
         {
+            if (!IsOpen) Audio.AudioManager.Play("levelup");
             _pending++;
             if (!IsOpen) Open();
         }
@@ -174,6 +175,7 @@ namespace HistoryHeroes.UI
         private void Choose(SkillCard card)
         {
             if (_waitingForAd) return;
+            Audio.AudioManager.Play("card");
             skills.Choose(card);
             _legendaryWarning &= !skills.ChoseLegendary; // 전설을 골랐으면 이번 판 ★3은 이미 실패
             Records.SaveSystem.SaveIfDirty(); // 스킬 선택 확정 = 안전한 저장 시점 (조합 도감 발견, 12-2)

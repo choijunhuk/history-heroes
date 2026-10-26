@@ -640,6 +640,11 @@ namespace HistoryHeroes.Records
         public int joystickSize = 1;
         /// <summary>조이스틱 진하기: 0 연하게 · 1 보통 · 2 진하게</summary>
         public int joystickOpacity = 1;
+        /// <summary>배경음 · 효과음 음량 (0~4 = 0 · 25 · 50 · 75 · 100%)</summary>
+        public int musicVolume = 3;
+        public int sfxVolume = 4;
+        /// <summary>진동 (Audio 4장, 기본 켜짐)</summary>
+        public bool vibration = true;
     }
 
     // ---------------------------------------------------------------- v1.0 출석부 · 신규 7일 미션 · 순찰

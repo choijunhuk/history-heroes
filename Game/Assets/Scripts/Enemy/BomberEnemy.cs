@@ -65,6 +65,7 @@ namespace HistoryHeroes.Enemy
 
         private void Explode()
         {
+            Audio.AudioManager.Play("explode", 0.6f);
             Collider2D hit = Physics2D.OverlapCircle(_blastCenter, blastRadius, playerMask);
             if (hit != null && hit.TryGetComponent(out Health target))
             {

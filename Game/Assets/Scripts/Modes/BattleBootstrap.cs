@@ -110,6 +110,7 @@ namespace HistoryHeroes.Modes
         private void Awake()
         {
             SettingsApplier.Apply(SaveSystem.Data.settings);
+            Audio.AudioManager.PlayMusic(Audio.AudioManager.MusicFor(GameSession.Mode, GameSession.Chapter));
             if (metaTable != null) Missions.MissionEvents.Configure(metaTable.missions, roster, database != null ? database.recipes.Count : 0);
             if (roster != null && player != null)
             {

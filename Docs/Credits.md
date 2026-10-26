@@ -20,9 +20,31 @@
 
 - 지금은 **임시 도형**만 쓴다 (게임이 직접 그린 원·사각형). 바깥 그림 에셋 없음.
 
-## 소리
+## 소리 (모두 CC0 — 출처 표시 의무는 없지만 고맙게 적는다)
 
-- 아직 없음 (v1.0 사운드 단계에서 추가하면 여기에 적는다).
+### 음악
+
+| 게임 안 이름 | 곡 | 만든 사람 | 라이선스 | 출처 |
+|---|---|---|---|---|
+| lobby | Ending | Juhani Junkala | CC0 | https://opengameart.org/content/5-chiptunes-action |
+| opening | Title Screen | Juhani Junkala | CC0 | (같은 묶음) |
+| chapter1 | Level 1 | Juhani Junkala | CC0 | (같은 묶음) |
+| chapter2 | Level 2 | Juhani Junkala | CC0 | (같은 묶음) |
+| chapter3 (3~4구간 · 균열) | Level 3 | Juhani Junkala | CC0 | (같은 묶음) |
+| chapter5 · survival | Fire Level (Danish Mega Pony v.4 OST Track 02) | Spring Spring | CC0 | https://opengameart.org/content/fire-level |
+| boss | Boss Battle #6 [8-bit] (V1) | nene | CC0 | https://opengameart.org/content/boss-battle-6-8-bit |
+
+- WAV·MP3를 OGG(Vorbis q4)로 바꿔서 넣었다 (`Game/Assets/Audio/Music`).
+
+### 효과음 (`Game/Assets/Audio/Sfx`, 원래 파일 이름)
+
+| 게임 안 이름 | 원래 파일 | 묶음 (Kenney, CC0) |
+|---|---|---|
+| shoot | tick_002 | Interface Sounds — https://kenney.nl/assets/interface-sounds |
+| card · ui_click · ui_back · ui_error · telegraph · reward | select_002 · click_001 · back_001 · error_001 · question_001 · confirmation_002 | Interface Sounds |
+| hit · player_hurt · enemy_die · slam · explode | impactPunch_medium_000 · impactPunch_heavy_000 · impactSoft_medium_001 · impactWood_heavy_000 · impactMetal_heavy_000 | Impact Sounds — https://kenney.nl/assets/impact-sounds |
+| levelup · fusion · legendary · gem · death · victory | powerUp2 · powerUp7 · threeTone2 · pepSound1 · lowThreeTone · zapThreeToneUp | Digital Audio — https://kenney.nl/assets/digital-audio |
+| door · coin | doorOpen_1 · handleCoins | RPG Audio — https://kenney.nl/assets/rpg-audio |
 
 ## 쓰는 패키지
 

@@ -25,6 +25,8 @@ namespace HistoryHeroes.Common
 
         public static void OnBossKilled()
         {
+            Audio.AudioManager.Play("victory");
+            Audio.Haptics.Long();
             Freeze(BossKill);
             Slow(BossKillSlowScale, BossKill + BossKillSlowSeconds); // 멈춤이 끝난 뒤 0.5초가 남게
         }

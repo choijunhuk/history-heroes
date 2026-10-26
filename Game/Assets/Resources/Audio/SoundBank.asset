@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae4086543353c9d48ac91c06518142df, type: 3}
+  m_Name: SoundBank
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Audio.SoundBank
+  music:
+  - id: lobby
+    clip: {fileID: 8300000, guid: 0861d5dde3b653048bda536f0fad55db, type: 3}
+    volume: 0.7
+  - id: opening
+    clip: {fileID: 8300000, guid: e583096aa1098e14cab5f19a0307f1f2, type: 3}
+    volume: 0.7
+  - id: chapter1
+    clip: {fileID: 8300000, guid: a1c198ae00609314a97d6afaef6ddc25, type: 3}
+    volume: 0.6
+  - id: chapter2
+    clip: {fileID: 8300000, guid: ac6de876e9e227d4780673fdc988bbc5, type: 3}
+    volume: 0.6
+  - id: chapter3
+    clip: {fileID: 8300000, guid: 76d429a87dbc64f49b68e340a2689009, type: 3}
+    volume: 0.6
+  - id: chapter5
+    clip: {fileID: 8300000, guid: 8dbd9b1bd6444824db9b2992a6dc205f, type: 3}
+    volume: 0.6
+  - id: survival
+    clip: {fileID: 8300000, guid: 8dbd9b1bd6444824db9b2992a6dc205f, type: 3}
+    volume: 0.6
+  - id: boss
+    clip: {fileID: 8300000, guid: 1c83f515ccdd4e84bbcb8206e1ac060d, type: 3}
+    volume: 0.65
+  sfx:
+  - id: card
+    clip: {fileID: 8300000, guid: aac1cc7f6cb97874cb734625648e025a, type: 3}
+    volume: 1
+  - id: coin
+    clip: {fileID: 8300000, guid: bfb1c724ce86fa64db3faa5465d3d05f, type: 3}
+    volume: 1
+  - id: death
+    clip: {fileID: 8300000, guid: cbad8551bd015724e8fd990b64943e4a, type: 3}
+    volume: 1
+  - id: door
+    clip: {fileID: 8300000, guid: 1c9f2b970eb37e548ae33692d71c9c77, type: 3}
+    volume: 1
+  - id: enemy_die
+    clip: {fileID: 8300000, guid: 13db9954c1cee474294b76be3d4fedef, type: 3}
+    volume: 1
+  - id: explode
+    clip: {fileID: 8300000, guid: 77e80fe6aba23144b83b7d5a474bc57b, type: 3}
+    volume: 1
+  - id: fusion
+    clip: {fileID: 8300000, guid: 8954156090f5eda4cb428f2d3d0fbd1d, type: 3}
+    volume: 1
+  - id: gem
+    clip: {fileID: 8300000, guid: 93b27bd5d564fcf40a9a3da390b156f3, type: 3}
+    volume: 1
+  - id: hit
+    clip: {fileID: 8300000, guid: 404f3d00c6f02a143923136905842226, type: 3}
+    volume: 1
+  - id: legendary
+    clip: {fileID: 8300000, guid: 2e4052a87e0aaf64fa4db6a47a011680, type: 3}
+    volume: 1
+  - id: levelup
+    clip: {fileID: 8300000, guid: 20bdf0ceaab30674fbe967228e7f0f1c, type: 3}
+    volume: 1
+  - id: player_hurt
+    clip: {fileID: 8300000, guid: 99aa9419556a85e419fdd267bd4d2dbb, type: 3}
+    volume: 1
+  - id: reward
+    clip: {fileID: 8300000, guid: 5aac1f7efc0e4594dafbed71ddbdfe2a, type: 3}
+    volume: 1
+  - id: shoot
+    clip: {fileID: 8300000, guid: 1b472a8ae97e65f4ba3c48b255ede90a, type: 3}
+    volume: 1
+  - id: slam
+    clip: {fileID: 8300000, guid: d54de6cdcc4be814683224e11d91c0b4, type: 3}
+    volume: 1
+  - id: telegraph
+    clip: {fileID: 8300000, guid: 4a36c4abf63f7f74b83bc3d2f74d38d4, type: 3}
+    volume: 1
+  - id: ui_back
+    clip: {fileID: 8300000, guid: b753867ef5ee3ef4e81694b329474f80, type: 3}
+    volume: 1
+  - id: ui_click
+    clip: {fileID: 8300000, guid: 054d6425b0feeee40b97f0ba01c6d88a, type: 3}
+    volume: 1
+  - id: ui_error
+    clip: {fileID: 8300000, guid: e70d28ee53e439140b632c4692ef2c47, type: 3}
+    volume: 1
+  - id: victory
+    clip: {fileID: 8300000, guid: de56ad9ca233cb84e81fd0d3879204a8, type: 3}
+    volume: 1
