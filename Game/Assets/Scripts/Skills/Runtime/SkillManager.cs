@@ -40,6 +40,9 @@ namespace HistoryHeroes.Skills
         /// <summary>조합을 처음 만들었을 때 (도감 기록·연출용)</summary>
         public event Action<FusionRecipe> FusionCompleted;
 
+        /// <summary>전설 스킬 카드를 골랐다 (영웅 대사 "전설 획득")</summary>
+        public event Action LegendaryChosen;
+
         public string HeroId => player.Hero != null ? player.Hero.id : string.Empty;
         public Heroes.HeroClass HeroClass => player.Hero != null ? player.Hero.heroClass : Heroes.HeroClass.Archer;
 
@@ -281,6 +284,7 @@ namespace HistoryHeroes.Skills
             if (card.Skill != null && card.Skill.rarity == Rarity.Legendary && card.Type != CardType.Fallback)
             {
                 ChoseLegendary = true;
+                LegendaryChosen?.Invoke();
                 Missions.MissionEvents.Raise(Missions.MissionEvents.Legendary); // 업적 "전설의 순간"
             }
 

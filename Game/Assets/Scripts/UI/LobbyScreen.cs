@@ -199,7 +199,24 @@ namespace HistoryHeroes.UI
             }
 
             SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
+            if (!tutorial) ShowHeroChat(data);
             Render();
+        }
+
+        /// <summary>영웅끼리 짧은 대화 (Story 3장): 둘 다 해금됐고 다른 알림이 없을 때 가끔</summary>
+        private void ShowHeroChat(SaveData data)
+        {
+            if (noticeLabel == null || noticeLabel.gameObject.activeSelf || Random.value > 0.4f) return;
+            var chats = new List<(string a, string lineA, string b, string lineB)>();
+            foreach (var c in Story.StoryLines.Chats)
+            {
+                HeroData a = roster.Find(c.a), b = roster.Find(c.b);
+                if (a != null && b != null && HeroUnlock.IsUnlocked(data, a) && HeroUnlock.IsUnlocked(data, b)) chats.Add(c);
+            }
+
+            if (chats.Count == 0) return;
+            var chat = chats[Random.Range(0, chats.Count)];
+            ShowNotice($"{roster.Find(chat.a).displayName}: \"{chat.lineA}\"   {roster.Find(chat.b).displayName}: \"{chat.lineB}\"");
         }
 
         private void OnDestroy() => Missions.MissionEvents.Completed -= OnMissionCompleted;

@@ -165,6 +165,11 @@ namespace HistoryHeroes.EditorTools
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
             }
 
+            using (var props = new Props(ui.Voice))
+            {
+                props.Ref("player", player).Ref("experience", experience).Ref("skills", skills).Ref("boss", bossRun);
+            }
+
             using (var props = new Props(ui.Guide))
             {
                 props.Ref("dungeon", run).Ref("boss", bossRun).Ref("levelUp", ui.LevelUp).Ref("recordSave", ui.RecordSave);
@@ -324,6 +329,7 @@ namespace HistoryHeroes.EditorTools
             public RewardRoomPanel RewardRoom;
             public PauseMenu Pause;
             public TutorialGuide Guide;
+            public HeroVoice Voice;
         }
 
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
@@ -420,7 +426,25 @@ namespace HistoryHeroes.EditorTools
             ui.Pause = BuildPauseMenu(root, hudRect, settings);
             settings.transform.SetAsLastSibling(); // 설정이 일시정지 판 위에
             ui.Guide = BuildTutorialGuide(root);
+            ui.Voice = BuildHeroVoice(root);
             return ui;
+        }
+
+        /// <summary>v1.0 영웅 대사 말풍선 (아래쪽, 터치를 막지 않는다)</summary>
+        private static HeroVoice BuildHeroVoice(Transform root)
+        {
+            RectTransform holder = Rect("HeroVoice", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            var voice = holder.gameObject.AddComponent<HeroVoice>();
+            RectTransform bubble = Rect("Bubble", holder, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 300f), new Vector2(920f, 96f));
+            Img(bubble, new Color(0f, 0f, 0f, 0.6f), null).raycastTarget = false;
+            TMP_Text label = Label("Text", bubble, "", 32, TextAlignmentOptions.Center);
+            Stretch(label.rectTransform);
+            label.raycastTarget = false;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 22f;
+            label.fontSizeMax = 32f;
+            using (var props = new Props(voice)) props.Ref("bubble", bubble.gameObject).Ref("label", label);
+            return voice;
         }
 
         /// <summary>v1.0 튜토리얼 안내 (클리오 말풍선): 위쪽, 누르면 닫힌다</summary>
