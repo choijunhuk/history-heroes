@@ -18,7 +18,7 @@ MonoBehaviour:
   playStyle: "\uC5F0\uC0AC\uB85C \uBC00\uC5B4\uB0B4\uBA74\uC11C \uBAB0\uB9B0 \uC801\uC744
     \uD3EC\uD0C4\uC73C\uB85C \uC815\uB9AC"
   maxHp: 900
-  attack: 90
+  attack: 72
   attackSpeed: 1.4
   moveSpeed: 4.8
   range: 5
@@ -30,17 +30,17 @@ MonoBehaviour:
   meleeArcDegrees: 120
   meleeWaveCoefficient: 0.4
   signatureName: "\uD3EC\uBCD1\uC758 \uB208"
-  signatureDescription: "\uAE30\uBCF8 \uACF5\uACA9 3\uBC1C\uB9C8\uB2E4 \uC791\uC740
-    \uD3EC\uD0C4 (\uBC94\uC704 \uD53C\uD574 80%). \uCD1D\uC54C\uC774 \uC801\uC744
-    \uC0B4\uC9DD \uBC00\uC5B4\uB0C4"
+  signatureDescription: "\uAE30\uBCF8 \uACF5\uACA9 3\uBC1C\uB9C8\uB2E4 \uD3EC\uD0C4
+    (\uBC94\uC704 \uD53C\uD574 100%). \uCD1D\uC54C\uC774 \uC801\uC744 \uC0B4\uC9DD
+    \uBC00\uC5B4\uB0C4"
   firstShotDelay: 0.2
   firstShotBonus: 0
   damageReduction: 0
   lowHpThreshold: 0.5
   lowHpAttackBonus: 0
   cannonEvery: 3
-  cannonCoefficient: 0.8
-  cannonRadius: 1.2
+  cannonCoefficient: 1
+  cannonRadius: 1.5
   knockback: 0.25
   chainBounces: 0
   chainRadius: 3

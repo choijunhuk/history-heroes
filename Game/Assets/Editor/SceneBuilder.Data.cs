@@ -73,15 +73,15 @@ namespace HistoryHeroes.EditorTools
             d.Guan.unlockAfterBossChapter = 1;
 
             // ----- 나폴레옹 (5장): 총알 연사·밀어냄, 3발마다 작은 포탄 -----
-            d.Napoleon = Hero("napoleon", "나폴레옹", HeroClass.Gunner, BasicAttackKind.Projectile, 900f, 90f, 1.4f, 4.8f, 5f, new Color(0.3f, 0.45f, 0.95f));
+            d.Napoleon = Hero("napoleon", "나폴레옹", HeroClass.Gunner, BasicAttackKind.Projectile, 900f, 72f, 1.4f, 4.8f, 5f, new Color(0.3f, 0.45f, 0.95f));
             d.Napoleon.playStyle = "연사로 밀어내면서 몰린 적을 포탄으로 정리";
             d.Napoleon.signatureName = "포병의 눈";
-            d.Napoleon.signatureDescription = "기본 공격 3발마다 작은 포탄 (범위 피해 80%). 총알이 적을 살짝 밀어냄";
+            d.Napoleon.signatureDescription = "기본 공격 3발마다 포탄 (범위 피해 100%). 총알이 적을 살짝 밀어냄";
             d.Napoleon.projectileSpeed = 18f;
             d.Napoleon.knockback = 0.25f;
             d.Napoleon.cannonEvery = 3;
-            d.Napoleon.cannonCoefficient = 0.8f;
-            d.Napoleon.cannonRadius = 1.2f;
+            d.Napoleon.cannonCoefficient = 1.0f; // v0.3 벤치: 보스에 너무 강하고 잡몹엔 보통이라 총알 공격력 90→72, 포탄 80%→100%·반지름 1.2→1.5
+            d.Napoleon.cannonRadius = 1.5f;
             d.Napoleon.unlockAfterBossChapter = 2;
 
             // ----- 니콜라 테슬라 (6장): 전기 구체가 근처 적에게 2번 튕김 -----
