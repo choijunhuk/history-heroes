@@ -74,6 +74,28 @@ namespace HistoryHeroes.Records
 
         public static bool SaveIfDirty() => !_dirty || Save();
 
+        public enum CommitResult
+        {
+            Rejected,   // 조건이 안 돼서 아무것도 안 바뀜
+            Saved,      // 바뀌고 저장됨
+            SaveFailed, // 저장을 못 해서 바뀌기 전으로 되돌림
+        }
+
+        /// <summary>
+        /// 바꾸고 바로 저장한다. **저장이 실패하면 바꾸기 전으로 되돌린다** — 뽑기 결과를 보고 앱을 다시 켜서 또 뽑는 길,
+        /// 재화만 빠진 것처럼 보이는 상태를 막는다 (Codex v0.4 2번). change가 false면 아무것도 바꾸지 않은 것으로 본다.
+        /// </summary>
+        public static CommitResult Commit(Func<bool> change)
+        {
+            string before = JsonUtility.ToJson(Data);
+            if (!change()) return CommitResult.Rejected;
+            if (Save()) return CommitResult.Saved;
+            JsonUtility.FromJsonOverwrite(before, Data);
+            return CommitResult.SaveFailed;
+        }
+
+        public const string SaveFailedText = "<color=#FF7A6B>저장하지 못해서 되돌렸어요. 기기 저장 공간을 확인하고 다시 해 주세요</color>";
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {

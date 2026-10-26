@@ -107,7 +107,27 @@ namespace HistoryHeroes.Tests
             save.unlockedChapter = 5;
             Assert.AreEqual(2, RuneService.SlotCount(save, _table));
             Assert.AreEqual("ch4", RuneService.PendingChoice(save, _table), "4구간 보스: 남은 것 중 고르기");
-            Assert.AreEqual(1, RuneService.ChoiceOptions(save, _table).Count, "투사체만 남음");
+            Assert.AreEqual(2, RuneService.ChoiceOptions(save, _table).Count, "보상으로 안 고른 번개(이미 삼)·투사체");
+
+            // 미리 산 번개를 보상으로 고르면 산 값을 돌려받는다 (확정 보상이 사라지지 않게, Codex v0.4 5번)
+            int gold = save.gold;
+            Assert.IsTrue(RuneService.TakeChoice(save, _table, _lightning.id));
+            Assert.AreEqual(gold + _table.shopPrice, save.gold);
+            Assert.IsNull(RuneService.PendingChoice(save, _table));
+            Assert.AreEqual(1, RuneService.Level(save, _lightning.id), "룬은 그대로 하나");
+        }
+
+        [Test]
+        public void BossChoice_StillThereWhenEveryBossRuneWasBought()
+        {
+            var save = new SaveData { gold = 100_000, unlockedChapter = 3 };
+            Assert.IsTrue(RuneService.TakeChoice(save, _table, _fire.id));
+            Assert.IsTrue(RuneService.TryBuy(save, _table, _lightning.id));
+            Assert.IsTrue(RuneService.TryBuy(save, _table, _projectile.id));
+            save.unlockedChapter = 5;
+            Assert.AreEqual("ch4", RuneService.PendingChoice(save, _table), "다 사 두었어도 4구간 보상은 남는다");
+            Assert.IsTrue(RuneService.TakeChoice(save, _table, _projectile.id));
+            Assert.AreEqual(100_000 - 16_000 + 8_000, save.gold);
         }
 
         [Test]

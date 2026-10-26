@@ -60,6 +60,7 @@ namespace HistoryHeroes.Equipment
                 case StatType.MoveSpeed: return "이동속도";
                 case StatType.DamageReduction: return "피해 감소";
                 case StatType.HpRegen: return "체력 재생";
+                case StatType.HpRegenFlat: return "초당 회복";
                 default: return stat.ToString();
             }
         }

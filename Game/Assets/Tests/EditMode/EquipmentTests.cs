@@ -536,5 +536,61 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(2, HeroSignature.For(napoleon, 5).CannonEvery);
             Assert.AreEqual(0, HeroSignature.For(khan, 5).CannonEvery, "포탄이 없는 영웅은 ★5여도 없음");
         }
+
+        // ---------------------------------------------------------------- Codex v0.4 리뷰
+
+        [Test]
+        public void Commit_SaveFailure_RevertsEverything()
+        {
+            // 폴더 자리에 파일이 있으면 저장이 실패한다
+            string blocker = Path.Combine(Path.GetTempPath(), "hh_block_" + System.Guid.NewGuid().ToString("N"));
+            File.WriteAllText(blocker, "x");
+            SaveStore old = SaveSystem.Store;
+            try
+            {
+                SaveSystem.Use(new SaveStore(Path.Combine(blocker, "sub")));
+                SaveSystem.Data.gold = 500;
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("저장 실패"));
+                SaveSystem.CommitResult r = SaveSystem.Commit(() => Wallet.TrySpendGold(SaveSystem.Data, 300));
+                Assert.AreEqual(SaveSystem.CommitResult.SaveFailed, r);
+                Assert.AreEqual(500, SaveSystem.Data.gold, "저장을 못 하면 바꾸기 전으로");
+                Assert.AreEqual(SaveSystem.CommitResult.Rejected, SaveSystem.Commit(() => Wallet.TrySpendGold(SaveSystem.Data, 9999)));
+            }
+            finally
+            {
+                SaveSystem.Use(old);
+                File.Delete(blocker);
+            }
+        }
+
+        [Test]
+        public void Exchange_RefusedWhenBagFull_ShardsKept()
+        {
+            SaveData save = Unlocked();
+            _table.inventoryCap = 1;
+            EquipmentInventory.Add(save, _table, _table.Find("w_c"));
+            save.AddItem(Wallet.GearShard, 300);
+            Assert.IsNull(EquipmentInventory.TryExchange(save, _table, "w_l1"));
+            Assert.AreEqual(300, save.ItemCount(Wallet.GearShard), "조각을 빼지 않는다");
+        }
+
+        [Test]
+        public void Gacha_CanOpen_RequiresEveryPossibleRarity()
+        {
+            GachaTable g = Gacha();
+            Assert.IsTrue(GachaService.CanOpen(g, g.premium));
+            _table.items.RemoveAll(d => d.rarity == EquipRarity.Legendary);
+            Assert.IsFalse(GachaService.CanOpen(g, g.premium), "전설이 비면 고급 상자를 못 연다 (천장·2%)");
+            Assert.IsTrue(GachaService.CanOpen(g, g.normal), "일반 상자는 전설이 없어도 된다");
+        }
+
+        [Test]
+        public void Training_Recovery_IsFlatPerSecond()
+        {
+            var snap = new MetaSnapshot { training = new List<int> { 0, 0, 0, 0, 0, 10 } };
+            List<StatModifier> mods = MetaStats.Build(snap, _meta, this);
+            Assert.AreEqual(10f, MetaStats.Sum(mods, StatType.HpRegenFlat, ModifierKind.Flat), 1e-5f, "회복력 Lv10 = 초당 +10 (최대체력과 무관)");
+            Assert.AreEqual(0f, MetaStats.Sum(mods, StatType.HpRegen, ModifierKind.Flat));
+        }
     }
 }

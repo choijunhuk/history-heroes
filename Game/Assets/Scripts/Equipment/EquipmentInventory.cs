@@ -30,6 +30,8 @@ namespace HistoryHeroes.Equipment
             return null;
         }
 
+        public static bool BagFull(SaveData save, EquipmentTable table) => save.equipment.items.Count >= table.inventoryCap;
+
         public static bool Owns(SaveData save, string dataId)
         {
             foreach (EquipmentItem i in save.equipment.items)
@@ -262,6 +264,7 @@ namespace HistoryHeroes.Equipment
             EquipmentData data = table.Find(dataId);
             int cost = ExchangeCost(table, data);
             if (cost < 0 || save.ItemCount(Wallet.GearShard) < cost) return null;
+            if (BagFull(save, table)) return null; // 꽉 찬 가방에 넣으면 바로 분해돼 조각만 잃는다 (Codex v0.4 3번)
             save.AddItem(Wallet.GearShard, -cost);
             // 교환은 원하는 것을 고른 거라 중복이어도 자동 분해하지 않는다
             bool auto = save.equipment.autoDismantle;

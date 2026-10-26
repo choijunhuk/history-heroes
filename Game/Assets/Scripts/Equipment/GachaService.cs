@@ -49,6 +49,42 @@ namespace HistoryHeroes.Equipment
             return EquipRarity.Common;
         }
 
+        /// <summary>
+        /// 열 수 있는 상자인가: 보통 확률·천장(전설)·10연 보장 표에서 나올 수 있는 등급마다 장비가 1개 이상 (Codex v0.4 4번).
+        /// 데이터가 빠져 빈 등급이 뽑히면 값만 치르고 장비가 안 나오는 일을 막는다.
+        /// </summary>
+        public static bool CanOpen(GachaTable table, BoxRates box)
+        {
+            if (table == null || table.equipment == null || box == null) return false;
+            var needed = new List<EquipRarity>();
+            for (int r = 0; r < box.rarity.Length; r++)
+            {
+                if (box.rarity[r] > 0f) needed.Add((EquipRarity)r);
+            }
+
+            if (box.pity > 0)
+            {
+                needed.Add(EquipRarity.Legendary);
+                for (int r = 0; r < table.tenPullGuarantee.Length; r++)
+                {
+                    if (table.tenPullGuarantee[r] > 0f) needed.Add((EquipRarity)r);
+                }
+            }
+
+            foreach (EquipRarity rarity in needed)
+            {
+                bool any = false;
+                foreach (EquipmentData d in table.equipment.items)
+                {
+                    if (d != null && d.rarity == rarity) any = true;
+                }
+
+                if (!any) return false;
+            }
+
+            return true;
+        }
+
         /// <summary>"전설 확정까지 n회" (천장이 없으면 -1)</summary>
         public static int PullsUntilPity(SaveData save, BoxRates box) => box.pity > 0 ? box.pity - save.gacha.premiumPity : -1;
 

@@ -117,12 +117,11 @@ namespace HistoryHeroes.UI
 
         private void Act()
         {
-            SaveData save = SaveSystem.Data;
-            bool owned = RelicService.Stars(save, _selected) > 0;
-            bool ok = owned ? RelicService.TryStar(save, table, _selected) : RelicService.TryExchange(save, table, _selected);
-            if (!ok) return;
-            SaveSystem.Save();
-            _message = owned ? $"<color=#FFD966>★{RelicService.Stars(save, _selected)}</color>" : "<color=#7CE38B>교환했어요</color>";
+            bool owned = RelicService.Stars(SaveSystem.Data, _selected) > 0;
+            SaveSystem.CommitResult r = SaveSystem.Commit(() => owned ? RelicService.TryStar(SaveSystem.Data, table, _selected) : RelicService.TryExchange(SaveSystem.Data, table, _selected));
+            if (r == SaveSystem.CommitResult.Rejected) return;
+            _message = r == SaveSystem.CommitResult.SaveFailed ? SaveSystem.SaveFailedText
+                : owned ? $"<color=#FFD966>★{RelicService.Stars(SaveSystem.Data, _selected)}</color>" : "<color=#7CE38B>교환했어요</color>";
             Render();
         }
     }

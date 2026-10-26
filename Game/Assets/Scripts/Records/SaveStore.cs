@@ -297,6 +297,7 @@ namespace HistoryHeroes.Records
             }
 
             data.runes.choicesTaken ??= new List<string>();
+            data.runes.choiceRunes ??= new List<string>();
             data.relics ??= new RelicSave();
             data.relics.owned ??= new List<RelicStar>();
             data.relics.owned.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id) || r.stars <= 0);

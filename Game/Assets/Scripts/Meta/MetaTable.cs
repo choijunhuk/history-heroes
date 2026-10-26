@@ -58,8 +58,7 @@ namespace HistoryHeroes.Meta
             new TrainingRow { name = "민첩", stat = StatType.AttackSpeed, kind = ModifierKind.Percent, perLevel = 0.002f, maxLevel = 20 },
             new TrainingRow { name = "집중", stat = StatType.CritRate, kind = ModifierKind.Flat, perLevel = 0.0015f, maxLevel = 20 },
             new TrainingRow { name = "지략", stat = StatType.CooldownReduction, kind = ModifierKind.Flat, perLevel = 0.002f, maxLevel = 20 },
-            // 문서는 "초당 +1". 우리 체력 재생은 초당 최대체력 비율이라 칭기즈 칸(1,000) 기준으로 바꿈: 레벨당 0.1% = 초당 1
-            new TrainingRow { name = "회복력", stat = StatType.HpRegen, kind = ModifierKind.Flat, perLevel = 0.001f, maxLevel = 10 },
+            new TrainingRow { name = "회복력", stat = StatType.HpRegenFlat, kind = ModifierKind.Flat, perLevel = 1f, maxLevel = 10 }, // 초당 +1 (Lv10 = +10/초)
         };
         [Tooltip("Lv n → n+1 = 이 값 × n")]
         public int trainingCostPerLevel = 500;

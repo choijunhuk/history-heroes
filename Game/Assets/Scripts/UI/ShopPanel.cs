@@ -145,7 +145,9 @@ namespace HistoryHeroes.UI
         {
             EquipmentTable table = gacha.equipment;
             int shards = save.ItemCount(Wallet.GearShard);
+            bool full = EquipmentInventory.BagFull(save, table);
             var rows = new List<ButtonList.Row>();
+            if (full) rows.Add(new ButtonList.Row("<color=#FFB347>가방이 가득 찼어요 (200칸). 분해·합성으로 자리를 비우면 교환할 수 있어요</color>", RowDisabled, null, false));
             foreach (EquipRarity rarity in new[] { EquipRarity.Legendary, EquipRarity.Rare })
             {
                 foreach (EquipmentData data in table.items)
@@ -156,7 +158,8 @@ namespace HistoryHeroes.UI
                     bool owned = EquipmentInventory.Owns(save, id);
                     string second = data.hasSecondary ? $" · {data.SecondaryText}" : string.Empty;
                     string text = $"<color={EquipmentText.RarityColor(rarity)}>{data.displayName} ({EquipmentText.RarityName(rarity)})</color> · {EquipmentText.SlotName(data.slot)}{(owned ? "  <color=#A9B4C2>[가짐]</color>" : string.Empty)}\n<size=85%>장비 조각 {cost}{second}</size>";
-                    rows.Add(new ButtonList.Row(text, shards >= cost ? RowNormal : RowDisabled, () => Exchange(id), shards >= cost));
+                    bool ok = shards >= cost && !full;
+                    rows.Add(new ButtonList.Row(text, ok ? RowNormal : RowDisabled, () => Exchange(id), ok));
                 }
             }
 
@@ -186,10 +189,11 @@ namespace HistoryHeroes.UI
 
         private void BuyHeroShard(string heroId)
         {
-            SaveData save = SaveSystem.Data;
-            if (!Meta.HeroGrowth.TryBuyHeroShard(save, heroId, Clock.Today)) return;
-            SaveSystem.Save();
-            messageLabel.text = $"<color=#7CE38B>영웅 조각 +1 (가진 것 {Meta.HeroGrowth.Shards(save, heroId)})</color>";
+            SaveSystem.CommitResult r = SaveSystem.Commit(() => Meta.HeroGrowth.TryBuyHeroShard(SaveSystem.Data, heroId, Clock.Today));
+            if (r == SaveSystem.CommitResult.Rejected) return;
+            messageLabel.text = r == SaveSystem.CommitResult.Saved
+                ? $"<color=#7CE38B>영웅 조각 +1 (가진 것 {Meta.HeroGrowth.Shards(SaveSystem.Data, heroId)})</color>"
+                : SaveSystem.SaveFailedText;
             Render(false);
         }
 
@@ -197,11 +201,30 @@ namespace HistoryHeroes.UI
 
         private void Buy(BoxRates box, int count, GachaService.Pay pay)
         {
-            SaveData save = SaveSystem.Data;
-            if (!EquipmentInventory.Unlocked(save) || !GachaService.TryPay(save, gacha, box, count, pay, Clock.Today)) return;
-            List<GachaService.Pull> pulls = GachaService.Open(save, gacha, box, count, Clock.UnixSeconds);
-            SaveSystem.Save(); // 재화 차감 + 결과 + 천장 카운터가 한 번에 (연출 전에)
-            ShowResults(box, pulls);
+            if (!GachaService.CanOpen(gacha, box))
+            {
+                messageLabel.text = "<color=#FF7A6B>상자 데이터에 문제가 있어 열 수 없어요 (값은 빠지지 않았어요)</color>";
+                return;
+            }
+
+            // 재화 차감 + 결과 + 천장 카운터가 한 번에 저장된 뒤에만 결과를 보여준다. 저장을 못 하면 전부 되돌린다
+            List<GachaService.Pull> pulls = null;
+            SaveSystem.CommitResult r = SaveSystem.Commit(() =>
+            {
+                SaveData save = SaveSystem.Data;
+                if (!EquipmentInventory.Unlocked(save) || !GachaService.TryPay(save, gacha, box, count, pay, Clock.Today)) return false;
+                pulls = GachaService.Open(save, gacha, box, count, Clock.UnixSeconds);
+                return true;
+            });
+
+            if (r == SaveSystem.CommitResult.SaveFailed)
+            {
+                messageLabel.text = SaveSystem.SaveFailedText;
+                Render(false);
+                return;
+            }
+
+            if (r == SaveSystem.CommitResult.Saved) ShowResults(box, pulls);
         }
 
         private void WatchAdForNormal()
@@ -240,12 +263,23 @@ namespace HistoryHeroes.UI
 
         private void Exchange(string dataId)
         {
-            SaveData save = SaveSystem.Data;
-            EquipmentInventory.AddResult? got = EquipmentInventory.TryExchange(save, gacha.equipment, dataId);
-            if (!got.HasValue) return;
-            SaveSystem.Save();
+            EquipmentInventory.AddResult? got = null;
+            SaveSystem.CommitResult r = SaveSystem.Commit(() =>
+            {
+                got = EquipmentInventory.TryExchange(SaveSystem.Data, gacha.equipment, dataId);
+                return got.HasValue;
+            });
+
+            if (r == SaveSystem.CommitResult.Rejected)
+            {
+                if (EquipmentInventory.BagFull(SaveSystem.Data, gacha.equipment)) messageLabel.text = "<color=#FFB347>가방이 가득 찼어요. 장비 화면에서 분해·합성하고 다시 와 주세요</color>";
+                return;
+            }
+
             EquipmentData data = gacha.equipment.Find(dataId);
-            messageLabel.text = "교환: " + EquipmentInventory.AddLine(got.Value, data).Replace("장비  ", string.Empty);
+            messageLabel.text = r == SaveSystem.CommitResult.Saved
+                ? "교환: " + EquipmentInventory.AddLine(got.Value, data).Replace("장비  ", string.Empty)
+                : SaveSystem.SaveFailedText;
             Render(false);
         }
 

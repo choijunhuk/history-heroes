@@ -295,6 +295,8 @@ namespace HistoryHeroes.Records
         public List<HeroRunes> loadouts = new List<HeroRunes>();
         /// <summary>받은 보스 보상 고르기 ("ch2", "ch4")</summary>
         public List<string> choicesTaken = new List<string>();
+        /// <summary>보스 보상으로 고른 룬 (상점에서 산 것과 구분, Codex v0.4 5번)</summary>
+        public List<string> choiceRunes = new List<string>();
     }
 
     [Serializable]

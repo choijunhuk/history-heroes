@@ -75,15 +75,17 @@ namespace HistoryHeroes.UI
         private static string Effect(TrainingRow row, int level)
         {
             float v = level * row.perLevel;
-            if (row.stat == StatType.HpRegen) return $"초당 최대체력 +{v * 100f:0.#}% 회복";
+            if (row.stat == StatType.HpRegenFlat) return $"초당 체력 +{v:0} 회복";
             return $"{EquipmentText.StatName(row.stat)} +{v * 100f:0.##}%";
         }
 
         private void Train(TrainingType type)
         {
-            if (!HeroGrowth.TryTrain(SaveSystem.Data, metaTable, type)) return;
-            SaveSystem.Save();
-            messageLabel.text = $"<color=#7CE38B>{metaTable.training[(int)type].name} Lv {HeroGrowth.TrainingLevel(SaveSystem.Data, type)}</color>";
+            SaveSystem.CommitResult r = SaveSystem.Commit(() => HeroGrowth.TryTrain(SaveSystem.Data, metaTable, type));
+            if (r == SaveSystem.CommitResult.Rejected) return;
+            messageLabel.text = r == SaveSystem.CommitResult.Saved
+                ? $"<color=#7CE38B>{metaTable.training[(int)type].name} Lv {HeroGrowth.TrainingLevel(SaveSystem.Data, type)}</color>"
+                : SaveSystem.SaveFailedText;
             Render();
         }
     }

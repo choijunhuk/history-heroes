@@ -112,7 +112,8 @@ namespace HistoryHeroes.UI
                 foreach (RuneData r in RuneService.ChoiceOptions(save, table))
                 {
                     string id = r.id;
-                    rows.Add(new ButtonList.Row($"<b>{r.displayName}</b> 고르기\n<size=85%>{r.aim}</size>", RowChoice, () => TakeChoice(id)));
+                    string refund = RuneService.Owns(save, id) ? $" <color=#7CE38B>(이미 샀으니 골드 {table.shopPrice:N0} 돌려받기)</color>" : string.Empty;
+                    rows.Add(new ButtonList.Row($"<b>{r.displayName}</b> 고르기{refund}\n<size=85%>{r.aim}</size>", RowChoice, () => TakeChoice(id)));
                 }
             }
 
@@ -190,48 +191,46 @@ namespace HistoryHeroes.UI
             Render();
         }
 
+        /// <summary>바꾸고 저장 (저장을 못 하면 되돌리고 알림)</summary>
+        private void Apply(System.Func<bool> change, System.Func<string> okMessage)
+        {
+            SaveSystem.CommitResult r = SaveSystem.Commit(change);
+            if (r == SaveSystem.CommitResult.Rejected) return;
+            _message = r == SaveSystem.CommitResult.Saved ? okMessage() : SaveSystem.SaveFailedText;
+            Render();
+        }
+
         private void TakeChoice(string runeId)
         {
-            if (!RuneService.TakeChoice(SaveSystem.Data, Table, runeId)) return;
-            SaveSystem.Save();
+            bool bought = RuneService.Owns(SaveSystem.Data, runeId);
             _selected = runeId;
-            _message = $"<color=#7CE38B>{Table.Find(runeId).displayName}을(를) 얻었어요</color>";
-            Render();
+            Apply(() => RuneService.TakeChoice(SaveSystem.Data, Table, runeId),
+                () => bought ? $"<color=#7CE38B>보상으로 골랐어요 · 골드 {Table.shopPrice:N0} 돌려받음</color>" : $"<color=#7CE38B>{Table.Find(runeId).displayName}을(를) 얻었어요</color>");
         }
 
         private void EquipSelected()
         {
-            SaveData save = SaveSystem.Data;
-            RuneTable table = Table;
-            if (!RuneService.Owns(save, _selected))
+            string id = _selected;
+            if (!RuneService.Owns(SaveSystem.Data, id))
             {
-                if (!RuneService.TryBuy(save, table, _selected)) return;
-                _message = $"<color=#7CE38B>{table.Find(_selected).displayName}을(를) 샀어요</color>";
-            }
-            else
-            {
-                if (!RuneService.Equip(save, table, _heroId, _slot, _selected)) return;
-                _message = $"<color=#7CE38B>칸 {_slot + 1}에 꼈어요</color>";
+                Apply(() => RuneService.TryBuy(SaveSystem.Data, Table, id), () => $"<color=#7CE38B>{Table.Find(id).displayName}을(를) 샀어요</color>");
+                return;
             }
 
-            SaveSystem.Save();
-            Render();
+            int slot = _slot;
+            Apply(() => RuneService.Equip(SaveSystem.Data, Table, _heroId, slot, id), () => $"<color=#7CE38B>칸 {slot + 1}에 꼈어요</color>");
         }
 
         private void UpgradeSelected()
         {
-            if (!RuneService.TryUpgrade(SaveSystem.Data, Table, _selected)) return;
-            SaveSystem.Save();
-            _message = $"<color=#7CE38B>Lv {RuneService.Level(SaveSystem.Data, _selected)}</color>";
-            Render();
+            string id = _selected;
+            Apply(() => RuneService.TryUpgrade(SaveSystem.Data, Table, id), () => $"<color=#7CE38B>Lv {RuneService.Level(SaveSystem.Data, id)}</color>");
         }
 
         private void RemoveFromSlot()
         {
-            if (!RuneService.Equip(SaveSystem.Data, Table, _heroId, _slot, string.Empty)) return;
-            SaveSystem.Save();
-            _message = "칸을 비웠어요";
-            Render();
+            int slot = _slot;
+            Apply(() => RuneService.Equip(SaveSystem.Data, Table, _heroId, slot, string.Empty), () => "칸을 비웠어요");
         }
     }
 }

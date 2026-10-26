@@ -73,18 +73,18 @@ namespace HistoryHeroes.UI
         private void LevelUpFocused()
         {
             HeroData focus = FocusHero;
-            if (!HeroUnlock.IsUnlocked(SaveSystem.Data, focus) || !Meta.HeroGrowth.TryLevelUp(SaveSystem.Data, metaTable, focus.id)) return;
-            SaveSystem.Save();
-            if (messageLabel != null) messageLabel.text = $"<color=#7CE38B>{focus.displayName} Lv {SaveSystem.Data.Hero(focus.id).level}</color>";
+            SaveSystem.CommitResult r = SaveSystem.Commit(() => HeroUnlock.IsUnlocked(SaveSystem.Data, focus) && Meta.HeroGrowth.TryLevelUp(SaveSystem.Data, metaTable, focus.id));
+            if (r == SaveSystem.CommitResult.Rejected) return;
+            if (messageLabel != null) messageLabel.text = r == SaveSystem.CommitResult.Saved ? $"<color=#7CE38B>{focus.displayName} Lv {SaveSystem.Data.Hero(focus.id).level}</color>" : SaveSystem.SaveFailedText;
             Render();
         }
 
         private void AwakenFocused()
         {
             HeroData focus = FocusHero;
-            if (!HeroUnlock.IsUnlocked(SaveSystem.Data, focus) || !Meta.HeroGrowth.TryAwaken(SaveSystem.Data, metaTable, focus.id)) return;
-            SaveSystem.Save();
-            if (messageLabel != null) messageLabel.text = $"<color=#FFD966>{focus.displayName} ★{SaveSystem.Data.Hero(focus.id).stars}</color>";
+            SaveSystem.CommitResult r = SaveSystem.Commit(() => HeroUnlock.IsUnlocked(SaveSystem.Data, focus) && Meta.HeroGrowth.TryAwaken(SaveSystem.Data, metaTable, focus.id));
+            if (r == SaveSystem.CommitResult.Rejected) return;
+            if (messageLabel != null) messageLabel.text = r == SaveSystem.CommitResult.Saved ? $"<color=#FFD966>{focus.displayName} ★{SaveSystem.Data.Hero(focus.id).stars}</color>" : SaveSystem.SaveFailedText;
             Render();
         }
 

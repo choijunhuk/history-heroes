@@ -337,21 +337,28 @@ namespace HistoryHeroes.UI
             Render(false);
         }
 
-        private void EquipSelected()
+        /// <summary>바꾸고 저장 (저장을 못 하면 되돌리고 알림, Codex v0.4 2번)</summary>
+        private bool Apply(System.Func<bool> change, string okMessage)
         {
-            if (!EquipmentInventory.Equip(SaveSystem.Data, Table, _heroId, _selected)) return;
-            SaveSystem.Save();
-            _message = "<color=#7CE38B>장착했어요</color>";
+            SaveSystem.CommitResult r = SaveSystem.Commit(change);
+            if (r == SaveSystem.CommitResult.Rejected) return false;
+            _message = r == SaveSystem.CommitResult.Saved ? okMessage : SaveSystem.SaveFailedText;
             Render(false);
+            return r == SaveSystem.CommitResult.Saved;
         }
+
+        private void EquipSelected() => Apply(() => EquipmentInventory.Equip(SaveSystem.Data, Table, _heroId, _selected), "<color=#7CE38B>장착했어요</color>");
 
         private void ToggleLock()
         {
             EquipmentItem item = EquipmentInventory.Find(SaveSystem.Data, _selected);
             if (item == null) return;
-            EquipmentInventory.SetLocked(SaveSystem.Data, item.uid, !item.locked);
-            SaveSystem.Save();
-            Render(false);
+            bool locked = !item.locked;
+            Apply(() =>
+            {
+                EquipmentInventory.SetLocked(SaveSystem.Data, _selected, locked);
+                return true;
+            }, locked ? "잠갔어요 (합성·분해에 안 써요)" : "잠금을 풀었어요");
         }
 
         private void DismantleSelected()
@@ -364,50 +371,61 @@ namespace HistoryHeroes.UI
                 return;
             }
 
-            int shards = EquipmentInventory.TryDismantle(SaveSystem.Data, Table, _selected);
             _confirmUid = null;
-            if (shards <= 0) return;
-            SaveSystem.Save();
-            _selected = null;
-            _message = $"<color=#7CE38B>분해했어요 · 장비 조각 +{shards}</color>";
-            Render(false);
+            int shards = 0;
+            string uid = _selected;
+            if (Apply(() => (shards = EquipmentInventory.TryDismantle(SaveSystem.Data, Table, uid)) > 0, string.Empty))
+            {
+                _selected = null;
+                _message = $"<color=#7CE38B>분해했어요 · 장비 조각 +{shards}</color>";
+                Render(false);
+            }
         }
 
         private void Enhance()
         {
-            if (!EquipmentInventory.TryEnhance(SaveSystem.Data, Table, _heroId, _slot)) return;
-            SaveSystem.Save();
-            _message = $"<color=#7CE38B>{EquipmentText.SlotName(_slot)} 칸 Lv {EquipmentInventory.SlotLevel(SaveSystem.Data, _slot)}</color>";
-            Render(false);
+            if (Apply(() => EquipmentInventory.TryEnhance(SaveSystem.Data, Table, _heroId, _slot), string.Empty))
+            {
+                _message = $"<color=#7CE38B>{EquipmentText.SlotName(_slot)} 칸 Lv {EquipmentInventory.SlotLevel(SaveSystem.Data, _slot)}</color>";
+                Render(false);
+            }
         }
 
         private void EnhanceMax()
         {
-            int levels = EquipmentInventory.EnhanceMax(SaveSystem.Data, Table, _heroId, _slot);
-            if (levels <= 0) return;
-            SaveSystem.Save();
-            _message = $"<color=#7CE38B>{EquipmentText.SlotName(_slot)} 칸 +{levels} → Lv {EquipmentInventory.SlotLevel(SaveSystem.Data, _slot)}</color>";
-            Render(false);
+            int levels = 0;
+            if (Apply(() => (levels = EquipmentInventory.EnhanceMax(SaveSystem.Data, Table, _heroId, _slot)) > 0, string.Empty))
+            {
+                _message = $"<color=#7CE38B>{EquipmentText.SlotName(_slot)} 칸 +{levels} → Lv {EquipmentInventory.SlotLevel(SaveSystem.Data, _slot)}</color>";
+                Render(false);
+            }
         }
 
         private void Synthesize(EquipRarity from, string resultId)
         {
-            SaveData save = SaveSystem.Data;
-            List<string> materials = EquipmentInventory.SuggestMaterials(save, Table, _slot, from);
-            EquipmentItem made = materials != null ? EquipmentInventory.TrySynthesize(save, Table, materials, resultId) : null;
-            if (made == null) return;
-            SaveSystem.Save(); // 재료 제거 + 결과 + 골드가 한 번에
-            EquipmentData data = Table.Find(made.dataId);
-            _message = $"<color=#7CE38B>합성: {data.displayName}</color>";
-            Render(false);
+            EquipmentItem made = null;
+            bool ok = Apply(() =>
+            {
+                SaveData save = SaveSystem.Data;
+                List<string> materials = EquipmentInventory.SuggestMaterials(save, Table, _slot, from);
+                made = materials != null ? EquipmentInventory.TrySynthesize(save, Table, materials, resultId) : null;
+                return made != null; // 재료 제거 + 결과 + 골드가 한 저장에
+            }, string.Empty);
+
+            if (ok)
+            {
+                _message = $"<color=#7CE38B>합성: {Table.Find(made.dataId).displayName}</color>";
+                Render(false);
+            }
         }
 
         private void ToggleAuto()
         {
-            SaveData save = SaveSystem.Data;
-            save.equipment.autoDismantle = !save.equipment.autoDismantle;
-            SaveSystem.Save();
-            Render(false);
+            Apply(() =>
+            {
+                SaveSystem.Data.equipment.autoDismantle = !SaveSystem.Data.equipment.autoDismantle;
+                return true;
+            }, null);
         }
     }
 }

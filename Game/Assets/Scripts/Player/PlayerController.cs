@@ -190,8 +190,8 @@ namespace HistoryHeroes.Player
             _attackCooldown -= dt;
             _lifestealBudget = Mathf.Min(_lifestealBudget + dt * Health.Max * 0.03f, Health.Max * 0.03f);
 
-            float regen = Stats.Get(StatType.HpRegen);
-            if (regen > 0f) Health.Heal(regen * Health.Max * dt);
+            float regen = Stats.Get(StatType.HpRegen) * Health.Max + Stats.Get(StatType.HpRegenFlat); // 비율(패시브) + 고정(수련)
+            if (regen > 0f) Health.Heal(regen * dt);
 
             UpdateLowHpBonus();
             UpdateMomentum();

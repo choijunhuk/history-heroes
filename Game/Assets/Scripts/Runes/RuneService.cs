@@ -58,25 +58,31 @@ namespace HistoryHeroes.Runes
             return null;
         }
 
-        /// <summary>고를 수 있는 룬: 보스 보상 룬 중 아직 없는 것</summary>
+        /// <summary>
+        /// 고를 수 있는 룬: 보스 보상 룬 중 아직 **보상으로** 고르지 않은 것 (상점에서 미리 산 것도 포함).
+        /// 보스 룬 3개 중 보상으로 고르는 건 많아야 2개라 고를 것이 늘 남는다
+        /// </summary>
         public static List<RuneData> ChoiceOptions(SaveData save, RuneTable table)
         {
             var list = new List<RuneData>();
             foreach (RuneData r in table.runes)
             {
-                if (r != null && r.source == RuneSource.BossChoice && !Owns(save, r.id)) list.Add(r);
+                if (r != null && r.source == RuneSource.BossChoice && !save.runes.choiceRunes.Contains(r.id)) list.Add(r);
             }
 
             return list;
         }
 
+        /// <summary>이미 상점에서 산 룬을 보상으로 고르면 산 값(골드)을 돌려준다 → 확정 보상이 사라지지 않는다</summary>
         public static bool TakeChoice(SaveData save, RuneTable table, string runeId)
         {
             string key = PendingChoice(save, table);
             RuneData rune = table.Find(runeId);
-            if (key == null || rune == null || rune.source != RuneSource.BossChoice || Owns(save, runeId)) return false;
+            if (key == null || rune == null || rune.source != RuneSource.BossChoice || save.runes.choiceRunes.Contains(runeId)) return false;
             save.runes.choicesTaken.Add(key);
-            Give(save, runeId);
+            save.runes.choiceRunes.Add(runeId);
+            if (Owns(save, runeId)) Wallet.AddGold(save, table.shopPrice);
+            else Give(save, runeId);
             return true;
         }
 

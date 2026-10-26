@@ -238,6 +238,7 @@ namespace HistoryHeroes.UI
                 record.createdAt = old.createdAt;
                 record.bossesDefeated = old.bossesDefeated;
                 record.bossWins = old.bossWins;
+                record.meta = old.meta; // 판 밖 성장은 만들 당시 그대로 (다시 고르기는 스킬만 바꾼다, Codex v0.4 1번)
                 if (string.IsNullOrEmpty(record.heroName)) record.heroName = old.heroName;
             }
 
