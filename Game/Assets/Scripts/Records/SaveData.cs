@@ -21,6 +21,10 @@ namespace HistoryHeroes.Records
         public int balanceVersion;
 
         public long savedAtUnixSeconds;
+        /// <summary>v1.0 저장 파일 해시 (SaveStore가 쓰고 확인한다. 비어 있으면 옛 파일)</summary>
+        public string integrity;
+        /// <summary>해시가 틀린 파일을 쓸 수밖에 없었던 횟수 (나중에 서버가 본다)</summary>
+        public int integrityFailures;
 
         /// <summary>기록 슬롯 수. 처음 3개 (GameDesign 7-3, 임시값)</summary>
         public int recordSlots = 3;

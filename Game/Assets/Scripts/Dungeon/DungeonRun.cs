@@ -780,6 +780,7 @@ namespace HistoryHeroes.Dungeon
             _finished = true;
             SaveSystem.Data.run = new RunSnapshot(); // 판이 끝났다 → 이어하기 없음
             SaveSystem.MarkDirty();
+            SaveSystem.RotateRunBackups();
             if (_rift)
             {
                 FinishRift();

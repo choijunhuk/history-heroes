@@ -128,10 +128,11 @@ namespace HistoryHeroes.Modes
         /// </summary>
         private void Finish(bool victory)
         {
-            SaveSystem.Data.run = new RunSnapshot();
-            SaveSystem.MarkDirty();
             if (_finished) return;
             _finished = true;
+            SaveSystem.Data.run = new RunSnapshot();
+            SaveSystem.MarkDirty();
+            SaveSystem.RotateRunBackups();
             player.Health.Invulnerable = true;
             float elapsed = _boss != null ? Time.time - _startTime : 0f;
 

@@ -329,6 +329,94 @@ namespace HistoryHeroes.Tests
             StringAssert.Contains("\"unlockedChapter\": 1", File.ReadAllText(store.BackupPath));
         }
 
+        // ---------------------------------------------------------------- v1.0 해시 검사 · 판 백업 3개
+
+        [Test]
+        public void Save_WritesHash_AndLoadsCleanly()
+        {
+            var store = new SaveStore(_folder);
+            store.Save(SampleSave());
+            string text = File.ReadAllText(store.MainPath);
+            Assert.IsTrue(SaveStore.IntegrityOk(text));
+            StringAssert.DoesNotContain("\"integrity\": \"\"", text, "해시가 채워져 있다");
+            store.Load();
+            Assert.IsFalse(store.LastLoad.FromBackup);
+            Assert.IsFalse(store.LastLoad.Tampered);
+        }
+
+        [Test]
+        public void Load_EditedMain_UsesBackup()
+        {
+            var store = new SaveStore(_folder);
+            SaveData data = SampleSave();
+            data.gold = 100;
+            store.Save(data);
+            data.gold = 200;
+            store.Save(data); // 백업 = 100
+            File.WriteAllText(store.MainPath, File.ReadAllText(store.MainPath).Replace("\"gold\": 200", "\"gold\": 999999"));
+
+            SaveData loaded = store.Load();
+
+            Assert.AreEqual(100, loaded.gold, "손으로 고친 본 파일 대신 백업");
+            Assert.IsTrue(store.LastLoad.FromBackup);
+            Assert.IsFalse(store.LastLoad.Tampered);
+            Assert.IsTrue(store.LastLoad.Problems.Exists(p => p.Contains("해시")));
+        }
+
+        [Test]
+        public void Load_AllCopiesEdited_KeepsProgressButFlags()
+        {
+            var store = new SaveStore(_folder);
+            SaveData data = SampleSave();
+            data.gold = 300;
+            store.Save(data);
+            File.WriteAllText(store.MainPath, File.ReadAllText(store.MainPath).Replace("\"gold\": 300", "\"gold\": 777"));
+
+            SaveData loaded = store.Load();
+
+            Assert.AreEqual(777, loaded.gold, "정상본이 없으면 진행을 날리지 않는다");
+            Assert.IsTrue(store.LastLoad.Tampered);
+            Assert.AreEqual(1, loaded.integrityFailures);
+            Assert.IsFalse(store.LastLoad.IsFresh);
+        }
+
+        [Test]
+        public void RotateRunBackups_KeepsLastThree()
+        {
+            var store = new SaveStore(_folder);
+            SaveData data = SampleSave();
+            for (int i = 1; i <= 4; i++)
+            {
+                data.gold = i;
+                store.Save(data);
+                store.RotateRunBackups();
+            }
+
+            StringAssert.Contains("\"gold\": 4", File.ReadAllText(store.RunBackupPath(1)));
+            StringAssert.Contains("\"gold\": 3", File.ReadAllText(store.RunBackupPath(2)));
+            StringAssert.Contains("\"gold\": 2", File.ReadAllText(store.RunBackupPath(3)));
+            Assert.IsFalse(File.Exists(store.MainPath + ".run4"));
+        }
+
+        [Test]
+        public void Load_MainAndBackupBroken_UsesRunBackup()
+        {
+            var store = new SaveStore(_folder);
+            SaveData data = SampleSave();
+            data.gold = 50;
+            store.Save(data);
+            store.RotateRunBackups(); // 판 백업 1 = 50
+            data.gold = 60;
+            store.Save(data);
+            File.WriteAllText(store.MainPath, "{ 망가짐");
+            File.WriteAllText(store.BackupPath, "{ 망가짐");
+
+            SaveData loaded = store.Load();
+
+            Assert.AreEqual(50, loaded.gold);
+            Assert.IsTrue(store.LastLoad.FromBackup);
+        }
+
         [Test]
         public void Load_BrokenMain_UsesBackup_AndPreservesBrokenFile()
         {

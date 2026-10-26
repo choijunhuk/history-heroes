@@ -273,6 +273,7 @@ namespace HistoryHeroes.Survival
         {
             if (_finished) return;
             _finished = true;
+            SaveSystem.RotateRunBackups();
             player.Health.Invulnerable = true;
             experience.AttractAll();
 
