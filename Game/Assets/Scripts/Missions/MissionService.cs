@@ -83,6 +83,7 @@ namespace HistoryHeroes.Missions
                 case MissionGate.Survival: return save.unlockedChapter >= 3;
                 case MissionGate.Equipment: return Equipment.EquipmentInventory.Unlocked(save);
                 case MissionGate.BossRecord: return save.records.Count > 0;
+                case MissionGate.RiftDaily: return Modes.RiftRules.Unlocked(save);
                 default: return false;
             }
         }
@@ -407,6 +408,8 @@ namespace HistoryHeroes.Missions
                 case AchievementKind.RecordsSaved: return save.relics.recordsSavedTotal;
                 case AchievementKind.BossRecords: return Math.Min(c.bossWinRecords.Count, save.defeatedBosses.Count);
                 case AchievementKind.SurvivalClears: return save.survival.clears;
+                case AchievementKind.RiftFloor: return save.rift.bestEver;
+                case AchievementKind.DailyDays: return save.dailyChallenge.participations;
                 default: return 0;
             }
         }

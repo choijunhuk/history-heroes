@@ -21,6 +21,8 @@ namespace HistoryHeroes.EditorTools
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
             public EnemyData Charger, Archer, Bomber;
+            // v0.6 (Content 4장): 방패병 · 분열체(+작은 것) · 소환사(+졸개)
+            public EnemyData Shield, Splitter, SplitterSmall, Summoner, Minion;
             public RarityTable Rarity;
             public DungeonData Dungeon;
 
@@ -111,6 +113,24 @@ namespace HistoryHeroes.EditorTools
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
             d.Archer = Enemy("archer", "궁병", 2.2f, 0.6f, 1.0f, new Color(0.7f, 0.3f, 0.75f));
             d.Bomber = Enemy("bomber", "투척병", 2.0f, 1.0f, 2.0f, new Color(0.9f, 0.5f, 0.15f));
+
+            // v0.6 적 (Content 4장). 예산 점수와 맞춰 체력을 조금씩 다르게
+            d.Shield = Enemy("shield", "방패병", 1.3f, 0.6f, 1.6f, new Color(0.55f, 0.6f, 0.7f));
+            d.Shield.maxHp = 160f;
+            d.Splitter = Enemy("splitter", "분열체", 2.3f, 0.5f, 1.1f, new Color(0.35f, 0.75f, 0.45f));
+            d.Splitter.maxHp = 130f;
+            d.SplitterSmall = Enemy("splitter_small", "작은 분열체", 2.9f, 0.45f, 1.0f, new Color(0.45f, 0.85f, 0.55f));
+            d.SplitterSmall.scale = 0.62f;
+            d.SplitterSmall.damage = 40f;
+            d.SplitterSmall.experience = 1;
+            d.Summoner = Enemy("summoner", "소환사", 2.1f, 1.0f, 1.5f, new Color(0.6f, 0.35f, 0.85f));
+            d.Summoner.maxHp = 110f;
+            d.Summoner.experience = 5;
+            d.Minion = Enemy("minion", "망각 졸개", 3.0f, 0.7f, 1.0f, new Color(0.45f, 0.4f, 0.55f));
+            d.Minion.scale = 0.7f;
+            d.Minion.damage = 40f;
+            d.Minion.experience = 1;
+            foreach (EnemyData e in new[] { d.Shield, d.Splitter, d.SplitterSmall, d.Summoner, d.Minion }) UnityEditor.EditorUtility.SetDirty(e);
 
             d.Rarity = AssetUtil.LoadOrCreate<RarityTable>($"{DataDir}/Skills/RarityTable.asset");
 
@@ -373,6 +393,7 @@ namespace HistoryHeroes.EditorTools
             d.RiftWarden.hpMultiplier = 300f; // 120 × 300 = 36,000. 대표 기록으로 제자리에서 약 1분 30초 → 피하면서 2~3분
             d.RiftWarden.attackMultiplier = 1.5f; // Stats.md 8장 (패턴 배수는 보스 쪽)
             d.RiftWarden.star2MaxHits = 8;
+            CreateBossData(); // v0.6 중간 보스 5 · 보스맵 보스 4 (SceneBuilder.Bosses)
             d.Meta = CreateMetaData();
             return d;
         }
@@ -525,6 +546,7 @@ namespace HistoryHeroes.EditorTools
         private static void LinkData(Data d, Prefabs p)
         {
             d.RiftWarden.prefab = p.RiftWarden;
+            LinkBosses(p);
             d.Guan.projectilePrefab = p.SwordWave;
             d.Napoleon.projectilePrefab = p.Bullet;
             d.Tesla.projectilePrefab = p.Orb;
@@ -563,24 +585,9 @@ namespace HistoryHeroes.EditorTools
             d.SteelWhirl.behaviourPrefab = p.SteelWhirl;
             d.ThunderFire.behaviourPrefab = p.ThunderFire;
 
-            // v0.1 던전: 방 10개, 5·10번 엘리트 (Content.md 2-2를 줄인 판)
+            // v0.6 던전: 방 15개 · 구간 5개 · 레이아웃 (SceneBuilder.Dungeon)
+            BuildDungeon(d, p);
             DungeonData dungeon = d.Dungeon;
-            dungeon.id = "chapter1_v01";
-            dungeon.displayName = "균열의 초원 (v0.1)";
-            dungeon.chapter = 1;
-            dungeon.rooms = new List<RoomData>
-            {
-                Room(RoomKind.Normal, (p.Charger, 3, false)),
-                Room(RoomKind.Normal, (p.Charger, 2, false), (p.Archer, 2, false)),
-                Room(RoomKind.Normal, (p.Charger, 3, false), (p.Archer, 2, false)),
-                Room(RoomKind.Normal, (p.Archer, 3, false), (p.Bomber, 2, false), (p.Charger, 1, false)),
-                Room(RoomKind.Elite, (p.Charger, 1, true), (p.Charger, 3, false)),
-                Room(RoomKind.Normal, (p.Charger, 4, false), (p.Bomber, 2, false)),
-                Room(RoomKind.Normal, (p.Archer, 3, false), (p.Charger, 3, false), (p.Bomber, 1, false)),
-                Room(RoomKind.Normal, (p.Charger, 4, false), (p.Archer, 2, false), (p.Bomber, 2, false)),
-                Room(RoomKind.Normal, (p.Archer, 4, false), (p.Bomber, 3, false), (p.Charger, 2, false)),
-                Room(RoomKind.Elite, (p.Archer, 1, true), (p.Bomber, 1, true), (p.Charger, 2, false)),
-            };
 
             foreach (SkillData s in d.Pool) UnityEditor.EditorUtility.SetDirty(s);
             UnityEditor.EditorUtility.SetDirty(d.SteelWhirl);
@@ -588,11 +595,5 @@ namespace HistoryHeroes.EditorTools
             UnityEditor.EditorUtility.SetDirty(dungeon);
         }
 
-        private static RoomData Room(RoomKind kind, params (EnemyBase prefab, int count, bool elite)[] spawns)
-        {
-            var room = new RoomData { kind = kind };
-            foreach (var s in spawns) room.spawns.Add(new SpawnEntry { prefab = s.prefab, count = s.count, elite = s.elite });
-            return room;
-        }
     }
 }

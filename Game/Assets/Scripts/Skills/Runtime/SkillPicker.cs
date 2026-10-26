@@ -88,7 +88,7 @@ namespace HistoryHeroes.Skills
             for (int i = 0; i < count; i++)
             {
                 Rarity rolled = RollRarity(floor, rarityTable);
-                SkillCard card = modifier != null ? TakeWeighted(pool, FallbackOrder(rolled), modifier, loadout, Random.value) : TakeFrom(pool, FallbackOrder(rolled));
+                SkillCard card = modifier != null ? TakeWeighted(pool, FallbackOrder(rolled), modifier, loadout, Common.RunRandom.Card01()) : TakeFrom(pool, FallbackOrder(rolled));
                 picked.Add(card ?? SkillCard.Fallback());
             }
 
@@ -175,7 +175,7 @@ namespace HistoryHeroes.Skills
             float total = legendary + rare + common;
             if (total <= 0f) return Rarity.Common;
 
-            float roll = Random.value * total;
+            float roll = Common.RunRandom.Card01() * total; // 카드 난수 갈래 (일일 도전: 같은 날 = 같은 카드 순서)
             if (roll < legendary) return Rarity.Legendary;
             if (roll < legendary + rare) return Rarity.Rare;
             return Rarity.Common;
@@ -195,7 +195,7 @@ namespace HistoryHeroes.Skills
                 if (matches == 0) continue;
 
                 // 그 등급 후보 중 n번째를 고른다 (목록을 새로 만들지 않고)
-                int target = Random.Range(0, matches);
+                int target = Common.RunRandom.CardRange(0, matches);
                 for (int i = 0; i < pool.Count; i++)
                 {
                     if (pool[i].Skill == null || pool[i].Skill.rarity != rarity) continue;

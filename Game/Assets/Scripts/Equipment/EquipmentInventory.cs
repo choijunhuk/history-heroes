@@ -309,6 +309,31 @@ namespace HistoryHeroes.Equipment
             return lines;
         }
 
+        /// <summary>5구간 보스를 깼고 아직 전설을 고르지 않았다 (Equipment 8장 "구간 5: 전설 1개 선택")</summary>
+        public static bool LegendaryChoicePending(SaveData save) => save.unlockedChapter > 5 && !save.equipment.legendaryChoiceTaken;
+
+        public static List<EquipmentData> LegendaryOptions(EquipmentTable table)
+        {
+            var list = new List<EquipmentData>();
+            if (table == null) return list;
+            foreach (EquipmentData e in table.items)
+            {
+                if (e != null && e.rarity == EquipRarity.Legendary) list.Add(e);
+            }
+
+            return list;
+        }
+
+        /// <summary>고른 전설을 준다 (한 번만). 받은 줄 글자, 못 받으면 null</summary>
+        public static string TakeLegendaryChoice(SaveData save, EquipmentTable table, string id)
+        {
+            if (!LegendaryChoicePending(save) || table == null) return null;
+            EquipmentData data = table.Find(id);
+            if (data == null || data.rarity != EquipRarity.Legendary) return null;
+            save.equipment.legendaryChoiceTaken = true;
+            return AddLine(Add(save, table, data), data);
+        }
+
         /// <summary>"장비  장군의 무기 (희귀)" / 자동 분해·가방이 찼으면 "장비 조각 +10"</summary>
         public static string AddLine(AddResult r, EquipmentData data)
         {

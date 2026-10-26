@@ -11,7 +11,8 @@ namespace HistoryHeroes.Missions
         Survival,       // 2구간 보스 격파
         Equipment,      // 1구간 보스 격파
         BossRecord,     // 기록이 하나라도 있어야 보스맵에 간다
-        Never,          // 아직 없는 모드 (무한의 균열·일일 도전 — v0.6)
+        Never,          // 아직 없는 기능 (도감 이야기)
+        RiftDaily,      // 3구간 보스 격파 (무한의 균열 · 일일 도전, v0.6)
     }
 
     [Flags]
@@ -83,6 +84,8 @@ namespace HistoryHeroes.Missions
         RecordsSaved,      // 기록 보관가
         BossRecords,       // 맞춤 전략
         SurvivalClears,    // 생존자
+        RiftFloor,         // 균열 탐험가 (역대 최고 층, v0.6)
+        DailyDays,         // 매일의 도전자 (일일 도전 공식 참여일, v0.6)
     }
 
     /// <summary>업적 하나 (영구, 단계별 — Missions 7장)</summary>

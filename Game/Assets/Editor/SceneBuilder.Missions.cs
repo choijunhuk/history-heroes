@@ -10,7 +10,7 @@ namespace HistoryHeroes.EditorTools
 {
     /// <summary>
     /// v0.5 미션·업적 데이터 (Missions 2·3·7장)와 로비 미션 화면.
-    /// 아직 없는 모드(무한의 균열·일일 도전 — v0.6)와 도감 이야기는 Never로 두어 풀에서 빠진다 (2-2 "해금된 다른 미션으로 대신").
+    /// 무한의 균열·일일 도전은 3구간 보스 격파 뒤에 풀에 들어온다 (v0.6). 도감 이야기는 아직 없어서 Never (2-2 "해금된 다른 미션으로 대신").
     /// </summary>
     public static partial class SceneBuilder
     {
@@ -38,8 +38,8 @@ namespace HistoryHeroes.EditorTools
             t.dailyPool.Add(M("boss1", "보스맵 도전 {0}회 (져도 인정)", MissionEvents.BossTry, 1, 20, MissionGate.BossRecord, mode: true, days: all));
             t.dailyPool.Add(M("record1", "기록 {0}개 저장하기", MissionEvents.Record, 1, 15, mode: true, days: MissionDays.Weekdays | MissionDays.Sat));
             t.dailyPool.Add(M("survival5", "서바이벌 5분 이상 생존", MissionEvents.Survival5, 1, 20, MissionGate.Survival, mode: true, days: MissionDays.Sat));
-            t.dailyPool.Add(M("rift5", "무한의 균열 5층 이상", "rift_floor5", 1, 20, MissionGate.Never, mode: true, days: MissionDays.Sun));
-            t.dailyPool.Add(M("challenge1", "일일 도전 공식 도전 1회", "daily_challenge", 1, 15, MissionGate.Never, mode: true, days: all));
+            t.dailyPool.Add(M("rift5", "무한의 균열 5층 이상", MissionEvents.RiftFloor5, 1, 20, MissionGate.RiftDaily, mode: true, days: MissionDays.Sun));
+            t.dailyPool.Add(M("challenge1", "일일 도전 공식 도전 1회", MissionEvents.DailyChallenge, 1, 15, MissionGate.RiftDaily, mode: true, days: all));
             t.dailyPool.Add(M("story1", "도감에서 영웅 이야기 1개 읽기", "story_read", 1, 15, MissionGate.Never));
 
             t.weekly.Clear();
@@ -47,7 +47,7 @@ namespace HistoryHeroes.EditorTools
             t.weekly.Add(M("twoheroes", "서로 다른 영웅 {0}명으로 던전 클리어", MissionEvents.DungeonClear, 2, 20, distinct: true));
             t.weekly.Add(M("boss2", "보스맵 {0}회 격파 (같은 보스여도 됨)", MissionEvents.BossWin, 2, 20));
             t.weekly.Add(M("recipe1", "새로운 조합 {0}개 발견", MissionEvents.RecipeNew, 1, 20, fallback: "fusion3"));
-            t.weekly.Add(M("survival20", "서바이벌 합계 20분 플레이", MissionEvents.SurvivalSeconds, 1200, 20, MissionGate.Survival, fallback: "dungeon3"));
+            t.weekly.Add(M("survival20", "서바이벌·무한의 균열 합계 20분 플레이", MissionEvents.SurvivalSeconds, 1200, 20, MissionGate.Survival, fallback: "dungeon3"));
             t.weekly.Add(M("nolegend", "전설 스킬 없이 던전 {0}판 클리어", MissionEvents.NoLegendClear, 1, 20));
             t.weeklyFallbacks.Clear();
             t.weeklyFallbacks.Add(M("fusion3", "조합 {0}회 만들기", MissionEvents.Fusion, 3, 20));
@@ -79,6 +79,8 @@ namespace HistoryHeroes.EditorTools
             t.achievements.Add(A("archivist", "기록 보관가", "기록", "기록 저장 {0}회", AchievementKind.RecordsSaved, new[] { 1, 10, 50 }, new[] { 20, 50, 100 }));
             t.achievements.Add(A("tailored", "맞춤 전략", "기록", "서로 다른 기록으로 보스 {0}명 격파", AchievementKind.BossRecords, new[] { 3, 5 }, new[] { 80, 150 }));
             t.achievements.Add(A("survivor", "생존자", "모드", "서바이벌 10분 생존 {0}회", AchievementKind.SurvivalClears, new[] { 1, 10 }, new[] { 50, 100 }));
+            t.achievements.Add(A("rift", "균열 탐험가", "모드", "무한의 균열 {0}층", AchievementKind.RiftFloor, new[] { 20, 40, 60, 80 }, new[] { 30, 60, 100, 150 }));
+            t.achievements.Add(A("daily", "매일의 도전자", "모드", "일일 도전 참여 {0}일", AchievementKind.DailyDays, new[] { 7, 30, 100 }, new[] { 30, 80, 150 }));
 
             EditorUtility.SetDirty(t);
             return t;

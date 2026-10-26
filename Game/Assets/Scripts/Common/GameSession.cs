@@ -10,6 +10,8 @@ namespace HistoryHeroes.Common
         Dungeon,
         Boss,
         Survival,
+        Rift,  // 무한의 균열 (Modes 4장)
+        Daily, // 일일 도전 (Modes 5장)
     }
 
     /// <summary>
@@ -37,6 +39,7 @@ namespace HistoryHeroes.Common
         {
             HeartSpent = false;
             Practice = true;
+            ClearSpecialRun();
             Mode = BattleMode.Boss;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = recordId;
@@ -59,8 +62,88 @@ namespace HistoryHeroes.Common
             return true;
         }
 
+        /// <summary>판 시드 (0 = 아무거나). 일일 도전은 날짜로 정한다 (Modes 5장)</summary>
+        public static int RunSeed { get; set; }
+
+        /// <summary>던전 방 구성을 바꿔 끼울 때 (일일 도전 7방). null = 던전 15방</summary>
+        public static System.Collections.Generic.IReadOnlyList<Dungeon.RoomPlan> CustomPlan { get; set; }
+
+        /// <summary>오늘의 변형 규칙 등 (적 체력·공격력 배수)</summary>
+        public static float EnemyHpScale { get; set; } = 1f;
+        public static float EnemyAttackScale { get; set; } = 1f;
+
+        /// <summary>던전·보스·서바이벌을 새로 시작할 때 특수 판 설정을 지운다</summary>
+        public static void ClearSpecialRun()
+        {
+            RunSeed = 0;
+            CustomPlan = null;
+            EnemyHpScale = 1f;
+            EnemyAttackScale = 1f;
+        }
+
         /// <summary>이번 모드의 하트 (던전·보스 1, 서바이벌 2 — Modes 8장)</summary>
-        public static int HeartCost => Mode == BattleMode.Survival ? SurvivalHearts : 1;
+        public static int HeartCost => Mode == BattleMode.Survival ? SurvivalHearts : Mode == BattleMode.Rift || Mode == BattleMode.Daily ? 0 : 1;
+
+        /// <summary>무한의 균열: 체크포인트에서 이어하기</summary>
+        public static bool RiftContinue { get; private set; }
+
+        /// <summary>일일 도전: 공식 도전 (첫 시도만 기록). 연습이면 false (Practice = true, 보상·기록 없음)</summary>
+        public static bool DailyOfficial { get; private set; }
+
+        /// <summary>무한의 균열 (하트 0, 3구간 보스 격파 뒤)</summary>
+        public static bool TryStartRift(bool continueRun)
+        {
+            SaveData data = SaveSystem.Data;
+            if (!Modes.RiftRules.Unlocked(data) && !Debug.isDebugBuild) return false;
+            Modes.RiftRules.EnsureWeek(data, Clock.Now());
+            if (continueRun && !data.rift.checkpoint.valid) return false;
+            StartRift(continueRun);
+            return true;
+        }
+
+        public static void StartRift(bool continueRun)
+        {
+            Practice = false;
+            ClearSpecialRun();
+            Mode = BattleMode.Rift;
+            RiftContinue = continueRun;
+            Chapter = 1;
+            BossRecordId = null;
+            RiftCheckpoint cp = SaveSystem.Data.rift.checkpoint;
+            RunSeed = continueRun && cp.valid ? cp.seed : 0;
+            Load(BattleScene);
+        }
+
+        /// <summary>일일 도전 (하트 0). 공식은 하루 1번</summary>
+        public static bool TryStartDaily(bool official)
+        {
+            SaveData data = SaveSystem.Data;
+            if (!Modes.DailyRules.Unlocked(data) && !Debug.isDebugBuild) return false;
+            Modes.DailyRules.EnsureDay(data, Clock.Now());
+            if (official && !Modes.DailyRules.OfficialAvailable(data)) return false;
+            StartDaily(official);
+            return true;
+        }
+
+        public static void StartDaily(bool official)
+        {
+            ClearSpecialRun();
+            Practice = !official;
+            DailyOfficial = official;
+            if (official)
+            {
+                Modes.DailyRules.MarkOfficialStarted(SaveSystem.Data);
+                SaveSystem.Save();
+            }
+
+            Mode = BattleMode.Daily;
+            string day = Modes.DailyRules.DayKey(Clock.Now());
+            RunSeed = Modes.DailyRules.Seed(day);
+            CustomPlan = Modes.DailyRules.Plan();
+            Chapter = Modes.DailyRules.ChapterFor(day);
+            BossRecordId = null;
+            Load(BattleScene);
+        }
 
         public const int SurvivalHearts = 2;
 
@@ -81,6 +164,7 @@ namespace HistoryHeroes.Common
         public static void StartSurvival()
         {
             Practice = false;
+            ClearSpecialRun();
             Mode = BattleMode.Survival;
             BossRecordId = null;
             Load(BattleScene);
@@ -89,6 +173,18 @@ namespace HistoryHeroes.Common
         /// <summary>결과 화면의 "다시 도전": 같은 설정, 그 모드의 하트</summary>
         public static bool TryRetry()
         {
+            if (Mode == BattleMode.Rift)
+            {
+                StartRift(false); // 1층부터 새로
+                return true;
+            }
+
+            if (Mode == BattleMode.Daily)
+            {
+                StartDaily(false); // 공식은 하루 1번 → 다시 하면 연습
+                return true;
+            }
+
             if (Practice)
             {
                 Retry(); // 연습은 하트 없이 또
@@ -112,6 +208,7 @@ namespace HistoryHeroes.Common
         public static void StartDungeon(int chapter)
         {
             Practice = false;
+            ClearSpecialRun();
             Mode = BattleMode.Dungeon;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = null;
@@ -121,6 +218,7 @@ namespace HistoryHeroes.Common
         public static void StartBoss(int chapter, string recordId)
         {
             Practice = false;
+            ClearSpecialRun();
             Mode = BattleMode.Boss;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = recordId;
@@ -146,6 +244,7 @@ namespace HistoryHeroes.Common
             BossRecordId = null;
             HeartSpent = false;
             Practice = false;
+            ClearSpecialRun();
         }
     }
 }

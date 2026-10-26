@@ -36,6 +36,8 @@ namespace HistoryHeroes.Missions
         public const string SurvivalSeconds = "survival_sec";
         public const string NoLegendClear = "nolegend_clear";
         public const string Legendary = "legendary";
+        public const string RiftFloor5 = "rift_floor5";
+        public const string DailyChallenge = "daily_challenge";
 
         /// <summary>미션 표 (로비·전투 장면이 열릴 때 넣는다)</summary>
         public static MissionTable Table { get; set; }

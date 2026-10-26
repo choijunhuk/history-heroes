@@ -16,6 +16,7 @@ namespace HistoryHeroes.Combat
         private float _speed;
         private DamageInfo _damage;
         private int _pierceLeft;
+        private bool _piercing; // 관통 투사체인가 (마지막 대상도 방패를 뚫는다)
         private int _ricochetLeft;
         private float _pierceFalloff;
         private float _age;
@@ -48,6 +49,7 @@ namespace HistoryHeroes.Combat
             _hitMask = hitMask;
             _wallMask = wallMask;
             _pierceLeft = pierce;
+            _piercing = pierce > 0;
             _ricochetLeft = ricochet;
             _pierceFalloff = pierceFalloff;
             _release = release;
@@ -92,6 +94,13 @@ namespace HistoryHeroes.Combat
 
             if (((1 << hit.collider.gameObject.layer) & _wallMask) != 0)
             {
+                if (hit.collider.TryGetComponent(out Dungeon.Breakable breakable))
+                {
+                    breakable.Hit(); // 부서지는 장애물: 튕기지 않고 피해만 (Modes 2-3)
+                    Release();
+                    return;
+                }
+
                 if (_ricochetLeft <= 0)
                 {
                     Release();
@@ -109,6 +118,9 @@ namespace HistoryHeroes.Combat
             transform.position = hit.centroid;
             _lastHit = hit.collider;
 
+            _damage.Direction = _direction;
+            _damage.HasDirection = true;
+            _damage.Piercing = _piercing;
             if (hit.collider.TryGetComponent(out Health health) && health.TryTakeDamage(_damage, out float dealt))
             {
                 _onHit?.Invoke(_damage, dealt);

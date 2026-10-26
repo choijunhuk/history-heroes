@@ -42,6 +42,13 @@ namespace HistoryHeroes.EditorTools
                 return "카드 고름 | " + State();
             }
 
+            // v0.6 보상 방: 카드 번호로 고른다 (0 회복 · 1 카드 · 2 골드)
+            if (run.RewardRoom != null && run.RewardRoom.IsOpen)
+            {
+                run.RewardRoom.Choose((RewardRoomPanel.Choice)Mathf.Clamp(cardIndex, 0, 2));
+                return "보상 고름 | " + State();
+            }
+
             if (EnemyBase.Alive.Count > 0)
             {
                 Dev.DevCheats.KillAll();
@@ -181,7 +188,7 @@ namespace HistoryHeroes.EditorTools
         /// modes: "dps", "play"(보스) / "swarm", "barrage"(던전 잡몹). 예: BossBench("balanced", 3f, "swarm,barrage")
         /// 끝나면 BossBenchStatus()로 결과. 예: BossBench("balanced", 3f)
         /// </summary>
-        public static string BossBench(string build = "balanced", float speed = 3f, string modes = "dps,play", string heroes = "khan,guan,napoleon,tesla")
+        public static string BossBench(string build = "balanced", float speed = 3f, string modes = "dps,play", string heroes = "khan,guan,napoleon,tesla", string chapters = "1")
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
             KeepRunning();
@@ -197,9 +204,13 @@ namespace HistoryHeroes.EditorTools
             }
 
             var runs = new List<Dev.BossBench.Run>();
-            foreach (string mode in modes.Split(','))
+            foreach (string chapter in chapters.Split(','))
             {
-                foreach (string hero in heroes.Split(',')) runs.Add(new Dev.BossBench.Run { HeroId = hero.Trim(), Mode = mode.Trim() });
+                int ch = int.TryParse(chapter.Trim(), out int c) ? c : 1;
+                foreach (string mode in modes.Split(','))
+                {
+                    foreach (string hero in heroes.Split(',')) runs.Add(new Dev.BossBench.Run { HeroId = hero.Trim(), Mode = mode.Trim(), Chapter = ch });
+                }
             }
 
             Dev.BossBench.ChargerPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Charger.prefab");
@@ -209,6 +220,33 @@ namespace HistoryHeroes.EditorTools
         }
 
         public static string BossBenchStatus() => Dev.BossBench.Report();
+
+        /// <summary>
+        /// v0.6 역할 벤치 (Content 3장 "보스가 시험하는 것"): 구간마다 빌드 여럿을 같은 판 밖 성장으로 붙인다.
+        /// 2구간 망령 군주 = 광역(storm), 3구간 강철 거상 = 칼날 탱커(blade), 4구간 그림자 쌍둥이 = 단일 화력(rapid), 5구간 = 완성 빌드(balanced).
+        /// 예: RoleBench(4f, "khan", "month", "2,3,4,5", "storm,blade,rapid,balanced", "play") → BossBenchStatus()
+        /// </summary>
+        public static string RoleBench(float speed = 4f, string hero = "khan", string meta = "month", string chapters = "2,3,4,5", string builds = "storm,blade,rapid,balanced", string mode = "play")
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            var runs = new List<Dev.BossBench.Run>();
+            foreach (string c in chapters.Split(','))
+            {
+                int ch = int.TryParse(c.Trim(), out int v) ? v : 1;
+                foreach (string b in builds.Split(','))
+                {
+                    string build = b.Trim();
+                    runs.Add(new Dev.BossBench.Run { HeroId = hero, Mode = mode, Chapter = ch, Build = BenchBuild(build), Meta = MetaPreset(meta), Label = $"{build}/{meta}" });
+                }
+            }
+
+            Dev.BossBench.ChargerPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Charger.prefab");
+            Dev.BossBench.ArcherPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Archer.prefab");
+            Dev.BossBench.BomberPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Bomber.prefab");
+            return Dev.BossBench.Begin(runs, BenchBuild("balanced"), speed, db);
+        }
 
         /// <summary>
         /// v0.5 서바이벌 벤치: 영웅마다 10분 판을 자동 조종으로 (카드 무작위, 위험하면 피하고 여유 있으면 멈춰 쏘기).
@@ -225,6 +263,22 @@ namespace HistoryHeroes.EditorTools
         }
 
         public static string SurvivalBenchStatus() => Dev.SurvivalBench.Report();
+
+        /// <summary>
+        /// v0.6 무한의 균열 벤치: 영웅마다 1층부터 자동 조종으로 쓰러질 때까지 (Modes 4-3 목표 20~30층).
+        /// meta: MetaPreset 이름 (none/week/month/max). 예: RiftBench("khan,guan,napoleon,tesla", "month", 4f, 60) → RiftBenchStatus()
+        /// </summary>
+        public static string RiftBench(string heroes = "khan,guan,napoleon,tesla", string meta = "month", float speed = 4f, int maxFloor = 60, int dungeonChapter = 0)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            var list = new List<string>();
+            foreach (string h in heroes.Split(',')) list.Add(h.Trim());
+            return Dev.RiftBench.Begin(list, MetaPreset(meta), speed, maxFloor, db, dungeonChapter);
+        }
+
+        public static string RiftBenchStatus() => Dev.RiftBench.Report();
 
         // ---------------------------------------------------------------- v0.4 판 밖 성장
 
@@ -390,6 +444,9 @@ namespace HistoryHeroes.EditorTools
                     break;
                 case "storm": // 번개 광역형
                     Add("thunder_fire", 1, true); Add("hp_up", 3); Add("atk_up", 2); Add("aspd_up", 1);
+                    break;
+                case "aoe": // 광역 여럿 (조합 없이, 21pt): 낙뢰 + 불꽃 장판 + 독 구름
+                    Add("lightning", 3); Add("flame_field", 2); Add("poison_cloud", 2); Add("atk_up", 3); Add("aspd_up", 1);
                     break;
                 case "sloppy": // 대충 고른 빌드: 보스에 별 도움 안 되는 것들 (같은 크기 21pt)
                     Add("exp_up", 3); Add("move_up", 3); Add("regen", 3); Add("ice_shard", 2); Add("poison_cloud", 2); Add("guard_shield", 2);

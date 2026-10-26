@@ -14,7 +14,7 @@ namespace HistoryHeroes.Enemy
     /// - 3단계: 예고가 짧아지고 강타가 2번 이어진다. 빈틈 길이는 그대로 (멈춰서 쏠 기회는 남긴다)
     /// 빈틈 동안 발밑에 노란 고리가 뜬다 = "지금 멈춰서 쏘세요".
     /// </summary>
-    public sealed class RiftWardenBoss : EnemyBase
+    public sealed class RiftWardenBoss : EnemyBase, IPhasedBoss
     {
         public enum Pattern { Slam, Charge, Wave }
 
@@ -68,6 +68,9 @@ namespace HistoryHeroes.Enemy
         private float _secondRingTimer;
 
         public int Phase => _phase;
+
+        /// <summary>무한의 균열 버전: 2단계(파동)부터</summary>
+        public bool RiftVersion { get; set; }
         public override bool CanBeKnockedBack => false;
         public Pattern CurrentPattern => _pattern;
 
@@ -107,7 +110,7 @@ namespace HistoryHeroes.Enemy
         {
             base.Spawn(target, hpMultiplier, atkMultiplier, false);
             transform.localScale = Vector3.one * bossScale;
-            _phase = 1;
+            _phase = RiftVersion ? 2 : 1;
             _step = 0;
             Enter(State.Approach, walkTime);
         }
@@ -122,7 +125,7 @@ namespace HistoryHeroes.Enemy
             PhaseChanged?.Invoke(_phase);
         }
 
-        private float TelegraphScale => _phase >= 3 ? phase3TelegraphScale : 1f;
+        private float PhaseTelegraph => (_phase >= 3 ? phase3TelegraphScale : 1f) * TelegraphScale;
 
         protected override void Tick()
         {
@@ -132,7 +135,7 @@ namespace HistoryHeroes.Enemy
             switch (state)
             {
                 case State.Approach:
-                    if (ToPlayer.magnitude > keepDistance) MoveToward(ToPlayer, data.moveSpeed);
+                    if (ToPlayer.magnitude > keepDistance) Walk(ToPlayer, data.moveSpeed);
                     else body.linearVelocity = Vector2.zero;
                     if (stateTimer <= 0f) BeginPattern(NextPattern());
                     break;
@@ -177,12 +180,12 @@ namespace HistoryHeroes.Enemy
 
                 case Pattern.Charge:
                     _chargeDirection = ToPlayer.normalized;
-                    Enter(State.Telegraph, chargeTelegraph * TelegraphScale);
+                    Enter(State.Telegraph, chargeTelegraph * PhaseTelegraph);
                     break;
 
                 case Pattern.Wave:
                     if (waveGlow != null) waveGlow.enabled = true;
-                    Enter(State.Telegraph, waveTelegraph * TelegraphScale);
+                    Enter(State.Telegraph, waveTelegraph * PhaseTelegraph);
                     break;
             }
         }
@@ -197,7 +200,7 @@ namespace HistoryHeroes.Enemy
                 slamMarker.enabled = true;
             }
 
-            Enter(State.Telegraph, slamTelegraph * TelegraphScale);
+            Enter(State.Telegraph, slamTelegraph * PhaseTelegraph);
         }
 
         // ---------------- 예고 ----------------
@@ -209,7 +212,7 @@ namespace HistoryHeroes.Enemy
                 case Pattern.Slam:
                 {
                     // 원이 점점 커지며 진해진다 → 다 차면 내려찍기
-                    float total = slamTelegraph * TelegraphScale;
+                    float total = slamTelegraph * PhaseTelegraph;
                     float t = 1f - Mathf.Clamp01(stateTimer / total);
                     if (slamMarker != null)
                     {
@@ -265,7 +268,7 @@ namespace HistoryHeroes.Enemy
                     slamMarker.enabled = true;
                 }
 
-                Enter(State.Telegraph, slamTelegraph * TelegraphScale * 0.75f + doubleSlamGap);
+                Enter(State.Telegraph, slamTelegraph * PhaseTelegraph * 0.75f + doubleSlamGap);
                 return;
             }
 

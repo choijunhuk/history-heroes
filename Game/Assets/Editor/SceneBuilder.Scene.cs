@@ -131,6 +131,8 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(ui.Hud)) props.Ref("player", player).Ref("experience", experience);
             using (var props = new Props(ui.LevelUp)) props.Ref("experience", experience).Ref("skills", skills);
 
+            var layoutRoot = new GameObject("Layout").transform; // 방 레이아웃 장애물·함정 (v0.6)
+            layoutRoot.SetParent(dungeonRoot, false);
             var runObject = new GameObject("DungeonRun");
             runObject.transform.SetParent(dungeonRoot, false);
             var run = runObject.AddComponent<DungeonRun>();
@@ -138,7 +140,9 @@ namespace HistoryHeroes.EditorTools
             {
                 props.Ref("dungeon", d.Dungeon).Ref("database", d.Database).Ref("player", player).Ref("experience", experience).Ref("skills", skills)
                     .Ref("door", door).Ref("playerStart", playerStart)
-                    .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("result", ui.Result).Ref("recordSave", ui.RecordSave).Ref("fade", ui.Fade);
+                    .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("result", ui.Result).Ref("recordSave", ui.RecordSave).Ref("fade", ui.Fade)
+                    .Ref("bossHud", ui.BossHud).Ref("rewardRoom", ui.RewardRoom).Ref("layoutRoot", layoutRoot)
+                    .Refs("riftBosses", AllBosses(d.RiftWarden)); // 균열 10층마다 (1~5구간 순서)
             }
 
             // ----- 보스맵: 원형 경기장 + 보스 (Modes 2-9) -----
@@ -155,7 +159,7 @@ namespace HistoryHeroes.EditorTools
             var bossRun = bossRunObject.AddComponent<BossRun>();
             using (var props = new Props(bossRun))
             {
-                props.Refs("bosses", new[] { d.RiftWarden }).Ref("database", d.Database).Ref("player", player).Ref("skills", skills)
+                props.Refs("bosses", AllBosses(d.RiftWarden)).Ref("database", d.Database).Ref("player", player).Ref("skills", skills)
                     .Ref("playerStart", bossStart).Ref("bossSpawn", bossSpawn)
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
             }
@@ -311,6 +315,7 @@ namespace HistoryHeroes.EditorTools
             public RecordSaveScreen RecordSave;
             public BossHud BossHud;
             public CanvasGroup Fade;
+            public RewardRoomPanel RewardRoom;
         }
 
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
@@ -402,6 +407,7 @@ namespace HistoryHeroes.EditorTools
             ui.LevelUp = BuildLevelUp(root);
             ui.Result = BuildResult(root);
             ui.RecordSave = BuildRecordSave(root, null);
+            ui.RewardRoom = BuildRewardRoomPanel(root);
             return ui;
         }
 

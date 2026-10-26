@@ -14,103 +14,113 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Dungeon.DungeonData
   chapterHpGrowth: 1.35
   chapterAttackGrowth: 1.2
-  id: chapter1_v01
-  displayName: "\uADE0\uC5F4\uC758 \uCD08\uC6D0 (v0.1)"
-  chapter: 1
-  rooms:
+  plan:
   - kind: 0
-    spawns:
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 3
-      elite: 0
+    budget: 6
+    minTypes: 1
+    maxTypes: 1
+    elites: 0
   - kind: 0
-    spawns:
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 2
-      elite: 0
-    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
-      count: 2
-      elite: 0
+    budget: 8
+    minTypes: 2
+    maxTypes: 2
+    elites: 0
   - kind: 0
-    spawns:
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 3
-      elite: 0
-    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
-      count: 2
-      elite: 0
+    budget: 10
+    minTypes: 2
+    maxTypes: 2
+    elites: 0
   - kind: 0
-    spawns:
-    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
-      count: 3
-      elite: 0
-    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
-      count: 2
-      elite: 0
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 1
-      elite: 0
+    budget: 12
+    minTypes: 2
+    maxTypes: 2
+    elites: 0
   - kind: 1
-    spawns:
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 1
-      elite: 1
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 3
-      elite: 0
+    budget: 6
+    minTypes: 1
+    maxTypes: 2
+    elites: 1
+  - kind: 2
+    budget: 0
+    minTypes: 0
+    maxTypes: 0
+    elites: 0
   - kind: 0
-    spawns:
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 4
-      elite: 0
-    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
-      count: 2
-      elite: 0
+    budget: 14
+    minTypes: 3
+    maxTypes: 3
+    elites: 0
   - kind: 0
-    spawns:
-    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
-      count: 3
-      elite: 0
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 3
-      elite: 0
-    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
-      count: 1
-      elite: 0
+    budget: 15
+    minTypes: 3
+    maxTypes: 3
+    elites: 0
   - kind: 0
-    spawns:
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 4
-      elite: 0
-    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
-      count: 2
-      elite: 0
-    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
-      count: 2
-      elite: 0
-  - kind: 0
-    spawns:
-    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
-      count: 4
-      elite: 0
-    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
-      count: 3
-      elite: 0
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 2
-      elite: 0
+    budget: 16
+    minTypes: 3
+    maxTypes: 3
+    elites: 0
   - kind: 1
-    spawns:
-    - prefab: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
-      count: 1
-      elite: 1
-    - prefab: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
-      count: 1
-      elite: 1
-    - prefab: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
-      count: 2
-      elite: 0
+    budget: 6
+    minTypes: 1
+    maxTypes: 2
+    elites: 2
+  - kind: 2
+    budget: 0
+    minTypes: 0
+    maxTypes: 0
+    elites: 0
+  - kind: 0
+    budget: 18
+    minTypes: 3
+    maxTypes: 4
+    elites: 0
+  - kind: 0
+    budget: 19
+    minTypes: 3
+    maxTypes: 4
+    elites: 0
+  - kind: 0
+    budget: 20
+    minTypes: 3
+    maxTypes: 4
+    elites: 0
+  - kind: 3
+    budget: 4
+    minTypes: 1
+    maxTypes: 1
+    elites: 0
+  chapters:
+  - {fileID: 11400000, guid: db8acd57b83d76c4abc173f4b5459980, type: 2}
+  - {fileID: 11400000, guid: 91733d573cdeda347a8711d33adfc2ef, type: 2}
+  - {fileID: 11400000, guid: 1a50b36c3cba9f747adc75a5accdab9d, type: 2}
+  - {fileID: 11400000, guid: f4e746de7b219e84f86ce2dd47c4ffd0, type: 2}
+  - {fileID: 11400000, guid: a4f9a2cdf2836b54cbb0c793e6abb594, type: 2}
+  layouts:
+  - {fileID: 11400000, guid: a76bbaafd8aeec74b85e23fca5d4dd8d, type: 2}
+  - {fileID: 11400000, guid: ce1bf2b0bea9a2049937890c97004419, type: 2}
+  - {fileID: 11400000, guid: 034a6ebe436c11d478669bc58d177c93, type: 2}
+  - {fileID: 11400000, guid: 5d53de12d61d34545b5fae0d37d21bc0, type: 2}
+  - {fileID: 11400000, guid: 0654dbaa1afd6a54db85816d2ef03202, type: 2}
+  - {fileID: 11400000, guid: 170cfd9d5860dc447806c1852b3b9945, type: 2}
+  - {fileID: 11400000, guid: 426ef0f980470a940ab2e6782adb8b97, type: 2}
+  - {fileID: 11400000, guid: 65e6937c28dd17a41b78a87c1bed27d0, type: 2}
+  - {fileID: 11400000, guid: b8ccdaeb551acab4887730d39f92dbb6, type: 2}
+  - {fileID: 11400000, guid: 97a56268896d591438d8a8e35eda4daa, type: 2}
+  - {fileID: 11400000, guid: 088d0851b1cd8fc4894169281c3ebf2f, type: 2}
+  - {fileID: 11400000, guid: 22c24b79b65fb4c49b6ce0f346419be3, type: 2}
+  - {fileID: 11400000, guid: 13af012783e073a44a03493156f4893e, type: 2}
+  - {fileID: 11400000, guid: d58d9714eb2fc7645b37676194909096, type: 2}
+  - {fileID: 11400000, guid: 8bcb7a5287b14d04888cc172fc9dc179, type: 2}
+  - {fileID: 11400000, guid: 18bc8406b7b15d94682856aa0cdce5b2, type: 2}
+  - {fileID: 11400000, guid: c9d9d70b1376aa3479789ec5de09a2fb, type: 2}
+  - {fileID: 11400000, guid: c7ba7c31b655f2042a1953c2a2780e33, type: 2}
+  - {fileID: 11400000, guid: 3d9275943c4bfd045bf9004c041299c8, type: 2}
+  - {fileID: 11400000, guid: 2e35693091fb1ba4fb0e9b9c9d49df32, type: 2}
+  - {fileID: 11400000, guid: 21a177cef9f67894487959bd9d0bf094, type: 2}
+  - {fileID: 11400000, guid: eaed4541d2274cc40956c2421a240720, type: 2}
+  - {fileID: 11400000, guid: a553f9abf36f8354a83c92be2121ea27, type: 2}
+  - {fileID: 11400000, guid: 611e3cec67e26db4e921bd0ef45bc3ba, type: 2}
+  specialLayout: {fileID: 11400000, guid: e4a59caf8e8edab478390773c0c39083, type: 2}
   hpPerRoom: 0.04
   attackPerRoom: 0.02
-  hpPerChapter: 1.35
-  attackPerChapter: 1.2

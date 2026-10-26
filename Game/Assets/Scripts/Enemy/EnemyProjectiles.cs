@@ -20,9 +20,13 @@ namespace HistoryHeroes.Enemy
         /// <summary>날아가는 적 투사체 (읽기만, 검증 벤치의 피하기 AI용)</summary>
         public static IReadOnlyList<Projectile> Active => _instance != null ? _instance._active : Empty;
 
+        /// <summary>적 투사체 빠르기 배수 (무한 주간 변형·일일 도전 변형 규칙). 장면마다 1로 시작</summary>
+        public static float SpeedScale { get; set; } = 1f;
+
         private void Awake()
         {
             _instance = this;
+            SpeedScale = 1f;
             _pool = new ComponentPool<Projectile>(prefab, transform, prewarm: 32);
         }
 
@@ -31,7 +35,7 @@ namespace HistoryHeroes.Enemy
         {
             if (_instance == null) return;
             Projectile p = _instance._pool.Get(origin, Quaternion.identity);
-            p.Launch(direction, speed, damage, playerMask, _instance.wallMask, pierce: 0, ricochet: 0, _instance.OnReleased);
+            p.Launch(direction, speed * SpeedScale, damage, playerMask, _instance.wallMask, pierce: 0, ricochet: 0, _instance.OnReleased);
             p.Owner = owner;
             _instance._active.Add(p);
         }

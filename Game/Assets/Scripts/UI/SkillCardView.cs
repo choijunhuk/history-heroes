@@ -66,6 +66,15 @@ namespace HistoryHeroes.UI
                     hint = skills.BlockedWarning(r);
                     break;
 
+                case CardType.RiftBoost:
+                    kindLabel.text = "균열 강화";
+                    kindBand.color = BasicBand;
+                    nameLabel.text = card.BoostStat == Stats.StatType.Attack ? "공격력" : card.BoostStat == Stats.StatType.MaxHp ? "최대체력" : "공격 속도";
+                    levelLabel.text = $"+{card.BoostValue * 100f:0}%";
+                    descriptionLabel.text = "스킬을 다 키웠다!\n이번 판 동안 계속 쌓인다";
+                    background.color = Common;
+                    break;
+
                 case CardType.Fallback:
                     kindLabel.text = "기본";
                     kindBand.color = BasicBand;

@@ -38,6 +38,8 @@ namespace HistoryHeroes.Dev
             public MetaSnapshot Meta;
             /// <summary>결과 줄 앞에 붙일 이름 ("기본 성장 + 연사형")</summary>
             public string Label;
+            /// <summary>보스 구간 (v0.6, 0이면 1구간)</summary>
+            public int Chapter;
         }
 
         /// <summary>잡몹 시나리오용 적 (에디터 QaTools가 넣어 준다)</summary>
@@ -111,14 +113,14 @@ namespace HistoryHeroes.Dev
                 skills = new List<RecordSkill>(run.Build ?? _build),
                 meta = run.Meta ?? new MetaSnapshot(),
                 capacity = 999,
-                chapter = 1,
+                chapter = Mathf.Max(1, run.Chapter),
                 cleared = true,
                 roomReached = 10,
                 roomCount = 10,
             });
 
             GamePause.DevSpeed = 1f;
-            GameSession.StartBossPractice(1, id);
+            GameSession.StartBossPractice(Mathf.Max(1, run.Chapter), id);
 
             // 장면이 다시 열리고 보스가 나올 때까지
             BossRun boss = null;
@@ -137,8 +139,17 @@ namespace HistoryHeroes.Dev
             }
 
             var player = FindAnyObjectByType<PlayerController>();
-            var pilot = boss.gameObject.AddComponent<BossPilot>();
-            pilot.Begin(player, boss.Boss as RiftWardenBoss, run.Mode == "dps");
+            if (boss.Boss is RiftWardenBoss warden)
+            {
+                var pilot = boss.gameObject.AddComponent<BossPilot>();
+                pilot.Begin(player, warden, run.Mode == "dps");
+            }
+            else
+            {
+                // v0.6 패턴 보스: 화면 예고(원·선·부채꼴)와 탄을 보고 피하는 일반 조종 AI
+                var pilot = boss.gameObject.AddComponent<TelegraphPilot>();
+                pilot.Begin(player, boss.Boss, run.Mode == "dps");
+            }
             GamePause.DevSpeed = _speed;
             float spawnedAt = Time.time;
 
@@ -151,7 +162,7 @@ namespace HistoryHeroes.Dev
             float bossLeft = bossHealth != null ? bossHealth.Current / Mathf.Max(1f, bossHealth.Max) : 1f;
             float hpLeft = player.Health.Current / Mathf.Max(1f, player.Health.Max);
             string outcome = win ? "승" : boss.IsFinished ? $"패 (보스 {bossLeft * 100f:0}% 남음)" : "시간 초과";
-            _results.Add($"{(run.Label != null ? run.Label + " | " : string.Empty)}{run.HeroId} | {run.Mode} | {outcome} | {seconds:0.0}초 | 피격 {boss.HitsTaken} | 남은 체력 {hpLeft * 100f:0}% | 기본 공격 {DamageLog.BasicShare * 100f:0}% | {Economy.RunText.TopDamage(_database, player.Hero, 4)}");
+            _results.Add($"{(run.Label != null ? run.Label + " | " : string.Empty)}{(run.Chapter > 1 ? run.Chapter + "구간 | " : string.Empty)}{run.HeroId} | {run.Mode} | {outcome} | {seconds:0.0}초 | 피격 {boss.HitsTaken} | 남은 체력 {hpLeft * 100f:0}% | 기본 공격 {DamageLog.BasicShare * 100f:0}% | {Economy.RunText.TopDamage(_database, player.Hero, 4)}");
             yield return new WaitForSecondsRealtime(0.5f);
         }
 

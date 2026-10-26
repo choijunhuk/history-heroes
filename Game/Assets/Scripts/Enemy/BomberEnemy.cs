@@ -28,13 +28,13 @@ namespace HistoryHeroes.Enemy
                 case State.Approach:
                     if (ToPlayer.magnitude > throwDistance)
                     {
-                        MoveToward(ToPlayer, data.moveSpeed);
+                        Walk(ToPlayer, data.moveSpeed);
                     }
                     else
                     {
                         _blastCenter = player.position;
                         ShowMarker(true);
-                        Enter(State.Telegraph, data.telegraphTime);
+                        Enter(State.Telegraph, data.telegraphTime * TelegraphScale);
                     }
                     break;
 

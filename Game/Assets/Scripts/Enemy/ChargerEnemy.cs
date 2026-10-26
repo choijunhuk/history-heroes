@@ -27,11 +27,11 @@ namespace HistoryHeroes.Enemy
             switch (state)
             {
                 case State.Approach:
-                    MoveToward(ToPlayer, data.moveSpeed);
+                    Walk(ToPlayer, data.moveSpeed);
                     if (ToPlayer.magnitude <= triggerDistance)
                     {
                         _dashDirection = ToPlayer.normalized;
-                        Enter(State.Telegraph, data.telegraphTime);
+                        Enter(State.Telegraph, data.telegraphTime * TelegraphScale);
                     }
                     break;
 

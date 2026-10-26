@@ -61,6 +61,23 @@ namespace HistoryHeroes.UI
             }
         }
 
+        /// <summary>v0.6: 방 종류별 칸 (★ 엘리트 · + 보상 · ! 중간 보스)</summary>
+        public void SetRoomProgress(int room, System.Collections.Generic.IReadOnlyList<Dungeon.RoomKind> kinds)
+        {
+            var special = new System.Collections.Generic.List<bool>(kinds.Count);
+            foreach (Dungeon.RoomKind k in kinds) special.Add(k != Dungeon.RoomKind.Normal);
+            SetRoomProgress(room, special);
+            for (int i = 0; i < kinds.Count && i < _cells.Count; i++)
+            {
+                Transform mark = _cells[i].transform.GetChild(0);
+                if (!mark.TryGetComponent(out TMPro.TMP_Text label)) continue;
+                label.text = kinds[i] == Dungeon.RoomKind.Reward ? "+" : kinds[i] == Dungeon.RoomKind.MidBoss || kinds[i] == Dungeon.RoomKind.Boss ? "!" : "★";
+                bool past = i < room - 1;
+                if (kinds[i] == Dungeon.RoomKind.Reward) _cells[i].color = past ? new Color(0.35f, 0.6f, 0.45f, 0.9f) : new Color(0.45f, 0.85f, 0.6f, 0.95f);
+                if (kinds[i] == Dungeon.RoomKind.MidBoss || kinds[i] == Dungeon.RoomKind.Boss) _cells[i].color = past ? new Color(0.6f, 0.3f, 0.3f, 0.9f) : new Color(0.95f, 0.35f, 0.35f, 0.95f);
+            }
+        }
+
         public void HideRoomProgress()
         {
             if (roomBar != null) roomBar.gameObject.SetActive(false);

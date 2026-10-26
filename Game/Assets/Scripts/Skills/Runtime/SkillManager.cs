@@ -55,13 +55,14 @@ namespace HistoryHeroes.Skills
             List<FusionRecipe> fusions = FusionFinder.FindAvailableFusions(Loadout, recipes, HeroId);
             if (fusions.Count > 0)
             {
-                FusionRecipe chosen = fusions[UnityEngine.Random.Range(0, fusions.Count)];
+                FusionRecipe chosen = fusions[Common.RunRandom.CardRange(0, fusions.Count)];
                 offer.Add(new SkillCard { Type = CardType.Fusion, Recipe = chosen });
             }
 
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
             offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable, WeightModifier, Loadout));
             if (_offersMade++ == 0) BoostExclusive(offer, candidates);
+            ApplyRiftBoosts(offer);
             return offer;
         }
 
@@ -71,7 +72,7 @@ namespace HistoryHeroes.Skills
             SkillData exclusive = player.Hero != null ? player.Hero.exclusiveActive : null;
             if (exclusive == null || offer.Exists(c => c.Skill == exclusive)) return;
             SkillCard card = candidates.Find(c => c.Skill == exclusive);
-            if (card == null || UnityEngine.Random.value > firstOfferExclusiveChance) return;
+            if (card == null || Common.RunRandom.Card01() > firstOfferExclusiveChance) return;
 
             for (int i = offer.Count - 1; i >= 0; i--)
             {
@@ -107,7 +108,7 @@ namespace HistoryHeroes.Skills
             List<FusionRecipe> fusions = FusionFinder.FindAvailableFusions(Loadout, recipes, HeroId);
             if (fusions.Count > 0)
             {
-                result.Insert(0, new SkillCard { Type = CardType.Fusion, Recipe = fusions[UnityEngine.Random.Range(0, fusions.Count)] });
+                result.Insert(0, new SkillCard { Type = CardType.Fusion, Recipe = fusions[Common.RunRandom.CardRange(0, fusions.Count)] });
                 return result;
             }
 
@@ -199,6 +200,54 @@ namespace HistoryHeroes.Skills
             }
         }
 
+        /// <summary>무한의 균열: 뽑을 스킬이 없으면 "기본 카드" 대신 균열 강화 (Modes 4-2)</summary>
+        public bool RiftBoosts { get; set; }
+        private readonly object _riftBoostOwner = new object();
+        public int RiftBoostCount { get; private set; }
+
+        private static readonly (Stats.StatType stat, float value)[] RiftBoostKinds =
+        {
+            (Stats.StatType.Attack, 0.03f), (Stats.StatType.MaxHp, 0.03f), (Stats.StatType.AttackSpeed, 0.02f),
+        };
+
+        private readonly int[] _riftBoostCounts = new int[3];
+
+        /// <summary>균열 강화 종류별 횟수 (공격력 / 체력 / 공격속도) — 체크포인트에 남긴다</summary>
+        public List<int> RiftBoostCounts() => new List<int>(_riftBoostCounts);
+
+        /// <summary>균열 이어하기: 저장해 둔 균열 강화를 다시 건다</summary>
+        public void RestoreRiftBoosts(IReadOnlyList<int> counts)
+        {
+            if (counts == null) return;
+            for (int k = 0; k < RiftBoostKinds.Length && k < counts.Count; k++)
+            {
+                for (int n = 0; n < counts[k]; n++) AddRiftBoost(k);
+            }
+        }
+
+        private void AddRiftBoost(int kind)
+        {
+            if (kind < 0 || kind >= RiftBoostKinds.Length) return;
+            var (stat, value) = RiftBoostKinds[kind];
+            // 공격속도는 기본 공격에만, 공격력·체력은 전체 (무한 중첩)
+            Stats.StatTarget target = stat == Stats.StatType.AttackSpeed ? Stats.StatTarget.BasicAttack : Stats.StatTarget.Both;
+            player.Stats.Add(new Stats.StatModifier(stat, Stats.ModifierKind.Percent, value, Stats.ModifierSource.Skill, _riftBoostOwner, target));
+            _riftBoostCounts[kind]++;
+            RiftBoostCount++;
+        }
+
+        private void ApplyRiftBoosts(List<SkillCard> offer)
+        {
+            if (!RiftBoosts) return;
+            int k = 0;
+            for (int i = 0; i < offer.Count; i++)
+            {
+                if (offer[i].Type != CardType.Fallback) continue;
+                var (stat, value) = RiftBoostKinds[k++ % RiftBoostKinds.Length];
+                offer[i] = new SkillCard { Type = CardType.RiftBoost, BoostStat = stat, BoostValue = value };
+            }
+        }
+
         /// <summary>이번 판에 전설 스킬 카드를 골랐는가 (던전 ★3 "전설 없이 클리어", Modes 3-2)</summary>
         public bool ChoseLegendary { get; private set; }
 
@@ -229,6 +278,10 @@ namespace HistoryHeroes.Skills
 
                 case CardType.Fallback:
                     player.Health.Heal(player.Health.Max * fallbackHeal);
+                    break;
+
+                case CardType.RiftBoost:
+                    AddRiftBoost(System.Array.FindIndex(RiftBoostKinds, k => k.stat == card.BoostStat));
                     break;
             }
 
