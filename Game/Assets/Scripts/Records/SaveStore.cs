@@ -230,6 +230,7 @@ namespace HistoryHeroes.Records
                 data.training = new List<int>();
                 data.gacha = new GachaSave();
                 data.shop = new ShopSave();
+                data.runes = new RuneSave();
                 foreach (RunRecord r in data.records ?? new List<RunRecord>()) r.meta = new MetaSnapshot();
             }
 
@@ -281,6 +282,20 @@ namespace HistoryHeroes.Records
             data.gacha.log ??= new List<GachaLogEntry>();
             data.gacha.premiumPity = Math.Max(0, data.gacha.premiumPity);
             data.shop ??= new ShopSave();
+            data.runes ??= new RuneSave();
+            data.runes.owned ??= new List<RuneLevel>();
+            data.runes.owned.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id) || r.level <= 0);
+            foreach (RuneLevel r in data.runes.owned) r.level = Math.Clamp(r.level, 1, 3);
+            data.runes.loadouts ??= new List<HeroRunes>();
+            data.runes.loadouts.RemoveAll(h => h == null || string.IsNullOrEmpty(h.heroId));
+            foreach (HeroRunes h in data.runes.loadouts)
+            {
+                h.ids ??= new List<string>();
+                while (h.ids.Count < 2) h.ids.Add("");
+                for (int i = 0; i < h.ids.Count; i++) h.ids[i] ??= "";
+            }
+
+            data.runes.choicesTaken ??= new List<string>();
             if (string.IsNullOrEmpty(data.selectedHero)) data.selectedHero = "khan";
             if (data.accountLevel < 1) data.accountLevel = 1;
             if (data.hearts < 0) data.hearts = 0;

@@ -23,6 +23,9 @@ namespace HistoryHeroes.Skills
         [SerializeField, Min(1)] private int activeSlots = 4;
         [SerializeField, Min(1)] private int passiveSlots = 4;
 
+        /// <summary>룬 (던전·서바이벌만, 보스맵은 레벨업이 없어서 효과 없음). BattleBootstrap이 넣는다</summary>
+        public IWeightModifier WeightModifier { get; set; }
+
         private SkillLoadout _loadout;
         public SkillLoadout Loadout => _loadout ??= new SkillLoadout(activeSlots, passiveSlots);
 
@@ -49,7 +52,7 @@ namespace HistoryHeroes.Skills
             }
 
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
-            offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable));
+            offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable, WeightModifier, Loadout));
             if (_offersMade++ == 0) BoostExclusive(offer, candidates);
             return offer;
         }
@@ -76,7 +79,7 @@ namespace HistoryHeroes.Skills
             var kept = current.FindAll(c => c.Type == CardType.Fusion);
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
             SkillPicker.ExcludeShown(candidates, current); // 방금 본 카드는 다시 안 나온다
-            kept.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - kept.Count, floor, rarityTable));
+            kept.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - kept.Count, floor, rarityTable, WeightModifier, Loadout));
             return kept;
         }
 
@@ -102,7 +105,7 @@ namespace HistoryHeroes.Skills
 
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
             candidates.RemoveAll(c => result.Exists(r => r.Skill != null && r.Skill == c.Skill));
-            result.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - result.Count, floor, rarityTable));
+            result.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - result.Count, floor, rarityTable, WeightModifier, Loadout));
             return result;
         }
 

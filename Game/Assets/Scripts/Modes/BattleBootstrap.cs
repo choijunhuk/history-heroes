@@ -19,6 +19,9 @@ namespace HistoryHeroes.Modes
         [SerializeField] private PlayerController player;
         [Tooltip("판 밖 성장 표 (v0.4). 비어 있으면 판 밖 성장 없이 싸운다")]
         [SerializeField] private Meta.MetaTable metaTable;
+        [Tooltip("룬 (던전만): 카드 뽑기 ②단계 배율")]
+        [SerializeField] private Skills.SkillManager skills;
+        [SerializeField] private Skills.SkillDatabase database;
 
         /// <summary>
         /// 이번 판 영웅: 던전 = 로비에서 고른 영웅, 보스 = 기록에 저장된 영웅 (GameDesign 7-1 "사용한 영웅").
@@ -60,6 +63,12 @@ namespace HistoryHeroes.Modes
                 HeroData hero = HeroForThisBattle(roster);
                 player.SetHero(hero);
                 if (metaTable != null && hero != null) player.ApplyMeta(MetaForThisBattle(metaTable, hero.id), metaTable);
+
+                // 룬: 던전에서만 (보스맵은 레벨업이 없다, 기록에도 저장하지 않는다 — Runes 6장)
+                if (skills != null && metaTable != null && metaTable.runes != null && hero != null && GameSession.Mode == BattleMode.Dungeon)
+                {
+                    skills.WeightModifier = Runes.RuneService.ModifierFor(SaveSystem.Data, metaTable.runes, hero.id, database != null ? database.recipes : null);
+                }
             }
 
             bool boss = GameSession.Mode == BattleMode.Boss;

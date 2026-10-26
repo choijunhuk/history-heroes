@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77afdafdbfe871a45bc610d22424289c, type: 3}
+  m_Name: Rune_rune_lightning
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Runes.RuneData
+  id: rune_lightning
+  displayName: "\uBC88\uAC1C\uC758 \uB8EC"
+  tag: 32
+  bond: 0
+  aim: "\uBC88\uAC1C \uAD11\uC5ED\uD615 (\uB099\uB8B0, \uD14C\uC2AC\uB77C \uCF54\uC77C)"
+  source: 0

@@ -78,7 +78,8 @@ namespace HistoryHeroes.EditorTools
             var gacha = UnityEditor.AssetDatabase.LoadAssetAtPath<HistoryHeroes.Equipment.GachaTable>($"{DataDir}/Equipment/GachaTable.asset");
             ShopPanel shopPanel = BuildShopPanel(safe, gacha);
             TrainingPanel trainingPanel = BuildTrainingPanel(safe, meta);
-            using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel);
+            RunePanel runePanel = BuildRunePanel(safe, meta, database);
+            using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
 
@@ -219,19 +220,21 @@ namespace HistoryHeroes.EditorTools
             levelLabel.fontSize = 28;
             Button awaken = Btn("HeroAwaken", panel, "각성", new Vector2(250f, -575f), new Vector2(440f, 110f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text awakenLabel);
             awakenLabel.fontSize = 28;
-            Button trainingButton = Btn("Training", panel, "수련 (모든 영웅)", new Vector2(-250f, -700f), new Vector2(440f, 110f), ButtonBlue, out TMP_Text trainingLabel);
-            trainingLabel.fontSize = 28;
+            Button trainingButton = Btn("Training", panel, "수련 (모든 영웅)", new Vector2(-335f, -700f), new Vector2(325f, 110f), ButtonBlue, out TMP_Text trainingLabel);
+            trainingLabel.fontSize = 26;
+            Button runeButton = Btn("HeroRunes", panel, "룬", new Vector2(0f, -700f), new Vector2(325f, 110f), new Color(0.32f, 0.25f, 0.45f), out TMP_Text runeLabel);
+            runeLabel.fontSize = 28;
             TMP_Text heroMessage = Label("HeroMessage", panel, "", 26, TextAlignmentOptions.Center);
             Place(heroMessage.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 50f));
             Button equip = Btn("HeroEquipment", panel, "장비", new Vector2(250f, -450f), new Vector2(440f, 110f), ButtonBlue, out TMP_Text equipLabel);
             equipLabel.fontSize = 28;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(250f, -700f), new Vector2(440f, 110f), ButtonGray, out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(335f, -700f), new Vector2(325f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("equipButton", equip).Ref("equipLabel", equipLabel)
                     .Ref("levelButton", level).Ref("levelLabel", levelLabel).Ref("awakenButton", awaken).Ref("awakenLabel", awakenLabel)
-                    .Ref("trainingButton", trainingButton).Ref("messageLabel", heroMessage);
+                    .Ref("trainingButton", trainingButton).Ref("messageLabel", heroMessage).Ref("runeButton", runeButton).Ref("runeLabel", runeLabel);
                 props.Ref("root", panel.gameObject).Ref("roster", roster).Refs("heroButtons", buttons).Refs("heroBackgrounds", backgrounds)
                     .Refs("heroLabels", labels).Ref("selectButton", select).Ref("selectLabel", selectLabel)
                     .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("backButton", back);

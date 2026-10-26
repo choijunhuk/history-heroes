@@ -81,6 +81,7 @@ namespace HistoryHeroes.Records
         public List<int> training = new List<int>();
         public GachaSave gacha = new GachaSave();
         public ShopSave shop = new ShopSave();
+        public RuneSave runes = new RuneSave();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -259,6 +260,32 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+    }
+
+    // ---------------------------------------------------------------- v0.4 룬 (Runes 9장)
+
+    [Serializable]
+    public sealed class RuneSave
+    {
+        public List<RuneLevel> owned = new List<RuneLevel>();
+        public List<HeroRunes> loadouts = new List<HeroRunes>();
+        /// <summary>받은 보스 보상 고르기 ("ch2", "ch4")</summary>
+        public List<string> choicesTaken = new List<string>();
+    }
+
+    [Serializable]
+    public sealed class RuneLevel
+    {
+        public string id;
+        public int level;
+    }
+
+    /// <summary>영웅마다 룬 2칸 (빈 칸은 빈 문자열)</summary>
+    [Serializable]
+    public sealed class HeroRunes
+    {
+        public string heroId;
+        public List<string> ids = new List<string> { "", "" };
     }
 
     // ---------------------------------------------------------------- v0.4 상자·상점 (Gacha, Economy 5)

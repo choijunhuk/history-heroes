@@ -41,8 +41,23 @@ namespace HistoryHeroes.EditorTools
             table.items.Add(Equip("acc_stirrup_l", "바람의 등자", EquipSlot.Accessory, EquipRarity.Legendary, StatType.MoveSpeed, 0.03f, ModifierKind.Percent));
             EditorUtility.SetDirty(table);
 
+            // 룬 7종 (Runes 3장)
+            var runes = AssetUtil.LoadOrCreate<HistoryHeroes.Runes.RuneTable>($"{DataDir}/Runes/RuneTable.asset");
+            runes.runes.Clear();
+            runes.runes.Add(Rune("rune_fire", "불의 룬", Skills.SkillTag.Fire, "지속 피해형 (불꽃 장판, 불꽃 발자국, 유성)", HistoryHeroes.Runes.RuneSource.BossChoice));
+            runes.runes.Add(Rune("rune_lightning", "번개의 룬", Skills.SkillTag.Lightning, "번개 광역형 (낙뢰, 테슬라 코일)", HistoryHeroes.Runes.RuneSource.BossChoice));
+            runes.runes.Add(Rune("rune_projectile", "투사체의 룬", Skills.SkillTag.Projectile, "연사형 (멀티샷, 관통, 벽 튕김)", HistoryHeroes.Runes.RuneSource.BossChoice));
+            runes.runes.Add(Rune("rune_melee", "근접의 룬", Skills.SkillTag.Melee, "칼날 탱커형, 관우", HistoryHeroes.Runes.RuneSource.Shop));
+            runes.runes.Add(Rune("rune_survival", "생존의 룬", Skills.SkillTag.Survival, "흡혈, 방어력, 최대체력", HistoryHeroes.Runes.RuneSource.Shop));
+            runes.runes.Add(Rune("rune_training", "수련의 룬", Skills.SkillTag.Stat, "공격력, 공격속도 같은 기본기", HistoryHeroes.Runes.RuneSource.Shop));
+            HistoryHeroes.Runes.RuneData bond = Rune("rune_bond", "인연의 룬", Skills.SkillTag.None, "조합 노리기 (발견한 조합의 재료)", HistoryHeroes.Runes.RuneSource.Survival);
+            bond.bond = true;
+            runes.runes.Add(bond);
+            EditorUtility.SetDirty(runes);
+
             var meta = AssetUtil.LoadOrCreate<MetaTable>($"{DataDir}/Meta/MetaTable.asset");
             meta.equipment = table;
+            meta.runes = runes;
             EditorUtility.SetDirty(meta);
 
             // 상자 표 (Gacha 2장): 화면 확률과 추첨이 같이 읽는다. 숫자는 GachaTable 기본값
@@ -50,6 +65,19 @@ namespace HistoryHeroes.EditorTools
             gacha.equipment = table;
             EditorUtility.SetDirty(gacha);
             return meta;
+        }
+
+        private static HistoryHeroes.Runes.RuneData Rune(string id, string name, Skills.SkillTag tag, string aim, HistoryHeroes.Runes.RuneSource source)
+        {
+            var r = AssetUtil.LoadOrCreate<HistoryHeroes.Runes.RuneData>($"{DataDir}/Runes/Rune_{id}.asset");
+            r.id = id;
+            r.displayName = name;
+            r.tag = tag;
+            r.bond = false;
+            r.aim = aim;
+            r.source = source;
+            EditorUtility.SetDirty(r);
+            return r;
         }
 
         private static EquipmentData Equip(string id, string name, EquipSlot slot, EquipRarity rarity,

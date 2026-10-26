@@ -3,6 +3,15 @@ using UnityEngine;
 
 namespace HistoryHeroes.Skills
 {
+    /// <summary>
+    /// 같은 등급 안 후보 하나에 곱할 배율 (룬, Runes 9장). 1.0 = 영향 없음, 최대 3.0.
+    /// **등급 추첨(RollRarity)은 이걸 받지 않는다** → "전설이 나올 확률은 룬이 있어도 같다"가 구조로 지켜진다.
+    /// </summary>
+    public interface IWeightModifier
+    {
+        float GetMultiplier(SkillData candidate, SkillLoadout currentLoadout);
+    }
+
     /// <summary>레벨업 카드 3장 뽑기 (GameDesign 6-4).</summary>
     public static class SkillPicker
     {
@@ -69,7 +78,9 @@ namespace HistoryHeroes.Skills
         ///      **전설로는 절대 올라가지 않는다.** ("전설은 귀하다")
         ///   4. 그래도 없으면 기본 카드(체력 회복)로 채운다. 기본 카드는 중복돼도 된다.
         /// </summary>
-        public static List<SkillCard> PickSkills(List<SkillCard> candidates, int count, int floor, RarityTable rarityTable)
+        /// <param name="modifier">룬 (없으면 같은 등급 안에서 균등). 등급 추첨에는 쓰지 않는다</param>
+        public static List<SkillCard> PickSkills(List<SkillCard> candidates, int count, int floor, RarityTable rarityTable,
+            IWeightModifier modifier = null, SkillLoadout loadout = null)
         {
             var pool = new List<SkillCard>(candidates);
             var picked = new List<SkillCard>(count);
@@ -77,11 +88,65 @@ namespace HistoryHeroes.Skills
             for (int i = 0; i < count; i++)
             {
                 Rarity rolled = RollRarity(floor, rarityTable);
-                SkillCard card = TakeFrom(pool, FallbackOrder(rolled));
+                SkillCard card = modifier != null ? TakeWeighted(pool, FallbackOrder(rolled), modifier, loadout, Random.value) : TakeFrom(pool, FallbackOrder(rolled));
                 picked.Add(card ?? SkillCard.Fallback());
             }
 
             return picked;
+        }
+
+        /// <summary>
+        /// ②단계 (룬): order 순서대로 그 등급 후보를 찾아, 후보마다 배율(최대 3.0)을 가중치로 하나를 꺼낸다.
+        /// roll01 = 0~1 난수 (테스트에서 정해 넣는다). 배율이 1보다 큰 카드는 RuneBoosted 표시.
+        /// </summary>
+        public static SkillCard TakeWeighted(List<SkillCard> pool, Rarity[] order, IWeightModifier modifier, SkillLoadout loadout, float roll01)
+        {
+            foreach (Rarity rarity in order)
+            {
+                float total = 0f;
+                for (int i = 0; i < pool.Count; i++)
+                {
+                    if (pool[i].Skill != null && pool[i].Skill.rarity == rarity) total += Weight(pool[i], modifier, loadout);
+                }
+
+                if (total <= 0f) continue;
+
+                float target = roll01 * total;
+                for (int i = 0; i < pool.Count; i++)
+                {
+                    if (pool[i].Skill == null || pool[i].Skill.rarity != rarity) continue;
+                    float w = Weight(pool[i], modifier, loadout);
+                    if (target >= w)
+                    {
+                        target -= w;
+                        continue;
+                    }
+
+                    SkillCard card = pool[i];
+                    pool.RemoveAt(i);
+                    card.RuneBoosted = w > 1f;
+                    return card;
+                }
+
+                // 반올림 오차: 그 등급의 마지막 후보
+                for (int i = pool.Count - 1; i >= 0; i--)
+                {
+                    if (pool[i].Skill == null || pool[i].Skill.rarity != rarity) continue;
+                    SkillCard card = pool[i];
+                    pool.RemoveAt(i);
+                    card.RuneBoosted = Weight(card, modifier, loadout) > 1f;
+                    return card;
+                }
+            }
+
+            return null;
+        }
+
+        public const float MaxRuneMultiplier = 3f;
+
+        private static float Weight(SkillCard card, IWeightModifier modifier, SkillLoadout loadout)
+        {
+            return Mathf.Clamp(modifier.GetMultiplier(card.Skill, loadout), 0f, MaxRuneMultiplier);
         }
 
         private static readonly Rarity[] FromLegendary = { Rarity.Legendary, Rarity.Rare, Rarity.Common };

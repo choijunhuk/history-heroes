@@ -163,6 +163,49 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        private static RunePanel BuildRunePanel(Transform parent, MetaTable meta, Skills.SkillDatabase database)
+        {
+            RectTransform panel = Overlay(parent, "RunePanel", out GameObject holder);
+            var screen = holder.AddComponent<RunePanel>();
+
+            TMP_Text title = Label("Title", panel, "룬", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 850f), new Vector2(900f, 80f));
+            TMP_Text info = Label("Info", panel, "", 26, TextAlignmentOptions.Center);
+            Place(info.rectTransform, Center, Center, new Vector2(0f, 765f), new Vector2(1000f, 80f));
+
+            var slotButtons = new Button[2];
+            var slotLabels = new TMP_Text[2];
+            for (int i = 0; i < 2; i++)
+            {
+                slotButtons[i] = Btn($"RuneSlot{i + 1}", panel, "", new Vector2(-252f + i * 504f, 660f), new Vector2(496f, 100f), RowColor, out TMP_Text label);
+                label.fontSize = 28;
+                slotLabels[i] = label;
+            }
+
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 120f), new Vector2(1000f, 940f), 100f, 27f);
+            TMP_Text detail = Label("Detail", panel, "", 27, TextAlignmentOptions.Center);
+            Place(detail.rectTransform, Center, Center, new Vector2(0f, -470f), new Vector2(1000f, 150f));
+            detail.lineSpacing = 6f;
+
+            Button equip = Btn("RuneEquip", panel, "끼기", new Vector2(-335f, -640f), new Vector2(325f, 100f), ButtonGreen, out TMP_Text equipLabel);
+            equipLabel.fontSize = 27;
+            Button upgrade = Btn("RuneUpgrade", panel, "강화", new Vector2(0f, -640f), new Vector2(325f, 100f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text upgradeLabel);
+            upgradeLabel.fontSize = 26;
+            Button remove = Btn("RuneRemove", panel, "칸 비우기", new Vector2(335f, -640f), new Vector2(325f, 100f), ButtonGray, out TMP_Text removeLabel);
+            removeLabel.fontSize = 27;
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -790f), new Vector2(400f, 100f), ButtonGray, out _);
+
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("metaTable", meta).Ref("database", database).Ref("titleLabel", title).Ref("infoLabel", info)
+                    .Refs("slotButtons", slotButtons).Refs("slotLabels", slotLabels).Ref("list", list).Ref("detailLabel", detail)
+                    .Ref("equipButton", equip).Ref("equipLabel", equipLabel).Ref("upgradeButton", upgrade).Ref("upgradeLabel", upgradeLabel)
+                    .Ref("removeButton", remove).Ref("backButton", back);
+            }
+
+            return screen;
+        }
+
         private static TrainingPanel BuildTrainingPanel(Transform parent, MetaTable meta)
         {
             RectTransform panel = Overlay(parent, "TrainingPanel", out GameObject holder);

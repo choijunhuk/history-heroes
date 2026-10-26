@@ -38,6 +38,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button trainingButton;
         [SerializeField] private TrainingPanel training;
         [SerializeField] private TMP_Text messageLabel;
+        [SerializeField] private Button runeButton;
+        [SerializeField] private TMP_Text runeLabel;
+        [SerializeField] private RunePanel runes;
 
         private static readonly Color Normal = new Color(0.16f, 0.18f, 0.24f);
         private static readonly Color Focused = new Color(0.25f, 0.42f, 0.7f);
@@ -62,6 +65,7 @@ namespace HistoryHeroes.UI
             if (levelButton != null) levelButton.onClick.AddListener(LevelUpFocused);
             if (awakenButton != null) awakenButton.onClick.AddListener(AwakenFocused);
             if (trainingButton != null) trainingButton.onClick.AddListener(() => training.Open(Render));
+            if (runeButton != null) runeButton.onClick.AddListener(() => runes.Open(FocusHero.id, FocusHero.displayName, Render));
         }
 
         private HeroData FocusHero => roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
@@ -143,6 +147,14 @@ namespace HistoryHeroes.UI
                 equipButton.gameObject.SetActive(focusUnlocked);
                 equipButton.interactable = gear;
                 equipLabel.text = !gear ? "장비 (1구간 보스 뒤)" : focus.displayName + "의 장비";
+            }
+
+            if (runeButton != null && metaTable != null && metaTable.runes != null)
+            {
+                runeButton.gameObject.SetActive(focusUnlocked);
+                int slots = Runes.RuneService.SlotCount(d, metaTable.runes);
+                bool pendingChoice = Runes.RuneService.PendingChoice(d, metaTable.runes) != null;
+                runeLabel.text = slots == 0 ? "룬 (2구간 보스 뒤)" : pendingChoice ? "룬 <color=#FFD966>(보상!)</color>" : $"룬 ({slots}칸)";
             }
 
             if (levelButton != null && metaTable != null)

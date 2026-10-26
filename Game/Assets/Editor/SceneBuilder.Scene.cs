@@ -147,7 +147,8 @@ namespace HistoryHeroes.EditorTools
             var bootstrap = systems.AddComponent<BattleBootstrap>();
             using (var props = new Props(bootstrap))
             {
-                props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player).Ref("metaTable", d.Meta);
+                props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player).Ref("metaTable", d.Meta)
+                    .Ref("skills", Object.FindAnyObjectByType<SkillManager>(FindObjectsInactive.Include)).Ref("database", d.Database);
             }
 
             using (var props = new Props(Object.FindAnyObjectByType<DungeonRun>(FindObjectsInactive.Include)))
