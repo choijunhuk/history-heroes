@@ -65,7 +65,7 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(0, PetService.CheckAll(save, _table).Count);
             Assert.IsFalse(PetService.Unlocked(save), "첫 펫 전에는 펫 칸이 없다");
 
-            save.relics.heroDungeonClears.Add("khan");
+            save.tutorialDone = true; // v1.0: 첫 펫(사냥매)은 튜토리얼 보스 격파 (Pets 7-1)
             Assert.AreEqual(1, PetService.CheckAll(save, _table).Count);
             Assert.IsTrue(PetService.Unlocked(save));
             Assert.AreEqual("hawk", PetService.Equipped(save, "khan"), "처음 받은 펫은 고른 영웅에게 바로");

@@ -16,6 +16,19 @@ namespace HistoryHeroes.Records
 
         public static SaveStore Store => _store ??= SaveStore.ForDevice();
 
+        /// <summary>판이 끝날 때 백업을 돌린다 (최근 3개). 실패해도 게임은 계속</summary>
+        public static void RotateRunBackups()
+        {
+            try
+            {
+                Store.RotateRunBackups();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[SaveSystem] 판 백업 실패: " + e.Message);
+            }
+        }
+
         /// <summary>저장하지 못한 변경이 남아 있는가 (실패 후 다시 시도할 것)</summary>
         public static bool IsDirty => _dirty;
 
@@ -123,7 +136,9 @@ namespace HistoryHeroes.Records
 
             private void OnApplicationPause(bool paused)
             {
-                if (paused) SaveIfDirty();
+                if (!paused) return;
+                SaveIfDirty();
+                Common.LocalNotices.Reschedule(Data); // 하트·순찰 알림 다시 예약 (v1.0)
             }
 
             private void OnApplicationFocus(bool focused)
@@ -131,7 +146,11 @@ namespace HistoryHeroes.Records
                 if (!focused) SaveIfDirty();
             }
 
-            private void OnApplicationQuit() => SaveIfDirty();
+            private void OnApplicationQuit()
+            {
+                SaveIfDirty();
+                Common.LocalNotices.Reschedule(Data);
+            }
 
             [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
             private static void ResetStatics() => _instance = null;

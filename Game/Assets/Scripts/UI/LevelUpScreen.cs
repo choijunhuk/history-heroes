@@ -39,6 +39,17 @@ namespace HistoryHeroes.UI
 
         public bool IsOpen => root.activeSelf;
 
+        /// <summary>지금 카드에 조합 카드가 있나 (튜토리얼 안내)</summary>
+        public bool ShowsFusion => IsOpen && _current.Exists(c => c.Type == CardType.Fusion);
+
+        /// <summary>판 이어하기: 남은 리롤 (껐다 켜서 리롤을 다시 채우지 못하게)</summary>
+        public int RerollsLeft => _rerollsLeft;
+
+        public void RestoreRerolls(int left)
+        {
+            if (left >= 0) _rerollsLeft = Mathf.Min(left, rerollsPerRun);
+        }
+
         private void Awake()
         {
             _rerollsLeft = rerollsPerRun;
@@ -52,6 +63,7 @@ namespace HistoryHeroes.UI
 
         private void OnLeveledUp(int level)
         {
+            if (!IsOpen) Audio.AudioManager.Play("levelup");
             _pending++;
             if (!IsOpen) Open();
         }
@@ -163,6 +175,7 @@ namespace HistoryHeroes.UI
         private void Choose(SkillCard card)
         {
             if (_waitingForAd) return;
+            Audio.AudioManager.Play("card");
             skills.Choose(card);
             _legendaryWarning &= !skills.ChoseLegendary; // 전설을 골랐으면 이번 판 ★3은 이미 실패
             Records.SaveSystem.SaveIfDirty(); // 스킬 선택 확정 = 안전한 저장 시점 (조합 도감 발견, 12-2)

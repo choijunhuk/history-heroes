@@ -26,6 +26,9 @@ namespace HistoryHeroes.Progress
         public float ExpMultiplier { get; set; } = 1f;
         public int Kills { get; private set; }
 
+        /// <summary>판 이어하기</summary>
+        public void RestoreKills(int kills) => Kills = Mathf.Max(0, kills);
+
         public event Action<int> LeveledUp;
 
         private void Awake()
@@ -82,6 +85,7 @@ namespace HistoryHeroes.Progress
 
         private void OnCollected(ExperienceGem gem, float value)
         {
+            Audio.AudioManager.Play("gem", 0.25f, 0.15f);
             _active.Remove(gem);
             _gems.Release(gem);
             Level.Add(value, player.Stats.Get(StatType.ExpGain));

@@ -54,6 +54,10 @@ namespace HistoryHeroes.Skills
         }
 
         /// <summary>조합 재료는 그 판에서 다시 후보에 나오지 않는다.</summary>
+        public IEnumerable<SkillData> ConsumedMaterials => _consumedMaterials;
+        public IEnumerable<FusionRecipe> CompletedFusions => _completedFusions;
+        public IEnumerable<FusionRecipe> HiddenFusions => _hiddenThisRun;
+
         public void MarkConsumed(SkillData material) => _consumedMaterials.Add(material);
         public bool IsConsumed(SkillData data) => _consumedMaterials.Contains(data);
 

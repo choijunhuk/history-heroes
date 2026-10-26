@@ -84,6 +84,7 @@ namespace HistoryHeroes.Missions
             SaveData save = SaveSystem.Data;
             EnsureCurrent();
             Count(save, key, amount);
+            Newcomer.OnEvent(save, key, amount, param, Clock.Now()); // 신규 7일 미션 (v1.0)
             Notify(MissionService.Raise(save, key, amount, param));
             SaveSystem.MarkDirty();
         }

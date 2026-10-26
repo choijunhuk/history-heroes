@@ -85,9 +85,11 @@ namespace HistoryHeroes.Dev
             save.rift.checkpoint = new RiftCheckpoint();
             BattleBootstrap.DevMeta = _meta;
             GamePause.DevSpeed = 1f;
-            bool dungeon = _dungeonChapter > 0;
-            if (dungeon) GameSession.StartDungeon(_dungeonChapter);
+            bool dungeon = _dungeonChapter != 0; // -1 = 튜토리얼 던전 (v1.0)
+            if (_dungeonChapter < 0) GameSession.StartTutorial(false);
+            else if (dungeon) GameSession.StartDungeon(_dungeonChapter);
             else GameSession.StartRift(false);
+            float lowestHp = 1f;
 
             DungeonRun run = null;
             PlayerController player = null;
@@ -167,6 +169,8 @@ namespace HistoryHeroes.Dev
                     floorStart = Time.time;
                 }
 
+                lowestHp = Mathf.Min(lowestHp, player.Health.Current / Mathf.Max(1f, player.Health.Max));
+
                 // 보상 방: 체력이 낮으면 회복, 아니면 카드
                 if (run.RewardRoom != null && run.RewardRoom.IsOpen)
                 {
@@ -226,6 +230,7 @@ namespace HistoryHeroes.Dev
             for (int i = 0; i < parts.Count && i < 5; i++) takenParts.Add($"{parts[i].Key} {parts[i].Value / Mathf.Max(1f, takenTotal) * 100f:0}%");
             string outcome = dungeon ? (died ? $"쓰러짐 방 {floor}" : run.IsFinished ? "클리어" : $"시간 초과 방 {floor}") : $"{(died ? "쓰러짐" : "상한")} {floor}층";
             if (stuckCount > 0) outcome += $" (막힌 방 {stuckCount}번)";
+            if (_dungeonChapter < 0) outcome += $" · 가장 낮은 체력 {lowestHp * 100f:0}%";
             _results.Add($"{heroId} | {outcome} | {Format(seconds)} | Lv{experience.Level.Level} | 균열 강화 {skills.RiftBoostCount} | 처치 {experience.Kills} | " +
                          $"{Economy.RunText.TopDamage(_database, player.Hero, 4)} | 받은 피해 ({string.Join(" · ", takenParts)}){samples}");
             Destroy(walker);

@@ -20,76 +20,91 @@ MonoBehaviour:
     minTypes: 1
     maxTypes: 1
     elites: 0
+    only: 
   - kind: 0
     budget: 8
     minTypes: 2
     maxTypes: 2
     elites: 0
+    only: 
   - kind: 0
     budget: 10
     minTypes: 2
     maxTypes: 2
     elites: 0
+    only: 
   - kind: 0
     budget: 12
     minTypes: 2
     maxTypes: 2
     elites: 0
+    only: 
   - kind: 1
     budget: 6
     minTypes: 1
     maxTypes: 2
     elites: 1
+    only: 
   - kind: 2
     budget: 0
     minTypes: 0
     maxTypes: 0
     elites: 0
+    only: 
   - kind: 0
     budget: 14
     minTypes: 3
     maxTypes: 3
     elites: 0
+    only: 
   - kind: 0
     budget: 15
     minTypes: 3
     maxTypes: 3
     elites: 0
+    only: 
   - kind: 0
     budget: 16
     minTypes: 3
     maxTypes: 3
     elites: 0
+    only: 
   - kind: 1
     budget: 6
     minTypes: 1
     maxTypes: 2
     elites: 2
+    only: 
   - kind: 2
     budget: 0
     minTypes: 0
     maxTypes: 0
     elites: 0
+    only: 
   - kind: 0
     budget: 18
     minTypes: 3
     maxTypes: 4
     elites: 0
+    only: 
   - kind: 0
     budget: 19
     minTypes: 3
     maxTypes: 4
     elites: 0
+    only: 
   - kind: 0
     budget: 20
     minTypes: 3
     maxTypes: 4
     elites: 0
+    only: 
   - kind: 3
     budget: 4
     minTypes: 1
     maxTypes: 1
     elites: 0
+    only: 
   chapters:
   - {fileID: 11400000, guid: db8acd57b83d76c4abc173f4b5459980, type: 2}
   - {fileID: 11400000, guid: 91733d573cdeda347a8711d33adfc2ef, type: 2}

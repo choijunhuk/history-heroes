@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace HistoryHeroes.Records
@@ -21,6 +22,60 @@ namespace HistoryHeroes.Records
         public string MainPath => Path.Combine(Folder, FileName);
         public string TempPath => MainPath + ".tmp";
         public string BackupPath => MainPath + ".bak";
+
+        /// <summary>판이 끝날 때마다 돌려 쓰는 백업 3개 (가장 최근 = 1)</summary>
+        public const int RunBackups = 3;
+        public string RunBackupPath(int i) => $"{MainPath}.run{i}";
+
+        // ---------------------------------------------------------------- v1.0 해시 검사 (손쉬운 편집 막기)
+        // 공개 저장소라 키는 숨길 수 없다. 진짜 막기는 서버 저장 (v1.0 갈래 2, LiveOps 15장)
+
+        private static readonly byte[] IntegrityKey = Encoding.UTF8.GetBytes("history-heroes/save/v1");
+        private static readonly Regex IntegrityField = new Regex("(\"integrity\"\\s*:\\s*\")([^\"]*)(\")", RegexOptions.CultureInvariant);
+
+        private static string Hash(string text)
+        {
+            using (var hmac = new System.Security.Cryptography.HMACSHA256(IntegrityKey))
+            {
+                byte[] h = hmac.ComputeHash(Encoding.UTF8.GetBytes(text));
+                var sb = new StringBuilder(h.Length * 2);
+                foreach (byte b in h) sb.Append(b.ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
+        /// <summary>해시 칸을 비운 글 (쓸 때와 읽을 때 같은 글에서 해시를 낸다)</summary>
+        private static string WithoutHash(string json, out string stored)
+        {
+            Match m = IntegrityField.Match(json);
+            stored = m.Success ? m.Groups[2].Value : null;
+            return m.Success ? json.Substring(0, m.Groups[2].Index) + json.Substring(m.Groups[2].Index + m.Groups[2].Length) : json;
+        }
+
+        /// <summary>글 안 해시 칸에 해시를 채운다</summary>
+        public static string Sign(string json)
+        {
+            Match m = IntegrityField.Match(json);
+            if (!m.Success) return json;
+            string hash = Hash(json);
+            return json.Substring(0, m.Groups[2].Index) + hash + json.Substring(m.Groups[2].Index + m.Groups[2].Length);
+        }
+
+        /// <summary>해시가 맞나. 해시가 없거나 비었으면 **구조 1~4(옛 파일)만** 통과 (구조 5부터는 해시가 꼭 있다)</summary>
+        public static bool IntegrityOk(string json)
+        {
+            string body = WithoutHash(json, out string stored);
+            if (string.IsNullOrEmpty(stored)) return SchemaOf(json) < 5;
+            return stored == Hash(body);
+        }
+
+        private static readonly Regex SchemaField = new Regex("\"schemaVersion\"\\s*:\\s*(\\d+)", RegexOptions.CultureInvariant);
+
+        private static int SchemaOf(string json)
+        {
+            Match m = SchemaField.Match(json);
+            return m.Success && int.TryParse(m.Groups[1].Value, out int v) ? v : 0;
+        }
 
         /// <summary>마지막 Load가 어디서 읽었고 무슨 문제가 있었는지 (로그·테스트용)</summary>
         public LoadReport LastLoad { get; private set; } = new LoadReport();
@@ -50,7 +105,8 @@ namespace HistoryHeroes.Records
 
             data.schemaVersion = SaveData.CurrentSchemaVersion;
             data.savedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            string json = JsonUtility.ToJson(data, true);
+            data.integrity = string.Empty;
+            string json = Sign(JsonUtility.ToJson(data, true));
 
             Directory.CreateDirectory(Folder);
 
@@ -113,12 +169,30 @@ namespace HistoryHeroes.Records
             var candidates = new List<string> { MainPath };
             if (!mainExists) candidates.Add(TempPath); // 교체 도중에 꺼진 경우에만 임시 파일을 믿는다
             candidates.Add(BackupPath);
+            for (int i = 1; i <= RunBackups; i++) candidates.Add(RunBackupPath(i));
 
+            SaveData tampered = null;
+            string tamperedPath = null;
             foreach (string path in candidates)
             {
                 if (!File.Exists(path)) continue;
 
-                if (TryRead(path, out SaveData data, out string problem))
+                if (TryRead(path, out SaveData data, out string problem, out bool hashFailed) && hashFailed)
+                {
+                    // 읽히지만 해시가 틀렸다 (손으로 고친 파일): 다른 정상본을 먼저 찾는다. 하나도 없으면 이걸 쓴다 (진행을 날리지 않게)
+                    report.Problems.Add($"{Path.GetFileName(path)}: 저장 파일이 바뀜 (해시 불일치)");
+                    report.PreservedCopies.Add(PreserveBroken(path));
+                    if (tampered == null)
+                    {
+                        tampered = data;
+                        tamperedPath = path;
+                    }
+
+                    if (path == MainPath) _mainIsValid = false;
+                    continue;
+                }
+
+                if (data != null)
                 {
                     report.Source = path;
                     report.FromBackup = path != MainPath;
@@ -153,13 +227,37 @@ namespace HistoryHeroes.Records
                 }
             }
 
+            if (tampered != null)
+            {
+                report.Source = tamperedPath;
+                report.FromBackup = tamperedPath != MainPath;
+                report.Tampered = true;
+                tampered.integrityFailures++;
+                return tampered;
+            }
+
             report.IsFresh = true;
             return new SaveData();
         }
 
-        private static bool TryRead(string path, out SaveData data, out string problem)
+        /// <summary>판이 끝날 때: 지금 본 파일을 백업 1로, 1 → 2 → 3으로 민다 (Game 12-2 · LiveOps 20장 "최근 3개")</summary>
+        public void RotateRunBackups()
+        {
+            if (!File.Exists(MainPath) || !_mainIsValid) return;
+            string last = RunBackupPath(RunBackups);
+            if (File.Exists(last)) File.Delete(last);
+            for (int i = RunBackups - 1; i >= 1; i--)
+            {
+                if (File.Exists(RunBackupPath(i))) File.Move(RunBackupPath(i), RunBackupPath(i + 1));
+            }
+
+            File.Copy(MainPath, RunBackupPath(1), false);
+        }
+
+        private static bool TryRead(string path, out SaveData data, out string problem, out bool hashFailed)
         {
             data = null;
+            hashFailed = false;
             try
             {
                 string json = File.ReadAllText(path, Encoding.UTF8);
@@ -168,6 +266,8 @@ namespace HistoryHeroes.Records
                     problem = "빈 파일";
                     return false;
                 }
+
+                hashFailed = !IntegrityOk(json);
 
                 if (!json.Contains("\"schemaVersion\""))
                 {
@@ -250,6 +350,16 @@ namespace HistoryHeroes.Records
                 }
             }
 
+            if (data.schemaVersion < 5)
+            {
+                // 4 → 5 (v1.0): 튜토리얼이 생겼다. 이미 진행한 사람은 튜토리얼을 끝낸 것으로 (출석·7일 미션이 바로 열린다)
+                data.tutorialDone = data.records.Count > 0 || data.unlockedChapter > 1 || data.stars.Count > 0 || data.accountLevel > 1;
+                data.attendance = new AttendanceSave();
+                data.newcomer = new NewcomerSave();
+                data.patrol = new PatrolSave();
+                data.titles = new List<string>();
+            }
+
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -324,6 +434,22 @@ namespace HistoryHeroes.Records
             data.rift.checkpoint ??= new RiftCheckpoint();
             data.rift.checkpoint.skills ??= new List<RecordSkill>();
             data.rift.checkpoint.boosts ??= new List<int>();
+            data.attendance ??= new AttendanceSave();
+            data.newcomer ??= new NewcomerSave();
+            data.newcomer.counts ??= new List<NamedCount>();
+            data.newcomer.counts.RemoveAll(c => c == null || string.IsNullOrEmpty(c.id));
+            data.newcomer.claimedDays ??= new List<int>();
+            data.patrol ??= new PatrolSave();
+            data.titles ??= new List<string>();
+            if (string.IsNullOrEmpty(data.userId)) data.userId = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpperInvariant();
+            data.run ??= new RunSnapshot();
+            data.run.skills ??= new List<RecordSkill>();
+            data.run.boosts ??= new List<int>();
+            data.run.fusions ??= new List<string>();
+            data.run.rng ??= new List<string>();
+            data.run.consumed ??= new List<string>();
+            data.run.completedFusions ??= new List<string>();
+            data.run.hiddenFusions ??= new List<string>();
             data.dailyChallenge ??= new DailySave();
             data.dailyChallenge.history ??= new List<DailyResult>();
             data.dailyChallenge.history.RemoveAll(h => h == null);
@@ -397,6 +523,8 @@ namespace HistoryHeroes.Records
             public string Source;
             public bool FromBackup;
             public bool IsFresh;
+            /// <summary>정상본이 없어서 해시가 틀린 파일을 썼다</summary>
+            public bool Tampered;
             public readonly List<string> Problems = new List<string>();
             public readonly List<string> PreservedCopies = new List<string>();
         }

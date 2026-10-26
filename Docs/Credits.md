@@ -1,0 +1,53 @@
+# 크레딧 · 에셋 출처
+
+> 규칙 ([Art 2장](Design/Art.md) · [Audio 5장](Design/Audio.md)): 에셋을 넣을 때마다 여기에 **출처 · 라이선스 · URL**을 적는다.
+> CC0 · CC-BY · OFL만 쓴다 (**CC-BY-NC 금지**). CC-BY는 게임 안 크레딧에 이름을 적는다.
+> 이 파일은 게임 안 "정보 → 크레딧"에도 그대로 나온다 (장면 빌더가 복사).
+
+## 만든 사람
+
+- 기획·개발: History Heroes 개발자
+- 개발 도구: Unity 6.3 LTS (Unity Technologies)
+- 코드·문서 작성 도움: AI 코딩 도구
+
+## 글꼴
+
+| 이름 | 쓰는 곳 | 라이선스 | 출처 |
+|---|---|---|---|
+| 나눔고딕 (NanumGothic Bold · ExtraBold) | 게임 안 모든 글자 | SIL Open Font License 1.1 (`Game/Assets/Fonts/OFL.txt`) | 네이버 나눔글꼴 — https://hangeul.naver.com/font |
+
+## 그림
+
+- 지금은 **임시 도형**만 쓴다 (게임이 직접 그린 원·사각형). 바깥 그림 에셋 없음.
+
+## 소리 (모두 CC0 — 출처 표시 의무는 없지만 고맙게 적는다)
+
+### 음악
+
+| 게임 안 이름 | 곡 | 만든 사람 | 라이선스 | 출처 |
+|---|---|---|---|---|
+| lobby | Ending | Juhani Junkala | CC0 | https://opengameart.org/content/5-chiptunes-action |
+| opening | Title Screen | Juhani Junkala | CC0 | (같은 묶음) |
+| chapter1 | Level 1 | Juhani Junkala | CC0 | (같은 묶음) |
+| chapter2 | Level 2 | Juhani Junkala | CC0 | (같은 묶음) |
+| chapter3 (3~4구간 · 균열) | Level 3 | Juhani Junkala | CC0 | (같은 묶음) |
+| chapter5 · survival | Fire Level (Danish Mega Pony v.4 OST Track 02) | Spring Spring | CC0 | https://opengameart.org/content/fire-level |
+| boss | Boss Battle #6 [8-bit] (V1) | nene | CC0 | https://opengameart.org/content/boss-battle-6-8-bit |
+
+- WAV·MP3를 OGG(Vorbis q4)로 바꿔서 넣었다 (`Game/Assets/Audio/Music`).
+
+### 효과음 (`Game/Assets/Audio/Sfx`, 원래 파일 이름)
+
+| 게임 안 이름 | 원래 파일 | 묶음 (Kenney, CC0) |
+|---|---|---|
+| shoot | tick_002 | Interface Sounds — https://kenney.nl/assets/interface-sounds |
+| card · ui_click · ui_back · ui_error · telegraph · reward | select_002 · click_001 · back_001 · error_001 · question_001 · confirmation_002 | Interface Sounds |
+| hit · player_hurt · enemy_die · slam · explode | impactPunch_medium_000 · impactPunch_heavy_000 · impactSoft_medium_001 · impactWood_heavy_000 · impactMetal_heavy_000 | Impact Sounds — https://kenney.nl/assets/impact-sounds |
+| levelup · fusion · legendary · gem · death · victory | powerUp2 · powerUp7 · threeTone2 · pepSound1 · lowThreeTone · zapThreeToneUp | Digital Audio — https://kenney.nl/assets/digital-audio |
+| door · coin | doorOpen_1 · handleCoins | RPG Audio — https://kenney.nl/assets/rpg-audio |
+
+## 쓰는 패키지
+
+| 이름 | 라이선스 |
+|---|---|
+| Unity Input System · TextMesh Pro · URP · Mobile Notifications | Unity Companion License |

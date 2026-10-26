@@ -9,7 +9,7 @@
 ![Unity](https://img.shields.io/badge/Unity-6.3_LTS-000000?logo=unity&logoColor=white)
 ![C#](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
-![Status](https://img.shields.io/badge/Status-v0.1_개발_중-blue)
+![Status](https://img.shields.io/badge/Status-v1.0_출시_준비_중-blue)
 
 </div>
 
@@ -43,12 +43,15 @@
 
 ## 🗺️ 로드맵
 
-- [ ] **v0.1** — 궁수 1명, 패시브 6 + 액티브 4 + 조합 2로 "재밌는지" 확인
-- [ ] **v0.2** — 기록 저장 + 보스맵 + 조합 도감 ⭐
-- [ ] **v0.3** — 영웅 추가 (전사, 법사, 총잡이)
-- [ ] **v0.4** — 장비, 룬
-- [ ] **v0.5** — 서바이벌(뱀서) 모드
+- [x] **v0.1** — 궁수 1명, 패시브 6 + 액티브 4 + 조합 2로 "재밌는지" 확인
+- [x] **v0.2** — 기록 저장 + 보스맵 + 조합 도감 ⭐
+- [x] **v0.3** — 영웅 추가 (전사, 법사, 총잡이)
+- [x] **v0.4** — 판 밖 성장 (장비, 룬, 수련, 유물)
+- [x] **v0.5** — 서바이벌(뱀서) 모드, 펫
+- [x] **v0.6** — 구간 2~5 (새 적·보스), 무한의 균열, 일일 도전
 - [ ] **v1.0** — 구글 플레이 출시
+  - [x] 오프라인으로 되는 것: 일시정지·이어하기, 저장 보호, 튜토리얼, 출석부·신규 7일 미션·순찰, 알림, 대사, 설정, 소리, 약관·개인정보 화면
+  - [ ] 계정이 필요한 것: 플레이 콘솔, 광고, 결제, 그래픽 방향 (개발자 가입 뒤)
 
 자세한 내용은 [기획서의 로드맵](Docs/GameDesign.md#11-로드맵)을 봐주세요.
 
@@ -111,6 +114,7 @@ history-heroes/
 | 리소스 | 출처 | 라이선스 |
 |---|---|---|
 | 나눔고딕 (Bold, ExtraBold) | NAVER · [Google Fonts](https://fonts.google.com/specimen/Nanum+Gothic) | [SIL Open Font License 1.1](Game/Assets/Fonts/OFL.txt) |
+| 음악 · 효과음 | OpenGameArt · Kenney (자세히는 [크레딧](Docs/Credits.md)) | CC0 |
 
 ## 🤝 개발 방식
 

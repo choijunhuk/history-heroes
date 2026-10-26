@@ -28,6 +28,7 @@ namespace HistoryHeroes.Dungeon
 
         public void SetOpen(bool open)
         {
+            if (open && !IsOpen) Audio.AudioManager.Play("door", 0.7f);
             IsOpen = open;
             if (sprite != null) sprite.color = open ? openColor : closedColor;
 

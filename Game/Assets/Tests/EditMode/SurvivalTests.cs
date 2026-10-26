@@ -87,7 +87,7 @@ namespace HistoryHeroes.Tests
                 File.WriteAllText(store.MainPath, json);
 
                 SaveData loaded = store.Load();
-                Assert.AreEqual(4, loaded.schemaVersion);
+                Assert.AreEqual(SaveData.CurrentSchemaVersion, loaded.schemaVersion);
                 Assert.AreEqual(42, loaded.gold);
                 Assert.AreEqual(0, loaded.survival.best.Count);
                 Assert.AreEqual(0, loaded.pets.owned.Count);

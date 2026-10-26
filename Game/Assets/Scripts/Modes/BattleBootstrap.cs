@@ -47,6 +47,20 @@ namespace HistoryHeroes.Modes
                 if (record != null) return roster.Find(record.heroId);
             }
 
+            // 튜토리얼 던전: 칭기즈 칸 (UX 4장)
+            if (GameSession.Tutorial && GameSession.Mode == BattleMode.Dungeon)
+            {
+                HeroData khan = roster.Find(Progress.Tutorial.Hero);
+                if (khan != null) return khan;
+            }
+
+            // 이어하기: 그 판의 영웅
+            if (GameSession.Resuming != null && !string.IsNullOrEmpty(GameSession.Resuming.heroId))
+            {
+                HeroData resumed = roster.Find(GameSession.Resuming.heroId);
+                if (resumed != null) return resumed;
+            }
+
             // 일일 도전: 오늘의 영웅 (해금 안 했어도 빌려 쓴다, Modes 5장)
             if (GameSession.Mode == BattleMode.Daily)
             {
@@ -79,6 +93,8 @@ namespace HistoryHeroes.Modes
             }
 
             if (GameSession.Mode == BattleMode.Daily) return DailyRules.FixedSet(); // 공정한 고정 세트 (펫·유물·수련 없음)
+            // 이어하기: 판을 시작할 때의 성장 그대로 (로비에서 강화해도 이 판에는 안 들어간다)
+            if (GameSession.Resuming != null && GameSession.Resuming.hasMeta && GameSession.Resuming.meta != null) return GameSession.Resuming.meta;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (DevMeta != null) return DevMeta; // 벤치: 정해 둔 판 밖 성장
 #endif
@@ -95,6 +111,9 @@ namespace HistoryHeroes.Modes
 
         private void Awake()
         {
+            SettingsApplier.Apply(SaveSystem.Data.settings);
+            SaveSystem.RotateRunBackups(); // 지난 판이 끝나고 저장된 상태를 판 백업으로 (끝날 때 돌리면 끝나기 전 상태가 들어간다)
+            Audio.AudioManager.PlayMusic(Audio.AudioManager.MusicFor(GameSession.Mode, GameSession.Chapter));
             if (metaTable != null) Missions.MissionEvents.Configure(metaTable.missions, roster, database != null ? database.recipes.Count : 0);
             if (roster != null && player != null)
             {

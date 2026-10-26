@@ -48,7 +48,7 @@ namespace HistoryHeroes.Pets
         {
             switch (p.source)
             {
-                case PetSource.FirstDungeonClear: return save.relics.heroDungeonClears.Count > 0;
+                case PetSource.FirstDungeonClear: return save.tutorialDone; // 튜토리얼 보스 격파 (v1.0, Pets 7-1)
                 case PetSource.BossFirstClear: return save.unlockedChapter > p.sourceChapter;
                 case PetSource.SurvivalFirstClear: return save.survival.clears > 0;
                 default: return false;

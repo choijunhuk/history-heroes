@@ -40,6 +40,9 @@ namespace HistoryHeroes.Skills
         /// <summary>조합을 처음 만들었을 때 (도감 기록·연출용)</summary>
         public event Action<FusionRecipe> FusionCompleted;
 
+        /// <summary>전설 스킬 카드를 골랐다 (영웅 대사 "전설 획득")</summary>
+        public event Action LegendaryChosen;
+
         public string HeroId => player.Hero != null ? player.Hero.id : string.Empty;
         public Heroes.HeroClass HeroClass => player.Hero != null ? player.Hero.heroClass : Heroes.HeroClass.Archer;
 
@@ -60,6 +63,19 @@ namespace HistoryHeroes.Skills
             }
 
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
+            if (TutorialCards != null)
+            {
+                // 튜토리얼: 정해 둔 순서의 카드부터 (회전 칼날 · 방어력 → 조합 튜토리얼)
+                foreach (string id in TutorialCards)
+                {
+                    if (offer.Count >= cardsPerLevel) break;
+                    SkillCard forced = candidates.Find(c => c.Skill != null && c.Skill.id == id);
+                    if (forced == null) continue;
+                    offer.Add(forced);
+                    candidates.Remove(forced);
+                }
+            }
+
             offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable, WeightModifier, Loadout));
             if (_offersMade++ == 0) BoostExclusive(offer, candidates);
             ApplyRiftBoosts(offer);
@@ -251,11 +267,56 @@ namespace HistoryHeroes.Skills
         /// <summary>이번 판에 전설 스킬 카드를 골랐는가 (던전 ★3 "전설 없이 클리어", Modes 3-2)</summary>
         public bool ChoseLegendary { get; private set; }
 
+        /// <summary>튜토리얼: 이 순서의 카드를 먼저 보여 준다 (null = 보통 뽑기)</summary>
+        public string[] TutorialCards { get; set; }
+
+        /// <summary>판 이어하기: 지금까지 카드를 보여 준 횟수 (첫 카드 전용 스킬 보정이 다시 걸리지 않게)</summary>
+        public int OffersMade => _offersMade;
+
+        public void RestoreRunState(int offersMade, bool choseLegendary)
+        {
+            _offersMade = Mathf.Max(0, offersMade);
+            ChoseLegendary = choseLegendary;
+        }
+
+        /// <summary>판 이어하기: 조합 이력 (재료로 쓴 스킬 · 끝낸 조합 · 숨긴 조합) — 없으면 카드 후보가 달라진다</summary>
+        public void CaptureFusionHistory(Records.RunSnapshot s)
+        {
+            foreach (SkillData d in Loadout.ConsumedMaterials) s.consumed.Add(d.id);
+            foreach (FusionRecipe r in Loadout.CompletedFusions) s.completedFusions.Add(r.id);
+            foreach (FusionRecipe r in Loadout.HiddenFusions) s.hiddenFusions.Add(r.id);
+        }
+
+        public void RestoreFusionHistory(Records.RunSnapshot s, SkillDatabase database)
+        {
+            if (s == null) return;
+            foreach (string id in s.consumed)
+            {
+                SkillData d = database != null ? database.Find(id) : null;
+                if (d != null) Loadout.MarkConsumed(d);
+            }
+
+            foreach (string id in s.completedFusions)
+            {
+                FusionRecipe r = recipes.Find(x => x != null && x.id == id);
+                if (r != null) Loadout.MarkCompleted(r);
+            }
+
+            foreach (string id in s.hiddenFusions)
+            {
+                FusionRecipe r = recipes.Find(x => x != null && x.id == id);
+                if (r != null) Loadout.Hide(r);
+            }
+        }
+
         public void Choose(SkillCard card)
         {
             if (card.Skill != null && card.Skill.rarity == Rarity.Legendary && card.Type != CardType.Fallback)
             {
                 ChoseLegendary = true;
+                LegendaryChosen?.Invoke();
+                Audio.AudioManager.Play("legendary");
+                Audio.Haptics.Double();
                 Missions.MissionEvents.Raise(Missions.MissionEvents.Legendary); // 업적 "전설의 순간"
             }
 
@@ -353,6 +414,8 @@ namespace HistoryHeroes.Skills
             RecipeBook.Discover(recipe);
             Missions.MissionEvents.Raise(Missions.MissionEvents.Fusion);
             FusionCompleted?.Invoke(recipe);
+            Audio.AudioManager.Play("fusion");
+            Audio.Haptics.Double();
         }
     }
 }

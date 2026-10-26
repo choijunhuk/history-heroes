@@ -69,6 +69,14 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button dailyButton;
         [SerializeField] private TMP_Text dailyButtonLabel;
         [SerializeField] private ModeInfoPanel modeInfo;
+        [Header("v1.0 신규 7일 미션 · 출석 · 순찰")]
+        [SerializeField] private Button newcomerButton;
+        [SerializeField] private TMP_Text newcomerLabel;
+        [SerializeField] private NewcomerPanel newcomerPanel;
+        [SerializeField] private Button patrolButton;
+        [SerializeField] private TMP_Text patrolLabel;
+        [Header("v1.0 튜토리얼")]
+        [SerializeField] private OpeningPanel opening;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -78,6 +86,7 @@ namespace HistoryHeroes.UI
         {
             GamePause.ResetAll();
             SaveData data = SaveSystem.Data;
+            SettingsApplier.Apply(data.settings);
             _chapter = Mathf.Clamp(GameSession.Chapter, 1, MaxChapter(data));
 
             previousChapter.onClick.AddListener(() => ChangeChapter(-1));
@@ -91,8 +100,21 @@ namespace HistoryHeroes.UI
             if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
             if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
             if (missionButton != null) missionButton.onClick.AddListener(() => missions.Open(Render));
+            if (newcomerButton != null) newcomerButton.onClick.AddListener(() => newcomerPanel.Open(Render, ShowNotice));
+            if (patrolButton != null) patrolButton.onClick.AddListener(ClaimPatrol);
             if (riftButton != null) riftButton.onClick.AddListener(OpenRift);
             if (dailyButton != null) dailyButton.onClick.AddListener(OpenDaily);
+
+            // v1.0: 신규 7일 미션 시작 · 오늘 출석 · 순찰 시계
+            if (Missions.Newcomer.EnsureStarted(data, Clock.Now())) SaveSystem.MarkDirty();
+            List<string> attended = Missions.Attendance.CheckIn(data, Clock.Now());
+            if (attended.Count > 0)
+            {
+                SaveSystem.MarkDirty();
+                ShowNotice(string.Join(" · ", attended));
+            }
+
+            if (Patrol.Ensure(data, Clock.UnixSeconds)) SaveSystem.MarkDirty();
 
             // 균열 주간 시즌 · 일일 도전 날짜가 바뀌었으면 새로
             if (RiftRules.EnsureWeek(data, Clock.Now())) SaveSystem.MarkDirty();
@@ -151,6 +173,18 @@ namespace HistoryHeroes.UI
                 }
             }
 
+            // 튜토리얼 (UX 4장): 처음이면 오프닝 → 튜토리얼 던전. 방금 끝냈으면 다음 목표
+            bool tutorialBoss = Progress.Tutorial.BossPending(data);
+            bool tutorial = tutorialBoss || (Progress.Tutorial.Needed(data) && opening != null);
+            Audio.AudioManager.PlayMusic(tutorial ? "opening" : "lobby");
+            if (tutorialBoss) GameSession.StartTutorialBoss(data.tutorialRecordId); // 기록은 남겼고 보스 전에 꺼졌다
+            else if (tutorial) opening.Open(() => GameSession.StartTutorial(false));
+            if (GameSession.TutorialJustFinished)
+            {
+                GameSession.TutorialJustFinished = false;
+                ShowNotice("튜토리얼 끝! 이제 1구간 던전에 도전하세요 · 출석부·7일 미션·펫이 열렸어요");
+            }
+
             // 장비가 생기기 전에 깬 보스의 장비 보상 (v0.4)
             if (metaTable != null)
             {
@@ -161,20 +195,41 @@ namespace HistoryHeroes.UI
                     ShowNotice("보스 격파 보상: " + string.Join(", ", gear).Replace("장비  ", ""));
                 }
 
-                OfferLegendaryChoice();
+                if (!tutorial && !OfferResume() && !OfferLegendaryChoice()) OfferNotifications();
+            }
+            else if (!tutorial && !OfferResume())
+            {
+                OfferNotifications();
             }
 
             SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
+            if (!tutorial) ShowHeroChat(data);
             Render();
+        }
+
+        /// <summary>영웅끼리 짧은 대화 (Story 3장): 둘 다 해금됐고 다른 알림이 없을 때 가끔</summary>
+        private void ShowHeroChat(SaveData data)
+        {
+            if (noticeLabel == null || noticeLabel.gameObject.activeSelf || Random.value > 0.4f) return;
+            var chats = new List<(string a, string lineA, string b, string lineB)>();
+            foreach (var c in Story.StoryLines.Chats)
+            {
+                HeroData a = roster.Find(c.a), b = roster.Find(c.b);
+                if (a != null && b != null && HeroUnlock.IsUnlocked(data, a) && HeroUnlock.IsUnlocked(data, b)) chats.Add(c);
+            }
+
+            if (chats.Count == 0) return;
+            var chat = chats[Random.Range(0, chats.Count)];
+            ShowNotice($"{roster.Find(chat.a).displayName}: \"{chat.lineA}\"   {roster.Find(chat.b).displayName}: \"{chat.lineB}\"");
         }
 
         private void OnDestroy() => Missions.MissionEvents.Completed -= OnMissionCompleted;
 
         /// <summary>5구간 보스 최초 격파: 전설 장비 1개 고르기 (Equipment 8장). "나중에"를 누르면 다음에 로비에서 또</summary>
-        private void OfferLegendaryChoice()
+        private bool OfferLegendaryChoice()
         {
             SaveData data = SaveSystem.Data;
-            if (choice == null || metaTable == null || metaTable.equipment == null || !Equipment.EquipmentInventory.LegendaryChoicePending(data)) return;
+            if (choice == null || metaTable == null || metaTable.equipment == null || !Equipment.EquipmentInventory.LegendaryChoicePending(data)) return false;
             var options = new List<ChoicePanel.Option>();
             foreach (Equipment.EquipmentData e in Equipment.EquipmentInventory.LegendaryOptions(metaTable.equipment))
             {
@@ -193,7 +248,90 @@ namespace HistoryHeroes.UI
                 });
             }
 
-            if (options.Count > 0) choice.Open("5구간 보스 보상", "전설 장비 1개를 골라요 (한 번만)", options);
+            if (options.Count == 0) return false;
+            choice.Open("5구간 보스 보상", "전설 장비 1개를 골라요 (한 번만)", options);
+            return true;
+        }
+
+        /// <summary>
+        /// 앱이 꺼져서 끝나지 못한 판 (v1.0 A4): "○번 방부터 이어하기" / "그만두기". 나중에(닫기)를 누르면 다음 로비에서 또.
+        /// 일일 도전 연습은 그날이 지났으면, 균열은 주가 바뀌었으면 조용히 버린다.
+        /// </summary>
+        private bool OfferResume()
+        {
+            SaveData data = SaveSystem.Data;
+            RunSnapshot run = data.run;
+            if (run == null || !run.valid || choice == null) return false;
+            var mode = (BattleMode)run.mode;
+            bool stale = mode == BattleMode.Survival
+                         || (mode == BattleMode.Daily && run.dayKey != DailyRules.DayKey(Clock.Now()))
+                         || (mode == BattleMode.Rift && run.weekKey != RiftRules.WeekKey(Clock.Now()));
+            if (stale)
+            {
+                data.run = new RunSnapshot();
+                SaveSystem.Save();
+                return false;
+            }
+
+            HeroData hero = roster.Find(run.heroId);
+            string who = hero != null ? $" ({hero.displayName})" : string.Empty;
+            string where = mode == BattleMode.Boss ? $"{ChapterTitle(run.chapter)} 보스 — 처음부터 다시 (하트 없이)"
+                : mode == BattleMode.Rift ? $"무한의 균열 {run.room}층부터"
+                : mode == BattleMode.Daily ? $"일일 도전 연습 방 {run.room}부터"
+                : $"{ChapterTitle(run.chapter)} 던전 방 {run.room}부터";
+            var options = new List<ChoicePanel.Option>
+            {
+                new ChoicePanel.Option { Text = $"<b>이어하기</b>  <size=80%>{where}{who}</size>", OnChosen = () => GameSession.StartResume(run) },
+                new ChoicePanel.Option
+                {
+                    Text = "<b>그만두기</b>  <size=80%>이번 판은 사라져요 (보상 없음)</size>",
+                    OnChosen = () =>
+                    {
+                        SaveSystem.Data.run = new RunSnapshot();
+                        SaveSystem.Save();
+                        ShowNotice("이번 판을 그만뒀어요");
+                    },
+                },
+            };
+            choice.Open("끝나지 않은 판이 있어요", "앱이 꺼져서 멈춘 판을 이어할 수 있어요", options);
+            return true;
+        }
+
+        /// <summary>
+        /// 알림 받을지 묻기 (LiveOps 9장): 첫 판이 끝난 뒤 한 번, 이유를 먼저 보여 주고 OS 권한 창(안드로이드 13+)을 띄운다.
+        /// </summary>
+        private bool OfferNotifications()
+        {
+            SaveData data = SaveSystem.Data;
+            bool playedOnce = data.records.Count > 0 || data.accountExp > 0 || data.accountLevel > 1;
+            if (choice == null || data.settings.notifyAsked || !data.tutorialDone || !playedOnce) return false;
+            var options = new List<ChoicePanel.Option>
+            {
+                new ChoicePanel.Option
+                {
+                    Text = "<b>받을게요</b>  <size=80%>하트가 다 차면 · 순찰이 가득 차면</size>",
+                    OnChosen = () =>
+                    {
+                        SaveSystem.Data.settings.notifyAsked = true;
+                        SaveSystem.Save();
+                        Common.LocalNotices.RequestPermission();
+                    },
+                },
+                new ChoicePanel.Option
+                {
+                    Text = "<b>괜찮아요</b>  <size=80%>설정에서 언제든 켤 수 있어요</size>",
+                    OnChosen = () =>
+                    {
+                        GameSettings s = SaveSystem.Data.settings;
+                        s.notifyAsked = true;
+                        s.notifyHearts = false;
+                        s.notifyPatrol = false;
+                        SaveSystem.Save();
+                    },
+                },
+            };
+            choice.Open("알림을 받을까요?", "밤 9시~아침 8시에는 보내지 않아요 · 하루 2번까지", options);
+            return true;
         }
 
         private void OnMissionCompleted(string line) => ShowNotice(line);
@@ -216,6 +354,7 @@ namespace HistoryHeroes.UI
         private void RenderWallet()
         {
             _nextWallet = Time.unscaledTime + 0.5f;
+            RenderPatrol(SaveSystem.Data);
             if (walletLabel == null) return;
             SaveData d = SaveSystem.Data;
             int next = Hearts.SecondsToNext(d, Clock.UnixSeconds);
@@ -278,6 +417,7 @@ namespace HistoryHeroes.UI
             archiveButtonLabel.text = $"기록 보관함  {records}/{data.recordSlots}";
             RenderSurvival(data);
             RenderRiftAndDaily(data);
+            RenderNewcomer(data);
             if (missionLabel != null && metaTable != null && metaTable.missions != null)
             {
                 int ready = Missions.MissionService.ClaimableCount(data, metaTable.missions, Missions.MissionEvents.Context);
@@ -306,6 +446,47 @@ namespace HistoryHeroes.UI
             string dev = GameSession.SurvivalUnlockedByProgress(data) ? "" : " · 개발용 해금";
             string record = best > 0f ? $"최고 {Survival.SurvivalRun.Format(best)}" : "10분 버티기";
             survivalButtonLabel.text = $"서바이벌\n<size=60%>{record} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
+        }
+
+        // ---------------------------------------------------------------- v1.0 신규 7일 미션 · 순찰
+
+        private void RenderNewcomer(SaveData data)
+        {
+            if (newcomerButton == null) return;
+            bool attendance = Missions.Attendance.Unlocked(data);
+            newcomerButton.gameObject.SetActive(attendance);
+            if (!attendance) return;
+            if (!Missions.Newcomer.Visible(data, Clock.Now()))
+            {
+                newcomerLabel.text = "출석부"; // 7일 미션이 끝나도 출석부는 계속
+                return;
+            }
+
+            int ready = Missions.Newcomer.Claimable(data, Clock.Now());
+            newcomerLabel.text = ready > 0 ? $"7일 <color=#FFD966>●{ready}</color>" : "7일 미션";
+        }
+
+        private void RenderPatrol(SaveData data)
+        {
+            if (patrolButton == null) return;
+            bool open = Patrol.Unlocked(data);
+            patrolButton.gameObject.SetActive(open);
+            if (!open) return;
+            long now = Clock.UnixSeconds;
+            int gold = Patrol.Pending(data, now);
+            string full = Patrol.Full(data, now) ? "<color=#FFD966>가득</color>" : Wallet.Format(gold);
+            patrolLabel.text = $"순찰\n<size=70%>{full}</size>";
+        }
+
+        private void ClaimPatrol()
+        {
+            int gold = 0;
+            SaveSystem.CommitResult r = SaveSystem.Commit(() => (gold = Patrol.Claim(SaveSystem.Data, Clock.UnixSeconds)) > 0);
+            if (r == SaveSystem.CommitResult.Saved) Audio.AudioManager.Play("coin");
+            if (r == SaveSystem.CommitResult.Saved) ShowNotice($"순찰 보상  골드 +{Wallet.Format(gold)} (최대 {Patrol.MaxHours}시간까지 쌓여요)");
+            else if (r == SaveSystem.CommitResult.SaveFailed) ShowNotice(SaveSystem.SaveFailedText);
+            else ShowNotice($"순찰 중이에요 · 시간당 골드 {Patrol.GoldPerHour(SaveSystem.Data)} (최대 {Patrol.MaxHours}시간)");
+            RenderWallet();
         }
 
         // ---------------------------------------------------------------- v0.6 무한의 균열 · 일일 도전

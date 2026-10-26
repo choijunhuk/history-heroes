@@ -303,6 +303,7 @@ namespace HistoryHeroes.Player
 
         private void Fire(Health target)
         {
+            Audio.AudioManager.Play("shoot", 0.35f, 0.1f);
             int extra = Attack.Get(AttackModifierKind.ExtraProjectiles);
             int count = 1 + extra;
             float perProjectile = NextShotCoefficient(extra);
@@ -397,6 +398,7 @@ namespace HistoryHeroes.Player
         /// </summary>
         private void Slash(Health target)
         {
+            Audio.AudioManager.Play("shoot", 0.4f, 0.15f);
             int extra = Attack.Get(AttackModifierKind.ExtraProjectiles);
             float coefficient = NextShotCoefficient(extra);
             float arc = hero.meleeArcDegrees + (Attack.Get(AttackModifierKind.Pierce) > 0 ? 40f : 0f);

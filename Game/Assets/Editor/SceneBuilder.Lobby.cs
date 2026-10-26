@@ -84,6 +84,11 @@ namespace HistoryHeroes.EditorTools
             shopLabel.fontSize = 30;
             Button missionButton = Btn("Missions", main, "미션", new Vector2(-430f, 725f), new Vector2(180f, 80f), new Color(0.2f, 0.42f, 0.3f), out TMP_Text missionLabel);
             missionLabel.fontSize = 30;
+            // v1.0: 신규 7일 미션 (왼쪽, 미션 아래) · 순찰 (오른쪽, 설정 아래)
+            Button newcomerButton = Btn("Newcomer", main, "7일 미션", new Vector2(-430f, 630f), new Vector2(180f, 80f), new Color(0.45f, 0.3f, 0.12f), out TMP_Text newcomerLabel);
+            newcomerLabel.fontSize = 28;
+            Button patrolButton = Btn("Patrol", main, "순찰", new Vector2(430f, 715f), new Vector2(180f, 100f), new Color(0.25f, 0.35f, 0.2f), out TMP_Text patrolLabel);
+            patrolLabel.fontSize = 28;
             TMP_Text note = Label("Note", main, "그래픽은 아직 임시 도형이에요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
 
@@ -96,7 +101,7 @@ namespace HistoryHeroes.EditorTools
             RecordSaveScreen reselect = BuildRecordSave(root, database);
             HeartPanel heartPanel = BuildHeartPanel(root);
             HeroPanel heroPanel = BuildHeroPanel(safe, roster);
-            SettingsPanel settingsPanel = BuildSettingsPanel(safe);
+            SettingsPanel settingsPanel = BuildSettingsPanel(safe, lobby: true);
             EquipmentPanel equipmentPanel = BuildEquipmentPanel(safe, meta);
             var gacha = UnityEditor.AssetDatabase.LoadAssetAtPath<HistoryHeroes.Equipment.GachaTable>($"{DataDir}/Equipment/GachaTable.asset");
             ShopPanel shopPanel = BuildShopPanel(safe, gacha);
@@ -106,6 +111,8 @@ namespace HistoryHeroes.EditorTools
             MissionPanel missionPanel = BuildMissionPanel(safe, meta, roster);
             ChoicePanel choicePanel = BuildChoicePanel(safe);
             ModeInfoPanel modeInfo = BuildModeInfoPanel(safe);
+            NewcomerPanel newcomerPanel = BuildNewcomerPanel(safe);
+            OpeningPanel opening = BuildOpeningPanel(root);
             using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
@@ -125,10 +132,91 @@ namespace HistoryHeroes.EditorTools
                     .Ref("shopButton", shopButton).Ref("shop", shopPanel)
                     .Ref("missionButton", missionButton).Ref("missionLabel", missionLabel).Ref("missions", missionPanel)
                     .Ref("choice", choicePanel)
-                    .Ref("riftButton", rift).Ref("riftButtonLabel", riftLabel).Ref("dailyButton", daily).Ref("dailyButtonLabel", dailyLabel).Ref("modeInfo", modeInfo);
+                    .Ref("riftButton", rift).Ref("riftButtonLabel", riftLabel).Ref("dailyButton", daily).Ref("dailyButtonLabel", dailyLabel).Ref("modeInfo", modeInfo)
+                    .Ref("newcomerButton", newcomerButton).Ref("newcomerLabel", newcomerLabel).Ref("newcomerPanel", newcomerPanel)
+                    .Ref("patrolButton", patrolButton).Ref("patrolLabel", patrolLabel).Ref("opening", opening);
             }
 
+            AddUiSounds(root);
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
+        }
+
+        /// <summary>v1.0 정보: 이용약관 · 개인정보 · 크레딧 · 정보 (스크롤 글)</summary>
+        private static InfoPanel BuildInfoPanel(Transform parent)
+        {
+            RectTransform panel = Overlay(parent, "InfoPanel", out GameObject holder);
+            var screen = holder.AddComponent<InfoPanel>();
+            TMP_Text title = Label("Title", panel, "정보", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 840f), new Vector2(900f, 90f));
+            Button TabButton(string name, string text, float x)
+            {
+                Button b = Btn(name, panel, text, new Vector2(x, 730f), new Vector2(240f, 90f), ButtonBlue, out TMP_Text l);
+                l.fontSize = 28;
+                return b;
+            }
+
+            Button terms = TabButton("Terms", "이용약관", -375f);
+            Button privacy = TabButton("Privacy", "개인정보", -125f);
+            Button credits = TabButton("Credits", "크레딧", 125f);
+            Button about = TabButton("About", "정보", 375f);
+
+            // 스크롤 글: 보이는 칸(마스크) + 글(높이 자동) + ScrollRect
+            RectTransform viewport = Rect("Viewport", panel, Center, Center, Center, new Vector2(0f, -40f), new Vector2(1000f, 1360f));
+            Img(viewport, new Color(0f, 0f, 0f, 0.25f), null).raycastTarget = true;
+            viewport.gameObject.AddComponent<RectMask2D>();
+            RectTransform content = Rect("Content", viewport, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 100f));
+            TMP_Text body = Label("Body", content, "", 30, TextAlignmentOptions.TopLeft);
+            Stretch(body.rectTransform);
+            body.rectTransform.offsetMin = new Vector2(30f, 0f);
+            body.rectTransform.offsetMax = new Vector2(-30f, -24f);
+            body.lineSpacing = 8f;
+            var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(30, 30, 24, 40);
+            layout.childControlHeight = true;
+            layout.childControlWidth = true;
+            layout.childForceExpandHeight = false;
+            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            scroll.content = content;
+            scroll.viewport = viewport;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 40f;
+
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -800f), new Vector2(400f, 100f), ButtonGray, out _);
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("bodyLabel", body).Ref("scroll", scroll)
+                    .Ref("termsButton", terms).Ref("privacyButton", privacy).Ref("creditsButton", credits).Ref("aboutButton", about).Ref("backButton", back);
+            }
+
+            return screen;
+        }
+
+        /// <summary>v1.0 오프닝 컷 3장면 (화면 전체, 다음 · 건너뛰기)</summary>
+        private static OpeningPanel BuildOpeningPanel(Transform root)
+        {
+            RectTransform holder = Rect("Opening", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            var screen = holder.gameObject.AddComponent<OpeningPanel>();
+            RectTransform panel = Rect("Panel", holder, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            Image bg = Img(panel, new Color(0.08f, 0.06f, 0.12f), null);
+            bg.raycastTarget = true;
+            TMP_Text text = Label("Text", panel, "", 54, TextAlignmentOptions.Center);
+            Place(text.rectTransform, Center, Center, new Vector2(0f, 120f), new Vector2(960f, 900f));
+            text.lineSpacing = 12f;
+            TMP_Text page = Label("Page", panel, "1 / 3", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.5f));
+            Place(page.rectTransform, Center, Center, new Vector2(0f, -520f), new Vector2(400f, 60f));
+            Button next = Btn("OpeningNext", panel, "다음", new Vector2(0f, -660f), new Vector2(600f, 150f), ButtonGreen, out TMP_Text nextLabel);
+            nextLabel.fontSize = 52;
+            Button skip = Btn("OpeningSkip", panel, "건너뛰기", new Vector2(380f, 840f), new Vector2(260f, 90f), ButtonGray, out _);
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("background", bg).Ref("textLabel", text).Ref("pageLabel", page)
+                    .Ref("nextButton", next).Ref("nextLabel", nextLabel).Ref("skipButton", skip);
+            }
+
+            return screen;
         }
 
         /// <summary>v0.6 모드 안내 (무한의 균열 · 일일 도전): 제목 + 설명 + 버튼 2개 + 뒤로</summary>
@@ -350,25 +438,87 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
-        private static SettingsPanel BuildSettingsPanel(Transform parent)
+        private static SettingsPanel BuildSettingsPanel(Transform parent, bool lobby = false)
         {
             RectTransform panel = Overlay(parent, "SettingsPanel", out GameObject holder);
             var screen = holder.AddComponent<SettingsPanel>();
 
             TMP_Text title = Label("Title", panel, "설정", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 600f), new Vector2(900f, 100f));
-            Button shake = Btn("Shake", panel, "화면 흔들림: 보통", new Vector2(0f, 330f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text shakeLabel);
-            Button numbers = Btn("DamageNumbers", panel, "피해 숫자: 켜기", new Vector2(0f, 170f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text numbersLabel);
-            Button flash = Btn("ReduceFlashes", panel, "번쩍임 줄이기: 끄기", new Vector2(0f, 10f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text flashLabel);
-            TMP_Text help = Label("Help", panel, "번쩍임 줄이기: 화면을 크게 덮는 섬광을 옅게, 1초에 3번까지만 보여줘요", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(help.rectTransform, Center, Center, new Vector2(0f, -110f), new Vector2(900f, 90f));
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -300f), new Vector2(400f, 110f), ButtonGray, out _);
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 800f), new Vector2(900f, 100f));
+            // 두 칸 (왼쪽 · 오른쪽), 묶음마다 제목
+            Vector2 half = new Vector2(450f, 110f);
+            const float left = -235f, right = 235f;
+            TMP_Text Section(string name, string text, float y)
+            {
+                TMP_Text t = Label(name, panel, text, 34, TextAlignmentOptions.Left, new Color(1f, 0.85f, 0.35f));
+                Place(t.rectTransform, Center, Center, new Vector2(0f, y), new Vector2(940f, 50f));
+                return t;
+            }
+
+            Button Half(string name, string text, float x, float y, Color color, out TMP_Text label)
+            {
+                Button b = Btn(name, panel, text, new Vector2(x, y), half, color, out label);
+                label.fontSize = 28;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 20f;
+                label.fontSizeMax = 28f;
+                label.rectTransform.offsetMin = new Vector2(10f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-10f, 0f);
+                return b;
+            }
+
+            Section("SectionSound", "소리", 720f);
+            Color sound = new Color(0.42f, 0.3f, 0.22f);
+            Button music = Half("MusicVolume", "배경음: 75%", left, 645f, sound, out TMP_Text musicLabel);
+            Button sfx = Half("SfxVolume", "효과음: 100%", right, 645f, sound, out TMP_Text sfxLabel);
+            Button vibration = Half("Vibration", "진동: 켜기", left, 525f, sound, out TMP_Text vibrationLabel);
+
+            Section("SectionScreen", "화면", 440f);
+            Button shake = Half("Shake", "화면 흔들림: 보통", left, 365f, ButtonBlue, out TMP_Text shakeLabel);
+            Button numbers = Half("DamageNumbers", "피해 숫자: 켜기", right, 365f, ButtonBlue, out TMP_Text numbersLabel);
+            Button flash = Half("ReduceFlashes", "번쩍임 줄이기: 끄기", left, 245f, ButtonBlue, out TMP_Text flashLabel);
+            Button frame = Half("Frame", "프레임: 60", right, 245f, ButtonBlue, out TMP_Text frameLabel);
+            TMP_Text help = Label("Help", panel, "번쩍임 줄이기: 화면을 크게 덮는 섬광을 옅게, 1초에 3번까지만", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            Place(help.rectTransform, Center, Center, new Vector2(0f, 168f), new Vector2(940f, 44f));
+
+            Section("SectionControl", "조작", 105f);
+            Color control = new Color(0.3f, 0.27f, 0.42f);
+            Button joyMode = Half("JoystickMode", "조이스틱: 누른 자리", left, 30f, control, out TMP_Text joyModeLabel);
+            Button joySize = Half("JoystickSize", "조이스틱 크기: 보통", right, 30f, control, out TMP_Text joySizeLabel);
+            Button joyOpacity = Half("JoystickOpacity", "조이스틱 진하기: 보통", left, -90f, control, out TMP_Text joyOpacityLabel);
+
+            // v1.0 알림 (LiveOps 9장: 종류별로 끈다)
+            Section("SectionNotice", "알림", -170f);
+            Color notice = new Color(0.25f, 0.35f, 0.25f);
+            Button hearts = Half("NotifyHearts", "하트가 다 차면: 켜기", left, -245f, notice, out TMP_Text heartsLabel);
+            Button patrol = Half("NotifyPatrol", "순찰이 가득 차면: 켜기", right, -245f, notice, out TMP_Text patrolLabel);
+            TMP_Text noticeHelp = Label("NoticeHelp", panel, "밤 9시~아침 8시에는 보내지 않아요 · 하루 2번까지", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            Place(noticeHelp.rectTransform, Center, Center, new Vector2(0f, -322f), new Vector2(940f, 44f));
+
+            Button replay = null, infoButton = null;
+            InfoPanel info = null;
+            if (lobby)
+            {
+                replay = Half("ReplayTutorial", "튜토리얼 다시 보기", left, -430f, new Color(0.38f, 0.3f, 0.18f), out _);
+                infoButton = Half("Info", "정보 · 약관 · 크레딧", right, -430f, ButtonGray, out _);
+                info = BuildInfoPanel(parent);
+            }
+
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -600f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("shakeButton", shake).Ref("shakeLabel", shakeLabel)
                     .Ref("numbersButton", numbers).Ref("numbersLabel", numbersLabel)
-                    .Ref("flashButton", flash).Ref("flashLabel", flashLabel).Ref("backButton", back);
+                    .Ref("flashButton", flash).Ref("flashLabel", flashLabel).Ref("backButton", back)
+                    .Ref("heartsButton", hearts).Ref("heartsLabel", heartsLabel).Ref("patrolButton", patrol).Ref("patrolLabel", patrolLabel)
+                    .Ref("replayTutorialButton", replay).Ref("infoButton", infoButton).Ref("info", info)
+                    .Ref("frameButton", frame).Ref("frameLabel", frameLabel)
+                    .Ref("musicButton", music).Ref("musicLabel", musicLabel).Ref("sfxButton", sfx).Ref("sfxLabel", sfxLabel)
+                    .Ref("vibrationButton", vibration).Ref("vibrationLabel", vibrationLabel)
+                    .Ref("joystickModeButton", joyMode).Ref("joystickModeLabel", joyModeLabel)
+                    .Ref("joystickSizeButton", joySize).Ref("joystickSizeLabel", joySizeLabel)
+                    .Ref("joystickOpacityButton", joyOpacity).Ref("joystickOpacityLabel", joyOpacityLabel);
             }
 
             return screen;

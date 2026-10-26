@@ -15,7 +15,7 @@ MonoBehaviour:
   id: poison_cloud
   displayName: "\uB3C5 \uAD6C\uB984"
   description: "5\uCD08\uB9C8\uB2E4 \uC801 \uC790\uB9AC\uC5D0 \uB3C5 \uAD6C\uB984
-    4\uCD08\n(\uCD08\uB2F9 25%, \uACB9\uCE58\uBA74 \uC911\uCCA9)\n\uB808\uBCA8\uB9C8\uB2E4
+    4\uCD08\n(\uCD08\uB2F9 33%, \uACB9\uCE58\uBA74 \uC911\uCCA9)\n\uB808\uBCA8\uB9C8\uB2E4
     \uC9C0\uC18D +1\uCD08"
   warriorDescription: 
   icon: {fileID: 0}
@@ -28,7 +28,7 @@ MonoBehaviour:
   recordable: 1
   heroOnlyId: 
   cooldown: 5
-  damageFirstLevel: 0.25
+  damageFirstLevel: 0.33
   damagePerLevel: 0
   countFirstLevel: 1
   countPerLevel: 0

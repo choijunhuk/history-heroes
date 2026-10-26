@@ -13,7 +13,7 @@ namespace HistoryHeroes.Records
         /// <summary>저장 구조가 바뀌면 올린다. 읽을 때 옛 구조면 옮겨 담고(Migrate), 더 새 구조면 읽지 않고 원본을 보존한다.</summary>
         /// 1: v0.2 기록·도감·구간 / 2: v0.2b 재화·하트·계정 레벨·별 / 3: v0.4 장비·영웅 성장·수련·상자·상점
         /// <summary>4 (v0.5): 서바이벌·펫·미션 — 빈 상태로 시작 (Normalize가 채운다). 옛 빌드는 더 새 파일을 읽지 않고 멈춘다</summary>
-        public const int CurrentSchemaVersion = 4;
+        public const int CurrentSchemaVersion = 5;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -21,6 +21,10 @@ namespace HistoryHeroes.Records
         public int balanceVersion;
 
         public long savedAtUnixSeconds;
+        /// <summary>v1.0 저장 파일 해시 (SaveStore가 쓰고 확인한다. 비어 있으면 옛 파일)</summary>
+        public string integrity;
+        /// <summary>해시가 틀린 파일을 쓸 수밖에 없었던 횟수 (나중에 서버가 본다)</summary>
+        public int integrityFailures;
 
         /// <summary>기록 슬롯 수. 처음 3개 (GameDesign 7-3, 임시값)</summary>
         public int recordSlots = 3;
@@ -97,6 +101,21 @@ namespace HistoryHeroes.Records
         // ----- v0.6 무한의 균열 (Modes 4장) · 일일 도전 (Modes 5장) -----
         public RiftSave rift = new RiftSave();
         public DailySave dailyChallenge = new DailySave();
+        /// <summary>v1.0 판 이어하기 (방 시작마다)</summary>
+        public RunSnapshot run = new RunSnapshot();
+
+        // ---------------------------------------------------------------- v1.0 (구조 5)
+        /// <summary>튜토리얼 보스를 깼다 → 출석부·신규 7일 미션·기록 보관함이 열린다 (Systems 3장)</summary>
+        public bool tutorialDone;
+        /// <summary>튜토리얼 던전에서 남긴 기록 (보스 전에 앱이 꺼져도 튜토리얼 보스로 바로 간다)</summary>
+        public string tutorialRecordId;
+        public AttendanceSave attendance = new AttendanceSave();
+        public NewcomerSave newcomer = new NewcomerSave();
+        public PatrolSave patrol = new PatrolSave();
+        /// <summary>사용자 ID (문의용 무작위 번호, 이름·연락처와 연결되지 않음)</summary>
+        public string userId;
+        /// <summary>얻은 칭호 (꾸미기는 v1.0 상점과 함께 — 지금은 모으기만)</summary>
+        public List<string> titles = new List<string>();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -313,6 +332,55 @@ namespace HistoryHeroes.Records
         public List<RecordSkill> skills = new List<RecordSkill>();
         /// <summary>균열 강화를 고른 횟수 (공격력 / 체력 / 공격속도 순서)</summary>
         public List<int> boosts = new List<int>();
+    }
+
+    /// <summary>
+    /// v1.0 판 이어하기: 방에 들어갈 때마다 남긴다. 앱이 꺼졌다 켜지면 로비에서 "○번 방부터 이어하기".
+    /// 판이 끝나면 지운다 (valid = false). 일일 도전 공식 판·서바이벌은 남기지 않는다.
+    /// </summary>
+    [Serializable]
+    public sealed class RunSnapshot
+    {
+        public bool valid;
+        /// <summary>Common.BattleMode (0 던전 · 1 보스 · 3 균열 · 4 일일 도전 연습)</summary>
+        public int mode;
+        public int chapter = 1;
+        public int seed;
+        public bool practice;
+        /// <summary>일일 도전 연습: 그날이 지나면 이어하지 않는다 · 균열: 주가 바뀌면 이어하지 않는다</summary>
+        public string dayKey;
+        public string weekKey;
+        /// <summary>보스: 쓴 기록</summary>
+        public string recordId;
+        public int room = 1;
+        public string heroId;
+        public List<RecordSkill> skills = new List<RecordSkill>();
+        public List<int> boosts = new List<int>();
+        public List<string> fusions = new List<string>();
+        public int level = 1;
+        public float experience;
+        public float hpRatio = 1f;
+        public int kills;
+        public int roomsCleared;
+        public int hits;
+        public float elapsed;
+        public int offersMade;
+        public bool choseLegendary;
+        public int rerollsLeft = -1;
+        /// <summary>이 방의 보상(보상 방·균열 엘리트 층)을 이미 받았나 (껐다 켜서 다시 받기 방지)</summary>
+        public bool rewardTaken;
+        /// <summary>판을 시작할 때 하트를 썼나 (보스 첫 패배 하트 돌려주기)</summary>
+        public bool heartSpent;
+        /// <summary>판을 시작할 때의 판 밖 성장 (이어할 때 그대로 — 로비에서 바꾼 강화가 끼어들지 않게)</summary>
+        public bool hasMeta;
+        public MetaSnapshot meta;
+        /// <summary>조합 이력: 재료로 쓴 스킬 · 끝낸 조합 · 이번 판에 숨긴 조합</summary>
+        public List<string> consumed = new List<string>();
+        public List<string> completedFusions = new List<string>();
+        public List<string> hiddenFusions = new List<string>();
+        /// <summary>난수 3갈래 상태 (방 · 적 · 카드)</summary>
+        public List<string> rng = new List<string>();
+        public long savedAt;
     }
 
     [Serializable]
@@ -572,6 +640,62 @@ namespace HistoryHeroes.Records
         public bool damageNumbers = true;
         /// <summary>번쩍임 줄이기: 화면을 크게 덮는 섬광을 옅게, 1초에 3번 이하로 (WCAG 2.3.1)</summary>
         public bool reduceFlashes;
+        /// <summary>로컬 알림 (LiveOps 9장): 하트 가득 · 순찰 가득. 종류별로 끈다</summary>
+        public bool notifyHearts = true;
+        public bool notifyPatrol = true;
+        /// <summary>안드로이드 13 알림 권한을 물어봤나 (첫 판이 끝난 뒤 한 번)</summary>
+        public bool notifyAsked;
+        /// <summary>프레임: true 60 / false 30 (배터리 절약)</summary>
+        public bool frame60 = true;
+        /// <summary>조이스틱: false = 누른 자리에 생김 (기본, UX 2장) / true = 아래 가운데 고정</summary>
+        public bool joystickFixed;
+        /// <summary>조이스틱 크기: 0 작게 · 1 보통 · 2 크게</summary>
+        public int joystickSize = 1;
+        /// <summary>조이스틱 진하기: 0 연하게 · 1 보통 · 2 진하게</summary>
+        public int joystickOpacity = 1;
+        /// <summary>배경음 · 효과음 음량 (0~4 = 0 · 25 · 50 · 75 · 100%)</summary>
+        public int musicVolume = 3;
+        public int sfxVolume = 4;
+        /// <summary>진동 (Audio 4장, 기본 켜짐)</summary>
+        public bool vibration = true;
+    }
+
+    // ---------------------------------------------------------------- v1.0 출석부 · 신규 7일 미션 · 순찰
+
+    /// <summary>출석부 (Missions 5장): 출석한 날 수로 센다 (연속 아님)</summary>
+    [Serializable]
+    public sealed class AttendanceSave
+    {
+        /// <summary>마지막으로 출석한 날 (05:00 기준)</summary>
+        public string lastDay;
+        /// <summary>지금까지 출석한 날 수</summary>
+        public int days;
+    }
+
+    /// <summary>신규 7일 미션 (Missions 6장)</summary>
+    [Serializable]
+    public sealed class NewcomerSave
+    {
+        /// <summary>시작한 날 (튜토리얼 보스 격파한 날, 05:00 기준). 비어 있으면 아직</summary>
+        public string startDay;
+        /// <summary>사건으로 세는 미션의 카운터 ("fusion", "hero_dungeon:guan" …)</summary>
+        public List<NamedCount> counts = new List<NamedCount>();
+        public List<int> claimedDays = new List<int>();
+        public bool bonusClaimed;
+    }
+
+    [Serializable]
+    public sealed class NamedCount
+    {
+        public string id;
+        public int value;
+    }
+
+    /// <summary>순찰 (LiveOps 8장): 마지막으로 받은 때부터 쌓인다 (최대 12시간)</summary>
+    [Serializable]
+    public sealed class PatrolSave
+    {
+        public long lastClaimAt;
     }
 
     /// <summary>하루 한도 (자정에 새로)</summary>

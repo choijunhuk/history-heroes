@@ -90,6 +90,9 @@ namespace HistoryHeroes.Dungeon
         /// <summary>이 판이 속한 주 (월요일 05:00을 넘기면 이 판의 층 보상·체크포인트는 거기까지)</summary>
         private string _riftWeek;
         private bool _riftSeasonNoticed;
+        /// <summary>이어한 방의 보상을 이미 받았나 (그 방에서는 보상 방을 다시 열지 않는다)</summary>
+        private bool _resumeRewardTaken;
+        private int _resumeRoom;
 
         public bool IsRift => _rift;
         public bool IsDaily => _daily;
@@ -132,7 +135,89 @@ namespace HistoryHeroes.Dungeon
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
             door.Entered += () => StartCoroutine(GoToNextRoom());
             if (fade != null) fade.alpha = 0f;
-            EnterRoom(_rift ? ResumeRift() : 1);
+            int first = _rift ? ResumeRift() : 1;
+            RunSnapshot resume = GameSession.ConsumeResume();
+            if (resume != null) first = RestoreSnapshot(resume);
+            EnterRoom(first);
+        }
+
+        // ---------------------------------------------------------------- v1.0 판 이어하기
+
+        /// <summary>방에 들어갈 때 판 상태를 남긴다 (일일 도전 공식 판은 남기지 않는다 — 끄면 0점)</summary>
+        private void SaveSnapshot(int room)
+        {
+            if (_daily && GameSession.DailyOfficial) return;
+            if (GameSession.Tutorial) return; // 튜토리얼은 처음부터 다시
+            var s = new RunSnapshot
+            {
+                valid = true,
+                mode = (int)GameSession.Mode,
+                chapter = GameSession.Chapter,
+                seed = RunRandom.Seed,
+                practice = GameSession.Practice,
+                dayKey = _daily ? Modes.DailyRules.DayKey(Clock.Now()) : null,
+                weekKey = _rift ? _riftWeek : null,
+                room = room,
+                heroId = skills.HeroId,
+                level = experience.Level.Level,
+                experience = experience.Level.Experience,
+                hpRatio = player.Health.Current / Mathf.Max(1f, player.Health.Max),
+                kills = experience.Kills,
+                roomsCleared = _roomsCleared,
+                hits = _hitsTaken,
+                elapsed = Time.time - _startTime,
+                offersMade = skills.OffersMade,
+                choseLegendary = skills.ChoseLegendary,
+                rerollsLeft = levelUp.RerollsLeft,
+                rewardTaken = _resumeRewardTaken && room == _resumeRoom,
+                heartSpent = GameSession.HeartSpent,
+                hasMeta = true,
+                meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)),
+                savedAt = Clock.UnixSeconds,
+            };
+            skills.CaptureFusionHistory(s);
+            foreach (SkillInstance k in skills.Loadout.Actives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
+            foreach (SkillInstance k in skills.Loadout.Passives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
+            s.boosts = skills.RiftBoostCounts();
+            s.fusions.AddRange(_fusions);
+            s.rng = RunRandom.Capture();
+            SaveSystem.Data.run = s;
+            SaveSystem.Save();
+        }
+
+        /// <summary>보상을 받았다고 스냅샷에 적고 바로 저장 (골드와 "받음"이 같이 남는다 → 껐다 켜도 다시 못 받는다)</summary>
+        private void MarkRewardTaken()
+        {
+            RunSnapshot run = SaveSystem.Data.run;
+            if (run != null && run.valid && run.room == _room) run.rewardTaken = true;
+            _resumeRewardTaken = true;
+            _resumeRoom = _room;
+            SaveSystem.Save();
+        }
+
+        /// <summary>저장해 둔 판으로 되돌린다: 빌드·레벨·체력·처치·피격·시간·난수. 돌아갈 방 번호를 돌려준다</summary>
+        private int RestoreSnapshot(RunSnapshot s)
+        {
+            int room = Mathf.Max(1, s.room);
+            if (_rift) EnsureRiftFloor(room + 9);
+            else room = Mathf.Min(room, _plans.Count);
+            skills.ApplyRecord(s.skills, database);
+            skills.RestoreRiftBoosts(s.boosts);
+            skills.RestoreRunState(s.offersMade, s.choseLegendary);
+            skills.RestoreFusionHistory(s, database);
+            _resumeRewardTaken = s.rewardTaken;
+            _resumeRoom = room;
+            experience.Level.Restore(s.level, s.experience);
+            experience.RestoreKills(s.kills);
+            player.Health.Revive(player.Health.Max * Mathf.Clamp(s.hpRatio, 0.05f, 1f));
+            _hitsTaken = s.hits;
+            _roomsCleared = s.roomsCleared;
+            _startTime = Time.time - Mathf.Max(0f, s.elapsed);
+            _fusions.AddRange(s.fusions);
+            levelUp.RestoreRerolls(s.rerollsLeft);
+            RunRandom.Restore(s.rng);
+            hud.ShowNotice(_rift ? $"균열 {room}층부터 이어서" : $"방 {room}부터 이어서", 2.5f);
+            return room;
         }
 
         // ---------------------------------------------------------------- v0.6 모드 규칙
@@ -142,6 +227,18 @@ namespace HistoryHeroes.Dungeon
         {
             _enemyHp = GameSession.EnemyHpScale;
             _enemyAttack = GameSession.EnemyAttackScale;
+            if (GameSession.Tutorial)
+            {
+                // 튜토리얼: 지지 않는다 (쓰러질 만큼 맞으면 체력 50%로), 경험치 두 배, 카드는 정해 둔 순서부터
+                experience.ExpMultiplier = Progress.Tutorial.ExpMultiplier;
+                player.Health.PreventDeath = () =>
+                {
+                    player.Health.Revive(player.Health.Max * Progress.Tutorial.SaveHp);
+                    return true;
+                };
+                skills.TutorialCards = Progress.Tutorial.CardOrder;
+            }
+
             Stats.StatSheet stats = player.Stats;
             void Mod(Stats.StatType stat, Stats.ModifierKind kind, float value, Stats.StatTarget target = Stats.StatTarget.Both) =>
                 stats.Add(new Stats.StatModifier(stat, kind, value, Stats.ModifierSource.Skill, _modeOwner, target));
@@ -280,6 +377,11 @@ namespace HistoryHeroes.Dungeon
 
             System.Random rooms = RunRandom.Rooms;
             _layouts = Encounter.PickLayouts(_plans, dungeon.layouts, dungeon.specialLayout, rooms);
+            if (GameSession.Tutorial)
+            {
+                for (int i = 0; i < _layouts.Count; i++) _layouts[i] = dungeon.specialLayout; // 튜토리얼은 장애물·함정 없는 방
+            }
+
             _encounters = new List<List<SpawnEntry>>(_plans.Count);
             for (int i = 0; i < _plans.Count; i++) _encounters.Add(Encounter.Build(_chapter, _plans[i], i + 1, rooms));
         }
@@ -313,6 +415,7 @@ namespace HistoryHeroes.Dungeon
             }
 
             door.SetOpen(false);
+            SaveSnapshot(room);
             var kinds = new List<RoomKind>();
             int first = _rift ? (room - 1) / 10 * 10 : 0; // 균열: 지금 10층 묶음만
             int count = _rift ? 10 : _plans.Count;
@@ -320,7 +423,12 @@ namespace HistoryHeroes.Dungeon
             hud.SetRoomProgress(room - first, kinds);
             ApplyLayout(_layouts[room - 1]);
 
-            if (plan.kind == RoomKind.Reward) OpenRewardRoom();
+            if (plan.kind == RoomKind.Reward && _resumeRewardTaken && room == _resumeRoom)
+            {
+                _alive = 0; // 이미 받은 보상 방 → 바로 다음 방으로
+                OnRoomCleared();
+            }
+            else if (plan.kind == RoomKind.Reward) OpenRewardRoom();
             else if (plan.kind == RoomKind.Boss) StartCoroutine(SpawnRiftBoss(room));
             else StartCoroutine(SpawnRoom(plan, _encounters[room - 1]));
             RoomEntered?.Invoke(room);
@@ -474,6 +582,7 @@ namespace HistoryHeroes.Dungeon
                         break;
                 }
 
+                MarkRewardTaken();
                 if (!_finished) OnRoomCleared();
             });
         }
@@ -641,7 +750,7 @@ namespace HistoryHeroes.Dungeon
 
             SaveSystem.SaveIfDirty();
 
-            if (Modes.RiftRules.IsEliteFloor(_room) && rewardRoom != null)
+            if (Modes.RiftRules.IsEliteFloor(_room) && rewardRoom != null && !(_resumeRewardTaken && _room == _resumeRoom))
             {
                 int gold = 50 + 25 * Modes.RiftRules.ChapterFor(_room);
                 rewardRoom.Open(_rewardHeal, gold, choice =>
@@ -654,6 +763,7 @@ namespace HistoryHeroes.Dungeon
                         SaveSystem.MarkDirty();
                     }
 
+                    MarkRewardTaken();
                     door.SetOpen(true);
                 });
                 yield break;
@@ -714,6 +824,8 @@ namespace HistoryHeroes.Dungeon
         {
             if (_finished) return;
             _finished = true;
+            SaveSystem.Data.run = new RunSnapshot(); // 판이 끝났다 → 이어하기 없음
+            SaveSystem.MarkDirty();
             if (_rift)
             {
                 FinishRift();
@@ -723,6 +835,12 @@ namespace HistoryHeroes.Dungeon
             if (_daily)
             {
                 FinishDaily(victory);
+                return;
+            }
+
+            if (GameSession.Tutorial)
+            {
+                FinishTutorial(victory);
                 return;
             }
 
@@ -747,6 +865,7 @@ namespace HistoryHeroes.Dungeon
             summary.HitsTaken = _hitsTaken;
             summary.TopDamage = RunText.TopDamage(database, player.Hero);
             Missions.MissionEvents.DungeonFinished(skills.HeroId, GameSession.Chapter, victory, skills.ChoseLegendary);
+            if (victory && _hitsTaken <= 10) Missions.MissionEvents.Raise(Missions.Newcomer.LowHitEvent); // 신규 7일 미션 "피격 10회 이하로 클리어"
             summary.RewardLines = GrantRewards(victory, roomsCleared);
 
             // 기록 용량 = 기준 × 0.8 × (깬 방 ÷ 전체 방), 클리어 = 1 (GameDesign 7-2)
@@ -770,6 +889,82 @@ namespace HistoryHeroes.Dungeon
                     r.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)); // 이번 판 판 밖 성장을 고정 저장 (복사본, 7-5)
                     return r;
                 }, subtitle, GameSession.ToLobby);
+            }
+
+            result.Show(summary, saveRecord);
+        }
+
+        // ---------------------------------------------------------------- v1.0 튜토리얼 끝 (UX 4장)
+
+        /// <summary>
+        /// 튜토리얼 던전이 끝났다: 별·구간·미션은 없다. 기록 저장 튜토리얼 (용량이 꼭 넘친다 → 하나 빼기) → 저장하면 튜토리얼 보스로.
+        /// 다시 보기(연습)면 보상·기록 없이 결과만.
+        /// </summary>
+        private void FinishTutorial(bool victory)
+        {
+            var summary = new RunSummary
+            {
+                Victory = victory,
+                Seconds = Time.time - _startTime,
+                Kills = experience.Kills,
+                Level = experience.Level.Level,
+                RoomReached = _room,
+                RoomCount = RoomCount,
+                Fusions = new List<string>(_fusions),
+                BasicAttackShare = DamageLog.BasicShare,
+                Skills = new List<string>(),
+                HitsTaken = _hitsTaken,
+                TopDamage = RunText.TopDamage(database, player.Hero),
+                RewardLines = new List<string>(),
+            };
+            foreach (SkillInstance s in skills.Loadout.Actives) summary.Skills.Add($"{s.Data.displayName} Lv{s.Level}");
+            foreach (SkillInstance s in skills.Loadout.Passives) summary.Skills.Add($"{s.Data.displayName} Lv{s.Level}");
+
+            if (GameSession.Practice)
+            {
+                summary.RewardLines.Add("튜토리얼 다시 보기라 보상·기록은 없어요");
+                result.Show(summary, null);
+                return;
+            }
+
+            if (!victory)
+            {
+                summary.RewardLines.Add("튜토리얼을 그만뒀어요 — 다시 하면 처음부터예요");
+                result.Show(summary, null);
+                return;
+            }
+
+            // 골드는 기록을 저장할 때 같이 준다 (저장 전에 앱이 꺼지면 튜토리얼 던전을 다시 하니까 두 번 받지 않게)
+            var reward = new Reward { Gold = 300 };
+            summary.RewardLines.Add(reward + " (기록을 저장하면)");
+
+            // 기록 용량이 꼭 한 칸 넘치게 (지금 빌드 비용 - 1) → 패시브 한 레벨만 빼면 된다 (핵심 스킬은 남는다)
+            RecordDraft all = RecordDraft.FromLoadout(skills.Loadout, database, 999);
+            int capacity = Mathf.Max(3, Mathf.Min(RecordCapacity.For(RoomCount, RoomCount, true), all.TotalCost - 1));
+            summary.Capacity = capacity;
+            RecordDraft draft = RecordDraft.FromLoadout(skills.Loadout, database, capacity);
+            System.Action saveRecord = null;
+            if (recordSave != null && draft.Entries.Count > 0)
+            {
+                int balance = database != null ? database.balanceVersion : 0;
+                string heroName = player.Hero != null ? player.Hero.displayName : string.Empty;
+                RunRecord made = null;
+                recordSave.DamageShare = DamageLog.ShareOf;
+                saveRecord = () =>
+                {
+                    recordSave.AllowSkip = false;
+                    recordSave.Open(draft, d =>
+                    {
+                        RunRecord r = d.ToRecord(skills.HeroId, 1, RoomCount, RoomCount, true, balance);
+                        r.heroName = heroName;
+                        r.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta));
+                        made = r;
+                        SaveSystem.Data.tutorialRecordId = r.id; // 보스 전에 앱이 꺼져도 로비가 튜토리얼 보스로 보낸다
+                        Wallet.Grant(SaveSystem.Data, reward); // 기록과 같은 저장에 들어간다
+                        return r;
+                    }, "용량이 넘쳤어요! 뺄 스킬을 눌러 용량 안으로 맞춘 뒤 저장해요 → 이 기록으로 보스와 싸워요",
+                    () => GameSession.StartTutorialBoss(made != null ? made.id : null));
+                };
             }
 
             result.Show(summary, saveRecord);
@@ -894,7 +1089,7 @@ namespace HistoryHeroes.Dungeon
         private void ShowHitCounter()
         {
             int chapter = GameSession.Chapter;
-            bool challenge = !_rift && !_daily && !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2); // 균열·일일 도전은 별이 없다
+            bool challenge = !_rift && !_daily && !GameSession.Tutorial && !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2); // 균열·일일 도전·튜토리얼은 별이 없다
             hud.SetHitCounter(challenge, () => _hitsTaken, Stars.DungeonHitLimit(chapter));
         }
 

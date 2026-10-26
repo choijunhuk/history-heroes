@@ -44,6 +44,8 @@ namespace HistoryHeroes.EditorTools
             SetupLayers();
             CreateSprites();
             SetupFont();
+            CopyLegalTexts(); // v1.0 약관·개인정보·크레딧 (Docs → Resources/Legal)
+            CreateSoundBank(); // v1.0 소리 표 (Assets/Audio → Resources/Audio/SoundBank)
 
             Data data = CreateData();
             Prefabs prefabs = CreatePrefabs(data);

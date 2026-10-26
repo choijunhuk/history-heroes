@@ -129,6 +129,7 @@ namespace HistoryHeroes.EditorTools
             }
 
             using (var props = new Props(ui.Hud)) props.Ref("player", player).Ref("experience", experience);
+            using (var props = new Props(ui.Pause)) props.Ref("player", player);
             using (var props = new Props(ui.LevelUp)) props.Ref("experience", experience).Ref("skills", skills);
 
             var layoutRoot = new GameObject("Layout").transform; // 방 레이아웃 장애물·함정 (v0.6)
@@ -162,6 +163,16 @@ namespace HistoryHeroes.EditorTools
                 props.Refs("bosses", AllBosses(d.RiftWarden)).Ref("database", d.Database).Ref("player", player).Ref("skills", skills)
                     .Ref("playerStart", bossStart).Ref("bossSpawn", bossSpawn)
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
+            }
+
+            using (var props = new Props(ui.Voice))
+            {
+                props.Ref("player", player).Ref("experience", experience).Ref("skills", skills).Ref("boss", bossRun);
+            }
+
+            using (var props = new Props(ui.Guide))
+            {
+                props.Ref("dungeon", run).Ref("boss", bossRun).Ref("levelUp", ui.LevelUp).Ref("recordSave", ui.RecordSave);
             }
 
             // ----- 서바이벌: 80×80 열린 맵 + 10분 버티기 (GameDesign 8장) -----
@@ -202,6 +213,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(cheats)) props.Ref("experience", experience).Ref("levelUp", ui.LevelUp).Ref("skills", skills);
             SetPresets(cheats, d);
 
+            AddUiSounds(ui.Hud.transform.root); // v1.0 버튼 소리
             EditorSceneManager.SaveScene(scene, BattleScenePath);
         }
 
@@ -316,6 +328,9 @@ namespace HistoryHeroes.EditorTools
             public BossHud BossHud;
             public CanvasGroup Fade;
             public RewardRoomPanel RewardRoom;
+            public PauseMenu Pause;
+            public TutorialGuide Guide;
+            public HeroVoice Voice;
         }
 
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
@@ -408,7 +423,78 @@ namespace HistoryHeroes.EditorTools
             ui.Result = BuildResult(root);
             ui.RecordSave = BuildRecordSave(root, null);
             ui.RewardRoom = BuildRewardRoomPanel(root);
+            SettingsPanel settings = BuildSettingsPanel(root);
+            ui.Pause = BuildPauseMenu(root, hudRect, settings);
+            settings.transform.SetAsLastSibling(); // 설정이 일시정지 판 위에
+            ui.Guide = BuildTutorialGuide(root);
+            ui.Voice = BuildHeroVoice(root);
             return ui;
+        }
+
+        /// <summary>v1.0 영웅 대사 말풍선 (아래쪽, 터치를 막지 않는다)</summary>
+        private static HeroVoice BuildHeroVoice(Transform root)
+        {
+            RectTransform holder = Rect("HeroVoice", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            var voice = holder.gameObject.AddComponent<HeroVoice>();
+            RectTransform bubble = Rect("Bubble", holder, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 300f), new Vector2(920f, 96f));
+            Img(bubble, new Color(0f, 0f, 0f, 0.6f), null).raycastTarget = false;
+            TMP_Text label = Label("Text", bubble, "", 32, TextAlignmentOptions.Center);
+            Stretch(label.rectTransform);
+            label.raycastTarget = false;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 22f;
+            label.fontSizeMax = 32f;
+            using (var props = new Props(voice)) props.Ref("bubble", bubble.gameObject).Ref("label", label);
+            return voice;
+        }
+
+        /// <summary>v1.0 튜토리얼 안내 (클리오 말풍선): 위쪽, 누르면 닫힌다</summary>
+        private static TutorialGuide BuildTutorialGuide(Transform root)
+        {
+            RectTransform holder = Rect("TutorialGuide", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            var guide = holder.gameObject.AddComponent<TutorialGuide>();
+            RectTransform banner = Rect("Banner", holder, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -400f), new Vector2(980f, 190f));
+            Img(banner, new Color(0.05f, 0.07f, 0.12f, 0.9f), null).raycastTarget = true;
+            Button button = banner.gameObject.AddComponent<Button>();
+            TMP_Text label = Label("Text", banner, "", 32, TextAlignmentOptions.Center);
+            Stretch(label.rectTransform);
+            label.rectTransform.offsetMin = new Vector2(24f, 12f);
+            label.rectTransform.offsetMax = new Vector2(-24f, -12f);
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 22f;
+            label.fontSizeMax = 32f;
+            using (var props = new Props(guide)) props.Ref("banner", banner.gameObject).Ref("label", label).Ref("bannerButton", button);
+            return guide;
+        }
+
+        /// <summary>v1.0 일시정지: HUD 왼쪽 위 버튼 + 계속 / 설정 / 판 포기</summary>
+        private static PauseMenu BuildPauseMenu(Transform root, RectTransform hud, SettingsPanel settings)
+        {
+            Button open = Btn("PauseButton", hud, "II", Vector2.zero, new Vector2(100f, 84f), new Color(0.2f, 0.22f, 0.28f, 0.85f), out TMP_Text openLabel);
+            openLabel.fontSize = 40;
+            var openRect = (RectTransform)open.transform;
+            openRect.anchorMin = openRect.anchorMax = new Vector2(0f, 1f);
+            openRect.pivot = new Vector2(0f, 1f);
+            openRect.anchoredPosition = new Vector2(40f, -110f);
+
+            RectTransform panel = Overlay(root, "PauseMenu", out GameObject holder);
+            var menu = holder.AddComponent<PauseMenu>();
+            TMP_Text title = Label("Title", panel, "일시정지", 72, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 520f), new Vector2(900f, 110f));
+            TMP_Text info = Label("Info", panel, "", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.7f));
+            Place(info.rectTransform, Center, Center, new Vector2(0f, 390f), new Vector2(960f, 100f));
+            Button resume = Btn("Resume", panel, "계속", new Vector2(0f, 180f), new Vector2(820f, 160f), ButtonGreen, out TMP_Text resumeLabel);
+            resumeLabel.fontSize = 56;
+            Button settingsButton = Btn("PauseSettings", panel, "설정", new Vector2(0f, -10f), new Vector2(820f, 130f), ButtonBlue, out _);
+            Button giveUp = Btn("GiveUp", panel, "판 포기", new Vector2(0f, -190f), new Vector2(820f, 130f), new Color(0.5f, 0.22f, 0.22f), out TMP_Text giveUpLabel);
+            using (var props = new Props(menu))
+            {
+                props.Ref("root", panel.gameObject).Ref("openButton", open).Ref("infoLabel", info)
+                    .Ref("resumeButton", resume).Ref("settingsButton", settingsButton).Ref("giveUpButton", giveUp).Ref("giveUpLabel", giveUpLabel)
+                    .Ref("settings", settings);
+            }
+
+            return menu;
         }
 
         private static LevelUpScreen BuildLevelUp(Transform root)

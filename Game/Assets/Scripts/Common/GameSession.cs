@@ -73,8 +73,103 @@ namespace HistoryHeroes.Common
         public static float EnemyAttackScale { get; set; } = 1f;
 
         /// <summary>던전·보스·서바이벌을 새로 시작할 때 특수 판 설정을 지운다</summary>
+        /// <summary>이어하는 판의 스냅샷 (전투 장면이 열릴 때 DungeonRun이 가져간다)</summary>
+        public static RunSnapshot Resuming { get; private set; }
+
+        public static RunSnapshot ConsumeResume()
+        {
+            RunSnapshot s = Resuming;
+            Resuming = null;
+            return s;
+        }
+
+        /// <summary>
+        /// 저장된 판을 이어한다 (하트는 판을 시작할 때 이미 썼다). 보스는 그 기록으로 처음부터 다시.
+        /// </summary>
+        public static void StartResume(RunSnapshot s)
+        {
+            if (s == null || !s.valid) return;
+            switch ((BattleMode)s.mode)
+            {
+                case BattleMode.Boss:
+                    if (s.practice)
+                    {
+                        StartBossPractice(s.chapter, s.recordId);
+                    }
+                    else
+                    {
+                        HeartSpent = s.heartSpent; // 하트를 쓰고 시작한 첫 보스전 → 지면 돌려준다
+                        StartBoss(s.chapter, s.recordId);
+                    }
+
+                    return;
+                case BattleMode.Daily:
+                    ClearSpecialRun();
+                    Practice = true;
+                    DailyOfficial = false;
+                    Mode = BattleMode.Daily;
+                    RunSeed = s.seed;
+                    CustomPlan = Modes.DailyRules.Plan();
+                    Chapter = s.chapter;
+                    break;
+                default:
+                    ClearSpecialRun();
+                    Practice = s.practice;
+                    Mode = (BattleMode)s.mode;
+                    RunSeed = s.seed;
+                    Chapter = Mathf.Max(1, s.chapter);
+                    RiftContinue = false;
+                    break;
+            }
+
+            BossRecordId = null;
+            HeartSpent = s.heartSpent;
+            Resuming = s;
+            Load(BattleScene);
+        }
+
+        /// <summary>튜토리얼 판 (UX 4장): 지지 않게, 별·해금·하트 없음</summary>
+        public static bool Tutorial { get; private set; }
+
+        /// <summary>튜토리얼을 방금 끝냈다 (로비가 "1구간 던전에 도전하세요"를 띄운다)</summary>
+        public static bool TutorialJustFinished { get; set; }
+
+        /// <summary>튜토리얼 던전 6방 (replay = 설정의 "다시 보기": 보상·기록 없음)</summary>
+        public static void StartTutorial(bool replay)
+        {
+            ClearSpecialRun();
+            Tutorial = true;
+            Practice = replay;
+            HeartSpent = false;
+            Mode = BattleMode.Dungeon;
+            Chapter = 1;
+            BossRecordId = null;
+            RunSeed = Progress.Tutorial.Seed;
+            CustomPlan = Progress.Tutorial.Plan();
+            EnemyHpScale = Progress.Tutorial.EnemyHp;
+            EnemyAttackScale = Progress.Tutorial.EnemyAttack;
+            Load(BattleScene);
+        }
+
+        /// <summary>튜토리얼 보스: 방금 남긴 기록으로 1구간 수문장 (약하게, 꼭 이기게)</summary>
+        public static void StartTutorialBoss(string recordId)
+        {
+            ClearSpecialRun();
+            Tutorial = true;
+            Practice = false;
+            HeartSpent = false;
+            Mode = BattleMode.Boss;
+            Chapter = 1;
+            BossRecordId = recordId;
+            EnemyHpScale = Progress.Tutorial.BossHp;
+            EnemyAttackScale = Progress.Tutorial.BossAttack;
+            Load(BattleScene);
+        }
+
         public static void ClearSpecialRun()
         {
+            Resuming = null;
+            Tutorial = false;
             RunSeed = 0;
             CustomPlan = null;
             EnemyHpScale = 1f;
@@ -173,6 +268,13 @@ namespace HistoryHeroes.Common
         /// <summary>결과 화면의 "다시 도전": 같은 설정, 그 모드의 하트</summary>
         public static bool TryRetry()
         {
+            if (Tutorial)
+            {
+                if (Mode == BattleMode.Boss) StartTutorialBoss(BossRecordId);
+                else StartTutorial(Practice);
+                return true;
+            }
+
             if (Mode == BattleMode.Rift)
             {
                 StartRift(false); // 1층부터 새로
