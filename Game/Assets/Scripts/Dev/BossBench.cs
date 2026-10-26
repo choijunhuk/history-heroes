@@ -32,6 +32,12 @@ namespace HistoryHeroes.Dev
         {
             public string HeroId;
             public string Mode;
+            /// <summary>이 판만의 빌드 (비면 Begin의 빌드)</summary>
+            public List<RecordSkill> Build;
+            /// <summary>이 판의 판 밖 성장 (기록 스냅샷, 비면 없음) — v0.4 판 밖 성장 벤치</summary>
+            public MetaSnapshot Meta;
+            /// <summary>결과 줄 앞에 붙일 이름 ("기본 성장 + 연사형")</summary>
+            public string Label;
         }
 
         /// <summary>잡몹 시나리오용 적 (에디터 QaTools가 넣어 준다)</summary>
@@ -102,7 +108,8 @@ namespace HistoryHeroes.Dev
                 slot = 90, // 보관함 칸(0~2) 밖: 화면에 안 보인다
                 heroId = run.HeroId,
                 heroName = run.HeroId,
-                skills = new List<RecordSkill>(_build),
+                skills = new List<RecordSkill>(run.Build ?? _build),
+                meta = run.Meta ?? new MetaSnapshot(),
                 capacity = 999,
                 chapter = 1,
                 cleared = true,
@@ -144,7 +151,7 @@ namespace HistoryHeroes.Dev
             float bossLeft = bossHealth != null ? bossHealth.Current / Mathf.Max(1f, bossHealth.Max) : 1f;
             float hpLeft = player.Health.Current / Mathf.Max(1f, player.Health.Max);
             string outcome = win ? "승" : boss.IsFinished ? $"패 (보스 {bossLeft * 100f:0}% 남음)" : "시간 초과";
-            _results.Add($"{run.HeroId} | {run.Mode} | {outcome} | {seconds:0.0}초 | 피격 {boss.HitsTaken} | 남은 체력 {hpLeft * 100f:0}% | 기본 공격 {DamageLog.BasicShare * 100f:0}% | {Economy.RunText.TopDamage(_database, player.Hero, 4)}");
+            _results.Add($"{(run.Label != null ? run.Label + " | " : string.Empty)}{run.HeroId} | {run.Mode} | {outcome} | {seconds:0.0}초 | 피격 {boss.HitsTaken} | 남은 체력 {hpLeft * 100f:0}% | 기본 공격 {DamageLog.BasicShare * 100f:0}% | {Economy.RunText.TopDamage(_database, player.Hero, 4)}");
             yield return new WaitForSecondsRealtime(0.5f);
         }
 

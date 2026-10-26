@@ -210,6 +210,109 @@ namespace HistoryHeroes.EditorTools
 
         public static string BossBenchStatus() => Dev.BossBench.Report();
 
+        // ---------------------------------------------------------------- v0.4 판 밖 성장
+
+        /// <summary>
+        /// 판 밖 성장 스냅샷 예시: "none" 판 밖 0 / "week" 무과금 1주 (Stats 4장 ×1.2 근처: 영웅 Lv8, 1구간 보스 희귀 무기 Lv10, 일반 갑옷 Lv5)
+        /// / "month" 1개월 (×1.4 근처) / "max" 전부 최대 (영웅 Lv30 ★5, 전설 3칸 Lv40, 수련 최대, 유물 20개 ★3)
+        /// </summary>
+        public static Records.MetaSnapshot MetaPreset(string name)
+        {
+            var s = new Records.MetaSnapshot();
+            void Equip(int slot, string id, int level) => s.equipment.Add(new Records.EquippedItem { slot = slot, dataId = id, level = level });
+            switch (name)
+            {
+                case "week":
+                    s.heroLevel = 8;
+                    Equip(0, "weapon_general_r", 10);
+                    Equip(1, "armor_recruit_c", 5);
+                    break;
+                case "month":
+                    s.heroLevel = 15;
+                    s.heroStars = 2;
+                    Equip(0, "weapon_general_r", 20);
+                    Equip(1, "armor_general_r", 20);
+                    Equip(2, "acc_signet_r", 15);
+                    s.training = new List<int> { 5, 5, 3, 2, 2, 0 };
+                    break;
+                case "max":
+                    s.heroLevel = 30;
+                    s.heroStars = 5;
+                    Equip(0, "weapon_conqueror_l", 40);
+                    Equip(1, "armor_timeguard_l", 40);
+                    Equip(2, "acc_hourglass_l", 40);
+                    s.training = new List<int> { 20, 20, 20, 20, 20, 10 };
+                    var relics = UnityEditor.AssetDatabase.LoadAssetAtPath<Relics.RelicTable>("Assets/Data/Relics/RelicTable.asset");
+                    foreach (Relics.RelicData r in relics.relics) s.relics.Add(new Records.RelicStar { id = r.id, stars = 3 });
+                    break;
+            }
+
+            return s;
+        }
+
+        /// <summary>
+        /// v0.4 완료 기준 벤치 (GameDesign 11장 + Stats 4-3). 실제 1구간 보스, 연습 모드, 칭기즈 칸.
+        /// ① 같은 빌드(연사형)로 판 밖 0 vs 최대 (dps: 처치 시간 비율 3.0 이하)
+        /// ② "기본 성장(1주) + 잘 짠 빌드(연사형)" vs "높은 성장(최대) + 대충 고른 빌드" (play: 피하기 AI)
+        /// </summary>
+        public static string MetaBench(float speed = 3f, string hero = "khan")
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            List<Records.RecordSkill> good = BenchBuild("rapid");
+            List<Records.RecordSkill> sloppy = BenchBuild("sloppy");
+            var runs = new List<Dev.BossBench.Run>
+            {
+                new Dev.BossBench.Run { HeroId = hero, Mode = "dps", Build = good, Meta = MetaPreset("none"), Label = "판 밖 0 + 연사형" },
+                new Dev.BossBench.Run { HeroId = hero, Mode = "dps", Build = good, Meta = MetaPreset("max"), Label = "판 밖 최대 + 연사형" },
+                new Dev.BossBench.Run { HeroId = hero, Mode = "play", Build = good, Meta = MetaPreset("week"), Label = "1주 성장 + 연사형" },
+                new Dev.BossBench.Run { HeroId = hero, Mode = "play", Build = sloppy, Meta = MetaPreset("max"), Label = "최대 성장 + 대충 빌드" },
+                new Dev.BossBench.Run { HeroId = hero, Mode = "play", Build = sloppy, Meta = MetaPreset("month"), Label = "1개월 성장 + 대충 빌드" },
+            };
+
+            Dev.BossBench.ChargerPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Charger.prefab");
+            Dev.BossBench.ArcherPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Archer.prefab");
+            Dev.BossBench.BomberPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Bomber.prefab");
+            return Dev.BossBench.Begin(runs, good, speed, db);
+        }
+
+        /// <summary>
+        /// 개발용 (v0.4 4단계, 임시 저장에서 쓸 것): 지금 저장에 판 밖 성장을 채운다 — 구간 해금, 영웅 Lv·★, 전설 장비 3칸 + 칸 강화,
+        /// 수련, 유물, 룬. 2구간 보스가 아직 없어서 수련·룬·유물을 시험하려면 필요하다.
+        /// </summary>
+        public static string DevFillMeta(string heroId = "khan", int chapters = 5)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            Records.SaveData d = Records.SaveSystem.Data;
+            var meta = UnityEditor.AssetDatabase.LoadAssetAtPath<Meta.MetaTable>("Assets/Data/Meta/MetaTable.asset");
+            d.unlockedChapter = Mathf.Max(d.unlockedChapter, chapters + 1);
+            d.accountLevel = Mathf.Max(d.accountLevel, 20);
+            d.Hero(heroId).level = 30;
+            d.Hero(heroId).stars = 5;
+            foreach (string id in new[] { "weapon_conqueror_l", "armor_timeguard_l", "acc_hourglass_l" })
+            {
+                var r = Equipment.EquipmentInventory.Add(d, meta.equipment, meta.equipment.Find(id));
+                Records.EquipmentItem item = r.Item ?? d.equipment.items.Find(i => i.dataId == id);
+                if (item != null) Equipment.EquipmentInventory.Equip(d, meta.equipment, heroId, item.uid);
+            }
+
+            for (int i = 0; i < 3; i++) d.equipment.slotLevels[i] = 40;
+            d.training = new List<int> { 20, 20, 20, 20, 20, 10 };
+            foreach (Relics.RelicData r in meta.relics.relics)
+            {
+                if (Relics.RelicService.Stars(d, r.id) == 0) d.relics.owned.Add(new Records.RelicStar { id = r.id, stars = 3 });
+            }
+
+            foreach (Runes.RuneData r in meta.runes.runes)
+            {
+                if (!Runes.RuneService.Owns(d, r.id)) d.runes.owned.Add(new Records.RuneLevel { id = r.id, level = 3 });
+            }
+
+            Records.SaveSystem.Save();
+            return $"판 밖 성장 채움: {heroId} (구간 {d.unlockedChapter - 1}까지 깬 것으로)";
+        }
+
         private static Records.SaveStore _realStore;
 
         /// <summary>
@@ -249,6 +352,9 @@ namespace HistoryHeroes.EditorTools
                     break;
                 case "storm": // 번개 광역형
                     Add("thunder_fire", 1, true); Add("hp_up", 3); Add("atk_up", 2); Add("aspd_up", 1);
+                    break;
+                case "sloppy": // 대충 고른 빌드: 보스에 별 도움 안 되는 것들 (같은 크기 21pt)
+                    Add("exp_up", 3); Add("move_up", 3); Add("regen", 3); Add("ice_shard", 2); Add("poison_cloud", 2); Add("guard_shield", 2);
                     break;
                 default: // 섞음: 대표 완성 빌드에 가깝게 (기본 공격 패시브 + 액티브 2개)
                     Add("aspd_up", 3); Add("multishot", 1); Add("atk_up", 3); Add("lifesteal", 2);
