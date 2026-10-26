@@ -238,17 +238,21 @@ namespace HistoryHeroes.UI
                 record.createdAt = old.createdAt;
                 record.bossesDefeated = old.bossesDefeated;
                 record.bossWins = old.bossWins;
+                record.meta = old.meta; // 판 밖 성장은 만들 당시 그대로 (다시 고르기는 스킬만 바꾼다, Codex v0.4 1번)
                 if (string.IsNullOrEmpty(record.heroName)) record.heroName = old.heroName;
             }
 
             RunRecord replaced = data.RecordInSlot(slot);
             data.records.RemoveAll(r => r.slot == slot);
             data.records.Add(record);
+            bool newRecord = _fixedSlot < 0;
+            if (newRecord) data.relics.recordsSavedTotal++; // 업적 "기록 10개 저장" (다시 고르기는 안 셈)
             if (!SaveSystem.Save())
             {
                 // 디스크가 꽉 찼을 때 등: 기록을 되돌리고 화면을 그대로 둔다 (다시 누르면 다시 시도)
                 data.records.Remove(record);
                 if (replaced != null) data.records.Add(replaced);
+                if (newRecord) data.relics.recordsSavedTotal--;
                 slotPanel.SetActive(false);
                 subtitleLabel.text = "저장하지 못했어요. 기기 저장 공간을 확인하고 다시 눌러 주세요.";
                 subtitleLabel.color = Over;

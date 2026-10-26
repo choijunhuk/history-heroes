@@ -24,6 +24,8 @@ namespace HistoryHeroes.Dungeon
 
         [Header("장면")]
         [SerializeField] private PlayerController player;
+        [Tooltip("장비 드랍 (v0.4)")]
+        [SerializeField] private Meta.MetaTable metaTable;
         [SerializeField] private ExperienceSystem experience;
         [SerializeField] private SkillManager skills;
         [SerializeField] private Door door;
@@ -242,6 +244,7 @@ namespace HistoryHeroes.Dungeon
                 {
                     RunRecord r = d.ToRecord(skills.HeroId, chapter, room, RoomCount, victory, balance);
                     r.heroName = heroName;
+                    r.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)); // 이번 판 판 밖 성장을 고정 저장 (복사본, 7-5)
                     return r;
                 }, subtitle, GameSession.ToLobby);
             }
@@ -264,9 +267,23 @@ namespace HistoryHeroes.Dungeon
             AccountLevel.Result level = AccountLevel.AddExp(save, AccountLevel.DungeonExp(roomsCleared), Clock.UnixSeconds);
             lines.Add(RunText.Level(level));
 
+            // 장비 드랍 (Equipment 8장): 클리어하면 30%, 1구간 보스 격파 뒤부터
+            if (victory && metaTable != null && metaTable.equipment != null)
+            {
+                Equipment.EquipmentData drop = Equipment.EquipmentInventory.RollDungeonDrop(save, metaTable.equipment);
+                if (drop != null) lines.Add(Equipment.EquipmentInventory.AddLine(Equipment.EquipmentInventory.Add(save, metaTable.equipment, drop), drop));
+            }
+
             foreach (string star in Stars.EvaluateDungeon(save, chapter, victory, _hitsTaken, skills.ChoseLegendary)) lines.Add("새 별  " + star);
             Reward box = Stars.ClaimBoxes(save);
             if (!box.IsEmpty) lines.Add("별 상자  " + box);
+
+            // 유물 (Relics 4장): 그 영웅으로 던전 첫 클리어, 구간 별 6개 등
+            if (metaTable != null && metaTable.relics != null)
+            {
+                if (victory) Relics.RelicService.MarkHeroClear(save, skills.HeroId);
+                lines.AddRange(Relics.RelicService.CheckAll(save, metaTable.relics));
+            }
 
             SaveSystem.Save();
             return lines;

@@ -17,6 +17,11 @@ namespace HistoryHeroes.Modes
         [SerializeField] private GameObject bossRoot;
         [SerializeField] private HeroRoster roster;
         [SerializeField] private PlayerController player;
+        [Tooltip("판 밖 성장 표 (v0.4). 비어 있으면 판 밖 성장 없이 싸운다")]
+        [SerializeField] private Meta.MetaTable metaTable;
+        [Tooltip("룬 (던전만): 카드 뽑기 ②단계 배율")]
+        [SerializeField] private Skills.SkillManager skills;
+        [SerializeField] private Skills.SkillDatabase database;
 
         /// <summary>
         /// 이번 판 영웅: 던전 = 로비에서 고른 영웅, 보스 = 기록에 저장된 영웅 (GameDesign 7-1 "사용한 영웅").
@@ -35,9 +40,36 @@ namespace HistoryHeroes.Modes
             return HeroUnlock.Selected(save, roster);
         }
 
+        /// <summary>
+        /// 이번 판의 판 밖 성장: 던전 = 지금 계정, 보스 = 기록에 고정된 것 (GameDesign 7-3 "현재 장비를 덧붙이지 않는다").
+        /// </summary>
+        public static MetaSnapshot MetaForThisBattle(Meta.MetaTable table, string heroId)
+        {
+            SaveData save = SaveSystem.Data;
+            if (GameSession.Mode == BattleMode.Boss)
+            {
+                RunRecord record = save.FindRecord(GameSession.BossRecordId);
+                if (record == null && save.records.Count > 0) record = save.records[save.records.Count - 1];
+                return record != null && record.meta != null ? record.meta : new MetaSnapshot();
+            }
+
+            return Meta.MetaStats.FromAccount(save, table, heroId);
+        }
+
         private void Awake()
         {
-            if (roster != null && player != null) player.SetHero(HeroForThisBattle(roster));
+            if (roster != null && player != null)
+            {
+                HeroData hero = HeroForThisBattle(roster);
+                player.SetHero(hero);
+                if (metaTable != null && hero != null) player.ApplyMeta(MetaForThisBattle(metaTable, hero.id), metaTable);
+
+                // 룬: 던전에서만 (보스맵은 레벨업이 없다, 기록에도 저장하지 않는다 — Runes 6장)
+                if (skills != null && metaTable != null && metaTable.runes != null && hero != null && GameSession.Mode == BattleMode.Dungeon)
+                {
+                    skills.WeightModifier = Runes.RuneService.ModifierFor(SaveSystem.Data, metaTable.runes, hero.id, database != null ? database.recipes : null);
+                }
+            }
 
             bool boss = GameSession.Mode == BattleMode.Boss;
             if (dungeonRoot != null) dungeonRoot.SetActive(!boss);

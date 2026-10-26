@@ -78,7 +78,7 @@ namespace HistoryHeroes.UI
                 default:
                     SkillData s = card.Skill;
                     bool passive = s.Kind == SkillKind.Passive;
-                    kindLabel.text = passive ? "패시브" : "액티브";
+                    kindLabel.text = (passive ? "패시브" : "액티브") + (card.RuneBoosted ? " · <color=#E8D27A>룬</color>" : string.Empty); // 룬이 일하고 있다는 표시 (Runes 8장)
                     kindBand.color = passive ? PassiveBand : ActiveBand;
                     nameLabel.text = s.displayName;
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";

@@ -67,6 +67,21 @@ namespace HistoryHeroes.Player
         private const float SearchRetryInterval = 0.1f;
 
         public HeroData Hero => hero;
+
+        private readonly object _metaModifiers = new object();
+
+        /// <summary>이번 판의 판 밖 성장 (던전 = 지금 계정, 보스 = 기록). 기록을 만들 때 이걸 그대로 고정 저장한다</summary>
+        public Records.MetaSnapshot Meta { get; private set; } = new Records.MetaSnapshot();
+
+        /// <summary>
+        /// 판 밖 성장 보정값을 갈아 끼운다 (v0.4). BattleBootstrap이 SetHero 다음, Awake 전에 부른다 → 체력이 처음부터 반영된다.
+        /// </summary>
+        public void ApplyMeta(Records.MetaSnapshot snapshot, HistoryHeroes.Meta.MetaTable table)
+        {
+            Meta = snapshot ?? new Records.MetaSnapshot();
+            Stats.ReplaceFrom(_metaModifiers, HistoryHeroes.Meta.MetaStats.Build(Meta, table, _metaModifiers));
+            if (_awake) SetHero(hero); // Awake 뒤라면 별(대표 효과 강화)까지 다시 만든다 (개발·테스트용)
+        }
         public StatSheet Stats { get; } = new StatSheet();
         public AttackModifiers Attack { get; } = new AttackModifiers();
         public StopDetector Stop { get; } = new StopDetector();
@@ -129,8 +144,13 @@ namespace HistoryHeroes.Player
             Stats.Changed -= OnStatsChanged;
         }
 
+        /// <summary>별(각성)까지 반영한 대표 효과 값. 판 밖 성장(Meta)의 별을 쓴다</summary>
+        private Heroes.HeroSignature _sig;
+        private bool _firstShotThisShot;
+
         private void ApplyHeroBaseStats()
         {
+            _sig = Heroes.HeroSignature.For(hero, Meta.heroStars);
             Stats.SetBase(StatType.MaxHp, hero.maxHp);
             Stats.SetBase(StatType.Attack, hero.attack);
             Stats.SetBase(StatType.AttackSpeed, hero.attackSpeed);
@@ -140,9 +160,9 @@ namespace HistoryHeroes.Player
             Stats.SetBase(StatType.CritDamage, hero.critDamage);
 
             // 대표 효과 중 늘 켜져 있는 것 (관우: 받는 피해 -15%)
-            if (hero.damageReduction > 0f)
+            if (_sig.DamageReduction > 0f)
             {
-                Stats.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, hero.damageReduction, ModifierSource.Hero, _heroModifiers));
+                Stats.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, _sig.DamageReduction, ModifierSource.Hero, _heroModifiers));
             }
         }
 
@@ -170,8 +190,8 @@ namespace HistoryHeroes.Player
             _attackCooldown -= dt;
             _lifestealBudget = Mathf.Min(_lifestealBudget + dt * Health.Max * 0.03f, Health.Max * 0.03f);
 
-            float regen = Stats.Get(StatType.HpRegen);
-            if (regen > 0f) Health.Heal(regen * Health.Max * dt);
+            float regen = Stats.Get(StatType.HpRegen) * Health.Max + Stats.Get(StatType.HpRegenFlat); // 비율(패시브) + 고정(수련)
+            if (regen > 0f) Health.Heal(regen * dt);
 
             UpdateLowHpBonus();
             UpdateMomentum();
@@ -230,11 +250,11 @@ namespace HistoryHeroes.Player
         /// <summary>관우 의리의 투지: 체력이 절반 아래면 공격력 +20%</summary>
         private void UpdateLowHpBonus()
         {
-            if (hero.lowHpAttackBonus <= 0f) return;
+            if (_sig.LowHpAttackBonus <= 0f) return;
             bool low = Health.Current < Health.Max * hero.lowHpThreshold;
             if (low == _lowHpActive) return;
             _lowHpActive = low;
-            if (low) Stats.Add(new StatModifier(StatType.Attack, ModifierKind.Percent, hero.lowHpAttackBonus, ModifierSource.Hero, _lowHpModifier));
+            if (low) Stats.Add(new StatModifier(StatType.Attack, ModifierKind.Percent, _sig.LowHpAttackBonus, ModifierSource.Hero, _lowHpModifier));
             else Stats.RemoveAllFrom(_lowHpModifier);
         }
 
@@ -257,11 +277,11 @@ namespace HistoryHeroes.Player
             else Fire(target);
 
             // 나폴레옹 포병의 눈: 쏜 총알 3발마다 작은 포탄 (멀티샷이면 더 자주)
-            if (hero.cannonEvery > 0)
+            if (_sig.CannonEvery > 0)
             {
-                while (_bulletsFired >= hero.cannonEvery)
+                while (_bulletsFired >= _sig.CannonEvery)
                 {
-                    _bulletsFired -= hero.cannonEvery;
+                    _bulletsFired -= _sig.CannonEvery;
                     FireCannon(target.transform.position);
                 }
             }
@@ -273,7 +293,8 @@ namespace HistoryHeroes.Player
         private float NextShotCoefficient(int extra)
         {
             float coefficient = 1f - 0.1f * extra; // 멀티샷: 발당 -10% (Skills.md 1장)
-            if (_firstShotPending) coefficient *= 1f + hero.firstShotBonus;
+            if (_firstShotPending) coefficient *= 1f + _sig.FirstShotBonus;
+            _firstShotThisShot = _firstShotPending;
             _firstShotPending = false;
             return coefficient;
         }
@@ -291,15 +312,16 @@ namespace HistoryHeroes.Player
             Vector2 origin = transform.position;
             Vector2 aim = ((Vector2)target.transform.position - origin).normalized;
             float start = -spreadDegrees * (count - 1) * 0.5f;
-            bool needsTarget = hero.knockback > 0f || hero.chainBounces > 0;
+            bool needsTarget = hero.knockback > 0f || _sig.ChainBounces > 0;
 
             for (int i = 0; i < count; i++)
             {
                 Vector2 direction = Quaternion.Euler(0f, 0f, start + spreadDegrees * i) * aim;
                 DamageInfo damage = DamageCalculator.Roll(Stats, perProjectile, DamageKind.BasicAttack);
                 Projectile p = _projectiles.Get(origin, Quaternion.identity);
+                int pierce = Attack.Get(AttackModifierKind.Pierce) + (_sig.FirstShotPierce && _firstShotThisShot ? 1 : 0); // 칭기즈 칸 ★5: 첫 발 관통
                 p.Launch(direction, hero.projectileSpeed, damage, enemyMask, wallMask,
-                    Attack.Get(AttackModifierKind.Pierce), Attack.Get(AttackModifierKind.Ricochet),
+                    pierce, Attack.Get(AttackModifierKind.Ricochet),
                     _projectiles.Release, OnBasicAttackHit, onHitTarget: needsTarget ? OnProjectileHitTarget : null);
             }
         }
@@ -308,7 +330,7 @@ namespace HistoryHeroes.Player
         private void OnProjectileHitTarget(Health target, Vector2 point)
         {
             if (hero.knockback > 0f) Knockback(target, (Vector2)target.transform.position - (Vector2)transform.position, hero.knockback);
-            if (hero.chainBounces > 0) Chain(target, _lastShotCoefficient);
+            if (_sig.ChainBounces > 0) Chain(target, _lastShotCoefficient);
         }
 
         private static void Knockback(Health target, Vector2 direction, float distance)
@@ -325,7 +347,7 @@ namespace HistoryHeroes.Player
             Health current = first;
             float radiusSqr = hero.chainRadius * hero.chainRadius;
 
-            for (int bounce = 0; bounce < hero.chainBounces; bounce++)
+            for (int bounce = 0; bounce < _sig.ChainBounces; bounce++)
             {
                 Vector2 from = current.transform.position;
                 Health next = null;
@@ -344,7 +366,7 @@ namespace HistoryHeroes.Player
                 }
 
                 if (next == null) return;
-                coefficient *= 1f - hero.chainFalloff;
+                coefficient *= 1f - _sig.ChainFalloff;
                 AttackFx.Line(from, next.transform.position, 0.09f, chainColor);
                 DamageInfo damage = DamageCalculator.Roll(Stats, coefficient, DamageKind.BasicAttack);
                 if (next.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
@@ -356,9 +378,9 @@ namespace HistoryHeroes.Player
         /// <summary>나폴레옹: 표적 자리에 작은 포탄 (범위 피해, 기본 공격으로 침)</summary>
         private void FireCannon(Vector2 point)
         {
-            AttackFx.Burst(point, hero.cannonRadius, cannonColor);
+            AttackFx.Burst(point, _sig.CannonRadius, cannonColor);
             _overlap.Clear();
-            Physics2D.OverlapCircle(point, hero.cannonRadius, _enemyFilter, _overlap);
+            Physics2D.OverlapCircle(point, _sig.CannonRadius, _enemyFilter, _overlap);
             for (int i = 0; i < _overlap.Count; i++)
             {
                 if (!_overlap[i].TryGetComponent(out Health h) || h.IsDead) continue;

@@ -49,6 +49,10 @@ namespace HistoryHeroes.UI
         [SerializeField] private CodexPanel codex;
         [SerializeField] private HeartPanel hearts;
         [SerializeField] private HeroPanel heroPanel;
+        [Tooltip("장비 보상 (v0.4)")]
+        [SerializeField] private Meta.MetaTable metaTable;
+        [SerializeField] private Button shopButton;
+        [SerializeField] private ShopPanel shop;
         [SerializeField] private Button settingsButton;
         [SerializeField] private SettingsPanel settings;
 
@@ -70,6 +74,7 @@ namespace HistoryHeroes.UI
             codexButton.onClick.AddListener(() => codex.Open());
             heroButton.onClick.AddListener(() => heroPanel.Open(Render));
             if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
+            if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
 
             // 놓친 별 상자가 있으면 여기서 받는다
             Reward box = Stars.ClaimBoxes(data);
@@ -77,6 +82,34 @@ namespace HistoryHeroes.UI
             {
                 SaveSystem.Save();
                 ShowNotice("별 상자를 열었어요: " + box);
+            }
+
+            // 유물 (업적·별·보스 — 늦게 채운 조건도 여기서 확인, v0.4)
+            if (metaTable != null && metaTable.relics != null)
+            {
+                int heroes = 0;
+                foreach (HeroData h in roster.heroes)
+                {
+                    if (HeroUnlock.IsUnlocked(data, h)) heroes++;
+                }
+
+                List<string> relics = Relics.RelicService.CheckAll(data, metaTable.relics, heroes);
+                if (relics.Count > 0)
+                {
+                    SaveSystem.Save();
+                    ShowNotice(string.Join(" · ", relics));
+                }
+            }
+
+            // 장비가 생기기 전에 깬 보스의 장비 보상 (v0.4)
+            if (metaTable != null)
+            {
+                List<string> gear = Equipment.EquipmentInventory.GrantBossRewards(data, metaTable.equipment);
+                if (gear.Count > 0)
+                {
+                    SaveSystem.Save();
+                    ShowNotice("보스 격파 보상: " + string.Join(", ", gear).Replace("장비  ", ""));
+                }
             }
 
             SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도

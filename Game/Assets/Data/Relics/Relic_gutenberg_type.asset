@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bffa178e5cfa3bc4da7564d67027bb57, type: 3}
+  m_Name: Relic_gutenberg_type
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
+  id: gutenberg_type
+  displayName: "\uAD6C\uD150\uBCA0\uB974\uD06C\uC758 \uD65C\uC790"
+  set: 1
+  fact: "\uC720\uB7FD \uD65C\uD310 \uC778\uC1C4\uC220\uC744 \uD37C\uB728\uB9B0 \uAE08\uC18D
+    \uD65C\uC790"
+  source: 4
+  sourceChapter: 0
+  sourceValue: records10
+  howToGet: "\uAE30\uB85D 10\uAC1C \uB0A8\uAE30\uAE30"

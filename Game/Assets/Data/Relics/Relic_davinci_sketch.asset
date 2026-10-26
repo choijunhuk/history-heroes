@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bffa178e5cfa3bc4da7564d67027bb57, type: 3}
+  m_Name: Relic_davinci_sketch
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
+  id: davinci_sketch
+  displayName: "\uB2E4\uBE48\uCE58\uC758 \uBE44\uD589\uAE30\uACC4 \uC2A4\uCF00\uCE58"
+  set: 0
+  fact: "\uB808\uC624\uB098\uB974\uB3C4 \uB2E4\uBE48\uCE58\uB294 \uC0C8\uC758 \uB0A0\uAC1C\uB97C
+    \uBCF8\uB72C \uBE44\uD589 \uC7A5\uCE58\uB97C \uC2A4\uCF00\uCE58\uB85C \uB0A8\uACBC\uB2E4"
+  source: 4
+  sourceChapter: 0
+  sourceValue: recipes5
+  howToGet: "\uC870\uD569 5\uC885 \uBC1C\uACAC"

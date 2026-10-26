@@ -18,6 +18,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text listLabel;
         [SerializeField] private Button backButton;
         [SerializeField] private SkillDatabase database;
+        [Tooltip("유물 도감 (v0.4, 조합 도감 옆)")]
+        [SerializeField] private Button relicButton;
+        [SerializeField] private RelicPanel relics;
 
         public int RecipeCount => database != null ? database.recipes.Count : 0;
 
@@ -25,6 +28,7 @@ namespace HistoryHeroes.UI
         {
             root.SetActive(false);
             backButton.onClick.AddListener(() => root.SetActive(false));
+            if (relicButton != null) relicButton.onClick.AddListener(() => relics.Open());
         }
 
         public void Open()

@@ -34,6 +34,9 @@ namespace HistoryHeroes.EditorTools
             public SkillDatabase Database;
             public EnemyData WardenEnemy;
             public BossData RiftWarden;
+
+            // v0.4 판 밖 성장
+            public HistoryHeroes.Meta.MetaTable Meta;
         }
 
         private static Data CreateData()
@@ -59,6 +62,9 @@ namespace HistoryHeroes.EditorTools
             d.Khan.signatureName = "기마 속사";
             d.Khan.signatureDescription = "멈추는 순간 공격 준비 시간 0. 첫 발 피해 +50%";
             d.Khan.unlockAfterBossChapter = 0;
+            d.Khan.star3FirstShotBonus = 0.75f; // Stats 6-1
+            d.Khan.star5FirstShotBonus = 1.0f;
+            d.Khan.star5FirstShotPierce = true;
 
             // ----- 관우 (Heroes.md 4장): 근접 부채꼴 베기, 받는 피해 -15%, 체력 50% 아래 공격력 +20% -----
             d.Guan = Hero("guan", "관우", HeroClass.Warrior, BasicAttackKind.MeleeArc, 1400f, 130f, 0.8f, 5.2f, 2f, new Color(0.25f, 0.7f, 0.4f));
@@ -71,6 +77,8 @@ namespace HistoryHeroes.EditorTools
             d.Guan.meleeArcDegrees = 120f;
             d.Guan.meleeWaveCoefficient = 0.4f;
             d.Guan.unlockAfterBossChapter = 1;
+            d.Guan.star3DamageReduction = 0.20f;
+            d.Guan.star5LowHpAttackBonus = 0.35f;
 
             // ----- 나폴레옹 (5장): 총알 연사·밀어냄, 3발마다 작은 포탄 -----
             d.Napoleon = Hero("napoleon", "나폴레옹", HeroClass.Gunner, BasicAttackKind.Projectile, 900f, 72f, 1.4f, 4.8f, 5f, new Color(0.3f, 0.45f, 0.95f));
@@ -83,6 +91,8 @@ namespace HistoryHeroes.EditorTools
             d.Napoleon.cannonCoefficient = 1.0f; // v0.3 벤치: 보스에 너무 강하고 잡몹엔 보통이라 총알 공격력 90→72, 포탄 80%→100%·반지름 1.2→1.5
             d.Napoleon.cannonRadius = 1.5f;
             d.Napoleon.unlockAfterBossChapter = 2;
+            d.Napoleon.star3CannonRadiusScale = 1.3f;
+            d.Napoleon.star5CannonEvery = 2;
 
             // ----- 니콜라 테슬라 (6장): 전기 구체가 근처 적에게 2번 튕김 -----
             d.Tesla = Hero("tesla", "니콜라 테슬라", HeroClass.Mage, BasicAttackKind.Projectile, 850f, 95f, 0.9f, 5f, 5.5f, new Color(0.55f, 0.85f, 1f));
@@ -94,6 +104,8 @@ namespace HistoryHeroes.EditorTools
             d.Tesla.chainRadius = 3f;
             d.Tesla.chainFalloff = 0.3f;
             d.Tesla.unlockAfterBossChapter = 3;
+            d.Tesla.star3ExtraBounces = 1;  // Stats 6-1은 "튕김 +2"(1 → 2 기준). 지금 테슬라는 처음부터 2번이라 ★3에 1번 더
+            d.Tesla.star5NoFalloff = true;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -361,6 +373,7 @@ namespace HistoryHeroes.EditorTools
             d.RiftWarden.hpMultiplier = 300f; // 120 × 300 = 36,000. 대표 기록으로 제자리에서 약 1분 30초 → 피하면서 2~3분
             d.RiftWarden.attackMultiplier = 1.5f; // Stats.md 8장 (패턴 배수는 보스 쪽)
             d.RiftWarden.star2MaxHits = 8;
+            d.Meta = CreateMetaData();
             return d;
         }
 

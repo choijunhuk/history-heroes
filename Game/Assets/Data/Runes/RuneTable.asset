@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d1bfa2cd23d14f45958c7f586fece35, type: 3}
+  m_Name: RuneTable
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Runes.RuneTable
+  runes:
+  - {fileID: 11400000, guid: 9c126ef712a1b8f459eb06c08901c13b, type: 2}
+  - {fileID: 11400000, guid: 0077354f6420f6149a87aceb450ef706, type: 2}
+  - {fileID: 11400000, guid: dca9a2d7043965d4a853d134700e81f2, type: 2}
+  - {fileID: 11400000, guid: 116499d23370ef34abdbb63f4f45f49c, type: 2}
+  - {fileID: 11400000, guid: 5bd206924d72c9b419e2dea14f2b27eb, type: 2}
+  - {fileID: 11400000, guid: 7028a165e1f4f394080fb201631b81ee, type: 2}
+  - {fileID: 11400000, guid: bf39c9ec5155127408b107a97c9c80e9, type: 2}
+  multipliers:
+  - 1.5
+  - 2
+  - 2.5
+  upgradeCosts: b80b000010270000
+  shopPrice: 8000
+  maxMultiplier: 3
+  slotUnlockChapter: 0300000005000000

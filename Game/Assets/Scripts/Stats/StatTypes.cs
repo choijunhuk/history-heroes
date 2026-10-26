@@ -18,6 +18,7 @@ namespace HistoryHeroes.Stats
         ActiveDamage,      // 액티브 피해 증가
         ExpGain,           // 판 안 스킬(배움)만 줄 수 있다. 판 밖 출처는 0 (Stats.md 4-1)
         GoldGain,
+        HpRegenFlat,       // 초당 고정 회복량 (수련 회복력, Stats 5장 "초당 +1")
     }
 
     /// <summary>
@@ -41,6 +42,7 @@ namespace HistoryHeroes.Stats
         Pet,
         Training,   // 수련
         Awakening,  // 영웅 각성
+        HeroLevel,  // 영웅 레벨 (v0.4)
     }
 
     /// <summary>

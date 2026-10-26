@@ -12,7 +12,7 @@ namespace HistoryHeroes.EditorTools
     /// <summary>v0.2 로비 장면: 구간 고르기, 던전 / 보스 도전 / 기록 보관함 / 조합 도감 (UX.md 1장 축소판).</summary>
     public static partial class SceneBuilder
     {
-        private static void BuildLobbyScene(Scene scene, SkillDatabase database, BossData[] bosses, Heroes.HeroRoster roster)
+        private static void BuildLobbyScene(Scene scene, SkillDatabase database, BossData[] bosses, Heroes.HeroRoster roster, HistoryHeroes.Meta.MetaTable meta)
         {
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
             cameraObject.transform.position = new Vector3(0f, 0f, -10f);
@@ -39,7 +39,7 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text title = Label("Title", main, "역사 영웅", 96, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(900f, 130f));
-            TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v0.3", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v0.4", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
             Place(sub.rectTransform, Center, Center, new Vector2(0f, 615f), new Vector2(900f, 50f));
 
             Button prev = Btn("PrevChapter", main, "<", new Vector2(-420f, 400f), new Vector2(120f, 120f), ButtonGray, out TMP_Text prevLabel);
@@ -61,6 +61,8 @@ namespace HistoryHeroes.EditorTools
             Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -700f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
             Button settingsButton = Btn("Settings", main, "설정", new Vector2(430f, 820f), new Vector2(180f, 80f), ButtonGray, out TMP_Text settingsLabel);
             settingsLabel.fontSize = 30;
+            Button shopButton = Btn("Shop", main, "상점", new Vector2(-430f, 820f), new Vector2(180f, 80f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text shopLabel);
+            shopLabel.fontSize = 30;
             TMP_Text note = Label("Note", main, "그래픽은 아직 임시 도형이에요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
 
@@ -68,10 +70,19 @@ namespace HistoryHeroes.EditorTools
             BossIntroPanel bossIntro = BuildBossIntroPanel(safe, database);
             RecordArchivePanel archivePanel = BuildArchivePanel(safe, database);
             CodexPanel codexPanel = BuildCodexPanel(safe, database);
+            RelicPanel relicPanel = BuildRelicPanel(safe, meta != null ? meta.relics : null);
+            using (var props = new Props(codexPanel)) props.Ref("relics", relicPanel).Ref("relicButton", codexPanel.transform.Find("Panel/Relics").GetComponent<Button>());
             RecordSaveScreen reselect = BuildRecordSave(root, database);
             HeartPanel heartPanel = BuildHeartPanel(root);
             HeroPanel heroPanel = BuildHeroPanel(safe, roster);
             SettingsPanel settingsPanel = BuildSettingsPanel(safe);
+            EquipmentPanel equipmentPanel = BuildEquipmentPanel(safe, meta);
+            var gacha = UnityEditor.AssetDatabase.LoadAssetAtPath<HistoryHeroes.Equipment.GachaTable>($"{DataDir}/Equipment/GachaTable.asset");
+            ShopPanel shopPanel = BuildShopPanel(safe, gacha);
+            TrainingPanel trainingPanel = BuildTrainingPanel(safe, meta);
+            RunePanel runePanel = BuildRunePanel(safe, meta, database);
+            using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel);
+            using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
 
             using (var props = new Props(lobby))
@@ -84,7 +95,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)
                     .Ref("walletLabel", wallet).Ref("noticeLabel", notice)
                     .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("roster", roster).Ref("heroPanel", heroPanel)
-                    .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel);
+                    .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel).Ref("metaTable", meta)
+                    .Ref("shopButton", shopButton).Ref("shop", shopPanel);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
@@ -203,13 +215,28 @@ namespace HistoryHeroes.EditorTools
                 labels[i] = label;
             }
 
-            Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -520f), new Vector2(440f, 130f), ButtonGreen, out TMP_Text selectLabel);
-            Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -520f), new Vector2(440f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
+            Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -450f), new Vector2(440f, 110f), ButtonGreen, out TMP_Text selectLabel);
+            Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -450f), new Vector2(440f, 110f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
             unlockLabel.fontSize = 28;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -680f), new Vector2(400f, 110f), ButtonGray, out _);
+            Button level = Btn("HeroLevelUp", panel, "레벨업", new Vector2(-250f, -575f), new Vector2(440f, 110f), new Color(0.2f, 0.42f, 0.5f), out TMP_Text levelLabel);
+            levelLabel.fontSize = 28;
+            Button awaken = Btn("HeroAwaken", panel, "각성", new Vector2(250f, -575f), new Vector2(440f, 110f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text awakenLabel);
+            awakenLabel.fontSize = 28;
+            Button trainingButton = Btn("Training", panel, "수련 (모든 영웅)", new Vector2(-335f, -700f), new Vector2(325f, 110f), ButtonBlue, out TMP_Text trainingLabel);
+            trainingLabel.fontSize = 26;
+            Button runeButton = Btn("HeroRunes", panel, "룬", new Vector2(0f, -700f), new Vector2(325f, 110f), new Color(0.32f, 0.25f, 0.45f), out TMP_Text runeLabel);
+            runeLabel.fontSize = 28;
+            TMP_Text heroMessage = Label("HeroMessage", panel, "", 26, TextAlignmentOptions.Center);
+            Place(heroMessage.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 50f));
+            Button equip = Btn("HeroEquipment", panel, "장비", new Vector2(250f, -450f), new Vector2(440f, 110f), ButtonBlue, out TMP_Text equipLabel);
+            equipLabel.fontSize = 28;
+            Button back = Btn("Back", panel, "뒤로", new Vector2(335f, -700f), new Vector2(325f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
+                props.Ref("equipButton", equip).Ref("equipLabel", equipLabel)
+                    .Ref("levelButton", level).Ref("levelLabel", levelLabel).Ref("awakenButton", awaken).Ref("awakenLabel", awakenLabel)
+                    .Ref("trainingButton", trainingButton).Ref("messageLabel", heroMessage).Ref("runeButton", runeButton).Ref("runeLabel", runeLabel);
                 props.Ref("root", panel.gameObject).Ref("roster", roster).Refs("heroButtons", buttons).Refs("heroBackgrounds", backgrounds)
                     .Refs("heroLabels", labels).Ref("selectButton", select).Ref("selectLabel", selectLabel)
                     .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("backButton", back);
@@ -296,7 +323,8 @@ namespace HistoryHeroes.EditorTools
             scroll.horizontal = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 40f;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -720f), new Vector2(400f, 110f), ButtonGray, out _);
+            Button relicButton = Btn("Relics", panel, "유물 도감", new Vector2(-220f, -720f), new Vector2(400f, 110f), new Color(0.45f, 0.32f, 0.12f), out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(220f, -720f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {

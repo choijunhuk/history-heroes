@@ -222,6 +222,19 @@ namespace HistoryHeroes.Records
                 data.accountExp = 0;
             }
 
+            if (data.schemaVersion < 3)
+            {
+                // 2 → 3: 판 밖 성장이 생겼다. 모두 처음 상태 (장비 없음, 칸 강화 0, 영웅 Lv1 ★1). 옛 기록은 판 밖 성장 없음
+                data.equipment = new EquipmentSave();
+                data.heroProgress = new List<HeroProgress>();
+                data.training = new List<int>();
+                data.gacha = new GachaSave();
+                data.shop = new ShopSave();
+                data.runes = new RuneSave();
+                data.relics = new RelicSave();
+                foreach (RunRecord r in data.records ?? new List<RunRecord>()) r.meta = new MetaSnapshot();
+            }
+
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -238,6 +251,59 @@ namespace HistoryHeroes.Records
             data.unlockedHeroes ??= new List<string>();
             data.settings ??= new GameSettings();
             data.settings.shake = Math.Clamp(data.settings.shake, 0, 2);
+
+            // v0.4 판 밖 성장
+            data.equipment ??= new EquipmentSave();
+            data.equipment.items ??= new List<EquipmentItem>();
+            data.equipment.items.RemoveAll(i => i == null || string.IsNullOrEmpty(i.uid) || string.IsNullOrEmpty(i.dataId));
+            data.equipment.slotLevels ??= new List<int>();
+            while (data.equipment.slotLevels.Count < 3) data.equipment.slotLevels.Add(0);
+            for (int i = 0; i < data.equipment.slotLevels.Count; i++) data.equipment.slotLevels[i] = Math.Clamp(data.equipment.slotLevels[i], 0, 40);
+            data.equipment.loadouts ??= new List<HeroLoadout>();
+            data.equipment.loadouts.RemoveAll(l => l == null || string.IsNullOrEmpty(l.heroId));
+            foreach (HeroLoadout l in data.equipment.loadouts)
+            {
+                l.uids ??= new List<string>();
+                while (l.uids.Count < 3) l.uids.Add("");
+                for (int i = 0; i < l.uids.Count; i++) l.uids[i] ??= "";
+            }
+
+            if (data.equipment.nextUid < 1) data.equipment.nextUid = 1;
+            data.equipment.bossRewardsGiven ??= new List<string>();
+            data.heroProgress ??= new List<HeroProgress>();
+            data.heroProgress.RemoveAll(h => h == null || string.IsNullOrEmpty(h.heroId));
+            foreach (HeroProgress h in data.heroProgress)
+            {
+                h.level = Math.Clamp(h.level, 1, 30);
+                h.stars = Math.Clamp(h.stars, 1, 5);
+            }
+
+            data.training ??= new List<int>();
+            data.gacha ??= new GachaSave();
+            data.gacha.log ??= new List<GachaLogEntry>();
+            data.gacha.premiumPity = Math.Max(0, data.gacha.premiumPity);
+            data.shop ??= new ShopSave();
+            data.runes ??= new RuneSave();
+            data.runes.owned ??= new List<RuneLevel>();
+            data.runes.owned.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id) || r.level <= 0);
+            foreach (RuneLevel r in data.runes.owned) r.level = Math.Clamp(r.level, 1, 3);
+            data.runes.loadouts ??= new List<HeroRunes>();
+            data.runes.loadouts.RemoveAll(h => h == null || string.IsNullOrEmpty(h.heroId));
+            foreach (HeroRunes h in data.runes.loadouts)
+            {
+                h.ids ??= new List<string>();
+                while (h.ids.Count < 2) h.ids.Add("");
+                for (int i = 0; i < h.ids.Count; i++) h.ids[i] ??= "";
+            }
+
+            data.runes.choicesTaken ??= new List<string>();
+            data.runes.choiceRunes ??= new List<string>();
+            data.relics ??= new RelicSave();
+            data.relics.owned ??= new List<RelicStar>();
+            data.relics.owned.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id) || r.stars <= 0);
+            foreach (RelicStar r in data.relics.owned) r.stars = Math.Clamp(r.stars, 1, 3);
+            data.relics.sourcesClaimed ??= new List<string>();
+            data.relics.heroDungeonClears ??= new List<string>();
             if (string.IsNullOrEmpty(data.selectedHero)) data.selectedHero = "khan";
             if (data.accountLevel < 1) data.accountLevel = 1;
             if (data.hearts < 0) data.hearts = 0;
@@ -250,6 +316,12 @@ namespace HistoryHeroes.Records
                 r.skills ??= new List<RecordSkill>();
                 r.bossesDefeated ??= new List<string>();
                 r.bossWins ??= new List<BossWin>();
+                r.meta ??= new MetaSnapshot();
+                r.meta.equipment ??= new List<EquippedItem>();
+                r.meta.training ??= new List<int>();
+                r.meta.relics ??= new List<RelicStar>();
+                if (r.meta.heroLevel < 1) r.meta.heroLevel = 1;
+                if (r.meta.heroStars < 1) r.meta.heroStars = 1;
                 r.skills.RemoveAll(s => s == null || string.IsNullOrEmpty(s.id));
             }
         }
