@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7490fb595e39454a94a84005ea6d222, type: 3}
+  m_Name: EquipmentTable
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Equipment.EquipmentTable
+  items:
+  - {fileID: 11400000, guid: 11470404564248c4195186fbe9906d6d, type: 2}
+  - {fileID: 11400000, guid: 272d7994e56958e428227fb20f168cdf, type: 2}
+  - {fileID: 11400000, guid: 80218fd6c56c34242bbc6df20ed02758, type: 2}
+  - {fileID: 11400000, guid: 20d3e8165ae8f69478a20d68e8c3b28f, type: 2}
+  - {fileID: 11400000, guid: 1850a8e7e3d59af409fa3f1e4909f11b, type: 2}
+  - {fileID: 11400000, guid: e3b3ba3160c835b46b5a8132d638e091, type: 2}
+  - {fileID: 11400000, guid: a6589a6de2fb07f4280b9c97db9a097e, type: 2}
+  - {fileID: 11400000, guid: 1e2ac8ece42deb445976a485925a442a, type: 2}
+  - {fileID: 11400000, guid: fad446c5f1f2ba440a85f3bc7314c844, type: 2}
+  - {fileID: 11400000, guid: 00f244cd2c5ad554a8a20414a72138e9, type: 2}
+  - {fileID: 11400000, guid: 27e58a798591aeb4ba26a5fd6d39754a, type: 2}
+  - {fileID: 11400000, guid: c9d889920a8b6db4e9ded0a04bf92359, type: 2}
+  - {fileID: 11400000, guid: 7c7da30e42d89f3439feafc5f760999d, type: 2}
+  - {fileID: 11400000, guid: 4f40c85281f02e5488010cc11e413bd4, type: 2}
+  - {fileID: 11400000, guid: 1002f24945d454148bb864ed1c81f33d, type: 2}
+  - {fileID: 11400000, guid: 3c83dc265de723e4d8b8447985dd928f, type: 2}
+  - {fileID: 11400000, guid: 1ef5abfa8bd9b7c4491da60af94b2987, type: 2}
+  - {fileID: 11400000, guid: 9cb8ddacf92b7604f80ed87af4b1b8bf, type: 2}
+  - {fileID: 11400000, guid: d99f2c011cce895499ff34c927cb0583, type: 2}
+  - {fileID: 11400000, guid: 52f8fc82c4d3cbc4694de735abd06128, type: 2}
+  - {fileID: 11400000, guid: 4270acb6a3234a7429cfe8e58b71d595, type: 2}
+  weaponBase:
+  - 0.03
+  - 0.06
+  - 0.1
+  - 0.15
+  armorBase:
+  - 0.03
+  - 0.06
+  - 0.1
+  - 0.15
+  accessoryBase:
+  - 0.015
+  - 0.03
+  - 0.045
+  - 0.06
+  enhanceCap: 0a000000140000001e00000028000000
+  weaponPerLevel: 0.0025
+  armorPerLevel: 0.0025
+  accessoryPerLevel: 0.0005
+  enhanceCostPerLevel: 100
+  synthesisCount: 3
+  toUncommonCost: 500
+  toRareCost: 3000
+  dismantleShards: 01000000030000000a00000032000000
+  exchangeRareCost: 60
+  exchangeLegendaryCost: 300
+  inventoryCap: 200

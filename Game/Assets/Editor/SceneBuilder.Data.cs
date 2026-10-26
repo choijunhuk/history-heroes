@@ -34,6 +34,9 @@ namespace HistoryHeroes.EditorTools
             public SkillDatabase Database;
             public EnemyData WardenEnemy;
             public BossData RiftWarden;
+
+            // v0.4 판 밖 성장
+            public HistoryHeroes.Meta.MetaTable Meta;
         }
 
         private static Data CreateData()
@@ -361,6 +364,7 @@ namespace HistoryHeroes.EditorTools
             d.RiftWarden.hpMultiplier = 300f; // 120 × 300 = 36,000. 대표 기록으로 제자리에서 약 1분 30초 → 피하면서 2~3분
             d.RiftWarden.attackMultiplier = 1.5f; // Stats.md 8장 (패턴 배수는 보스 쪽)
             d.RiftWarden.star2MaxHits = 8;
+            d.Meta = CreateMetaData();
             return d;
         }
 

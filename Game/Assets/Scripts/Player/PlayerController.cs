@@ -67,6 +67,20 @@ namespace HistoryHeroes.Player
         private const float SearchRetryInterval = 0.1f;
 
         public HeroData Hero => hero;
+
+        private readonly object _metaModifiers = new object();
+
+        /// <summary>이번 판의 판 밖 성장 (던전 = 지금 계정, 보스 = 기록). 기록을 만들 때 이걸 그대로 고정 저장한다</summary>
+        public Records.MetaSnapshot Meta { get; private set; } = new Records.MetaSnapshot();
+
+        /// <summary>
+        /// 판 밖 성장 보정값을 갈아 끼운다 (v0.4). BattleBootstrap이 SetHero 다음, Awake 전에 부른다 → 체력이 처음부터 반영된다.
+        /// </summary>
+        public void ApplyMeta(Records.MetaSnapshot snapshot, HistoryHeroes.Meta.MetaTable table)
+        {
+            Meta = snapshot ?? new Records.MetaSnapshot();
+            Stats.ReplaceFrom(_metaModifiers, HistoryHeroes.Meta.MetaStats.Build(Meta, table, _metaModifiers));
+        }
         public StatSheet Stats { get; } = new StatSheet();
         public AttackModifiers Attack { get; } = new AttackModifiers();
         public StopDetector Stop { get; } = new StopDetector();

@@ -242,6 +242,7 @@ namespace HistoryHeroes.Dungeon
                 {
                     RunRecord r = d.ToRecord(skills.HeroId, chapter, room, RoomCount, victory, balance);
                     r.heroName = heroName;
+                    r.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)); // 이번 판 판 밖 성장을 고정 저장 (복사본, 7-5)
                     return r;
                 }, subtitle, GameSession.ToLobby);
             }

@@ -41,6 +41,7 @@ namespace HistoryHeroes.Stats
         Pet,
         Training,   // 수련
         Awakening,  // 영웅 각성
+        HeroLevel,  // 영웅 레벨 (v0.4)
     }
 
     /// <summary>

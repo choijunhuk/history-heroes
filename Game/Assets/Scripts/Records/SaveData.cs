@@ -11,8 +11,8 @@ namespace HistoryHeroes.Records
     public sealed class SaveData
     {
         /// <summary>저장 구조가 바뀌면 올린다. 읽을 때 옛 구조면 옮겨 담고(Migrate), 더 새 구조면 읽지 않고 원본을 보존한다.</summary>
-        /// 1: v0.2 기록·도감·구간 / 2: v0.2b 재화·하트·계정 레벨·별
-        public const int CurrentSchemaVersion = 2;
+        /// 1: v0.2 기록·도감·구간 / 2: v0.2b 재화·하트·계정 레벨·별 / 3: v0.4 장비·영웅 성장·수련·상자·상점
+        public const int CurrentSchemaVersion = 3;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -72,6 +72,15 @@ namespace HistoryHeroes.Records
 
         // 설정 (판 밖, 조사 A9 · UX 5장 접근성)
         public GameSettings settings = new GameSettings();
+
+        // ----- v0.4 판 밖 성장 (Stats 4~7, Equipment, Gacha) -----
+        public EquipmentSave equipment = new EquipmentSave();
+        /// <summary>영웅별 레벨·별(각성). 없으면 Lv1 ★1. 🧩 영웅 조각은 items (Wallet.HeroShard)</summary>
+        public List<HeroProgress> heroProgress = new List<HeroProgress>();
+        /// <summary>수련 6종 레벨 (순서 = Meta.TrainingType). 계정 공용</summary>
+        public List<int> training = new List<int>();
+        public GachaSave gacha = new GachaSave();
+        public ShopSave shop = new ShopSave();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -126,6 +135,19 @@ namespace HistoryHeroes.Records
             return -1;
         }
 
+        /// <summary>영웅 성장 칸 (없으면 만든다)</summary>
+        public HeroProgress Hero(string heroId)
+        {
+            foreach (HeroProgress h in heroProgress)
+            {
+                if (h.heroId == heroId) return h;
+            }
+
+            var created = new HeroProgress { heroId = heroId };
+            heroProgress.Add(created);
+            return created;
+        }
+
         public RunRecord FindRecord(string recordId)
         {
             foreach (RunRecord r in records)
@@ -170,6 +192,101 @@ namespace HistoryHeroes.Records
         /// 패치·다시 고르기로 기록이 바뀌어도 그때 싸운 구성으로 비교한다.
         /// </summary>
         public List<BossWin> bossWins = new List<BossWin>();
+
+        /// <summary>
+        /// 만들 당시의 판 밖 성장 (장비 ID + 강화값, 영웅 레벨·별, 수련). 보스전은 이걸로 싸운다 (GameDesign 7-3·7-5).
+        /// v0.4 전에 만든 기록은 비어 있다 = 판 밖 성장 없음.
+        /// </summary>
+        public MetaSnapshot meta = new MetaSnapshot();
+    }
+
+    /// <summary>판 밖 성장 상태 한 장 (기록에 고정 저장, 또는 지금 계정에서 만든다). 수치는 언제나 최신 데이터로 계산</summary>
+    [Serializable]
+    public sealed class MetaSnapshot
+    {
+        public int heroLevel = 1;
+        public int heroStars = 1;
+        /// <summary>장착 장비 (칸마다 하나, 비면 빠짐). level = 그 칸의 강화값을 장비 등급 상한으로 자른 값</summary>
+        public List<EquippedItem> equipment = new List<EquippedItem>();
+        public List<int> training = new List<int>();
+    }
+
+    [Serializable]
+    public sealed class EquippedItem
+    {
+        public int slot;
+        public string dataId;
+        public int level;
+    }
+
+    // ---------------------------------------------------------------- v0.4 장비 (Equipment.md 12장)
+
+    [Serializable]
+    public sealed class EquipmentSave
+    {
+        public List<EquipmentItem> items = new List<EquipmentItem>();
+        /// <summary>칸 강화 (무기·갑옷·장신구, 계정 공용). 0 = 강화 안 함, 최대 40</summary>
+        public List<int> slotLevels = new List<int> { 0, 0, 0 };
+        public List<HeroLoadout> loadouts = new List<HeroLoadout>();
+        public int nextUid = 1;
+        /// <summary>희귀·전설 중복을 얻자마자 조각으로 (Equipment 9장 기본값 켜짐)</summary>
+        public bool autoDismantle = true;
+    }
+
+    [Serializable]
+    public sealed class EquipmentItem
+    {
+        public string uid;
+        public string dataId;
+        public bool locked;
+    }
+
+    /// <summary>영웅마다 3칸 (장비 uid, 빈 칸은 빈 문자열). 같은 장비를 여러 영웅이 동시에 낄 수 있다</summary>
+    [Serializable]
+    public sealed class HeroLoadout
+    {
+        public string heroId;
+        public List<string> uids = new List<string> { "", "", "" };
+    }
+
+    // ---------------------------------------------------------------- v0.4 영웅 성장 (Stats 4·6)
+
+    [Serializable]
+    public sealed class HeroProgress
+    {
+        public string heroId;
+        public int level = 1;
+        public int stars = 1;
+    }
+
+    // ---------------------------------------------------------------- v0.4 상자·상점 (Gacha, Economy 5)
+
+    [Serializable]
+    public sealed class GachaSave
+    {
+        /// <summary>고급 상자 천장 카운터 (전설이 나오면 0). 보석·소환권으로 연 고급 상자 전부가 같이 쓴다</summary>
+        public int premiumPity;
+        /// <summary>일반 상자 광고 무료를 받은 날 (하루 1번)</summary>
+        public string freeNormalDate;
+        /// <summary>뽑기 기록 (고객 문의·검증용, 최근 100개)</summary>
+        public List<GachaLogEntry> log = new List<GachaLogEntry>();
+    }
+
+    [Serializable]
+    public sealed class GachaLogEntry
+    {
+        public long at;
+        public string box;
+        public string dataId;
+        public int pityBefore;
+    }
+
+    [Serializable]
+    public sealed class ShopSave
+    {
+        public string date;
+        /// <summary>오늘 골드 상점에서 산 영웅 조각 수 (하루 3개)</summary>
+        public int heroShardsBought;
     }
 
     [Serializable]

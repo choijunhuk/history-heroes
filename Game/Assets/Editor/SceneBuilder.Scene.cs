@@ -147,7 +147,7 @@ namespace HistoryHeroes.EditorTools
             var bootstrap = systems.AddComponent<BattleBootstrap>();
             using (var props = new Props(bootstrap))
             {
-                props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player);
+                props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player).Ref("metaTable", d.Meta);
             }
 
             var cheats = systems.AddComponent<Dev.DevCheats>();
