@@ -30,6 +30,13 @@ namespace HistoryHeroes.Combat
         // (첫 결과가 방금 그 적이면 뒤의 벽을 못 보고 통과하던 문제 방지)
         private static readonly RaycastHit2D[] _hits = new RaycastHit2D[8];
 
+        /// <summary>날아가는 방향·빠르기·피해 (마렝고가 막고 되돌리는 데, 벤치가 피하는 데 쓴다)</summary>
+        public Vector2 Direction => _direction;
+        public float Speed => _speed;
+        public DamageInfo Damage => _damage;
+        /// <summary>쏜 쪽 (적 투사체: 쏜 적. 없으면 null)</summary>
+        public Component Owner { get; set; }
+
         public void Launch(Vector2 direction, float speed, DamageInfo damage, LayerMask hitMask, LayerMask wallMask,
             int pierce, int ricochet, Action<Projectile> release, Action<DamageInfo, float> onHit = null,
             float pierceFalloff = 0.2f, Action<Health, Vector2> onHitTarget = null)
@@ -47,6 +54,7 @@ namespace HistoryHeroes.Combat
             _onHit = onHit;
             _age = 0f;
             _lastHit = null;
+            Owner = null;
             transform.right = _direction;
         }
 

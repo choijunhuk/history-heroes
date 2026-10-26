@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b39e5829f5bca7a4ba1c0bf499b3730c, type: 3}
+  m_Name: Pet_hawk
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Pets.PetData
+  id: hawk
+  displayName: "\uC0AC\uB0E5\uB9E4"
+  kind: 0
+  bondHeroId: khan
+  bondHeroName: "\uCE6D\uAE30\uC988 \uCE78"
+  source: 0
+  sourceChapter: 0
+  color: {r: 0.72, g: 0.52, b: 0.28, a: 1}
+  trigger: "\uBA48\uCDB0\uC11C \uBC84\uD2F0\uAE30"
+  effect: "2\uCD08 \uBA48\uCD94\uBA74 \uD558\uB298\uB85C \uC19F\uAD6C\uCCE4\uB2E4\uAC00
+    \uD654\uBA74\uC5D0\uC11C \uCCB4\uB825\uC774 \uAC00\uC7A5 \uB192\uC740 \uC801\uC5D0\uAC8C
+    \uAE09\uAC15\uD558 (\uACF5\uACA9\uB825 30%) + \uC0AC\uB0E5 \uD45C\uC2DD 5\uCD08:
+    \uADF8 \uC801\uC5D0\uAC8C \uAE30\uBCF8 \uACF5\uACA9 \uCE58\uBA85\uD0C0 \uD655\uB960
+    +25%. \uC7AC\uC0AC\uC6A9 6\uCD08"
+  awaken5: "\uD45C\uC2DD \uB300\uC0C1\uC774 \uC8FD\uC73C\uBA74 \uD45C\uC2DD\uC774
+    \uAC00\uC7A5 \uAC00\uAE4C\uC6B4 \uC801\uC5D0\uAC8C \uC62E\uACA8 \uAC04\uB2E4"
+  awaken10: "4\uCD08 \uB118\uAC8C \uBA48\uCD94\uBA74 \uD55C \uBC88 \uB354 \uAE09\uAC15\uD558"
+  fact: "\uBABD\uACE8\uC778\uB4E4\uC740 \uB9E4\uC0AC\uB0E5\uC744 \uC990\uACBC\uB2E4."
+  legend: "\uCE6D\uAE30\uC988 \uCE78\uC758 \uB9E4\uAC00 \uB3C5\uC774 \uB4E0 \uBB3C\uADF8\uB987\uC744
+    \uCCD0\uC11C \uADF8\uB97C \uAD6C\uD588\uB2E4\uB294 \uC774\uC57C\uAE30\uAC00 \uC804\uD574\uC9C4\uB2E4."

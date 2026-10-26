@@ -287,6 +287,7 @@ namespace HistoryHeroes.Survival
 
             if (metaTable != null && metaTable.relics != null) lines.AddRange(Relics.RelicService.CheckAll(save, metaTable.relics));
             if (metaTable != null && metaTable.runes != null) lines.AddRange(Runes.RuneService.GrantSurvivalRunes(save, metaTable.runes));
+            if (metaTable != null && metaTable.pets != null) lines.AddRange(Pets.PetService.CheckAll(save, metaTable.pets)); // 흰 비둘기
             SaveSystem.Save();
 
             var summary = new SurvivalSummary

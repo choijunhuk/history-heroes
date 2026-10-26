@@ -104,6 +104,17 @@ namespace HistoryHeroes.UI
                 }
             }
 
+            // 펫 (v0.5): 펫이 생기기 전에 채운 조건도 여기서
+            if (metaTable != null && metaTable.pets != null)
+            {
+                List<string> pets = Pets.PetService.CheckAll(data, metaTable.pets);
+                if (pets.Count > 0)
+                {
+                    SaveSystem.Save();
+                    ShowNotice(string.Join(" · ", pets));
+                }
+            }
+
             // 장비가 생기기 전에 깬 보스의 장비 보상 (v0.4)
             if (metaTable != null)
             {

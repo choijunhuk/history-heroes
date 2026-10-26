@@ -297,6 +297,28 @@ namespace HistoryHeroes.EditorTools
         /// 개발용 (v0.4 4단계, 임시 저장에서 쓸 것): 지금 저장에 판 밖 성장을 채운다 — 구간 해금, 영웅 Lv·★, 전설 장비 3칸 + 칸 강화,
         /// 수련, 유물, 룬. 2구간 보스가 아직 없어서 수련·룬·유물을 시험하려면 필요하다.
         /// </summary>
+        /// <summary>
+        /// v0.5 펫 시험: 4마리를 모두 그 레벨로 주고, 고른 영웅에게 equip 펫을 끼운다 (SandboxSave(true)와 같이 쓴다).
+        /// 예: DevPets("hawk", 10) → 던전·서바이벌에서 각성 행동까지 본다
+        /// </summary>
+        public static string DevPets(string equip = "hawk", int level = 1)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            Records.SaveData d = Records.SaveSystem.Data;
+            var meta = UnityEditor.AssetDatabase.LoadAssetAtPath<Meta.MetaTable>("Assets/Data/Meta/MetaTable.asset");
+            if (meta == null || meta.pets == null) return "펫 표가 없음";
+            foreach (Pets.PetData p in meta.pets.pets)
+            {
+                Records.PetLevel owned = d.pets.owned.Find(x => x.id == p.id);
+                if (owned == null) d.pets.owned.Add(new Records.PetLevel { id = p.id, level = Mathf.Clamp(level, 1, meta.pets.maxLevel) });
+                else owned.level = Mathf.Clamp(level, 1, meta.pets.maxLevel);
+            }
+
+            bool ok = Pets.PetService.Equip(d, meta.pets, d.selectedHero, string.IsNullOrEmpty(equip) ? null : equip);
+            Records.SaveSystem.Save();
+            return $"펫 {meta.pets.pets.Count}마리 Lv{level}, {d.selectedHero} ← {equip} ({(ok ? "끼움" : "실패")})";
+        }
+
         public static string DevFillMeta(string heroId = "khan", int chapters = 5)
         {
             if (!Application.isPlaying) return "Play 모드가 아님";

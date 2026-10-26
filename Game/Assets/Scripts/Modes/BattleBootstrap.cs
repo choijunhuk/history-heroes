@@ -28,6 +28,9 @@ namespace HistoryHeroes.Modes
         [Tooltip("룬 (던전만): 카드 뽑기 ②단계 배율")]
         [SerializeField] private Skills.SkillManager skills;
         [SerializeField] private Skills.SkillDatabase database;
+        [Header("v0.5 펫")]
+        [SerializeField] private Pets.PetController pet;
+        [SerializeField] private Progress.ExperienceSystem experience;
 
         /// <summary>
         /// 이번 판 영웅: 던전 = 로비에서 고른 영웅, 보스 = 기록에 저장된 영웅 (GameDesign 7-1 "사용한 영웅").
@@ -95,6 +98,14 @@ namespace HistoryHeroes.Modes
             }
 
             if (survive && skills != null && survival != null) skills.ConfigureSlots(survival.activeSlots, survival.passiveSlots); // 6·6
+
+            // 펫: 이번 판 스냅샷의 펫 (던전·서바이벌 = 지금 장착, 보스 = 기록의 펫). 모드 묶음을 켠 뒤라야 던전을 찾는다
+            if (pet != null)
+            {
+                Pets.PetData data = metaTable != null && metaTable.pets != null && player != null ? metaTable.pets.Find(player.Meta.petId) : null;
+                if (data != null) pet.Setup(data, player.Meta.petLevel, player, experience);
+                else pet.gameObject.SetActive(false);
+            }
         }
     }
 }

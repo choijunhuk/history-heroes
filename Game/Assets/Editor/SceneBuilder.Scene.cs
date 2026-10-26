@@ -103,6 +103,14 @@ namespace HistoryHeroes.EditorTools
             }
 
             using (var props = new Props(playerObject.AddComponent<StopIndicator>())) props.Ref("player", player).Ref("fill", stopFill);
+
+            // 펫 (v0.5): BattleBootstrap이 장착한 펫으로 켠다. 충돌 없음 (적이 공격하지 않는다)
+            var petObject = new GameObject("Pet");
+            SpriteRenderer petBody = Visual(petObject.transform, "Body", _circle, Color.white, Vector2.one * 0.42f, 4);
+            SpriteRenderer petMarker = Visual(petObject.transform, "Marker", _circle, Color.white, Vector2.one * 0.35f, 6);
+            var pet = petObject.AddComponent<HistoryHeroes.Pets.PetController>();
+            using (var props = new Props(pet)) props.Ref("body", petBody).Ref("marker", petMarker).Mask("enemyMask", Mask(EnemyLayer));
+            petObject.SetActive(false);
             using (var props = new Props(cameraFollow)) props.Ref("target", playerObject.transform).Ref("viewCamera", camera).Float("boundsHalfSize", SurvivalHalf);
 
             // ----- 시스템 -----
@@ -170,7 +178,8 @@ namespace HistoryHeroes.EditorTools
             {
                 props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player).Ref("metaTable", d.Meta)
                     .Ref("skills", Object.FindAnyObjectByType<SkillManager>(FindObjectsInactive.Include)).Ref("database", d.Database)
-                    .Ref("survivalRoot", survivalRoot.gameObject).Ref("arenaRoot", arena.gameObject).Ref("cameraFollow", cameraFollow).Ref("survival", survivalData);
+                    .Ref("survivalRoot", survivalRoot.gameObject).Ref("arenaRoot", arena.gameObject).Ref("cameraFollow", cameraFollow).Ref("survival", survivalData)
+                    .Ref("pet", pet).Ref("experience", experience);
             }
 
             survivalRoot.gameObject.SetActive(false); // 던전이 기본 (BattleBootstrap이 모드대로 켠다)

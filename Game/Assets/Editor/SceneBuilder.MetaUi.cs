@@ -206,6 +206,40 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        private static PetPanel BuildPetPanel(Transform parent, MetaTable meta)
+        {
+            RectTransform panel = Overlay(parent, "PetPanel", out GameObject holder);
+            var screen = holder.AddComponent<PetPanel>();
+
+            TMP_Text title = Label("Title", panel, "펫", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 850f), new Vector2(900f, 80f));
+            TMP_Text info = Label("Info", panel, "", 26, TextAlignmentOptions.Center);
+            Place(info.rectTransform, Center, Center, new Vector2(0f, 765f), new Vector2(1000f, 80f));
+
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 330f), new Vector2(1000f, 760f), 170f, 28f);
+            TMP_Text detail = Label("Detail", panel, "", 27, TextAlignmentOptions.Top);
+            Place(detail.rectTransform, Center, Center, new Vector2(0f, -330f), new Vector2(1000f, 480f));
+            detail.lineSpacing = 4f;
+            detail.enableAutoSizing = true;
+            detail.fontSizeMin = 20f;
+            detail.fontSizeMax = 27f;
+
+            Button equip = Btn("PetEquip", panel, "장착", new Vector2(-250f, -660f), new Vector2(440f, 110f), ButtonGreen, out TMP_Text equipLabel);
+            equipLabel.fontSize = 30;
+            Button level = Btn("PetLevelUp", panel, "레벨업", new Vector2(250f, -660f), new Vector2(440f, 110f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text levelLabel);
+            levelLabel.fontSize = 27;
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -800f), new Vector2(400f, 100f), ButtonGray, out _);
+
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("metaTable", meta).Ref("titleLabel", title).Ref("infoLabel", info)
+                    .Ref("list", list).Ref("detailLabel", detail).Ref("equipButton", equip).Ref("equipLabel", equipLabel)
+                    .Ref("levelButton", level).Ref("levelLabel", levelLabel).Ref("backButton", back);
+            }
+
+            return screen;
+        }
+
         private static RelicPanel BuildRelicPanel(Transform parent, HistoryHeroes.Relics.RelicTable relics)
         {
             RectTransform panel = Overlay(parent, "RelicPanel", out GameObject holder);

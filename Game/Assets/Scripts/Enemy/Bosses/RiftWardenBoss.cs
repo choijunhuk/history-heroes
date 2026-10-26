@@ -339,7 +339,7 @@ namespace HistoryHeroes.Enemy
             {
                 float angle = (i + offset) * step * Mathf.Deg2Rad;
                 var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-                EnemyProjectiles.Fire((Vector2)transform.position + direction * 0.9f, direction, waveSpeed, DamageCalculator.Enemy(Damage * waveDamage, "boss_wave"), playerMask);
+                EnemyProjectiles.Fire((Vector2)transform.position + direction * 0.9f, direction, waveSpeed, DamageCalculator.Enemy(Damage * waveDamage, "boss_wave"), playerMask, this);
             }
         }
 

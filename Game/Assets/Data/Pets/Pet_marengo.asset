@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b39e5829f5bca7a4ba1c0bf499b3730c, type: 3}
+  m_Name: Pet_marengo
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Pets.PetData
+  id: marengo
+  displayName: "\uB9C8\uB81D\uACE0"
+  kind: 2
+  bondHeroId: napoleon
+  bondHeroName: "\uB098\uD3F4\uB808\uC639"
+  source: 1
+  sourceChapter: 3
+  color: {r: 0.78, g: 0.78, b: 0.82, a: 1}
+  trigger: "\uC704\uD5D8\uD55C \uC21C\uAC04"
+  effect: "\uC801 \uD22C\uC0AC\uCCB4\uAC00 \uB2FF\uAE30 0.3\uCD08 \uC804\uC5D0 \uC601\uC6C5
+    \uC55E\uC744 \uB9C9\uC544\uC11C\uC11C 1\uBC1C\uC744 \uBAB8\uC73C\uB85C \uBC1B\uB294\uB2E4.
+    \uC7AC\uC0AC\uC6A9 7\uCD08 (\uCCB4\uB825 30% \uC544\uB798\uBA74 4\uCD08). \uB3CC\uC9C4
+    \uAC19\uC740 \uADFC\uC811 \uACF5\uACA9\uC740 \uBABB \uB9C9\uB294\uB2E4"
+  awaken5: "\uB9C9\uC544\uB0B8 \uD22C\uC0AC\uCCB4\uB97C \uC3DC \uC801\uC5D0\uAC8C
+    \uB418\uB3CC\uB824 \uBCF4\uB0B8\uB2E4 (\uADF8 \uD53C\uD574 100%)"
+  awaken10: "\uD55C \uBC88\uC5D0 2\uBC1C\uAE4C\uC9C0 \uB9C9\uB294\uB2E4"
+  fact: "\uB098\uD3F4\uB808\uC639\uC774 \uD0D4\uB358 \uAC83\uC73C\uB85C \uC720\uBA85\uD55C
+    \uC544\uB78D \uC885 \uD68C\uC0C9 \uB9D0. \uC5EC\uB7EC \uC804\uD22C\uC5D0 \uD568\uAED8\uD588\uB2E4
+    (\uC774\uB984\uC740 \uB9C8\uB81D\uACE0 \uC804\uD22C\uC5D0\uC11C \uB530\uC654\uB2E4)."
+  legend: 

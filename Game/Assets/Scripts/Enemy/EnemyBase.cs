@@ -69,6 +69,7 @@ namespace HistoryHeroes.Enemy
             attackMultiplier = atkMultiplier * (elite ? 1.5f : 1f);
             IsElite = elite;
             health.Init(Team.Enemy, data.maxHp * hpMultiplier * (elite ? 5f : 1f));
+            health.IncomingModifier = null; // 풀에서 다시 쓸 때 지난 표식이 남지 않게
             transform.localScale = Vector3.one * (elite ? 1.5f : 1f);
             status.Clear();
             if (!_alive.Contains(this)) _alive.Add(this);

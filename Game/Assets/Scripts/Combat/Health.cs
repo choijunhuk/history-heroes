@@ -18,6 +18,9 @@ namespace HistoryHeroes.Combat
         public float Current { get; private set; }
         public bool IsDead => Current <= 0f;
 
+        /// <summary>맞기 직전에 피해를 바꾼다 (사냥매 사냥 표식처럼 "이 적에게만" 붙는 효과). 적은 다시 나올 때 비운다</summary>
+        public Func<DamageInfo, DamageInfo> IncomingModifier { get; set; }
+
         /// <summary>실제로 깎인 양과 함께 알린다.</summary>
         public event Action<DamageInfo, float> Damaged;
         public event Action<Health> Died;
@@ -55,6 +58,7 @@ namespace HistoryHeroes.Combat
         {
             dealt = 0f;
             if (IsDead || info.AttackerTeam == team) return false;
+            if (IncomingModifier != null) info = IncomingModifier(info); // 사냥매 표식: 기본 공격 치명타 확률 +25%
             if (Invulnerable || Time.time < _invulnerableUntil) return false;
 
             float reduction = 0f;

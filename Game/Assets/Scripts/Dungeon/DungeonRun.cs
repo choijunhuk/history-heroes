@@ -57,6 +57,12 @@ namespace HistoryHeroes.Dungeon
         private float _startTime;
 
         public int Room => _room;
+
+        /// <summary>새 방에 들어갔다 (방 번호). 흰 비둘기 보물 찾기 등</summary>
+        public event System.Action<int> RoomEntered;
+
+        /// <summary>적이 나오는 영역 (방 안쪽)</summary>
+        public Rect SpawnArea => spawnArea;
         public int RoomCount => dungeon.rooms.Count;
         public bool IsFinished => _finished;
 
@@ -89,6 +95,7 @@ namespace HistoryHeroes.Dungeon
             foreach (RoomData r in dungeon.rooms) elite.Add(r.kind == RoomKind.Elite);
             hud.SetRoomProgress(room, elite);
             StartCoroutine(SpawnRoom(data));
+            RoomEntered?.Invoke(room);
         }
 
         private IEnumerator SpawnRoom(RoomData data)
@@ -284,6 +291,9 @@ namespace HistoryHeroes.Dungeon
                 if (victory) Relics.RelicService.MarkHeroClear(save, skills.HeroId);
                 lines.AddRange(Relics.RelicService.CheckAll(save, metaTable.relics));
             }
+
+            // 펫 (Pets 3장): 첫 던전 클리어 = 사냥매 + 펫 칸
+            if (metaTable != null && metaTable.pets != null) lines.AddRange(Pets.PetService.CheckAll(save, metaTable.pets));
 
             SaveSystem.Save();
             return lines;

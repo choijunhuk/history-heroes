@@ -27,6 +27,7 @@ namespace HistoryHeroes.Meta
             if (table.equipment != null && EquipmentInventory.Unlocked(save)) snap.equipment = EquipmentInventory.Snapshot(save, table.equipment, heroId);
             snap.training = new List<int>(save.training);
             snap.relics = Relics.RelicService.Active(save);
+            Pets.PetService.FillSnapshot(snap, save, table.pets, heroId);
             return snap;
         }
 
@@ -90,6 +91,17 @@ namespace HistoryHeroes.Meta
                 }
 
                 if (relic.DamageReduction > 0f) list.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, relic.DamageReduction, ModifierSource.Relic, owner));
+            }
+
+            // 펫: 장착한 하나만. 레벨당 +0.3% + 인연 +2% (공격력·체력만, 보조 능력치 0 — Pets 2장)
+            if (table.pets != null && !string.IsNullOrEmpty(snap.petId) && table.pets.Find(snap.petId) != null)
+            {
+                float pet = table.pets.Bonus(snap.petLevel, snap.petBond);
+                if (pet > 0f)
+                {
+                    list.Add(new StatModifier(StatType.Attack, ModifierKind.Percent, pet, ModifierSource.Pet, owner));
+                    list.Add(new StatModifier(StatType.MaxHp, ModifierKind.Percent, pet, ModifierSource.Pet, owner));
+                }
             }
 
             return list;

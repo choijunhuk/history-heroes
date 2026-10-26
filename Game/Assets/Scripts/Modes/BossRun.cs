@@ -164,6 +164,7 @@ namespace HistoryHeroes.Modes
                     Reward box = Stars.ClaimBoxes(save);
                     if (!box.IsEmpty) lines.Add("별 상자  " + box);
                     if (metaTable != null && metaTable.relics != null) lines.AddRange(Relics.RelicService.CheckAll(save, metaTable.relics));
+                    if (metaTable != null && metaTable.pets != null) lines.AddRange(Pets.PetService.CheckAll(save, metaTable.pets)); // 1구간 적토마, 3구간 마렝고
                 }
             }
 

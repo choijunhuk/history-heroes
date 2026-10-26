@@ -86,6 +86,9 @@ namespace HistoryHeroes.Records
 
         // ----- v0.5 서바이벌 (GameDesign 8-3: 생존 시간 기록, 영웅별 최고 기록) -----
         public SurvivalSave survival = new SurvivalSave();
+
+        // ----- v0.5 펫 (Pets 4·5장) -----
+        public PetSave pets = new PetSave();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -216,6 +219,10 @@ namespace HistoryHeroes.Records
         public List<int> training = new List<int>();
         /// <summary>효과가 있던 유물과 별 (유물 탭이 열린 뒤에만, 결정 53 "기록 당시 값")</summary>
         public List<RelicStar> relics = new List<RelicStar>();
+        /// <summary>장착한 펫 (비면 없음). 레벨·인연도 기록 당시 값 (Pets 5장: 보스맵은 기록의 펫)</summary>
+        public string petId;
+        public int petLevel;
+        public bool petBond;
     }
 
     [Serializable]
@@ -266,6 +273,31 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+    }
+
+    // ---------------------------------------------------------------- v0.5 펫
+
+    [Serializable]
+    public sealed class PetSave
+    {
+        /// <summary>가진 펫과 레벨 (Pets 7장 PetCollection)</summary>
+        public List<PetLevel> owned = new List<PetLevel>();
+        /// <summary>영웅마다 장착한 펫 (Pets 7장 HeroPetLoadout, 1칸)</summary>
+        public List<HeroPet> loadouts = new List<HeroPet>();
+    }
+
+    [Serializable]
+    public sealed class PetLevel
+    {
+        public string id;
+        public int level;
+    }
+
+    [Serializable]
+    public sealed class HeroPet
+    {
+        public string heroId;
+        public string petId;
     }
 
     // ---------------------------------------------------------------- v0.5 서바이벌

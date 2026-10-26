@@ -33,7 +33,7 @@ namespace HistoryHeroes.Enemy
                     DrawTelegraphLine(transform.position, UntilWall(transform.position, _aim, 12f));
                     if (stateTimer <= 0f)
                     {
-                        EnemyProjectiles.Fire(transform.position, _aim, arrowSpeed, DamageCalculator.Enemy(Damage, data.id), playerMask);
+                        EnemyProjectiles.Fire(transform.position, _aim, arrowSpeed, DamageCalculator.Enemy(Damage, data.id), playerMask, this);
                         Enter(State.Recover, data.recoverTime);
                     }
                     break;

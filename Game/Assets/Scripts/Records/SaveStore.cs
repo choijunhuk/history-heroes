@@ -304,6 +304,12 @@ namespace HistoryHeroes.Records
             foreach (RelicStar r in data.relics.owned) r.stars = Math.Clamp(r.stars, 1, 3);
             data.relics.sourcesClaimed ??= new List<string>();
             data.relics.heroDungeonClears ??= new List<string>();
+            data.pets ??= new PetSave();
+            data.pets.owned ??= new List<PetLevel>();
+            data.pets.owned.RemoveAll(p => p == null || string.IsNullOrEmpty(p.id));
+            foreach (PetLevel p in data.pets.owned) p.level = Mathf.Max(1, p.level);
+            data.pets.loadouts ??= new List<HeroPet>();
+            data.pets.loadouts.RemoveAll(l => l == null || string.IsNullOrEmpty(l.heroId));
             data.survival ??= new SurvivalSave();
             data.survival.best ??= new List<HeroBest>();
             data.survival.best.RemoveAll(b => b == null || string.IsNullOrEmpty(b.heroId));
