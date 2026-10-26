@@ -633,6 +633,7 @@ namespace HistoryHeroes.Pets
             else
             {
                 Economy.Wallet.Grant(Records.SaveSystem.Data, new Economy.Reward { Gold = gold });
+                Records.SaveSystem.MarkDirty(); // 앱이 바로 꺼져도 다음 안전한 저장에서 남는다 (Codex v0.5 5번)
                 if (hud != null) hud.ShowNotice($"흰 비둘기: 보물 골드 +{gold}");
             }
 

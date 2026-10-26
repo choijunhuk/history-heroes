@@ -148,6 +148,7 @@ namespace HistoryHeroes.Survival
             {
                 EnemyBase e = alive[i];
                 if (e == null || e.IsElite || e == _boss || e.Health.IsDead) continue;
+                if (e.IsTelegraphing || e.IsAttacking) continue; // 공격 도중 옮기면 새 자리에서 옛 조준으로 쏜다 (Codex v0.5 3번)
                 if (((Vector2)e.transform.position - me).sqrMagnitude > farSqr) e.transform.position = RingPosition();
             }
         }
@@ -177,24 +178,37 @@ namespace HistoryHeroes.Survival
             experience.Register(enemy);
         }
 
-        /// <summary>화면 바로 밖 원형 띠 (Modes 2-10). 맵 밖이면 다른 방향으로 다시</summary>
+        /// <summary>
+        /// 화면 바로 밖 원형 띠 (Modes 2-10). 맵 안이고 바위·연못 위가 아닌 자리만 (Codex v0.5 2번).
+        /// 구석이라 못 찾으면 맵 가운데 쪽 방향으로 같은 거리 — 플레이어 바로 옆에 생기지 않는다.
+        /// </summary>
         public Vector2 RingPosition()
         {
             Vector2 center = player.transform.position;
             float radius = SpawnRadius();
             float limit = data.mapHalfSize - 1f;
-            for (int attempt = 0; attempt < 8; attempt++)
+            for (int attempt = 0; attempt < 12; attempt++)
             {
                 float angle = Random.value * Mathf.PI * 2f;
                 Vector2 p = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
-                if (Mathf.Abs(p.x) <= limit && Mathf.Abs(p.y) <= limit) return p;
+                if (Mathf.Abs(p.x) <= limit && Mathf.Abs(p.y) <= limit && IsFree(p)) return p;
             }
 
-            // 구석: 맵 안으로 잘라 넣는다
-            float a = Random.value * Mathf.PI * 2f;
-            Vector2 q = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
-            return new Vector2(Mathf.Clamp(q.x, -limit, limit), Mathf.Clamp(q.y, -limit, limit));
+            Vector2 inward = center.sqrMagnitude > 0.01f ? -center.normalized : Vector2.up;
+            for (int attempt = 0; attempt < 8; attempt++)
+            {
+                Vector2 dir = Quaternion.Euler(0f, 0f, Random.Range(-60f, 60f)) * inward;
+                Vector2 q = center + dir * radius;
+                q = new Vector2(Mathf.Clamp(q.x, -limit, limit), Mathf.Clamp(q.y, -limit, limit));
+                if (IsFree(q) && (q - center).sqrMagnitude > radius * radius * 0.5f) return q;
+            }
+
+            return center + inward * radius;
         }
+
+        private static readonly int ObstacleMask = 1 << 10 | 1 << 0; // 바위(Wall) + 연못(Default)
+
+        private static bool IsFree(Vector2 p) => Physics2D.OverlapCircle(p, 0.6f, ObstacleMask) == null;
 
         private EnemyBase GetEnemy(EnemyBase prefab)
         {

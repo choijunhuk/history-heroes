@@ -235,6 +235,21 @@ namespace HistoryHeroes.Records
                 foreach (RunRecord r in data.records ?? new List<RunRecord>()) r.meta = new MetaSnapshot();
             }
 
+            if (data.schemaVersion < 4)
+            {
+                // 3 → 4 (v0.5): 서바이벌 기록·펫·미션은 처음 상태. 옛 기록은 펫 없음
+                data.survival = new SurvivalSave();
+                data.pets = new PetSave();
+                data.missions = new MissionSave();
+                foreach (RunRecord r in data.records ?? new List<RunRecord>())
+                {
+                    if (r.meta == null) continue;
+                    r.meta.petId = null;
+                    r.meta.petLevel = 0;
+                    r.meta.petBond = false;
+                }
+            }
+
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 

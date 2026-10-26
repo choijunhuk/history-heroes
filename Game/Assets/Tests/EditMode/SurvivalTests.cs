@@ -73,6 +73,34 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Load_SchemaThreeSave_MigratesToFourWithEmptyV05Data()
+        {
+            string folder = Path.Combine(Path.GetTempPath(), "hh_v4_" + System.Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(folder);
+            try
+            {
+                var store = new SaveStore(folder);
+                var old = new SaveData { schemaVersion = 3, gold = 42 };
+                old.records.Add(new RunRecord { id = "r1", heroId = "khan" });
+                string json = JsonUtility.ToJson(old, true);
+                foreach (string key in new[] { "survival", "pets", "missions" }) json = json.Replace($"\"{key}\"", $"\"{key}_old\"");
+                File.WriteAllText(store.MainPath, json);
+
+                SaveData loaded = store.Load();
+                Assert.AreEqual(4, loaded.schemaVersion);
+                Assert.AreEqual(42, loaded.gold);
+                Assert.AreEqual(0, loaded.survival.best.Count);
+                Assert.AreEqual(0, loaded.pets.owned.Count);
+                Assert.IsNotNull(loaded.missions.counters);
+                Assert.IsTrue(string.IsNullOrEmpty(loaded.records[0].meta.petId), "옛 기록은 펫 없음");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        [Test]
         public void Unlock_AfterChapterTwoBoss()
         {
             Assert.IsFalse(GameSession.SurvivalUnlockedByProgress(new SaveData { unlockedChapter = 2 }));
