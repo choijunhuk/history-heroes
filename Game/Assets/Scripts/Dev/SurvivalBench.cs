@@ -201,6 +201,7 @@ namespace HistoryHeroes.Dev
         private Vector2 _lastMove = Vector2.up;
         private int _wallMask;
         private int _highWallMask;
+        private float _approachClock;
 
         /// <summary>방(던전·균열)용: 위험이 없는데 사거리 안에 적이 없으면 가까운 적에게 다가간다 (서바이벌은 적이 알아서 온다)</summary>
         public bool Approach { get; set; }
@@ -253,6 +254,7 @@ namespace HistoryHeroes.Dev
             Vector2 me = _player.transform.position;
             Vector2 push = Vector2.zero;
             Vector2 sidestep = Vector2.zero;
+            Vector2 flank = Vector2.zero;
             float closest = float.MaxValue;
             IReadOnlyList<EnemyBase> alive = EnemyBase.Alive;
             for (int i = 0; i < alive.Count; i++)
@@ -274,6 +276,13 @@ namespace HistoryHeroes.Dev
                         Vector2 perpendicular = off.sqrMagnitude > 0.0004f ? off.normalized : new Vector2(-line.y, line.x);
                         sidestep += perpendicular;
                     }
+                }
+
+                // 방패병: 들이받기 예고가 아니면 피하지 않는다 (가까이 오게 둬야 방패를 내린다). 방패 정면이면 옆으로 돈다
+                if (e is ShieldEnemy shield && !e.IsTelegraphing && !e.IsAttacking)
+                {
+                    if (!shield.ShieldDown && dist < SenseRadius && Vector2.Angle(shield.Facing, d) < 60f) flank += new Vector2(-d.y, d.x).normalized;
+                    continue;
                 }
 
                 if (dist > SenseRadius) continue;
@@ -308,12 +317,19 @@ namespace HistoryHeroes.Dev
                 // 근접 영웅은 무리 속으로 들어가 베야 한다 → 몰림 기준을 사거리에 맞춰 높인다
                 float crowd = CrowdThreshold * Mathf.Clamp(4f / Mathf.Max(1f, range), 1f, 2.5f);
                 bool danger = closest < tooClose || push.magnitude > crowd;
-                if (!danger)
+                if (!danger && flank.sqrMagnitude > 0.01f && Approach && Time.time % 3f < 1.2f)
+                {
+                    dir = flank.normalized; // 방패 옆으로 (3초에 1.2초만, 나머지는 쏜다)
+                }
+                else if (!danger)
                 {
                     Vector2 target = Approach ? NearestEnemyOffset(me) : Vector2.zero;
                     bool seen = target == Vector2.zero || Physics2D.Raycast(me, target.normalized, target.magnitude, _highWallMask).collider == null;
                     if (target.magnitude < range * 0.85f && seen) return Vector2.zero; // 여유 → 멈춰서 쏜다
-                    dir = target.normalized; // 사거리 밖이거나 높은 벽에 가렸다 → 다가간다
+                    // 사거리 밖이거나 높은 벽에 가렸다 → 다가간다. 1.5초 걷고 1초 멈춘다 (계속 걸으면 기본 공격을 못 한다)
+                    _approachClock += Time.deltaTime;
+                    if (_approachClock % 2.5f > 1.5f) return Vector2.zero;
+                    dir = target.normalized;
                 }
                 else
                 {
