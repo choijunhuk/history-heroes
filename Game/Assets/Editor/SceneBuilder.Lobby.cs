@@ -140,6 +140,59 @@ namespace HistoryHeroes.EditorTools
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
         }
 
+        /// <summary>v1.0 정보: 이용약관 · 개인정보 · 크레딧 · 정보 (스크롤 글)</summary>
+        private static InfoPanel BuildInfoPanel(Transform parent)
+        {
+            RectTransform panel = Overlay(parent, "InfoPanel", out GameObject holder);
+            var screen = holder.AddComponent<InfoPanel>();
+            TMP_Text title = Label("Title", panel, "정보", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 840f), new Vector2(900f, 90f));
+            Button TabButton(string name, string text, float x)
+            {
+                Button b = Btn(name, panel, text, new Vector2(x, 730f), new Vector2(240f, 90f), ButtonBlue, out TMP_Text l);
+                l.fontSize = 28;
+                return b;
+            }
+
+            Button terms = TabButton("Terms", "이용약관", -375f);
+            Button privacy = TabButton("Privacy", "개인정보", -125f);
+            Button credits = TabButton("Credits", "크레딧", 125f);
+            Button about = TabButton("About", "정보", 375f);
+
+            // 스크롤 글: 보이는 칸(마스크) + 글(높이 자동) + ScrollRect
+            RectTransform viewport = Rect("Viewport", panel, Center, Center, Center, new Vector2(0f, -40f), new Vector2(1000f, 1360f));
+            Img(viewport, new Color(0f, 0f, 0f, 0.25f), null).raycastTarget = true;
+            viewport.gameObject.AddComponent<RectMask2D>();
+            RectTransform content = Rect("Content", viewport, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 100f));
+            TMP_Text body = Label("Body", content, "", 30, TextAlignmentOptions.TopLeft);
+            Stretch(body.rectTransform);
+            body.rectTransform.offsetMin = new Vector2(30f, 0f);
+            body.rectTransform.offsetMax = new Vector2(-30f, -24f);
+            body.lineSpacing = 8f;
+            var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(30, 30, 24, 40);
+            layout.childControlHeight = true;
+            layout.childControlWidth = true;
+            layout.childForceExpandHeight = false;
+            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            scroll.content = content;
+            scroll.viewport = viewport;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 40f;
+
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -800f), new Vector2(400f, 100f), ButtonGray, out _);
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("bodyLabel", body).Ref("scroll", scroll)
+                    .Ref("termsButton", terms).Ref("privacyButton", privacy).Ref("creditsButton", credits).Ref("aboutButton", about).Ref("backButton", back);
+            }
+
+            return screen;
+        }
+
         /// <summary>v1.0 오프닝 컷 3장면 (화면 전체, 다음 · 건너뛰기)</summary>
         private static OpeningPanel BuildOpeningPanel(Transform root)
         {
@@ -435,8 +488,15 @@ namespace HistoryHeroes.EditorTools
             TMP_Text noticeHelp = Label("NoticeHelp", panel, "밤 9시~아침 8시에는 보내지 않아요 · 하루 2번까지", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
             Place(noticeHelp.rectTransform, Center, Center, new Vector2(0f, -100f), new Vector2(940f, 50f));
 
-            Button replay = null;
-            if (lobby) replay = Btn("ReplayTutorial", panel, "튜토리얼 다시 보기 (보상 없음)", new Vector2(0f, -230f), new Vector2(920f, 110f), new Color(0.38f, 0.3f, 0.18f), out _);
+            Button replay = null, infoButton = null;
+            InfoPanel info = null;
+            if (lobby)
+            {
+                replay = Half("ReplayTutorial", "튜토리얼 다시 보기", left, -230f, new Color(0.38f, 0.3f, 0.18f), out _);
+                infoButton = Half("Info", "정보 · 약관 · 크레딧", right, -230f, ButtonGray, out _);
+                info = BuildInfoPanel(parent);
+            }
+
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -420f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
@@ -445,7 +505,7 @@ namespace HistoryHeroes.EditorTools
                     .Ref("numbersButton", numbers).Ref("numbersLabel", numbersLabel)
                     .Ref("flashButton", flash).Ref("flashLabel", flashLabel).Ref("backButton", back)
                     .Ref("heartsButton", hearts).Ref("heartsLabel", heartsLabel).Ref("patrolButton", patrol).Ref("patrolLabel", patrolLabel)
-                    .Ref("replayTutorialButton", replay)
+                    .Ref("replayTutorialButton", replay).Ref("infoButton", infoButton).Ref("info", info)
                     .Ref("frameButton", frame).Ref("frameLabel", frameLabel)
                     .Ref("joystickModeButton", joyMode).Ref("joystickModeLabel", joyModeLabel)
                     .Ref("joystickSizeButton", joySize).Ref("joystickSizeLabel", joySizeLabel)

@@ -110,6 +110,8 @@ namespace HistoryHeroes.Records
         public AttendanceSave attendance = new AttendanceSave();
         public NewcomerSave newcomer = new NewcomerSave();
         public PatrolSave patrol = new PatrolSave();
+        /// <summary>사용자 ID (문의용 무작위 번호, 이름·연락처와 연결되지 않음)</summary>
+        public string userId;
         /// <summary>얻은 칭호 (꾸미기는 v1.0 상점과 함께 — 지금은 모으기만)</summary>
         public List<string> titles = new List<string>();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>

@@ -28,8 +28,10 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text joystickSizeLabel;
         [SerializeField] private Button joystickOpacityButton;
         [SerializeField] private TMP_Text joystickOpacityLabel;
-        [Header("v1.0 튜토리얼 다시 보기 (로비에만)")]
+        [Header("v1.0 튜토리얼 다시 보기 · 정보 (로비에만)")]
         [SerializeField] private Button replayTutorialButton;
+        [SerializeField] private Button infoButton;
+        [SerializeField] private InfoPanel info;
         [Header("v1.0 알림")]
         [SerializeField] private Button heartsButton;
         [SerializeField] private TMP_Text heartsLabel;
@@ -51,6 +53,7 @@ namespace HistoryHeroes.UI
             if (joystickModeButton != null) joystickModeButton.onClick.AddListener(() => Change(s => s.joystickFixed = !s.joystickFixed));
             if (joystickSizeButton != null) joystickSizeButton.onClick.AddListener(() => Change(s => s.joystickSize = (s.joystickSize + 1) % 3));
             if (joystickOpacityButton != null) joystickOpacityButton.onClick.AddListener(() => Change(s => s.joystickOpacity = (s.joystickOpacity + 1) % 3));
+            if (infoButton != null) infoButton.onClick.AddListener(() => info?.Open());
             if (replayTutorialButton != null) replayTutorialButton.onClick.AddListener(() => Common.GameSession.StartTutorial(true));
             if (heartsButton != null) heartsButton.onClick.AddListener(() => ChangeNotice(s => s.notifyHearts = !s.notifyHearts));
             if (patrolButton != null) patrolButton.onClick.AddListener(() => ChangeNotice(s => s.notifyPatrol = !s.notifyPatrol));

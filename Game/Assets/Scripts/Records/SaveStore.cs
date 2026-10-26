@@ -432,6 +432,7 @@ namespace HistoryHeroes.Records
             data.newcomer.claimedDays ??= new List<int>();
             data.patrol ??= new PatrolSave();
             data.titles ??= new List<string>();
+            if (string.IsNullOrEmpty(data.userId)) data.userId = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpperInvariant();
             data.run ??= new RunSnapshot();
             data.run.skills ??= new List<RecordSkill>();
             data.run.boosts ??= new List<int>();

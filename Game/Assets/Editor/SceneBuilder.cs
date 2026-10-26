@@ -44,6 +44,7 @@ namespace HistoryHeroes.EditorTools
             SetupLayers();
             CreateSprites();
             SetupFont();
+            CopyLegalTexts(); // v1.0 약관·개인정보·크레딧 (Docs → Resources/Legal)
 
             Data data = CreateData();
             Prefabs prefabs = CreatePrefabs(data);
