@@ -251,6 +251,15 @@ namespace HistoryHeroes.Skills
         /// <summary>이번 판에 전설 스킬 카드를 골랐는가 (던전 ★3 "전설 없이 클리어", Modes 3-2)</summary>
         public bool ChoseLegendary { get; private set; }
 
+        /// <summary>판 이어하기: 지금까지 카드를 보여 준 횟수 (첫 카드 전용 스킬 보정이 다시 걸리지 않게)</summary>
+        public int OffersMade => _offersMade;
+
+        public void RestoreRunState(int offersMade, bool choseLegendary)
+        {
+            _offersMade = Mathf.Max(0, offersMade);
+            ChoseLegendary = choseLegendary;
+        }
+
         public void Choose(SkillCard card)
         {
             if (card.Skill != null && card.Skill.rarity == Rarity.Legendary && card.Type != CardType.Fallback)

@@ -324,6 +324,11 @@ namespace HistoryHeroes.Records
             data.rift.checkpoint ??= new RiftCheckpoint();
             data.rift.checkpoint.skills ??= new List<RecordSkill>();
             data.rift.checkpoint.boosts ??= new List<int>();
+            data.run ??= new RunSnapshot();
+            data.run.skills ??= new List<RecordSkill>();
+            data.run.boosts ??= new List<int>();
+            data.run.fusions ??= new List<string>();
+            data.run.rng ??= new List<string>();
             data.dailyChallenge ??= new DailySave();
             data.dailyChallenge.history ??= new List<DailyResult>();
             data.dailyChallenge.history.RemoveAll(h => h == null);

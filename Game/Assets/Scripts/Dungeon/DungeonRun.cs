@@ -132,7 +132,70 @@ namespace HistoryHeroes.Dungeon
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
             door.Entered += () => StartCoroutine(GoToNextRoom());
             if (fade != null) fade.alpha = 0f;
-            EnterRoom(_rift ? ResumeRift() : 1);
+            int first = _rift ? ResumeRift() : 1;
+            RunSnapshot resume = GameSession.ConsumeResume();
+            if (resume != null) first = RestoreSnapshot(resume);
+            EnterRoom(first);
+        }
+
+        // ---------------------------------------------------------------- v1.0 판 이어하기
+
+        /// <summary>방에 들어갈 때 판 상태를 남긴다 (일일 도전 공식 판은 남기지 않는다 — 끄면 0점)</summary>
+        private void SaveSnapshot(int room)
+        {
+            if (_daily && GameSession.DailyOfficial) return;
+            var s = new RunSnapshot
+            {
+                valid = true,
+                mode = (int)GameSession.Mode,
+                chapter = GameSession.Chapter,
+                seed = RunRandom.Seed,
+                practice = GameSession.Practice,
+                dayKey = _daily ? Modes.DailyRules.DayKey(Clock.Now()) : null,
+                weekKey = _rift ? _riftWeek : null,
+                room = room,
+                heroId = skills.HeroId,
+                level = experience.Level.Level,
+                experience = experience.Level.Experience,
+                hpRatio = player.Health.Current / Mathf.Max(1f, player.Health.Max),
+                kills = experience.Kills,
+                roomsCleared = _roomsCleared,
+                hits = _hitsTaken,
+                elapsed = Time.time - _startTime,
+                offersMade = skills.OffersMade,
+                choseLegendary = skills.ChoseLegendary,
+                rerollsLeft = levelUp.RerollsLeft,
+                savedAt = Clock.UnixSeconds,
+            };
+            foreach (SkillInstance k in skills.Loadout.Actives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
+            foreach (SkillInstance k in skills.Loadout.Passives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
+            s.boosts = skills.RiftBoostCounts();
+            s.fusions.AddRange(_fusions);
+            s.rng = RunRandom.Capture();
+            SaveSystem.Data.run = s;
+            SaveSystem.Save();
+        }
+
+        /// <summary>저장해 둔 판으로 되돌린다: 빌드·레벨·체력·처치·피격·시간·난수. 돌아갈 방 번호를 돌려준다</summary>
+        private int RestoreSnapshot(RunSnapshot s)
+        {
+            int room = Mathf.Max(1, s.room);
+            if (_rift) EnsureRiftFloor(room + 9);
+            else room = Mathf.Min(room, _plans.Count);
+            skills.ApplyRecord(s.skills, database);
+            skills.RestoreRiftBoosts(s.boosts);
+            skills.RestoreRunState(s.offersMade, s.choseLegendary);
+            experience.Level.Restore(s.level, s.experience);
+            experience.RestoreKills(s.kills);
+            player.Health.Revive(player.Health.Max * Mathf.Clamp(s.hpRatio, 0.05f, 1f));
+            _hitsTaken = s.hits;
+            _roomsCleared = s.roomsCleared;
+            _startTime = Time.time - Mathf.Max(0f, s.elapsed);
+            _fusions.AddRange(s.fusions);
+            levelUp.RestoreRerolls(s.rerollsLeft);
+            RunRandom.Restore(s.rng);
+            hud.ShowNotice(_rift ? $"균열 {room}층부터 이어서" : $"방 {room}부터 이어서", 2.5f);
+            return room;
         }
 
         // ---------------------------------------------------------------- v0.6 모드 규칙
@@ -313,6 +376,7 @@ namespace HistoryHeroes.Dungeon
             }
 
             door.SetOpen(false);
+            SaveSnapshot(room);
             var kinds = new List<RoomKind>();
             int first = _rift ? (room - 1) / 10 * 10 : 0; // 균열: 지금 10층 묶음만
             int count = _rift ? 10 : _plans.Count;
@@ -714,6 +778,8 @@ namespace HistoryHeroes.Dungeon
         {
             if (_finished) return;
             _finished = true;
+            SaveSystem.Data.run = new RunSnapshot(); // 판이 끝났다 → 이어하기 없음
+            SaveSystem.MarkDirty();
             if (_rift)
             {
                 FinishRift();

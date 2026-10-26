@@ -161,7 +161,11 @@ namespace HistoryHeroes.UI
                     ShowNotice("보스 격파 보상: " + string.Join(", ", gear).Replace("장비  ", ""));
                 }
 
-                OfferLegendaryChoice();
+                if (!OfferResume()) OfferLegendaryChoice();
+            }
+            else
+            {
+                OfferResume();
             }
 
             SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
@@ -194,6 +198,50 @@ namespace HistoryHeroes.UI
             }
 
             if (options.Count > 0) choice.Open("5구간 보스 보상", "전설 장비 1개를 골라요 (한 번만)", options);
+        }
+
+        /// <summary>
+        /// 앱이 꺼져서 끝나지 못한 판 (v1.0 A4): "○번 방부터 이어하기" / "그만두기". 나중에(닫기)를 누르면 다음 로비에서 또.
+        /// 일일 도전 연습은 그날이 지났으면, 균열은 주가 바뀌었으면 조용히 버린다.
+        /// </summary>
+        private bool OfferResume()
+        {
+            SaveData data = SaveSystem.Data;
+            RunSnapshot run = data.run;
+            if (run == null || !run.valid || choice == null) return false;
+            var mode = (BattleMode)run.mode;
+            bool stale = mode == BattleMode.Survival
+                         || (mode == BattleMode.Daily && run.dayKey != DailyRules.DayKey(Clock.Now()))
+                         || (mode == BattleMode.Rift && run.weekKey != RiftRules.WeekKey(Clock.Now()));
+            if (stale)
+            {
+                data.run = new RunSnapshot();
+                SaveSystem.Save();
+                return false;
+            }
+
+            HeroData hero = roster.Find(run.heroId);
+            string who = hero != null ? $" ({hero.displayName})" : string.Empty;
+            string where = mode == BattleMode.Boss ? $"{ChapterTitle(run.chapter)} 보스 — 처음부터 다시 (하트 없이)"
+                : mode == BattleMode.Rift ? $"무한의 균열 {run.room}층부터"
+                : mode == BattleMode.Daily ? $"일일 도전 연습 방 {run.room}부터"
+                : $"{ChapterTitle(run.chapter)} 던전 방 {run.room}부터";
+            var options = new List<ChoicePanel.Option>
+            {
+                new ChoicePanel.Option { Text = $"<b>이어하기</b>  <size=80%>{where}{who}</size>", OnChosen = () => GameSession.StartResume(run) },
+                new ChoicePanel.Option
+                {
+                    Text = "<b>그만두기</b>  <size=80%>이번 판은 사라져요 (보상 없음)</size>",
+                    OnChosen = () =>
+                    {
+                        SaveSystem.Data.run = new RunSnapshot();
+                        SaveSystem.Save();
+                        ShowNotice("이번 판을 그만뒀어요");
+                    },
+                },
+            };
+            choice.Open("끝나지 않은 판이 있어요", "앱이 꺼져서 멈춘 판을 이어할 수 있어요", options);
+            return true;
         }
 
         private void OnMissionCompleted(string line) => ShowNotice(line);

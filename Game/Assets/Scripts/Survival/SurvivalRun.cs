@@ -62,6 +62,11 @@ namespace HistoryHeroes.Survival
 
             player.Teleport(playerStart != null ? (Vector2)playerStart.position : Vector2.zero);
             player.Health.Died += _ => Finish(victory: false);
+            if (SaveSystem.Data.run.valid)
+            {
+                SaveSystem.Data.run = new RunSnapshot(); // 서바이벌은 이어하지 않는다 (10분짜리, 적 수백 마리)
+                SaveSystem.Save();
+            }
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
             experience.MaxGems = data.maxGems;
             experience.ExpMultiplier = data.expMultiplier;

@@ -39,6 +39,8 @@ namespace HistoryHeroes.UI
             Render();
         }
 
+        public void Close() => root.SetActive(false);
+
         private void Change(System.Action<GameSettings> change)
         {
             change(SaveSystem.Data.settings);

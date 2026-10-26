@@ -10,9 +10,9 @@ namespace HistoryHeroes.Common
     /// </summary>
     public static class RunRandom
     {
-        private static System.Random _rooms;
-        private static System.Random _enemies;
-        private static System.Random _cards;
+        private static StreamRandom _rooms;
+        private static StreamRandom _enemies;
+        private static StreamRandom _cards;
 
         public static int Seed { get; private set; }
         public static bool Started => _rooms != null;
@@ -20,9 +20,28 @@ namespace HistoryHeroes.Common
         public static void Begin(int seed)
         {
             Seed = seed;
-            _rooms = new System.Random(Mix(seed, 0x51ED));
-            _enemies = new System.Random(Mix(seed, 0x2B79));
-            _cards = new System.Random(Mix(seed, 0x6A09));
+            _rooms = new StreamRandom(Mix(seed, 0x51ED));
+            _enemies = new StreamRandom(Mix(seed, 0x2B79));
+            _cards = new StreamRandom(Mix(seed, 0x6A09));
+        }
+
+        /// <summary>판 이어하기: 3갈래의 지금 상태 (방 · 적 · 카드 순서)</summary>
+        public static System.Collections.Generic.List<string> Capture()
+        {
+            Ensure();
+            return new System.Collections.Generic.List<string> { _rooms.State.ToString(), _enemies.State.ToString(), _cards.State.ToString() };
+        }
+
+        /// <summary>판 이어하기: 저장해 둔 상태로 되돌린다 → 껐다 켜도 같은 카드·같은 적</summary>
+        public static bool Restore(System.Collections.Generic.IReadOnlyList<string> states)
+        {
+            Ensure();
+            if (states == null || states.Count < 3) return false;
+            if (!ulong.TryParse(states[0], out ulong a) || !ulong.TryParse(states[1], out ulong b) || !ulong.TryParse(states[2], out ulong c)) return false;
+            _rooms.State = a;
+            _enemies.State = b;
+            _cards.State = c;
+            return true;
         }
 
         /// <summary>시드를 정할 이유가 없는 판 (던전·서바이벌)</summary>
@@ -103,6 +122,59 @@ namespace HistoryHeroes.Common
             _enemies = null;
             _cards = null;
             Seed = 0;
+        }
+    }
+
+    /// <summary>
+    /// 상태(64비트 하나)를 저장·복원할 수 있는 난수 (SplitMix64). System.Random을 상속해서 쓰던 곳은 그대로 쓴다.
+    /// System.Random 자체는 속 상태를 꺼낼 수 없어서 판 이어하기에 못 쓴다.
+    /// </summary>
+    public sealed class StreamRandom : System.Random
+    {
+        public ulong State;
+
+        public StreamRandom(int seed) : base(0)
+        {
+            unchecked
+            {
+                State = (ulong)(uint)seed * 0x9E3779B97F4A7C15UL ^ 0xD1B54A32D192ED03UL;
+            }
+        }
+
+        private ulong NextU64()
+        {
+            unchecked
+            {
+                ulong z = State += 0x9E3779B97F4A7C15UL;
+                z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+                z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+                return z ^ (z >> 31);
+            }
+        }
+
+        /// <summary>[0, 1)</summary>
+        protected override double Sample() => (NextU64() >> 11) * (1.0 / 9007199254740992.0);
+
+        public override double NextDouble() => Sample();
+
+        public override int Next() => (int)(NextU64() >> 33);
+
+        public override int Next(int maxValue)
+        {
+            if (maxValue < 0) throw new ArgumentOutOfRangeException(nameof(maxValue));
+            return maxValue <= 1 ? 0 : (int)(Sample() * maxValue);
+        }
+
+        public override int Next(int minValue, int maxValue)
+        {
+            if (minValue > maxValue) throw new ArgumentOutOfRangeException(nameof(minValue));
+            long range = (long)maxValue - minValue;
+            return range <= 1 ? minValue : (int)(minValue + (long)(Sample() * range));
+        }
+
+        public override void NextBytes(byte[] buffer)
+        {
+            for (int i = 0; i < buffer.Length; i++) buffer[i] = (byte)NextU64();
         }
     }
 }

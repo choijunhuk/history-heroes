@@ -73,8 +73,55 @@ namespace HistoryHeroes.Common
         public static float EnemyAttackScale { get; set; } = 1f;
 
         /// <summary>던전·보스·서바이벌을 새로 시작할 때 특수 판 설정을 지운다</summary>
+        /// <summary>이어하는 판의 스냅샷 (전투 장면이 열릴 때 DungeonRun이 가져간다)</summary>
+        public static RunSnapshot Resuming { get; private set; }
+
+        public static RunSnapshot ConsumeResume()
+        {
+            RunSnapshot s = Resuming;
+            Resuming = null;
+            return s;
+        }
+
+        /// <summary>
+        /// 저장된 판을 이어한다 (하트는 판을 시작할 때 이미 썼다). 보스는 그 기록으로 처음부터 다시.
+        /// </summary>
+        public static void StartResume(RunSnapshot s)
+        {
+            if (s == null || !s.valid) return;
+            switch ((BattleMode)s.mode)
+            {
+                case BattleMode.Boss:
+                    if (s.practice) StartBossPractice(s.chapter, s.recordId);
+                    else StartBoss(s.chapter, s.recordId);
+                    return;
+                case BattleMode.Daily:
+                    ClearSpecialRun();
+                    Practice = true;
+                    DailyOfficial = false;
+                    Mode = BattleMode.Daily;
+                    RunSeed = s.seed;
+                    CustomPlan = Modes.DailyRules.Plan();
+                    Chapter = s.chapter;
+                    break;
+                default:
+                    ClearSpecialRun();
+                    Practice = s.practice;
+                    Mode = (BattleMode)s.mode;
+                    RunSeed = s.seed;
+                    Chapter = Mathf.Max(1, s.chapter);
+                    RiftContinue = false;
+                    break;
+            }
+
+            BossRecordId = null;
+            Resuming = s;
+            Load(BattleScene);
+        }
+
         public static void ClearSpecialRun()
         {
+            Resuming = null;
             RunSeed = 0;
             CustomPlan = null;
             EnemyHpScale = 1f;

@@ -127,6 +127,15 @@ namespace HistoryHeroes.Combat
 
         public void ClearShield() => Shield = 0f;
 
+        /// <summary>판 포기: 막기·보호막·무적·불굴을 건너뛰고 바로 쓰러진다 (일시정지 메뉴, v1.0)</summary>
+        public void Kill()
+        {
+            if (IsDead) return;
+            Shield = 0f;
+            Current = 0f;
+            Died?.Invoke(this);
+        }
+
         /// <summary>죽지 않고 체력을 정한다 (불굴)</summary>
         public void Revive(float hp) => Current = Mathf.Clamp(hp, 1f, Max);
 

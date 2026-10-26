@@ -39,6 +39,14 @@ namespace HistoryHeroes.UI
 
         public bool IsOpen => root.activeSelf;
 
+        /// <summary>판 이어하기: 남은 리롤 (껐다 켜서 리롤을 다시 채우지 못하게)</summary>
+        public int RerollsLeft => _rerollsLeft;
+
+        public void RestoreRerolls(int left)
+        {
+            if (left >= 0) _rerollsLeft = Mathf.Min(left, rerollsPerRun);
+        }
+
         private void Awake()
         {
             _rerollsLeft = rerollsPerRun;

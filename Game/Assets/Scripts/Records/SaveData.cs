@@ -97,6 +97,8 @@ namespace HistoryHeroes.Records
         // ----- v0.6 무한의 균열 (Modes 4장) · 일일 도전 (Modes 5장) -----
         public RiftSave rift = new RiftSave();
         public DailySave dailyChallenge = new DailySave();
+        /// <summary>v1.0 판 이어하기 (방 시작마다)</summary>
+        public RunSnapshot run = new RunSnapshot();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -313,6 +315,44 @@ namespace HistoryHeroes.Records
         public List<RecordSkill> skills = new List<RecordSkill>();
         /// <summary>균열 강화를 고른 횟수 (공격력 / 체력 / 공격속도 순서)</summary>
         public List<int> boosts = new List<int>();
+    }
+
+    /// <summary>
+    /// v1.0 판 이어하기: 방에 들어갈 때마다 남긴다. 앱이 꺼졌다 켜지면 로비에서 "○번 방부터 이어하기".
+    /// 판이 끝나면 지운다 (valid = false). 일일 도전 공식 판·서바이벌은 남기지 않는다.
+    /// </summary>
+    [Serializable]
+    public sealed class RunSnapshot
+    {
+        public bool valid;
+        /// <summary>Common.BattleMode (0 던전 · 1 보스 · 3 균열 · 4 일일 도전 연습)</summary>
+        public int mode;
+        public int chapter = 1;
+        public int seed;
+        public bool practice;
+        /// <summary>일일 도전 연습: 그날이 지나면 이어하지 않는다 · 균열: 주가 바뀌면 이어하지 않는다</summary>
+        public string dayKey;
+        public string weekKey;
+        /// <summary>보스: 쓴 기록</summary>
+        public string recordId;
+        public int room = 1;
+        public string heroId;
+        public List<RecordSkill> skills = new List<RecordSkill>();
+        public List<int> boosts = new List<int>();
+        public List<string> fusions = new List<string>();
+        public int level = 1;
+        public float experience;
+        public float hpRatio = 1f;
+        public int kills;
+        public int roomsCleared;
+        public int hits;
+        public float elapsed;
+        public int offersMade;
+        public bool choseLegendary;
+        public int rerollsLeft = -1;
+        /// <summary>난수 3갈래 상태 (방 · 적 · 카드)</summary>
+        public List<string> rng = new List<string>();
+        public long savedAt;
     }
 
     [Serializable]

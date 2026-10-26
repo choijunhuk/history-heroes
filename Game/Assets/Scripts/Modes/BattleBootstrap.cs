@@ -47,6 +47,13 @@ namespace HistoryHeroes.Modes
                 if (record != null) return roster.Find(record.heroId);
             }
 
+            // 이어하기: 그 판의 영웅
+            if (GameSession.Resuming != null && !string.IsNullOrEmpty(GameSession.Resuming.heroId))
+            {
+                HeroData resumed = roster.Find(GameSession.Resuming.heroId);
+                if (resumed != null) return resumed;
+            }
+
             // 일일 도전: 오늘의 영웅 (해금 안 했어도 빌려 쓴다, Modes 5장)
             if (GameSession.Mode == BattleMode.Daily)
             {
