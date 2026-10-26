@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using HistoryHeroes.Economy;
 using HistoryHeroes.Equipment;
+using HistoryHeroes.Heroes;
 using HistoryHeroes.Meta;
 using HistoryHeroes.Records;
 using HistoryHeroes.Stats;
@@ -442,6 +443,98 @@ namespace HistoryHeroes.Tests
             StringAssert.Contains("50번째", text);
             g.premium.rarity = new[] { 0.48f, 0.35f, 0.13f, 0.04f };
             StringAssert.Contains("전설 4%", GachaService.RatesText(g, g.premium), "표를 바꾸면 보이는 확률도 같이 바뀐다");
+        }
+
+        // ---------------------------------------------------------------- 영웅 성장 (Stats 4~7)
+
+        [Test]
+        public void HeroLevel_Costs200xN_MaxThirty()
+        {
+            var save = new SaveData { gold = 1_000_000 };
+            int spent = 0;
+            while (HeroGrowth.TryLevelUp(save, _meta, "khan")) { }
+            for (int n = 1; n < 30; n++) spent += 200 * n;
+            Assert.AreEqual(30, save.Hero("khan").level);
+            Assert.AreEqual(87_000, spent, "영웅 하나 약 87,000");
+            Assert.AreEqual(1_000_000 - spent, save.gold);
+            Assert.AreEqual(0.29f, _meta.HeroLevelBonus(30), 1e-5f, "Lv1 = 0%, 레벨당 +1%");
+            Assert.AreEqual(1, save.Hero("guan").level, "영웅마다 따로");
+        }
+
+        [Test]
+        public void Awaken_SpendsHeroShards_10_20_40_80()
+        {
+            var save = new SaveData();
+            Assert.IsFalse(HeroGrowth.TryAwaken(save, _meta, "khan"), "조각 없음");
+            save.AddItem(Wallet.HeroShard("khan"), 150);
+            for (int i = 0; i < 4; i++) Assert.IsTrue(HeroGrowth.TryAwaken(save, _meta, "khan"));
+            Assert.AreEqual(5, save.Hero("khan").stars);
+            Assert.AreEqual(0, HeroGrowth.Shards(save, "khan"), "10+20+40+80 = 150");
+            Assert.IsFalse(HeroGrowth.TryAwaken(save, _meta, "khan"), "★5가 끝");
+            Assert.AreEqual(0.15f, _meta.AwakenBonus(5), 1e-5f);
+        }
+
+        [Test]
+        public void Training_LockedUntilSecondBoss_CappedByAccountLevel()
+        {
+            var save = new SaveData { gold = 1_000_000, accountLevel = 2, unlockedChapter = 2 };
+            Assert.IsFalse(HeroGrowth.TryTrain(save, _meta, TrainingType.Weapon), "2구간 보스 전엔 잠김");
+            save.unlockedChapter = 3;
+            Assert.IsTrue(HeroGrowth.TryTrain(save, _meta, TrainingType.Weapon));
+            Assert.IsTrue(HeroGrowth.TryTrain(save, _meta, TrainingType.Weapon));
+            Assert.IsFalse(HeroGrowth.CanTrain(save, _meta, TrainingType.Weapon, out _, out string reason), "수련 레벨 ≤ 계정 레벨");
+            StringAssert.Contains("계정 Lv 3", reason);
+            Assert.AreEqual(1_000_000 - 500 - 500, save.gold, "Lv n → n+1 = 500 × n (Lv0→1은 n=1로 쳐서 500)");
+
+            var snap = new MetaSnapshot { training = new List<int>(save.training) };
+            Assert.AreEqual(0.015f, MetaStats.Sum(MetaStats.Build(snap, _meta, this), StatType.Attack, ModifierKind.Percent), 1e-5f, "무기 단련 Lv2 = +1.5%");
+        }
+
+        [Test]
+        public void GoldShop_HeroShards_ThreePerDay()
+        {
+            var save = new SaveData { gold = 10_000 };
+            for (int i = 0; i < 3; i++) Assert.IsTrue(HeroGrowth.TryBuyHeroShard(save, "guan", "2026-10-26"));
+            Assert.IsFalse(HeroGrowth.TryBuyHeroShard(save, "khan", "2026-10-26"), "하루 3개 (영웅 합쳐서)");
+            Assert.AreEqual(0, HeroGrowth.ShardsLeftToday(save, "2026-10-26"));
+            Assert.AreEqual(3, HeroGrowth.ShardsLeftToday(save, "2026-10-27"));
+            Assert.IsTrue(HeroGrowth.TryBuyHeroShard(save, "khan", "2026-10-27"));
+            Assert.AreEqual(3, HeroGrowth.Shards(save, "guan"));
+            Assert.AreEqual(10_000 - 4 * 500, save.gold);
+        }
+
+        [Test]
+        public void Signature_StarUpgradesApplyAtThreeAndFive()
+        {
+            var khan = ScriptableObject.CreateInstance<HeroData>();
+            khan.firstShotBonus = 0.5f;
+            khan.star3FirstShotBonus = 0.75f;
+            khan.star5FirstShotBonus = 1.0f;
+            khan.star5FirstShotPierce = true;
+            Assert.AreEqual(0.5f, HeroSignature.For(khan, 2).FirstShotBonus);
+            Assert.AreEqual(0.75f, HeroSignature.For(khan, 3).FirstShotBonus);
+            Assert.IsFalse(HeroSignature.For(khan, 4).FirstShotPierce);
+            Assert.AreEqual(1.0f, HeroSignature.For(khan, 5).FirstShotBonus);
+            Assert.IsTrue(HeroSignature.For(khan, 5).FirstShotPierce);
+
+            var tesla = ScriptableObject.CreateInstance<HeroData>();
+            tesla.chainBounces = 2;
+            tesla.chainFalloff = 0.3f;
+            tesla.star3ExtraBounces = 1;
+            tesla.star5NoFalloff = true;
+            Assert.AreEqual(3, HeroSignature.For(tesla, 3).ChainBounces);
+            Assert.AreEqual(0.3f, HeroSignature.For(tesla, 4).ChainFalloff);
+            Assert.AreEqual(0f, HeroSignature.For(tesla, 5).ChainFalloff);
+
+            var napoleon = ScriptableObject.CreateInstance<HeroData>();
+            napoleon.cannonEvery = 3;
+            napoleon.cannonRadius = 1.5f;
+            napoleon.star3CannonRadiusScale = 1.3f;
+            napoleon.star5CannonEvery = 2;
+            Assert.AreEqual(1.95f, HeroSignature.For(napoleon, 3).CannonRadius, 1e-5f);
+            Assert.AreEqual(3, HeroSignature.For(napoleon, 4).CannonEvery);
+            Assert.AreEqual(2, HeroSignature.For(napoleon, 5).CannonEvery);
+            Assert.AreEqual(0, HeroSignature.For(khan, 5).CannonEvery, "포탄이 없는 영웅은 ★5여도 없음");
         }
     }
 }

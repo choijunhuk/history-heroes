@@ -44,6 +44,15 @@ MonoBehaviour:
   chainBounces: 0
   chainRadius: 3
   chainFalloff: 0.3
+  star3FirstShotBonus: 0.75
+  star5FirstShotBonus: 1
+  star5FirstShotPierce: 1
+  star3DamageReduction: -1
+  star5LowHpAttackBonus: -1
+  star3CannonRadiusScale: -1
+  star5CannonEvery: -1
+  star3ExtraBounces: 0
+  star5NoFalloff: 0
   exclusiveActive: {fileID: 11400000, guid: b74edf6d9a1c89047b621fbec9c88907, type: 2}
   unlockAfterBossChapter: 0
   unlockGems: 1500

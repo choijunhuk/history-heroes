@@ -129,10 +129,12 @@ namespace HistoryHeroes.EditorTools
             Button ticket = Btn("Ticket", panel, "소환권", new Vector2(335f, 490f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text ticketLabel);
             ticketLabel.fontSize = 25;
 
-            Button rates = Btn("Rates", panel, "확률 보기", new Vector2(-252f, 385f), new Vector2(496f, 84f), ButtonGray, out TMP_Text ratesButtonLabel);
+            Button rates = Btn("Rates", panel, "확률 보기", new Vector2(-335f, 385f), new Vector2(325f, 84f), ButtonGray, out TMP_Text ratesButtonLabel);
             ratesButtonLabel.fontSize = 28;
-            Button exchange = Btn("Exchange", panel, "조각 교환소", new Vector2(252f, 385f), new Vector2(496f, 84f), ButtonGray, out TMP_Text exchangeLabel);
+            Button exchange = Btn("Exchange", panel, "조각 교환소", new Vector2(0f, 385f), new Vector2(325f, 84f), ButtonGray, out TMP_Text exchangeLabel);
             exchangeLabel.fontSize = 28;
+            Button goldShop = Btn("GoldShop", panel, "골드 상점", new Vector2(335f, 385f), new Vector2(325f, 84f), ButtonGray, out TMP_Text goldShopLabel);
+            goldShopLabel.fontSize = 28;
 
             TMP_Text message = Label("Message", panel, "", 26, TextAlignmentOptions.Center);
             Place(message.rectTransform, Center, Center, new Vector2(0f, 300f), new Vector2(1000f, 60f));
@@ -155,7 +157,30 @@ namespace HistoryHeroes.EditorTools
                     .Ref("premium10Button", premium10).Ref("premium10Label", premium10Label).Ref("ticketButton", ticket).Ref("ticketLabel", ticketLabel)
                     .Ref("ratesButton", rates).Ref("exchangeButton", exchange).Ref("exchangeLabel", exchangeLabel).Ref("messageLabel", message)
                     .Ref("list", list).Ref("ratesRoot", ratesPanel.gameObject).Ref("ratesLabel", ratesText).Ref("ratesCloseButton", ratesClose)
-                    .Ref("backButton", back);
+                    .Ref("backButton", back).Ref("goldShopButton", goldShop).Ref("goldShopLabel", goldShopLabel);
+            }
+
+            return screen;
+        }
+
+        private static TrainingPanel BuildTrainingPanel(Transform parent, MetaTable meta)
+        {
+            RectTransform panel = Overlay(parent, "TrainingPanel", out GameObject holder);
+            var screen = holder.AddComponent<TrainingPanel>();
+
+            TMP_Text title = Label("Title", panel, "수련", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 820f), new Vector2(900f, 80f));
+            TMP_Text info = Label("Info", panel, "", 26, TextAlignmentOptions.Center);
+            Place(info.rectTransform, Center, Center, new Vector2(0f, 730f), new Vector2(1000f, 80f));
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 80f), new Vector2(1000f, 1160f), 150f, 30f);
+            TMP_Text message = Label("Message", panel, "", 28, TextAlignmentOptions.Center);
+            Place(message.rectTransform, Center, Center, new Vector2(0f, -560f), new Vector2(1000f, 60f));
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -700f), new Vector2(400f, 110f), ButtonGray, out _);
+
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("metaTable", meta).Ref("infoLabel", info).Ref("list", list)
+                    .Ref("messageLabel", message).Ref("backButton", back);
             }
 
             return screen;

@@ -29,6 +29,15 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button equipButton;
         [SerializeField] private TMP_Text equipLabel;
         [SerializeField] private EquipmentPanel equipment;
+        [Header("v0.4 영웅 성장")]
+        [SerializeField] private Meta.MetaTable metaTable;
+        [SerializeField] private Button levelButton;
+        [SerializeField] private TMP_Text levelLabel;
+        [SerializeField] private Button awakenButton;
+        [SerializeField] private TMP_Text awakenLabel;
+        [SerializeField] private Button trainingButton;
+        [SerializeField] private TrainingPanel training;
+        [SerializeField] private TMP_Text messageLabel;
 
         private static readonly Color Normal = new Color(0.16f, 0.18f, 0.24f);
         private static readonly Color Focused = new Color(0.25f, 0.42f, 0.7f);
@@ -50,6 +59,29 @@ namespace HistoryHeroes.UI
             unlockButton.onClick.AddListener(UnlockFocused);
             backButton.onClick.AddListener(() => root.SetActive(false));
             if (equipButton != null) equipButton.onClick.AddListener(OpenEquipment);
+            if (levelButton != null) levelButton.onClick.AddListener(LevelUpFocused);
+            if (awakenButton != null) awakenButton.onClick.AddListener(AwakenFocused);
+            if (trainingButton != null) trainingButton.onClick.AddListener(() => training.Open(Render));
+        }
+
+        private HeroData FocusHero => roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
+
+        private void LevelUpFocused()
+        {
+            HeroData focus = FocusHero;
+            if (!HeroUnlock.IsUnlocked(SaveSystem.Data, focus) || !Meta.HeroGrowth.TryLevelUp(SaveSystem.Data, metaTable, focus.id)) return;
+            SaveSystem.Save();
+            if (messageLabel != null) messageLabel.text = $"<color=#7CE38B>{focus.displayName} Lv {SaveSystem.Data.Hero(focus.id).level}</color>";
+            Render();
+        }
+
+        private void AwakenFocused()
+        {
+            HeroData focus = FocusHero;
+            if (!HeroUnlock.IsUnlocked(SaveSystem.Data, focus) || !Meta.HeroGrowth.TryAwaken(SaveSystem.Data, metaTable, focus.id)) return;
+            SaveSystem.Save();
+            if (messageLabel != null) messageLabel.text = $"<color=#FFD966>{focus.displayName} ★{SaveSystem.Data.Hero(focus.id).stars}</color>";
+            Render();
         }
 
         /// <summary>고른 영웅의 장비 화면 (장비는 영웅마다 따로 낀다)</summary>
@@ -89,11 +121,15 @@ namespace HistoryHeroes.UI
                 bool unlocked = HeroUnlock.IsUnlocked(d, h);
                 heroBackgrounds[i].color = i == _focus ? Focused : unlocked ? Normal : Locked;
                 string mark = h == selected ? "  <color=#7CFC9A>(지금 영웅)</color>" : string.Empty;
+                Records.HeroProgress progress = d.Hero(h.id);
+                string growth = unlocked ? $"  <size=80%><color=#9FD8FF>Lv {progress.level}</color> <color=#FFD966>{new string('★', progress.stars)}{new string('☆', 5 - progress.stars)}</color></size>" : string.Empty;
+                mark = growth + mark;
                 string lockText = unlocked ? string.Empty : $"\n<color=#FFB347>잠김 · {HeroUnlock.Condition(h)} (또는 보석 {Wallet.Format(h.unlockGems)})</color>";
                 heroLabels[i].text =
                     $"<b>{h.displayName}</b>  <size=80%>{h.ClassLabel}</size>{mark}\n" +
                     $"<size=78%>체력 {h.maxHp:0} · 공격 {h.attack:0} · 공속 {h.attackSpeed:0.0} · 사거리 {h.range:0.#} · 이동 {h.moveSpeed:0.#}</size>\n" +
-                    $"<size=78%><color=#FFD966>{h.signatureName}</color>: {h.signatureDescription}</size>" + lockText;
+                    $"<size=78%><color=#FFD966>{h.signatureName}</color>: {h.signatureDescription}</size>\n" +
+                    $"<size=70%><color=#A9B4C2>{Heroes.HeroSignature.StarText(h)}</color></size>" + lockText;
             }
 
             HeroData focus = roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
@@ -104,8 +140,24 @@ namespace HistoryHeroes.UI
             if (equipButton != null)
             {
                 bool gear = Equipment.EquipmentInventory.Unlocked(d);
-                equipButton.interactable = focusUnlocked && gear;
+                equipButton.gameObject.SetActive(focusUnlocked);
+                equipButton.interactable = gear;
                 equipLabel.text = !gear ? "장비 (1구간 보스 뒤)" : focus.displayName + "의 장비";
+            }
+
+            if (levelButton != null && metaTable != null)
+            {
+                Records.HeroProgress p = d.Hero(focus.id);
+                bool canLevel = Meta.HeroGrowth.CanLevelUp(d, metaTable, focus.id, out int levelCost);
+                levelButton.gameObject.SetActive(focusUnlocked);
+                levelButton.interactable = canLevel && d.gold >= levelCost;
+                levelLabel.text = canLevel ? $"레벨업 Lv {p.level} → {p.level + 1}\n<size=80%>골드 {levelCost:N0}</size>" : "최대 레벨 (Lv 30)";
+
+                int awakenCost = Meta.HeroGrowth.AwakenCost(d, metaTable, focus.id);
+                int shards = Meta.HeroGrowth.Shards(d, focus.id);
+                awakenButton.gameObject.SetActive(focusUnlocked);
+                awakenButton.interactable = awakenCost > 0 && shards >= awakenCost;
+                awakenLabel.text = awakenCost > 0 ? $"각성 ★{p.stars} → ★{p.stars + 1}\n<size=80%>영웅 조각 {shards}/{awakenCost}</size>" : "★5 완성";
             }
 
             unlockButton.gameObject.SetActive(!focusUnlocked);

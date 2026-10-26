@@ -81,6 +81,26 @@ namespace HistoryHeroes.Heroes
         [Tooltip("튕길 때마다 피해가 줄어드는 비율")]
         public float chainFalloff = 0.3f;
 
+        [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
+        [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
+        public float star3FirstShotBonus = -1f;
+        [Tooltip("★5 첫 발 피해 보너스 (칭기즈 칸 +100%)")]
+        public float star5FirstShotBonus = -1f;
+        [Tooltip("★5 첫 발이 적을 하나 관통 (칭기즈 칸)")]
+        public bool star5FirstShotPierce;
+        [Tooltip("★3 받는 피해 감소 (관우 20%)")]
+        public float star3DamageReduction = -1f;
+        [Tooltip("★5 체력 50% 아래 공격력 보너스 (관우 +35%)")]
+        public float star5LowHpAttackBonus = -1f;
+        [Tooltip("★3 포탄 범위 배수 (나폴레옹 ×1.3)")]
+        public float star3CannonRadiusScale = -1f;
+        [Tooltip("★5 기본 공격 몇 발마다 포탄 (나폴레옹 2)")]
+        public int star5CannonEvery = -1;
+        [Tooltip("★3 튕김 횟수 더하기 (테슬라 +1)")]
+        public int star3ExtraBounces;
+        [Tooltip("★5 튕길 때 피해가 줄지 않음 (테슬라)")]
+        public bool star5NoFalloff;
+
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]
         public ActiveSkillData exclusiveActive;

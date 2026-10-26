@@ -39,11 +39,16 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text ratesLabel;
         [SerializeField] private Button ratesCloseButton;
         [SerializeField] private Button backButton;
+        [Header("골드 상점 (매일 갱신, Economy 5장)")]
+        [SerializeField] private Button goldShopButton;
+        [SerializeField] private TMP_Text goldShopLabel;
+        [SerializeField] private Heroes.HeroRoster roster;
 
         private static readonly Color RowNormal = new Color(0.13f, 0.15f, 0.2f);
         private static readonly Color RowDisabled = new Color(0.1f, 0.1f, 0.12f);
 
         private bool _exchangeMode;
+        private bool _goldShopMode;
         private bool _waitingForAd;
         private List<ButtonList.Row> _lastResults = new List<ButtonList.Row>();
         private System.Action _onClosed;
@@ -64,8 +69,18 @@ namespace HistoryHeroes.UI
             exchangeButton.onClick.AddListener(() =>
             {
                 _exchangeMode = !_exchangeMode;
+                _goldShopMode = false;
                 Render(true);
             });
+            if (goldShopButton != null)
+            {
+                goldShopButton.onClick.AddListener(() =>
+                {
+                    _goldShopMode = !_goldShopMode;
+                    _exchangeMode = false;
+                    Render(true);
+                });
+            }
             backButton.onClick.AddListener(Close);
         }
 
@@ -73,6 +88,7 @@ namespace HistoryHeroes.UI
         {
             _onClosed = onClosed;
             _exchangeMode = false;
+            _goldShopMode = false;
             _lastResults.Clear();
             messageLabel.text = string.Empty;
             root.SetActive(true);
@@ -109,9 +125,11 @@ namespace HistoryHeroes.UI
             ticketLabel.text = $"소환권 1장 (가진 것 {tickets})";
             ticketButton.interactable = unlocked && tickets > 0;
             exchangeButton.interactable = unlocked;
-            exchangeLabel.text = _exchangeMode ? "상자 결과 보기" : "조각 교환소";
+            exchangeLabel.text = _exchangeMode ? "상자 결과" : "조각 교환소";
+            if (goldShopLabel != null) goldShopLabel.text = _goldShopMode ? "상자 결과" : "골드 상점";
 
-            if (_exchangeMode) RenderExchange(save, scrollToTop);
+            if (_goldShopMode) RenderGoldShop(save, today, scrollToTop);
+            else if (_exchangeMode) RenderExchange(save, scrollToTop);
             else list.Show(_lastResults.Count > 0 ? _lastResults : Hint(), scrollToTop);
         }
 
@@ -145,6 +163,36 @@ namespace HistoryHeroes.UI
             list.Show(rows, scrollToTop);
         }
 
+        /// <summary>골드 상점: 🧩 영웅 조각 골드 500, 하루 3개 (영웅 골라서). 영웅 조각은 보석·뽑기로 팔지 않는다</summary>
+        private void RenderGoldShop(SaveData save, string today, bool scrollToTop)
+        {
+            int left = Meta.HeroGrowth.ShardsLeftToday(save, today);
+            var rows = new List<ButtonList.Row>
+            {
+                new ButtonList.Row($"<color=#A9B4C2>영웅 조각은 각성(★)에 써요 · 오늘 남은 것 {left}/{Meta.HeroGrowth.ShardsPerDay} · 매일 새로</color>", RowDisabled, null, false),
+            };
+
+            foreach (Heroes.HeroData h in roster.heroes)
+            {
+                if (h == null || !Heroes.HeroUnlock.IsUnlocked(save, h)) continue;
+                string id = h.id;
+                bool ok = left > 0 && save.gold >= Meta.HeroGrowth.ShardPrice;
+                string text = $"{h.displayName} 영웅 조각 1개 · 골드 {Meta.HeroGrowth.ShardPrice:N0}\n<size=85%>가진 것 {Meta.HeroGrowth.Shards(save, id)} · ★{save.Hero(id).stars}</size>";
+                rows.Add(new ButtonList.Row(text, ok ? RowNormal : RowDisabled, () => BuyHeroShard(id), ok));
+            }
+
+            list.Show(rows, scrollToTop);
+        }
+
+        private void BuyHeroShard(string heroId)
+        {
+            SaveData save = SaveSystem.Data;
+            if (!Meta.HeroGrowth.TryBuyHeroShard(save, heroId, Clock.Today)) return;
+            SaveSystem.Save();
+            messageLabel.text = $"<color=#7CE38B>영웅 조각 +1 (가진 것 {Meta.HeroGrowth.Shards(save, heroId)})</color>";
+            Render(false);
+        }
+
         // ---------------------------------------------------------------- 사기
 
         private void Buy(BoxRates box, int count, GachaService.Pay pay)
@@ -173,6 +221,7 @@ namespace HistoryHeroes.UI
         private void ShowResults(BoxRates box, List<GachaService.Pull> pulls)
         {
             _exchangeMode = false;
+            _goldShopMode = false;
             _lastResults = new List<ButtonList.Row>();
             int best = 0;
             foreach (GachaService.Pull p in pulls)
