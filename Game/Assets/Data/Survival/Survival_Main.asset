@@ -19,7 +19,7 @@ MonoBehaviour:
   charger: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
   archer: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
   bomber: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
-  archerFrom: 60
+  archerFrom: 90
   bomberFrom: 180
   archerShare: 0.25
   bomberShare: 0.1
@@ -36,8 +36,8 @@ MonoBehaviour:
   recycleDistanceRatio: 1.8
   hpStart: 0.6
   hpPerMinute: 0.25
-  attackStart: 1
-  attackPerMinute: 0.08
+  attackStart: 0.8
+  attackPerMinute: 0.1
   spawnMargin: 1.5
   eliteTimes:
   - 120

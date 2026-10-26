@@ -32,7 +32,7 @@ namespace HistoryHeroes.Tests
             var data = ScriptableObject.CreateInstance<SurvivalData>();
             Assert.AreEqual(0.6f, data.HpMultiplier(0f), 1e-5f, "처음엔 한두 대에 죽는다");
             Assert.AreEqual(0.6f + 0.25f * 10f, data.HpMultiplier(600f), 1e-4f);
-            Assert.AreEqual(1f + 0.08f * 10f, data.AttackMultiplier(600f), 1e-4f);
+            Assert.AreEqual(0.8f + 0.1f * 10f, data.AttackMultiplier(600f), 1e-4f, "처음엔 약하게, 10분에는 그대로 ×1.8");
         }
 
         [Test]

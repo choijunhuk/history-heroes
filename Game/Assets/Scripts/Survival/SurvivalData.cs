@@ -25,7 +25,7 @@ namespace HistoryHeroes.Survival
         public EnemyBase archer;
         public EnemyBase bomber;
         [Tooltip("궁병이 나오기 시작하는 시간 (초)")]
-        public float archerFrom = 60f;
+        public float archerFrom = 90f;
         public float bomberFrom = 180f;
         [Tooltip("궁병·폭탄병 비율 (나머지는 돌진병). 원거리가 많으면 화살 비가 되어 '멈추기'가 사라진다 (벤치: 궁병 45%면 2~3분에 쓰러짐)")]
         [Range(0f, 1f)] public float archerShare = 0.25f;
@@ -46,8 +46,8 @@ namespace HistoryHeroes.Survival
         public float hpStart = 0.6f;
         public float hpPerMinute = 0.25f;
         [Tooltip("공격력 배수 = 처음 + 분 × 증가")]
-        public float attackStart = 1f;
-        public float attackPerMinute = 0.08f;
+        public float attackStart = 0.8f;
+        public float attackPerMinute = 0.1f;
         [Tooltip("화면 밖 얼마나 떨어져서 나오나 (유닛)")]
         public float spawnMargin = 1.5f;
 
