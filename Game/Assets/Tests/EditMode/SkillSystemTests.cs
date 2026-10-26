@@ -398,6 +398,38 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Hints_SkipRecipesWhoseMissingMaterialHasNoFreeSlot()
+        {
+            var blade = Make<ActiveSkillData>("blade");
+            var def = Make<PassiveSkillData>("def");
+            var whirl = Make<ActiveSkillData>("whirl");
+            var lightning = Make<ActiveSkillData>("lightning");
+            var storm = Make<ActiveSkillData>("storm");
+            var evo = Recipe("evo", FusionType.Evolution, blade, def, whirl, 5, 1);
+            var merge = Recipe("merge", FusionType.Merge, blade, lightning, storm, 3, 3);
+            var known = new HashSet<FusionRecipe> { evo, merge };
+
+            // 패시브 칸이 다 찼는데 방어력이 없다 → 강철 회오리는 이번 판에 못 만든다 (Codex v0.3b 5번)
+            var loadout = new SkillLoadout(activeSlots: 4, passiveSlots: 2);
+            loadout.AddNew(blade, 3);
+            loadout.AddNew(Make<PassiveSkillData>("p1"));
+            loadout.AddNew(Make<PassiveSkillData>("p2"));
+
+            Assert.IsFalse(FusionHints.Obtainable(evo, loadout));
+            Assert.IsTrue(FusionHints.TryNearest(blade, 4, loadout, new[] { evo, merge }, "khan", known.Contains, out FusionHints.Progress p, out int others));
+            Assert.AreSame(merge, p.Recipe, "못 만드는 진화 대신 만들 수 있는 합체를 보여준다");
+            Assert.AreEqual(0, others);
+            Assert.IsFalse(FusionHints.TryNearest(blade, 4, loadout, new[] { evo }, "khan", known.Contains, out _, out _));
+
+            // 새 액티브 카드 + 짝도 새 액티브인데 액티브 칸이 1개뿐 → 둘 다 들어갈 수 없다
+            var tight = new SkillLoadout(activeSlots: 4, passiveSlots: 4);
+            tight.AddNew(Make<ActiveSkillData>("a1"));
+            tight.AddNew(Make<ActiveSkillData>("a2"));
+            tight.AddNew(Make<ActiveSkillData>("a3"));
+            Assert.IsFalse(FusionHints.Obtainable(merge, tight), "칼날·낙뢰 둘 다 없고 빈 칸은 1개");
+        }
+
+        [Test]
         public void Hints_CountForCodex()
         {
             var flame = Make<ActiveSkillData>("flame");

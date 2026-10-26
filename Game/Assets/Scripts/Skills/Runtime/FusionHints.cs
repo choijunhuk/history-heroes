@@ -39,6 +39,25 @@ namespace HistoryHeroes.Skills
         }
 
         /// <summary>
+        /// 없는 재료를 이번 판에 얻을 수 있는가: 그 종류의 빈 칸이 재료 수만큼 있어야 한다 (패시브는 진화에서도 안 사라져 칸이 안 빈다).
+        /// 새 스킬 카드도 아직 없는 재료로 세므로, 그 카드가 쓸 칸까지 같이 본다.
+        /// </summary>
+        public static bool Obtainable(FusionRecipe r, SkillLoadout loadout)
+        {
+            int needActive = 0, needPassive = 0;
+            foreach (SkillData m in new[] { r.materialA, r.materialB })
+            {
+                if (m == null || loadout.Find(m) != null) continue;
+                if (m.Kind == SkillKind.Passive) needPassive++;
+                else needActive++;
+            }
+
+            int freeActive = loadout.ActiveSlots - loadout.Actives.Count;
+            int freePassive = loadout.PassiveSlots - loadout.Passives.Count;
+            return needActive <= freeActive && needPassive <= freePassive;
+        }
+
+        /// <summary>
         /// skill을 nextLevel로 올리면 가장 완성에 가까워지는 발견한 조합. 없으면 false.
         /// others = 같은 스킬이 들어가는 다른 발견한 조합 수 ("외 n").
         /// </summary>
@@ -53,7 +72,7 @@ namespace HistoryHeroes.Skills
             float bestScore = -1f;
             foreach (FusionRecipe r in recipes)
             {
-                if (r == null || !isKnown(r) || !StillPossible(r, loadout, heroId)) continue;
+                if (r == null || !isKnown(r) || !StillPossible(r, loadout, heroId) || !Obtainable(r, loadout)) continue;
                 bool isA = r.materialA == skill;
                 if (!isA && r.materialB != skill) continue;
 
@@ -120,7 +139,7 @@ namespace HistoryHeroes.Skills
 
             foreach (FusionRecipe r in recipes)
             {
-                if (r == null || r == chosen || !isKnown(r) || !StillPossible(r, loadout, heroId)) continue;
+                if (r == null || r == chosen || !isKnown(r) || !StillPossible(r, loadout, heroId) || !Obtainable(r, loadout)) continue;
                 if (r.result == chosen.result) continue; // 같은 결과는 어차피 한 판에 1개
 
                 SkillData lost = Uses(r, chosen.materialA) ? chosen.materialA

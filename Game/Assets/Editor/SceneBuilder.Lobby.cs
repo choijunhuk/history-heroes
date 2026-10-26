@@ -39,7 +39,7 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text title = Label("Title", main, "역사 영웅", 96, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(900f, 130f));
-            TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v0.2", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v0.3", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
             Place(sub.rectTransform, Center, Center, new Vector2(0f, 615f), new Vector2(900f, 50f));
 
             Button prev = Btn("PrevChapter", main, "<", new Vector2(-420f, 400f), new Vector2(120f, 120f), ButtonGray, out TMP_Text prevLabel);

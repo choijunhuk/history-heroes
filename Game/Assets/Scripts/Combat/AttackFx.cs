@@ -48,23 +48,20 @@ namespace HistoryHeroes.Combat
         /// <summary>이 반지름 이상 폭발은 화면을 크게 덮는 섬광으로 본다 (번쩍임 줄이기 대상)</summary>
         public const float BigBurstRadius = 2.5f;
         private const int MaxBigBurstsPerSecond = 3;
-        private static float _bigWindowStart;
-        private static int _bigInWindow;
+        private static readonly float[] BigBurstTimes = { float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity }; // 최근에 보여준 큰 폭발 시각 (돌려 쓰는 칸, 크기 = MaxBigBurstsPerSecond)
+        private static int _bigBurstNext;
 
         /// <summary>원 폭발 (포탄, 회전 베기)</summary>
         public static void Burst(Vector2 center, float radius, Color color, float duration = 0.18f)
         {
             if (radius >= BigBurstRadius && Records.SaveSystem.Data.settings.reduceFlashes)
             {
-                // 번쩍임 줄이기 (조사 A9, WCAG 2.3.1): 옅게, 1초에 3번까지만
+                // 번쩍임 줄이기 (조사 A9, WCAG 2.3.1): 옅게, 어느 1초를 잘라도 3번까지만.
+                // 가장 오래된 칸이 1초 안이면 이미 3번 보여준 것 → 이번 것은 건너뛴다
                 float now = Time.unscaledTime;
-                if (now - _bigWindowStart >= 1f)
-                {
-                    _bigWindowStart = now;
-                    _bigInWindow = 0;
-                }
-
-                if (++_bigInWindow > MaxBigBurstsPerSecond) return;
+                if (now - BigBurstTimes[_bigBurstNext] < 1f) return;
+                BigBurstTimes[_bigBurstNext] = now;
+                _bigBurstNext = (_bigBurstNext + 1) % MaxBigBurstsPerSecond;
                 color.a *= 0.4f;
             }
 
@@ -77,8 +74,8 @@ namespace HistoryHeroes.Combat
         {
             _pool = null;
             _root = null;
-            _bigWindowStart = 0f;
-            _bigInWindow = 0;
+            for (int i = 0; i < BigBurstTimes.Length; i++) BigBurstTimes[i] = float.NegativeInfinity;
+            _bigBurstNext = 0;
         }
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
@@ -67,8 +68,14 @@ namespace HistoryHeroes.Dev
         private IEnumerator RunAll()
         {
             Application.runInBackground = true;
-            string selectedBefore = SaveSystem.Data.selectedHero;
-            var unlockedBefore = new List<string>(SaveSystem.Data.unlockedHeroes);
+
+            // 실제 저장 파일은 건드리지 않는다: 지금 데이터를 임시 폴더 저장소로 복사해 그쪽에서 돈다 (Codex v0.3b 1번).
+            // 중간에 Play를 꺼도 SaveSystem이 다음 Play에서 기기 저장소를 다시 읽으므로 실제 파일은 그대로다.
+            SaveStore real = SaveSystem.Store;
+            var sandbox = new SaveStore(Path.Combine(Application.temporaryCachePath, "BossBenchSave"));
+            sandbox.Save(SaveSystem.Data);
+            SaveSystem.Use(sandbox);
+
             for (int i = 0; i < _runs.Count; i++)
             {
                 Run run = _runs[i];
@@ -76,11 +83,7 @@ namespace HistoryHeroes.Dev
                 yield return run.Mode == "swarm" || run.Mode == "barrage" ? Crowd(run) : Fight(run);
             }
 
-            SaveSystem.Data.selectedHero = selectedBefore;
-            SaveSystem.Data.unlockedHeroes.Clear();
-            SaveSystem.Data.unlockedHeroes.AddRange(unlockedBefore); // 벤치 동안만 잠금을 풀었다
-            SaveSystem.Data.records.RemoveAll(r => r.id.StartsWith(RecordPrefix, StringComparison.Ordinal));
-            SaveSystem.Save();
+            SaveSystem.Use(real); // 임시 기록·잠금 해제·영웅 선택은 임시 저장소와 함께 버려진다
             GamePause.DevSpeed = 1f;
             Status = "끝";
             Debug.Log("[BossBench]\n" + string.Join("\n", _results));

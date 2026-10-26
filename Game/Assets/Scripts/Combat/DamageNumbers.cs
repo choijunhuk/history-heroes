@@ -67,6 +67,7 @@ namespace HistoryHeroes.Combat
                 e.LastHit = now;
                 e.Born = now; // 합쳐지면 다시 처음부터 떠오른다
                 e.Crit |= info.IsCrit;
+                if (target.IsDead) e.Target = null; // 다시 나온 적이 이 숫자에 합쳐지지 않게
                 Refresh(e);
                 return;
             }
@@ -84,6 +85,7 @@ namespace HistoryHeroes.Combat
                 Color = info.Kind == DamageKind.Active ? ActiveColor : BasicColor,
                 Start = target.transform.position + new Vector3(Random.Range(-0.3f, 0.3f), 0.6f, 0f),
             };
+            if (target.IsDead) entry.Target = null; // 처치 피해는 보여주되, 같은 오브젝트가 풀에서 다시 나오면 새 숫자로
             _active.Add(entry);
             Refresh(entry);
         }

@@ -42,7 +42,7 @@ namespace HistoryHeroes.Enemy
 
         private readonly List<PoisonSource> _poison = new List<PoisonSource>(4);
         private float _poisonTimer;
-        private static readonly List<float> _strengths = new List<float>(8);
+        private static readonly List<PoisonSource> _top = new List<PoisonSource>(8); // 독 틱마다 센 순서로 (모든 적이 같이 쓴다, 그 자리에서만)
 
         private Vector2 _pullCenter;
         private float _pullSpeed;
@@ -163,24 +163,21 @@ namespace HistoryHeroes.Enemy
                 if (_poisonTimer <= 0f)
                 {
                     _poisonTimer += PoisonTick;
-                    _strengths.Clear();
-                    string source = null;
-                    float strongest = -1f;
-                    foreach (PoisonSource s in _poison)
+                    // 센 것부터 3개까지, 출처(스킬)마다 따로 깎는다. 합계는 "센 3개의 초당 피해 합 × 0.5" 그대로
+                    _top.Clear();
+                    _top.AddRange(_poison);
+                    _top.Sort((a, b) => b.DamagePerSecond.CompareTo(a.DamagePerSecond));
+                    for (int i = 0; i < _top.Count && i < MaxPoisonStacks && !_enemy.Health.IsDead; i++)
                     {
-                        _strengths.Add(s.DamagePerSecond);
-                        if (s.DamagePerSecond > strongest)
+                        var info = new DamageInfo
                         {
-                            strongest = s.DamagePerSecond;
-                            source = s.SourceId;
-                        }
+                            Amount = _top[i].DamagePerSecond * PoisonTick,
+                            Kind = DamageKind.Active,
+                            AttackerTeam = Team.Player,
+                            SourceId = _top[i].SourceId,
+                        };
+                        _enemy.Health.TryTakeDamage(info);
                     }
-
-                    _strengths.Sort((a, b) => b.CompareTo(a));
-                    float dps = 0f;
-                    for (int i = 0; i < _strengths.Count && i < MaxPoisonStacks; i++) dps += _strengths[i];
-                    var info = new DamageInfo { Amount = dps * PoisonTick, Kind = DamageKind.Active, AttackerTeam = Team.Player, SourceId = source };
-                    _enemy.Health.TryTakeDamage(info);
                 }
             }
             else
