@@ -9,12 +9,24 @@ namespace HistoryHeroes.Records
     /// <summary>기록을 화면에 보여줄 글자 (보관함, 보스 시작 전 화면, 결과 화면)</summary>
     public static class RecordFormat
     {
-        /// <summary>예: "1번 기록 · 클리어 · 10/26 05:30"</summary>
-        public static string Title(RunRecord record)
+        /// <summary>
+        /// 예: "1번 기록 · 칭기즈 칸 연사형 · 클리어 · 10/26 05:30".
+        /// database를 주면 강점으로 빌드 유형을 붙인다 (조사 A8 자동 이름, 저장하지 않고 볼 때 계산).
+        /// </summary>
+        public static string Title(RunRecord record, SkillDatabase database = null)
         {
             if (record == null) return "빈 칸";
             string progress = record.cleared ? "클리어" : $"방 {record.roomReached}/{record.roomCount}";
-            return $"{record.slot + 1}번 기록 · {progress} · {When(record.createdAt)}";
+            string type = string.Empty;
+            if (database != null)
+            {
+                SkillRole main = RecordStrength.Of(record, database).Main;
+                type = $"<color={RecordStrength.RoleColor(main)}>{RecordStrength.TypeName(main)}</color>";
+            }
+
+            string heroAndType = $"{record.heroName} {type}".Trim();
+            string hero = string.IsNullOrEmpty(heroAndType) ? string.Empty : $" · {heroAndType}";
+            return $"{record.slot + 1}번 기록{hero} · {progress} · {When(record.createdAt)}";
         }
 
         public static string When(string isoUtc)
@@ -61,6 +73,7 @@ namespace HistoryHeroes.Records
             RecordValidator.Result checkedBuild = RecordValidator.Validate(record, database);
             var sb = new StringBuilder();
             List<string> lines = SkillLines(checkedBuild.Skills, database);
+            sb.AppendLine(RecordStrength.Of(checkedBuild.Skills, database).Bar()); // 강점 막대 (조사 A8)
             sb.AppendLine(lines.Count > 0 ? string.Join(" · ", lines) : "스킬 없음 (기본 공격만)");
             sb.Append($"비용 {checkedBuild.Cost} / {record.capacity}pt");
             if (checkedBuild.OverCapacity) sb.Append("  (패치로 비용이 올라 다시 골라야 해요)");

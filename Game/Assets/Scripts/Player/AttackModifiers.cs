@@ -7,6 +7,8 @@ namespace HistoryHeroes.Player
         ExtraProjectiles, // 멀티샷: 발사체 +1 (근접은 베기 +1)
         Pierce,           // 관통 횟수
         Ricochet,         // 벽 튕김 횟수
+        Undying,          // 불굴 (전설): 판에서 한 번, 죽는 순간 체력 50%로 부활
+        Momentum,         // 영웅의 기세 (전설): 멈춘 뒤 3초간 공격속도 +50%, 기본 공격 피해 +30%
     }
 
     /// <summary>

@@ -30,7 +30,7 @@ namespace HistoryHeroes.Enemy
 
                 case State.Telegraph:
                     if (stateTimer > lockBeforeFire) _aim = ToPlayer.normalized;
-                    DrawTelegraphLine(transform.position, (Vector2)transform.position + _aim * 12f);
+                    DrawTelegraphLine(transform.position, UntilWall(transform.position, _aim, 12f));
                     if (stateTimer <= 0f)
                     {
                         EnemyProjectiles.Fire(transform.position, _aim, arrowSpeed, DamageCalculator.Enemy(Damage), playerMask);

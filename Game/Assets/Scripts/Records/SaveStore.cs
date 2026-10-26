@@ -235,6 +235,10 @@ namespace HistoryHeroes.Records
             data.items ??= new List<ItemCount>();
             data.daily ??= new DailyCounters();
             data.daily.heartRefunds ??= new List<ItemCount>();
+            data.unlockedHeroes ??= new List<string>();
+            data.settings ??= new GameSettings();
+            data.settings.shake = Math.Clamp(data.settings.shake, 0, 2);
+            if (string.IsNullOrEmpty(data.selectedHero)) data.selectedHero = "khan";
             if (data.accountLevel < 1) data.accountLevel = 1;
             if (data.hearts < 0) data.hearts = 0;
             if (data.recordSlots < 1) data.recordSlots = 3;

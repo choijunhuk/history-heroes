@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c31a02d6e300bb54b80ef1a7d7f3d480, type: 3}
+  m_Name: Fusion_tesla_tower
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.FusionRecipe
+  id: tesla_tower
+  type: 1
+  materialA: {fileID: 11400000, guid: df0c2be386201e8419ebe3056523bf3a, type: 2}
+  materialB: {fileID: 11400000, guid: 07cada886cb78794a89ec6843a2e3098, type: 2}
+  requiredLevelA: 3
+  requiredLevelB: 3
+  result: {fileID: 11400000, guid: d95d2d2a4e032224696bbc64b356787d, type: 2}
+  heroOnlyId: tesla

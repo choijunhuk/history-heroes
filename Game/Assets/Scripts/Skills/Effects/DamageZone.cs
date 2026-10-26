@@ -29,8 +29,13 @@ namespace HistoryHeroes.Skills
         private int _ticksLeft;
         private ContactFilter2D _filter;
         private Action<DamageZone> _release;
+        private Action<Vector2> _onKill;
+        private bool _poison;
 
-        public static ComponentPool<DamageZone> CreatePool(Transform root, Color color, int sortingOrder = -1)
+        [Tooltip("피해 출처 (스킬 ID, 스킬별 피해 비율용). 풀을 만들 때 정한다")]
+        [SerializeField] private string sourceId;
+
+        public static ComponentPool<DamageZone> CreatePool(Transform root, Color color, int sortingOrder = -1, string sourceId = null)
         {
             var template = new GameObject("DamageZone");
             template.SetActive(false);
@@ -39,7 +44,9 @@ namespace HistoryHeroes.Skills
             sr.sprite = PlaceholderSprites.Circle;
             sr.color = color;
             sr.sortingOrder = sortingOrder;
-            return new ComponentPool<DamageZone>(template.AddComponent<DamageZone>(), root, prewarm: 4);
+            DamageZone zone = template.AddComponent<DamageZone>();
+            zone.sourceId = sourceId; // 직렬화된 칸이라 풀에서 복사한 장판에도 들어간다
+            return new ComponentPool<DamageZone>(zone, root, prewarm: 4);
         }
 
         private void Awake()
@@ -49,8 +56,12 @@ namespace HistoryHeroes.Skills
         }
 
         /// <param name="coefficientPerSecond">초당 피해 (공격력 배수). 0.3 = 초당 30%</param>
-        public void Begin(StatSheet stats, float coefficientPerSecond, float radius, float duration, LayerMask enemies, Action<DamageZone> release)
+        /// <param name="onKill">장판 안에서 적이 죽으면 그 자리 (맹독 개화: 독이 번짐)</param>
+        public void Begin(StatSheet stats, float coefficientPerSecond, float radius, float duration, LayerMask enemies, Action<DamageZone> release,
+            Action<Vector2> onKill = null)
         {
+            _onKill = onKill;
+            _poison = false;
             _stats = stats;
             _coefficientPerSecond = coefficientPerSecond;
             _radius = radius;
@@ -89,14 +100,38 @@ namespace HistoryHeroes.Skills
             if (_timeLeft <= 0f && _ticksLeft == 0) _release?.Invoke(this);
         }
 
+        /// <summary>
+        /// 독 구름: 직접 때리지 않고, 안에 있는 적에게 독 한 겹을 건다 (적마다 3겹까지, EnemyStatus).
+        /// onDeathInside: 구름 안에서 죽으면 그 자리 (막타가 무엇이든, 맹독 개화 번짐)
+        /// </summary>
+        public void BeginPoison(StatSheet stats, float coefficientPerSecond, float radius, float duration, LayerMask enemies,
+            Action<DamageZone> release, Action<Vector2> onDeathInside)
+        {
+            Begin(stats, coefficientPerSecond, radius, duration, enemies, release, onDeathInside);
+            _poison = true;
+        }
+
         private void Tick()
         {
             Physics2D.OverlapCircle(transform.position, _radius, _filter, _hits);
+            if (_poison)
+            {
+                for (int i = 0; i < _hits.Count; i++)
+                {
+                    if (!_hits[i].TryGetComponent(out HistoryHeroes.Enemy.EnemyStatus status)) continue;
+                    float dps = DamageCalculator.Roll(_stats, _coefficientPerSecond, DamageKind.Active, false, sourceId).Amount;
+                    status.TouchPoison(this, dps, TickInterval + 0.15f, _onKill, sourceId);
+                }
+
+                return;
+            }
+
             for (int i = 0; i < _hits.Count; i++)
             {
                 if (_hits[i].TryGetComponent(out Health health))
                 {
-                    health.TryTakeDamage(DamageCalculator.Roll(_stats, _coefficientPerSecond * TickInterval, DamageKind.Active));
+                    bool hit = health.TryTakeDamage(DamageCalculator.Roll(_stats, _coefficientPerSecond * TickInterval, DamageKind.Active, false, sourceId));
+                    if (hit && health.IsDead) _onKill?.Invoke(health.transform.position);
                 }
             }
         }

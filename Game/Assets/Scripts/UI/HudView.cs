@@ -20,6 +20,82 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text killLabel;
         [SerializeField] private TMP_Text hitsLabel;
 
+        [Header("방 진행 바 · 알림 (조사 A6·A7)")]
+        [SerializeField] private RectTransform roomBar;
+        [SerializeField] private TMP_Text noticeLabel;
+        private readonly System.Collections.Generic.List<Image> _cells = new System.Collections.Generic.List<Image>();
+        private float _noticeUntil;
+
+        private static readonly Color CellPast = new Color(0.55f, 0.75f, 0.55f, 0.9f);
+        private static readonly Color CellNext = new Color(1f, 1f, 1f, 0.18f);
+        private static readonly Color CellElite = new Color(1f, 0.8f, 0.25f, 0.95f);
+
+        /// <summary>
+        /// 방 칸: 지난 방은 채움, 지금 방은 크게, 엘리트 방은 금색 + ★ (Archero 2처럼 다음 엘리트까지 계획할 수 있게).
+        /// elite[i] = i번째 방(0부터)이 엘리트인가.
+        /// </summary>
+        public void SetRoomProgress(int room, System.Collections.Generic.IReadOnlyList<bool> elite)
+        {
+            if (roomBar == null) return;
+            roomBar.gameObject.SetActive(true);
+            while (_cells.Count < elite.Count) _cells.Add(CreateCell(_cells.Count));
+
+            const float size = 26f, gap = 8f;
+            float width = elite.Count * size + (elite.Count - 1) * gap;
+            for (int i = 0; i < _cells.Count; i++)
+            {
+                Image cell = _cells[i];
+                bool exists = i < elite.Count;
+                cell.gameObject.SetActive(exists);
+                if (!exists) continue;
+
+                bool current = i == room - 1;
+                bool past = i < room - 1;
+                var rt = (RectTransform)cell.transform;
+                rt.anchoredPosition = new Vector2(-width * 0.5f + size * 0.5f + i * (size + gap), 0f);
+                rt.sizeDelta = Vector2.one * (current ? size * 1.35f : size);
+                Color color = elite[i] ? CellElite : past ? CellPast : current ? Color.white : CellNext;
+                if (past && elite[i]) color = new Color(0.75f, 0.6f, 0.25f, 0.9f);
+                cell.color = color;
+                cell.transform.GetChild(0).gameObject.SetActive(elite[i]);
+            }
+        }
+
+        public void HideRoomProgress()
+        {
+            if (roomBar != null) roomBar.gameObject.SetActive(false);
+        }
+
+        private Image CreateCell(int index)
+        {
+            var go = new GameObject($"Room{index + 1}", typeof(RectTransform));
+            go.transform.SetParent(roomBar, false);
+            var image = go.AddComponent<Image>();
+            image.raycastTarget = false;
+            var star = new GameObject("Star", typeof(RectTransform));
+            star.transform.SetParent(go.transform, false);
+            var label = star.AddComponent<TextMeshProUGUI>();
+            label.text = "★";
+            label.fontSize = 20;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = new Color(0.3f, 0.2f, 0f);
+            label.raycastTarget = false;
+            var srt = (RectTransform)star.transform;
+            srt.anchorMin = Vector2.zero;
+            srt.anchorMax = Vector2.one;
+            srt.offsetMin = srt.offsetMax = Vector2.zero;
+            return image;
+        }
+
+        /// <summary>잠깐 뜨는 알림 (방 클리어 때 기록 용량 등)</summary>
+        public void ShowNotice(string text, float seconds = 1.8f)
+        {
+            if (noticeLabel == null) return;
+            noticeLabel.text = text;
+            noticeLabel.gameObject.SetActive(true);
+            _noticeUntil = Time.unscaledTime + seconds;
+        }
+
         private System.Func<int> _hits;
         private int _hitLimit;
         private int _shownHits = -1;
@@ -38,6 +114,7 @@ namespace HistoryHeroes.UI
         /// <summary>보스맵: 레벨업이 없으므로 레벨·경험치·처치 수를 숨긴다 (GameDesign 7-3)</summary>
         public void SetBossMode()
         {
+            HideRoomProgress();
             levelLabel.gameObject.SetActive(false);
             killLabel.gameObject.SetActive(false);
             expFill.transform.parent.gameObject.SetActive(false);
@@ -49,6 +126,8 @@ namespace HistoryHeroes.UI
 
         private void Update()
         {
+            if (noticeLabel != null && noticeLabel.gameObject.activeSelf && Time.unscaledTime > _noticeUntil) noticeLabel.gameObject.SetActive(false);
+
             if (player != null && player.Health != null)
             {
                 float max = Mathf.Max(1f, player.Health.Max);

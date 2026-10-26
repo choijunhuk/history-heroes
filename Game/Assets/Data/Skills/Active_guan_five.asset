@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_guan_five
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: guan_five
+  displayName: "\uC624\uAD00\uCC38\uC7A5"
+  description: "\uD68C\uC804 \uBCA0\uAE30 5\uBC88 \uC5F0\uC18D (\uD68C\uB2F9 120%)\n\uB3C4\uB294
+    \uB3D9\uC548 \uBC1B\uB294 \uD53C\uD574 -50%"
+  warriorDescription: 
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 1032
+  role: 2
+  maxLevel: 1
+  saveCostFirstLevel: 12
+  saveCostPerLevel: 0
+  recordable: 1
+  heroOnlyId: guan
+  cooldown: 6
+  damageFirstLevel: 1.2
+  damagePerLevel: 0
+  countFirstLevel: 1
+  countPerLevel: 0
+  radius: 2.5
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 7253845035404965208, guid: 719650e71147d6045a371300cb1c4310, type: 3}

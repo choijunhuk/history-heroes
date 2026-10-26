@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_toxic_bloom
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: toxic_bloom
+  displayName: "\uB9F9\uB3C5 \uAC1C\uD654"
+  description: "5\uCD08\uB9C8\uB2E4 \uB3C5 \uAD6C\uB984 8\uCD08 (\uCD08\uB2F9 30%)\n\uAD6C\uB984
+    \uC548\uC5D0\uC11C \uC8FD\uC740 \uC801 \uC790\uB9AC\uC5D0\n\uC791\uC740 \uAD6C\uB984\uC774
+    \uBC88\uC9D0 (3\uBC88\uAE4C\uC9C0)"
+  warriorDescription: 
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 128
+  role: 2
+  maxLevel: 1
+  saveCostFirstLevel: 10
+  saveCostPerLevel: 0
+  recordable: 1
+  heroOnlyId: 
+  cooldown: 5
+  damageFirstLevel: 0.3
+  damagePerLevel: 0
+  countFirstLevel: 1
+  countPerLevel: 0
+  radius: 1.4
+  radiusPerLevel: 0
+  duration: 8
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 2611089756263065097, guid: 725a4c05ddbbfeb469e91f0c2eec828d, type: 3}

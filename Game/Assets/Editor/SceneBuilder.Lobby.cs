@@ -12,7 +12,7 @@ namespace HistoryHeroes.EditorTools
     /// <summary>v0.2 로비 장면: 구간 고르기, 던전 / 보스 도전 / 기록 보관함 / 조합 도감 (UX.md 1장 축소판).</summary>
     public static partial class SceneBuilder
     {
-        private static void BuildLobbyScene(Scene scene, SkillDatabase database, BossData[] bosses)
+        private static void BuildLobbyScene(Scene scene, SkillDatabase database, BossData[] bosses, Heroes.HeroRoster roster)
         {
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
             cameraObject.transform.position = new Vector3(0f, 0f, -10f);
@@ -39,7 +39,7 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text title = Label("Title", main, "역사 영웅", 96, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(900f, 130f));
-            TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v0.2", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v0.3", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
             Place(sub.rectTransform, Center, Center, new Vector2(0f, 615f), new Vector2(900f, 50f));
 
             Button prev = Btn("PrevChapter", main, "<", new Vector2(-420f, 400f), new Vector2(120f, 120f), ButtonGray, out TMP_Text prevLabel);
@@ -58,6 +58,9 @@ namespace HistoryHeroes.EditorTools
             bossLabel.fontSize = 44;
             Button archive = Btn("Archive", main, "기록 보관함", new Vector2(0f, -380f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text archiveLabel);
             Button codex = Btn("Codex", main, "조합 도감", new Vector2(0f, -540f), new Vector2(820f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text codexLabel);
+            Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -700f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
+            Button settingsButton = Btn("Settings", main, "설정", new Vector2(430f, 820f), new Vector2(180f, 80f), ButtonGray, out TMP_Text settingsLabel);
+            settingsLabel.fontSize = 30;
             TMP_Text note = Label("Note", main, "그래픽은 아직 임시 도형이에요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
 
@@ -67,6 +70,8 @@ namespace HistoryHeroes.EditorTools
             CodexPanel codexPanel = BuildCodexPanel(safe, database);
             RecordSaveScreen reselect = BuildRecordSave(root, database);
             HeartPanel heartPanel = BuildHeartPanel(root);
+            HeroPanel heroPanel = BuildHeroPanel(safe, roster);
+            SettingsPanel settingsPanel = BuildSettingsPanel(safe);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
 
             using (var props = new Props(lobby))
@@ -77,7 +82,9 @@ namespace HistoryHeroes.EditorTools
                     .Ref("archiveButton", archive).Ref("archiveButtonLabel", archiveLabel)
                     .Ref("codexButton", codex).Ref("codexButtonLabel", codexLabel)
                     .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)
-                    .Ref("walletLabel", wallet).Ref("noticeLabel", notice);
+                    .Ref("walletLabel", wallet).Ref("noticeLabel", notice)
+                    .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("roster", roster).Ref("heroPanel", heroPanel)
+                    .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
@@ -174,6 +181,43 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        private static HeroPanel BuildHeroPanel(Transform parent, Heroes.HeroRoster roster)
+        {
+            RectTransform panel = Overlay(parent, "HeroPanel", out GameObject holder);
+            var screen = holder.AddComponent<HeroPanel>();
+
+            TMP_Text title = Label("Title", panel, "영웅", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 800f), new Vector2(900f, 100f));
+
+            var buttons = new Button[4];
+            var backgrounds = new Image[4];
+            var labels = new TMP_Text[4];
+            for (int i = 0; i < 4; i++)
+            {
+                buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(0f, 560f - i * 265f), new Vector2(980f, 245f), RowColor, out TMP_Text label);
+                backgrounds[i] = buttons[i].GetComponent<Image>();
+                label.fontSize = 32;
+                label.alignment = TextAlignmentOptions.MidlineLeft;
+                label.rectTransform.offsetMin = new Vector2(30f, 8f);
+                label.rectTransform.offsetMax = new Vector2(-30f, -8f);
+                labels[i] = label;
+            }
+
+            Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -520f), new Vector2(440f, 130f), ButtonGreen, out TMP_Text selectLabel);
+            Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -520f), new Vector2(440f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
+            unlockLabel.fontSize = 28;
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -680f), new Vector2(400f, 110f), ButtonGray, out _);
+
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("roster", roster).Refs("heroButtons", buttons).Refs("heroBackgrounds", backgrounds)
+                    .Refs("heroLabels", labels).Ref("selectButton", select).Ref("selectLabel", selectLabel)
+                    .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("backButton", back);
+            }
+
+            return screen;
+        }
+
         private static HeartPanel BuildHeartPanel(Transform parent)
         {
             RectTransform holder = Rect("HeartPanel", parent, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
@@ -200,6 +244,30 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        private static SettingsPanel BuildSettingsPanel(Transform parent)
+        {
+            RectTransform panel = Overlay(parent, "SettingsPanel", out GameObject holder);
+            var screen = holder.AddComponent<SettingsPanel>();
+
+            TMP_Text title = Label("Title", panel, "설정", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 600f), new Vector2(900f, 100f));
+            Button shake = Btn("Shake", panel, "화면 흔들림: 보통", new Vector2(0f, 330f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text shakeLabel);
+            Button numbers = Btn("DamageNumbers", panel, "피해 숫자: 켜기", new Vector2(0f, 170f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text numbersLabel);
+            Button flash = Btn("ReduceFlashes", panel, "번쩍임 줄이기: 끄기", new Vector2(0f, 10f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text flashLabel);
+            TMP_Text help = Label("Help", panel, "번쩍임 줄이기: 화면을 크게 덮는 섬광을 옅게, 1초에 3번까지만 보여줘요", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            Place(help.rectTransform, Center, Center, new Vector2(0f, -110f), new Vector2(900f, 90f));
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -300f), new Vector2(400f, 110f), ButtonGray, out _);
+
+            using (var props = new Props(screen))
+            {
+                props.Ref("root", panel.gameObject).Ref("shakeButton", shake).Ref("shakeLabel", shakeLabel)
+                    .Ref("numbersButton", numbers).Ref("numbersLabel", numbersLabel)
+                    .Ref("flashButton", flash).Ref("flashLabel", flashLabel).Ref("backButton", back);
+            }
+
+            return screen;
+        }
+
         private static CodexPanel BuildCodexPanel(Transform parent, SkillDatabase database)
         {
             RectTransform panel = Overlay(parent, "CodexPanel", out GameObject holder);
@@ -209,9 +277,25 @@ namespace HistoryHeroes.EditorTools
             Place(title.rectTransform, Center, Center, new Vector2(0f, 790f), new Vector2(900f, 100f));
             TMP_Text progress = Label("Progress", panel, "발견 0 / 0", 36, TextAlignmentOptions.Center);
             Place(progress.rectTransform, Center, Center, new Vector2(0f, 690f), new Vector2(900f, 60f));
-            TMP_Text list = Label("List", panel, "", 32, TextAlignmentOptions.TopLeft);
-            Place(list.rectTransform, Center, Center, new Vector2(0f, 20f), new Vector2(920f, 1200f));
+            // 조합 14개 + 스킬별 조합 수가 한 화면을 넘어서 위아래로 밀어 본다
+            RectTransform viewport = Rect("Viewport", panel, Center, Center, Center, new Vector2(0f, 20f), new Vector2(920f, 1200f));
+            Img(viewport, new Color(0f, 0f, 0f, 0.001f), null).raycastTarget = true; // 끌기를 받는 판
+            viewport.gameObject.AddComponent<RectMask2D>();
+            TMP_Text list = Label("List", viewport, "", 32, TextAlignmentOptions.TopLeft);
+            RectTransform listRect = list.rectTransform;
+            listRect.anchorMin = new Vector2(0f, 1f);
+            listRect.anchorMax = new Vector2(1f, 1f);
+            listRect.pivot = new Vector2(0.5f, 1f);
+            listRect.anchoredPosition = Vector2.zero;
+            listRect.sizeDelta = new Vector2(0f, 1200f);
             list.lineSpacing = 6f;
+            list.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport;
+            scroll.content = listRect;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 40f;
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -720f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))

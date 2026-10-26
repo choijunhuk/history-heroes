@@ -66,7 +66,7 @@ namespace HistoryHeroes.UI
                 if (!exists) continue;
 
                 RunRecord record = data.RecordInSlot(i);
-                slotTitles[i].text = record != null ? RecordFormat.Title(record) : $"{i + 1}번 칸";
+                slotTitles[i].text = record != null ? RecordFormat.Title(record, database) : $"{i + 1}번 칸";
                 slotDetails[i].text = record != null ? RecordFormat.Details(record, database) : "비어 있어요. 던전을 끝내면 기록을 남길 수 있어요.";
                 deleteButtons[i].gameObject.SetActive(record != null);
                 deleteLabels[i].text = _confirmSlot == i ? "한 번 더 누르면 지워요" : "지우기";

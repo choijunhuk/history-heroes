@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ebc6196135fc4408657c8ea9d0378e, type: 3}
+  m_Name: Hero_napoleon
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Heroes.HeroData
+  id: napoleon
+  displayName: "\uB098\uD3F4\uB808\uC639"
+  heroClass: 2
+  playStyle: "\uC5F0\uC0AC\uB85C \uBC00\uC5B4\uB0B4\uBA74\uC11C \uBAB0\uB9B0 \uC801\uC744
+    \uD3EC\uD0C4\uC73C\uB85C \uC815\uB9AC"
+  maxHp: 900
+  attack: 72
+  attackSpeed: 1.4
+  moveSpeed: 4.8
+  range: 5
+  critRate: 0.05
+  critDamage: 1.5
+  attackKind: 0
+  projectilePrefab: {fileID: 3931026674838196629, guid: 014dfd9dec87fab4bb260a0f76977705, type: 3}
+  projectileSpeed: 18
+  meleeArcDegrees: 120
+  meleeWaveCoefficient: 0.4
+  signatureName: "\uD3EC\uBCD1\uC758 \uB208"
+  signatureDescription: "\uAE30\uBCF8 \uACF5\uACA9 3\uBC1C\uB9C8\uB2E4 \uD3EC\uD0C4
+    (\uBC94\uC704 \uD53C\uD574 100%). \uCD1D\uC54C\uC774 \uC801\uC744 \uC0B4\uC9DD
+    \uBC00\uC5B4\uB0C4"
+  firstShotDelay: 0.2
+  firstShotBonus: 0
+  damageReduction: 0
+  lowHpThreshold: 0.5
+  lowHpAttackBonus: 0
+  cannonEvery: 3
+  cannonCoefficient: 1
+  cannonRadius: 1.5
+  knockback: 0.25
+  chainBounces: 0
+  chainRadius: 3
+  chainFalloff: 0.3
+  exclusiveActive: {fileID: 11400000, guid: 52f2a5f0faa64cd459ac8cfe375879ee, type: 2}
+  unlockAfterBossChapter: 2
+  unlockGems: 1500
+  color: {r: 0.3, g: 0.45, b: 0.95, a: 1}

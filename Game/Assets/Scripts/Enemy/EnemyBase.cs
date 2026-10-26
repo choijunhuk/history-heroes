@@ -21,6 +21,7 @@ namespace HistoryHeroes.Enemy
 
         protected Health health;
         protected Rigidbody2D body;
+        protected EnemyStatus status;
         protected Transform player;
         protected State state;
         protected float stateTimer;
@@ -28,8 +29,12 @@ namespace HistoryHeroes.Enemy
 
         public EnemyData Data => data;
         public Health Health => health;
+        public EnemyStatus Status => status;
         public bool IsElite { get; private set; }
         public float Damage => data.damage * attackMultiplier;
+
+        /// <summary>나폴레옹 총알에 밀리는가. 엘리트·보스는 밀리지 않는다</summary>
+        public virtual bool CanBeKnockedBack => !IsElite;
 
         public event Action<EnemyBase> Killed;
 
@@ -46,6 +51,8 @@ namespace HistoryHeroes.Enemy
         {
             health = GetComponent<Health>();
             body = GetComponent<Rigidbody2D>();
+            status = GetComponent<EnemyStatus>();
+            if (status == null) status = gameObject.AddComponent<EnemyStatus>();
             body.gravityScale = 0f;
             body.freezeRotation = true;
             health.Died += OnDied;
@@ -59,6 +66,7 @@ namespace HistoryHeroes.Enemy
             IsElite = elite;
             health.Init(Team.Enemy, data.maxHp * hpMultiplier * (elite ? 5f : 1f));
             transform.localScale = Vector3.one * (elite ? 1.5f : 1f);
+            status.Clear();
             if (!_alive.Contains(this)) _alive.Add(this);
             Enter(State.Approach);
         }
@@ -66,6 +74,14 @@ namespace HistoryHeroes.Enemy
         protected virtual void Update()
         {
             if (player == null || health.IsDead || GamePause.IsPaused) return;
+
+            // 빙결: 움직이지도, 공격 시간이 흐르지도 않는다 (예고 중이던 공격도 멈춤)
+            if (status.IsFrozen)
+            {
+                body.linearVelocity = Vector2.zero;
+                return;
+            }
+
             stateTimer -= Time.deltaTime;
             Tick();
         }
@@ -84,7 +100,18 @@ namespace HistoryHeroes.Enemy
 
         protected void MoveToward(Vector2 direction, float speed)
         {
-            body.linearVelocity = direction.normalized * speed;
+            // 끌려가는 중이면 스스로 움직이지 않는다 (회오리·눈보라). 둔화는 속도에 곱한다
+            body.linearVelocity = status.IsPulled ? Vector2.zero : direction.normalized * speed * status.SpeedMultiplier;
+        }
+
+        private static int _wallMask = -1;
+
+        /// <summary>from에서 direction으로 maxDistance까지 가되 벽에 닿으면 그 자리 (예고선이 벽 밖·HUD까지 뻗지 않게)</summary>
+        protected static Vector2 UntilWall(Vector2 from, Vector2 direction, float maxDistance)
+        {
+            if (_wallMask < 0) _wallMask = LayerMask.GetMask("Wall");
+            RaycastHit2D hit = Physics2D.Raycast(from, direction, maxDistance, _wallMask);
+            return hit.collider != null ? hit.point : from + direction * maxDistance;
         }
 
         protected void DrawTelegraphLine(Vector2 from, Vector2 to)
@@ -102,6 +129,14 @@ namespace HistoryHeroes.Enemy
 
         protected virtual void OnDied(Health h)
         {
+            if (IsElite)
+            {
+                // 손맛 (조사 A9): 엘리트는 잠깐 멈춤 + 흔들림
+                Common.HitStop.Freeze(Common.HitStop.EliteKill);
+                Common.CameraShake.Add(Common.CameraShake.EliteKill);
+            }
+
+            status.NotifyDeath(transform.position); // 독 구름 안에서 죽었으면 번짐 (맹독 개화)
             _alive.Remove(this);
             body.linearVelocity = Vector2.zero;
             Killed?.Invoke(this);

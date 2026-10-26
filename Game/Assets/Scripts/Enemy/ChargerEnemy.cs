@@ -31,7 +31,7 @@ namespace HistoryHeroes.Enemy
                     break;
 
                 case State.Telegraph:
-                    DrawTelegraphLine(transform.position, (Vector2)transform.position + _dashDirection * dashSpeed * dashDuration);
+                    DrawTelegraphLine(transform.position, UntilWall(transform.position, _dashDirection, dashSpeed * dashDuration));
                     if (stateTimer <= 0f)
                     {
                         _hitThisDash = false;

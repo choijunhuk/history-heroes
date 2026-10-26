@@ -48,3 +48,5 @@ MonoBehaviour:
   arrowSize: {x: 0.1, y: 0.7}
   fallHeight: 6
   fallTimeRange: {x: 0.25, y: 0.55}
+  returnCoefficient: 0
+  returnDelay: 0.35

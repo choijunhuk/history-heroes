@@ -22,6 +22,12 @@ namespace HistoryHeroes.Combat
         public event Action<DamageInfo, float> Damaged;
         public event Action<Health> Died;
 
+        /// <summary>누군가 피해를 받았을 때 (피해 숫자·화면 흔들림, 조사 A9). 장면마다 듣는 쪽이 붙고 뗀다</summary>
+        public static event Action<Health, DamageInfo, float> AnyDamaged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => AnyDamaged = null;
+
         /// <param name="stats">피해 감소·회피를 읽을 능력치. 적은 null이어도 된다.</param>
         /// <param name="invulnerableDuration">맞은 뒤 무적 시간. 플레이어 0.5초.</param>
         public void Init(Team owner, float maxHp, StatSheet stats = null, float invulnerableDuration = 0f)
@@ -58,18 +64,58 @@ namespace HistoryHeroes.Combat
                 reduction = _stats.Get(StatType.DamageReduction);
             }
 
-            dealt = Mathf.Min(Current, info.Amount * (1f - reduction));
+            float incoming = info.Amount * (1f - reduction);
+            if (Shield > 0f)
+            {
+                float absorbed = Mathf.Min(Shield, incoming);
+                Shield -= absorbed;
+                incoming -= absorbed;
+                if (Shield <= 0f)
+                {
+                    Shield = 0f;
+                    ShieldBroken?.Invoke();
+                }
+            }
+
+            dealt = Mathf.Min(Current, incoming);
+            if (Current - dealt <= 0f && PreventDeath != null && PreventDeath())
+            {
+                // 불굴: 죽지 않았다 (체력은 PreventDeath가 정함)
+                if (_invulnerableDuration > 0f) _invulnerableUntil = Time.time + _invulnerableDuration;
+                Damaged?.Invoke(info, dealt);
+                AnyDamaged?.Invoke(this, info, dealt);
+                return true;
+            }
+
             Current -= dealt;
             if (_invulnerableDuration > 0f) _invulnerableUntil = Time.time + _invulnerableDuration;
 
-            if (team == Team.Enemy) DamageLog.Record(info.Kind, dealt);
+            if (team == Team.Enemy) DamageLog.Record(info, dealt);
             Damaged?.Invoke(info, dealt);
+            AnyDamaged?.Invoke(this, info, dealt);
             if (IsDead) Died?.Invoke(this);
             return true;
         }
 
         /// <summary>켜면 어떤 피해도 받지 않는다 (판이 끝난 뒤 남은 탄환 등)</summary>
         public bool Invulnerable { get; set; }
+
+        /// <summary>보호막: 체력보다 먼저 깎인다 (수호 방패·철벽)</summary>
+        public float Shield { get; private set; }
+
+        /// <summary>보호막이 다 깎였을 때 (철벽: 깨질 때 폭발)</summary>
+        public event Action ShieldBroken;
+
+        /// <summary>죽을 만큼 맞았을 때 한 번 막을 기회 (불굴). true를 돌려주면 죽지 않고, 체력은 그쪽이 정한다</summary>
+        public Func<bool> PreventDeath;
+
+        /// <summary>보호막을 채운다. 이미 있는 것보다 크면 그만큼으로 (겹쳐서 무한히 쌓이지 않게)</summary>
+        public void SetShieldAtLeast(float amount) => Shield = Mathf.Max(Shield, amount);
+
+        public void ClearShield() => Shield = 0f;
+
+        /// <summary>죽지 않고 체력을 정한다 (불굴)</summary>
+        public void Revive(float hp) => Current = Mathf.Clamp(hp, 1f, Max);
 
         public void Heal(float amount)
         {

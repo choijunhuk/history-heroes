@@ -14,6 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Heroes.HeroData
   id: khan
   displayName: "\uCE6D\uAE30\uC988 \uCE78"
+  heroClass: 0
+  playStyle: "\"\uBA48\uCE6B\uBA48\uCE6B\" \uC9E7\uAC8C \uC11C\uBA74\uC11C \uACC4\uC18D
+    \uC3D8\uB294 \uB9AC\uB4EC"
   maxHp: 1000
   attack: 100
   attackSpeed: 1
@@ -21,7 +24,27 @@ MonoBehaviour:
   range: 6
   critRate: 0.05
   critDamage: 1.5
+  attackKind: 0
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 14
+  meleeArcDegrees: 120
+  meleeWaveCoefficient: 0.4
+  signatureName: "\uAE30\uB9C8 \uC18D\uC0AC"
+  signatureDescription: "\uBA48\uCD94\uB294 \uC21C\uAC04 \uACF5\uACA9 \uC900\uBE44
+    \uC2DC\uAC04 0. \uCCAB \uBC1C \uD53C\uD574 +50%"
   firstShotDelay: 0
   firstShotBonus: 0.5
-  projectileSpeed: 14
+  damageReduction: 0
+  lowHpThreshold: 0.5
+  lowHpAttackBonus: 0
+  cannonEvery: 0
+  cannonCoefficient: 0.8
+  cannonRadius: 1.2
+  knockback: 0
+  chainBounces: 0
+  chainRadius: 3
+  chainFalloff: 0.3
+  exclusiveActive: {fileID: 11400000, guid: b74edf6d9a1c89047b621fbec9c88907, type: 2}
+  unlockAfterBossChapter: 0
+  unlockGems: 1500
   color: {r: 0.95, g: 0.75, b: 0.2, a: 1}

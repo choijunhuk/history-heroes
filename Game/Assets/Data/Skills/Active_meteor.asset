@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_meteor
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: meteor
+  displayName: "\uC720\uC131 \uB099\uD558"
+  description: "10\uCD08\uB9C8\uB2E4 \uC801\uC774 \uB9CE\uC740 \uACF3\uC5D0 \uC720\uC131\n(400%,
+    \uBC94\uC704 \uD07C, 0.8\uCD08 \uC608\uACE0)\n\uB808\uBCA8\uB9C8\uB2E4 \uD53C\uD574
+    +60%"
+  warriorDescription: 
+  icon: {fileID: 0}
+  rarity: 2
+  tags: 16
+  role: 2
+  maxLevel: 5
+  saveCostFirstLevel: 6
+  saveCostPerLevel: 6
+  recordable: 1
+  heroOnlyId: 
+  cooldown: 10
+  damageFirstLevel: 4
+  damagePerLevel: 2.4
+  countFirstLevel: 1
+  countPerLevel: 0
+  radius: 2
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 6135950185287038502, guid: 5024a8593135cdb41b1ca0daa3cf249f, type: 3}

@@ -138,6 +138,114 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>
+        /// 스킬 하나만 들고 적 무리(돌진병 8 + 궁병 3 + 엘리트 1)를 상대해 본다 (새 스킬 점검용).
+        /// 방 흐름·레벨업 창은 끈다. 예: TrySkill("meteor", 3) / TrySkill("thunder_god", 1, fusion: true)
+        /// </summary>
+        public static string TrySkill(string skillId, int level = 3, bool fusion = false)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var player = Object.FindAnyObjectByType<PlayerController>();
+            var skills = Object.FindAnyObjectByType<SkillManager>();
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            SkillData skill = db.Find(skillId);
+            if (player == null || skills == null || skill == null) return "없음: " + skillId;
+
+            var levelUp = Object.FindAnyObjectByType<LevelUpScreen>();
+            if (levelUp != null)
+            {
+                levelUp.DevCancel();
+                levelUp.enabled = false;
+            }
+
+            var run = Object.FindAnyObjectByType<DungeonRun>();
+            if (run != null) run.gameObject.SetActive(false);
+            Dev.DevCheats.KillAll();
+            skills.ClearAll();
+            skills.DevSetLevel(skill, level, fusion);
+            player.Teleport(new Vector2(0f, -4f));
+            player.Health.Heal(1e9f);
+            player.Health.Invulnerable = true; // 스킬만 보려고: 죽어서 결과 화면이 뜨면 점검이 멈춘다
+
+            var root = new GameObject("TrySkill").transform;
+            SpawnScenario(root, "Enemy_Charger", 8, hp: 2f, elite: false, player);
+            SpawnScenario(root, "Enemy_Archer", 3, hp: 2f, elite: false, player);
+            SpawnScenario(root, "Enemy_Charger", 1, hp: 2f, elite: true, player);
+            Combat.DamageLog.Reset();
+            return $"시작: {skill.displayName} Lv{level} (적 12)";
+        }
+
+        /// <summary>
+        /// v0.3 8단계 검증 벤치: 영웅 4명 × (dps, play)로 같은 기록을 들고 실제 1구간 보스와 싸운다 (연습 모드).
+        /// build: "balanced"(기본) / "rapid"(연사형) / "blade"(칼날 탱커형) / "storm"(번개 광역형). 전설·영웅 전용 스킬 없음.
+        /// modes: "dps", "play"(보스) / "swarm", "barrage"(던전 잡몹). 예: BossBench("balanced", 3f, "swarm,barrage")
+        /// 끝나면 BossBenchStatus()로 결과. 예: BossBench("balanced", 3f)
+        /// </summary>
+        public static string BossBench(string build = "balanced", float speed = 3f, string modes = "dps,play", string heroes = "khan,guan,napoleon,tesla")
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            List<Records.RecordSkill> skills = BenchBuild(build);
+            int cost = 0;
+            foreach (Records.RecordSkill s in skills)
+            {
+                SkillData data = db.Find(s.id);
+                if (data == null) return "없는 스킬: " + s.id;
+                if (data.rarity == Rarity.Legendary) return "전설은 넣지 않는다: " + s.id;
+                cost += data.SaveCostAt(s.level);
+            }
+
+            var runs = new List<Dev.BossBench.Run>();
+            foreach (string mode in modes.Split(','))
+            {
+                foreach (string hero in heroes.Split(',')) runs.Add(new Dev.BossBench.Run { HeroId = hero.Trim(), Mode = mode.Trim() });
+            }
+
+            Dev.BossBench.ChargerPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Charger.prefab");
+            Dev.BossBench.ArcherPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Archer.prefab");
+            Dev.BossBench.BomberPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyBase>("Assets/Prefabs/Enemies/Enemy_Bomber.prefab");
+            return Dev.BossBench.Begin(runs, skills, speed, db) + $" | 빌드 {build} {cost}pt (클리어 기록 용량 27pt)";
+        }
+
+        public static string BossBenchStatus() => Dev.BossBench.Report();
+
+        private static List<Records.RecordSkill> BenchBuild(string build)
+        {
+            var list = new List<Records.RecordSkill>();
+            void Add(string id, int level, bool fusion = false) => list.Add(new Records.RecordSkill(id, level, fusion));
+            switch (build)
+            {
+                case "rapid": // 연사형 (GameDesign 6-8)
+                    Add("aspd_up", 4); Add("multishot", 2); Add("atk_up", 3); Add("lifesteal", 2); Add("lightning", 2);
+                    break;
+                case "blade": // 칼날 탱커형
+                    Add("steel_whirl", 1, true); Add("def_up", 2); Add("hp_up", 3); Add("atk_up", 2); Add("aspd_up", 1);
+                    break;
+                case "storm": // 번개 광역형
+                    Add("thunder_fire", 1, true); Add("hp_up", 3); Add("atk_up", 2); Add("aspd_up", 1);
+                    break;
+                default: // 섞음: 대표 완성 빌드에 가깝게 (기본 공격 패시브 + 액티브 2개)
+                    Add("aspd_up", 3); Add("multishot", 1); Add("atk_up", 3); Add("lifesteal", 2);
+                    Add("lightning", 2); Add("flame_field", 2);
+                    break;
+            }
+
+            return list;
+        }
+
+        /// <summary>TrySkill 뒤: 남은 적, 액티브 피해, 플레이어 체력</summary>
+        public static string TrySkillStatus()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            var player = Object.FindAnyObjectByType<PlayerController>();
+            player.Health.Heal(1e9f);
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            return $"남은 적 {EnemyBase.Alive.Count} · 액티브 피해 {Combat.DamageLog.Active:0} · 기본 공격 {Combat.DamageLog.BasicAttack:0} · 보호막 {player.Health.Shield:0} / "
+                + $"출처별: {Economy.RunText.TopDamage(db, player.Hero, 8)}";
+        }
+
+        /// <summary>
         /// 화면에 보이는 버튼을 이름으로 누른다 (로비·결과·기록 화면 흐름 점검용).
         /// 예: "Dungeon", "Boss", "Primary"(결과 첫 버튼), "Save", "AutoFit", "Slot1", "Start", "Back"
         /// </summary>
@@ -154,6 +262,31 @@ namespace HistoryHeroes.EditorTools
             }
 
             return $"{buttonName}: 화면에 없음";
+        }
+
+        /// <summary>
+        /// 메인 카메라가 보는 전투 화면을 바로 PNG로 (UI 제외). Game 창이 뒤에 있으면 capture가 옛 화면을 줄 때가 있어서.
+        /// 예: SnapshotWorld("Assets/Temp/qa/x.png")
+        /// </summary>
+        public static string SnapshotWorld(string path, int width = 540, int height = 1170)
+        {
+            Camera camera = Camera.main;
+            if (camera == null) return "카메라 없음";
+            var rt = new RenderTexture(width, height, 24);
+            RenderTexture previous = camera.targetTexture;
+            camera.targetTexture = rt;
+            camera.Render();
+            RenderTexture.active = rt;
+            var texture = new Texture2D(width, height, TextureFormat.RGB24, false);
+            texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            texture.Apply();
+            camera.targetTexture = previous;
+            RenderTexture.active = null;
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+            System.IO.File.WriteAllBytes(path, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+            Object.DestroyImmediate(rt);
+            return "저장 " + path;
         }
 
         /// <summary>Play 모드에 들어가서 장면이 다 준비됐는가 (자동 점검 스크립트가 기다릴 때 씀)</summary>

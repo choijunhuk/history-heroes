@@ -61,7 +61,9 @@ namespace HistoryHeroes.UI
             _chapter = chapter;
             titleLabel.text = boss.displayName;
             testsLabel.text = "시험하는 것: " + boss.tests;
-            recommendLabel.text = "추천: " + boss.recommend;
+            recommendLabel.text = boss.recommendedRole != SkillRole.None
+                ? $"추천: <color={RecordStrength.RoleColor(boss.recommendedRole)}>{RecordStrength.RoleName(boss.recommendedRole)} 강점</color> · {boss.recommend}"
+                : "추천: " + boss.recommend;
 
             // 이 보스를 아직 못 깬 기록 중 가장 최근 것을 먼저 골라 둔다 (★3 "서로 다른 기록 2개" 유도)
             _selectedSlot = -1;
@@ -104,7 +106,10 @@ namespace HistoryHeroes.UI
                 }
 
                 string beaten = record.bossesDefeated.Contains(_boss.id) ? "  (이 기록으로 격파함)" : string.Empty;
-                slotLabels[i].text = $"{RecordFormat.Title(record)}{beaten}\n{RecordFormat.Details(record, database)}";
+                // 강점이 보스 추천 역할과 같으면 배지 (조사 A8). 고르는 건 플레이어 자유
+                bool recommended = _boss.recommendedRole != SkillRole.None && RecordStrength.Of(record, database).Main == _boss.recommendedRole;
+                string badge = recommended ? "<color=#7CE38B>◎ 추천</color>  " : string.Empty;
+                slotLabels[i].text = $"{badge}{RecordFormat.Title(record, database)}{beaten}\n{RecordFormat.Details(record, database)}";
             }
 
             RunRecord selected = data.RecordInSlot(_selectedSlot);

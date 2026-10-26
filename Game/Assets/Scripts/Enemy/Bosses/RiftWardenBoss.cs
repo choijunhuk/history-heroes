@@ -68,10 +68,19 @@ namespace HistoryHeroes.Enemy
         private float _secondRingTimer;
 
         public int Phase => _phase;
+        public override bool CanBeKnockedBack => false;
         public Pattern CurrentPattern => _pattern;
 
         /// <summary>빈틈인가 (멈춰서 쏠 때)</summary>
         public bool IsOpen => state == State.Recover;
+
+        // 읽기만: 검증 벤치의 피하기 AI가 화면 예고와 같은 정보를 본다 (사람이 보는 원·선과 같음)
+        public bool IsTelegraphing => state == State.Telegraph;
+        public bool IsAttacking => state == State.Attack;
+        public Vector2 SlamCenter => _slamCenter;
+        public float SlamRadius => slamRadius;
+        public Vector2 ChargeDirection => _chargeDirection;
+        public float ChargeHitRadius => chargeHitRadius * transform.localScale.x;
 
         public event Action<int> PhaseChanged;
 
@@ -109,6 +118,7 @@ namespace HistoryHeroes.Enemy
             int phase = ratio > 2f / 3f ? 1 : ratio > 1f / 3f ? 2 : 3;
             if (phase <= _phase) return;
             _phase = phase;
+            Common.HitStop.Freeze(Common.HitStop.BossPhase); // 손맛 (조사 A9)
             PhaseChanged?.Invoke(_phase);
         }
 
@@ -242,6 +252,7 @@ namespace HistoryHeroes.Enemy
             Collider2D hit = Physics2D.OverlapCircle(_slamCenter, slamRadius, playerMask);
             if (hit != null && hit.TryGetComponent(out Health target)) target.TryTakeDamage(DamageCalculator.Enemy(Damage * slamDamage));
             StrikeFlash(_slamCenter, slamRadius);
+            Common.CameraShake.Add(Common.CameraShake.BossImpact);
 
             _slamsLeft--;
             if (_slamsLeft > 0)
@@ -350,6 +361,8 @@ namespace HistoryHeroes.Enemy
             if (openingRing != null) openingRing.enabled = false;
             if (waveGlow != null) waveGlow.enabled = false;
             _secondRingPending = false;
+            Common.HitStop.OnBossKilled(); // 0.2초 멈춤 + 0.5초 0.3배 (조사 A9)
+            Common.CameraShake.Add(Common.CameraShake.BossImpact);
             base.OnDied(h);
         }
     }

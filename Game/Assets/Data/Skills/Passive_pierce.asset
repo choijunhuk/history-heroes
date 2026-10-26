@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8a1162d004b4454fa441b7538c6e4af, type: 3}
+  m_Name: Passive_pierce
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.PassiveSkillData
+  id: pierce
+  displayName: "\uAD00\uD1B5"
+  description: "\uAE30\uBCF8 \uACF5\uACA9\uC774 \uC801\uC744 \uB6AB\uACE0 \uC9C0\uB098\uAC10\n(\uB6AB\uC744
+    \uB54C\uB9C8\uB2E4 \uD53C\uD574 -20%)"
+  warriorDescription: "\uBCA0\uAE30 \uAC01\uB3C4\n120\xB0 \u2192 160\xB0"
+  icon: {fileID: 0}
+  rarity: 1
+  tags: 4
+  role: 1
+  maxLevel: 1
+  saveCostFirstLevel: 2
+  saveCostPerLevel: 2
+  recordable: 1
+  heroOnlyId: 
+  stats: []
+  attack:
+  - kind: 1
+    firstLevel: 1
+    perLevel: 0

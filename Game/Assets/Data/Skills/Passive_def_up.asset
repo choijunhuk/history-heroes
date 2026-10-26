@@ -15,9 +15,11 @@ MonoBehaviour:
   id: def_up
   displayName: "\uBC29\uC5B4\uB825"
   description: "\uBC1B\uB294 \uD53C\uD574 -6%\n(\uB808\uBCA8\uB9C8\uB2E4 -4%)"
+  warriorDescription: 
   icon: {fileID: 0}
   rarity: 0
   tags: 1026
+  role: 3
   maxLevel: 5
   saveCostFirstLevel: 1
   saveCostPerLevel: 1

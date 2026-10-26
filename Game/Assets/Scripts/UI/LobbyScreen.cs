@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HistoryHeroes.Common;
 using HistoryHeroes.Economy;
+using HistoryHeroes.Heroes;
 using HistoryHeroes.Modes;
 using HistoryHeroes.Records;
 using TMPro;
@@ -38,12 +39,18 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text archiveButtonLabel;
         [SerializeField] private Button codexButton;
         [SerializeField] private TMP_Text codexButtonLabel;
+        [SerializeField] private Button heroButton;
+        [SerializeField] private TMP_Text heroButtonLabel;
+        [SerializeField] private HeroRoster roster;
 
         [Header("패널")]
         [SerializeField] private BossIntroPanel bossIntro;
         [SerializeField] private RecordArchivePanel archive;
         [SerializeField] private CodexPanel codex;
         [SerializeField] private HeartPanel hearts;
+        [SerializeField] private HeroPanel heroPanel;
+        [SerializeField] private Button settingsButton;
+        [SerializeField] private SettingsPanel settings;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -61,6 +68,8 @@ namespace HistoryHeroes.UI
             bossButton.onClick.AddListener(OpenBoss);
             archiveButton.onClick.AddListener(() => archive.Open(Render));
             codexButton.onClick.AddListener(() => codex.Open());
+            heroButton.onClick.AddListener(() => heroPanel.Open(Render));
+            if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
 
             // 놓친 별 상자가 있으면 여기서 받는다
             Reward box = Stars.ClaimBoxes(data);
@@ -144,6 +153,8 @@ namespace HistoryHeroes.UI
 
             int found = data.discoveredRecipes.Count;
             codexButtonLabel.text = $"조합 도감  {found}/{codex.RecipeCount}";
+            HeroData hero = HeroUnlock.Selected(data, roster);
+            heroButtonLabel.text = hero != null ? $"영웅  {hero.displayName} ({hero.ClassLabel})" : "영웅";
             RenderWallet();
         }
 

@@ -30,6 +30,11 @@ namespace HistoryHeroes.Skills
         public event Action<FusionRecipe> FusionCompleted;
 
         public string HeroId => player.Hero != null ? player.Hero.id : string.Empty;
+        public Heroes.HeroClass HeroClass => player.Hero != null ? player.Hero.heroClass : Heroes.HeroClass.Archer;
+
+        /// <summary>첫 레벨업에 영웅 전용 액티브가 나올 확률을 조금 높인다 (Skills.md 3장: 영웅 개성을 빨리 느끼게)</summary>
+        [SerializeField, Range(0f, 1f)] private float firstOfferExclusiveChance = 0.5f;
+        private int _offersMade;
 
         /// <summary>레벨업 카드 만들기 (GameDesign 6-4). 조합 조건을 채웠으면 1장은 조합 카드로 확정.</summary>
         public List<SkillCard> CreateOffer(int floor)
@@ -45,7 +50,24 @@ namespace HistoryHeroes.Skills
 
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
             offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable));
+            if (_offersMade++ == 0) BoostExclusive(offer, candidates);
             return offer;
+        }
+
+        /// <summary>첫 카드 묶음에 전용 액티브가 없으면 확률적으로 마지막 일반 카드와 바꾼다</summary>
+        private void BoostExclusive(List<SkillCard> offer, List<SkillCard> candidates)
+        {
+            SkillData exclusive = player.Hero != null ? player.Hero.exclusiveActive : null;
+            if (exclusive == null || offer.Exists(c => c.Skill == exclusive)) return;
+            SkillCard card = candidates.Find(c => c.Skill == exclusive);
+            if (card == null || UnityEngine.Random.value > firstOfferExclusiveChance) return;
+
+            for (int i = offer.Count - 1; i >= 0; i--)
+            {
+                if (offer[i].Type == CardType.Fusion) continue;
+                offer[i] = card;
+                return;
+            }
         }
 
         /// <summary>리롤: 조합 카드는 고정하고 나머지만 다시 뽑는다 (GameDesign 6-7).</summary>
@@ -53,6 +75,7 @@ namespace HistoryHeroes.Skills
         {
             var kept = current.FindAll(c => c.Type == CardType.Fusion);
             List<SkillCard> candidates = SkillPicker.BuildCandidates(Loadout, skillPool, HeroId);
+            SkillPicker.ExcludeShown(candidates, current); // 방금 본 카드는 다시 안 나온다
             kept.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - kept.Count, floor, rarityTable));
             return kept;
         }
@@ -83,18 +106,22 @@ namespace HistoryHeroes.Skills
             return result;
         }
 
-        /// <summary>**발견한** 조합의 재료인가 (카드에 "조합 재료" 표시용, UX.md 3장 · GameDesign 6-2)</summary>
-        public bool IsFusionMaterial(SkillData skill)
+        /// <summary>
+        /// 일반 카드의 조합 힌트 (조사 A3): 이 카드를 고르면 가장 가까워지는 **발견한** 조합 한 줄. 없으면 null.
+        /// 예: "◆ 강철 회오리 ← 방어력 보유 · 회전 칼날 4/5"
+        /// </summary>
+        public string CardHint(SkillCard card)
         {
-            if (skill == null) return false;
-            foreach (FusionRecipe r in recipes)
-            {
-                if (r == null || !RecipeBook.IsDiscovered(r)) continue;
-                if (!string.IsNullOrEmpty(r.heroOnlyId) && r.heroOnlyId != HeroId) continue;
-                if (r.materialA == skill || r.materialB == skill) return true;
-            }
+            if (card == null || card.Skill == null || card.Type == CardType.Fusion || card.Type == CardType.Fallback) return null;
+            return FusionHints.TryNearest(card.Skill, card.NextLevel, Loadout, recipes, HeroId, RecipeBook.IsDiscovered, out FusionHints.Progress p, out int others)
+                ? FusionHints.CardLine(p, others)
+                : null;
+        }
 
-            return false;
+        /// <summary>조합 카드 경고 (조사 A4): 이 조합으로 재료가 사라져 이번 판에 못 만들게 되는 발견한 조합. 없으면 빈 문자열</summary>
+        public string BlockedWarning(FusionRecipe recipe)
+        {
+            return FusionHints.BlockedLine(FusionHints.BlockedBy(recipe, Loadout, recipes, HeroId, RecipeBook.IsDiscovered));
         }
 
         /// <summary>
@@ -137,6 +164,7 @@ namespace HistoryHeroes.Skills
             }
 
             _loadout = new SkillLoadout(activeSlots, passiveSlots);
+            player.Health.ClearShield(); // 수호 방패·철벽이 남긴 보호막도 같이
         }
 
         /// <summary>

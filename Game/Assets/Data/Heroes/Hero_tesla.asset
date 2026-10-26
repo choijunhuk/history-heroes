@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ebc6196135fc4408657c8ea9d0378e, type: 3}
+  m_Name: Hero_tesla
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Heroes.HeroData
+  id: tesla
+  displayName: "\uB2C8\uCF5C\uB77C \uD14C\uC2AC\uB77C"
+  heroClass: 3
+  playStyle: "\uCF54\uC77C\uC744 \uAE54\uC544\uB450\uACE0 \uADF8 \uC8FC\uBCC0\uC5D0\uC11C
+    \uC2F8\uC6B0\uB294 \uC790\uB9AC \uC7A1\uAE30"
+  maxHp: 850
+  attack: 95
+  attackSpeed: 0.9
+  moveSpeed: 5
+  range: 5.5
+  critRate: 0.05
+  critDamage: 1.5
+  attackKind: 0
+  projectilePrefab: {fileID: 1703544268103197824, guid: 3ea8bdb1b89ca524386934c5df072f74, type: 3}
+  projectileSpeed: 11
+  meleeArcDegrees: 120
+  meleeWaveCoefficient: 0.4
+  signatureName: "\uAD50\uB958"
+  signatureDescription: "\uAE30\uBCF8 \uACF5\uACA9\uC774 \uB9DE\uC73C\uBA74 \uADFC\uCC98
+    \uC801\uC5D0\uAC8C 2\uBC88 \uD295\uAE40 (\uD295\uAE38 \uB54C\uB9C8\uB2E4 -30%)"
+  firstShotDelay: 0.2
+  firstShotBonus: 0
+  damageReduction: 0
+  lowHpThreshold: 0.5
+  lowHpAttackBonus: 0
+  cannonEvery: 0
+  cannonCoefficient: 0.8
+  cannonRadius: 1.2
+  knockback: 0
+  chainBounces: 2
+  chainRadius: 3
+  chainFalloff: 0.3
+  exclusiveActive: {fileID: 11400000, guid: df0c2be386201e8419ebe3056523bf3a, type: 2}
+  unlockAfterBossChapter: 3
+  unlockGems: 1500
+  color: {r: 0.55, g: 0.85, b: 1, a: 1}

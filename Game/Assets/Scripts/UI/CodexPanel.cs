@@ -31,6 +31,7 @@ namespace HistoryHeroes.UI
         {
             root.SetActive(true);
             Render();
+            listLabel.rectTransform.anchoredPosition = Vector2.zero; // 늘 맨 위부터
         }
 
         private void Render()
@@ -60,6 +61,17 @@ namespace HistoryHeroes.UI
                 }
 
                 sb.AppendLine();
+            }
+
+            // 스킬별 조합 수 (조사 A3): 미발견 조합은 결과·짝 대신 개수만
+            sb.AppendLine("<b>스킬별 조합</b>");
+            foreach (SkillData s in database.skills)
+            {
+                if (s == null) continue;
+                (int total, int known) = FusionHints.CountFor(s, database.recipes, RecipeBook.IsDiscovered);
+                if (total == 0) continue;
+                string color = known == total ? "#7CE38B" : known > 0 ? "#FFE08A" : "#A9B4C2";
+                sb.AppendLine($"  {s.displayName}  <color={color}>{total}개 ({known}개 발견)</color>");
             }
 
             progressLabel.text = $"발견 {found} / {RecipeCount}";

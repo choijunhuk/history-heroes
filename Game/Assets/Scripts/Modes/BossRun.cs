@@ -169,7 +169,7 @@ namespace HistoryHeroes.Modes
                 FirstClear = firstClear,
                 UnlockedChapter = firstClear ? _info.chapter + 1 : 0,
                 BasicAttackShare = DamageLog.BasicShare,
-                RecordLabel = _record != null ? RecordFormat.Title(_record) : "기록 없음 (기본 공격만)",
+                RecordLabel = _record != null ? RecordFormat.Title(_record, database) : "기록 없음 (기본 공격만)",
                 RewardLines = lines,
             };
             StartCoroutine(ShowResultAfter(victory ? 1f : 0.6f, summary));
@@ -191,7 +191,7 @@ namespace HistoryHeroes.Modes
             return bosses.Count > 0 ? bosses[0] : null;
         }
 
-        /// <summary>에디터에서 전투 장면을 바로 보스 모드로 열었을 때: 가장 최근 기록</summary>
+        /// <summary>에디터에서 전투 장면을 바로 보스 모드로 열었을 때: 가장 최근 기록 (BattleBootstrap과 같은 규칙)</summary>
         private static RunRecord LatestRecord()
         {
             List<RunRecord> records = SaveSystem.Data.records;

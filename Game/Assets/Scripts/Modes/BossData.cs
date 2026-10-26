@@ -16,6 +16,8 @@ namespace HistoryHeroes.Modes
         [TextArea] public string tests = "큰 빈틈이 있다 → 빈틈마다 멈춰서 쏘기";
         [Tooltip("시작 전 화면: 추천 빌드")]
         [TextArea] public string recommend = "기본 공격이 강한 빌드";
+        [Tooltip("이 강점의 기록에 \"추천\" 배지 (조사 A8). 고르는 건 플레이어 자유")]
+        public Skills.SkillRole recommendedRole = Skills.SkillRole.Single;
 
         public EnemyBase prefab;
         [Tooltip("적 데이터 체력 × 이 값")]

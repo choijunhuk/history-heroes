@@ -16,9 +16,11 @@ MonoBehaviour:
   displayName: "\uD654\uC0B4\uBE44"
   description: "6\uCD08\uB9C8\uB2E4 \uD654\uBA74 \uC548 \uBAA8\uB4E0 \uC801\uC5D0\uAC8C
     \uD654\uC0B4\n(150%)\n\uB808\uBCA8\uB9C8\uB2E4 \uD53C\uD574 +30%"
+  warriorDescription: 
   icon: {fileID: 0}
   rarity: 2
   tags: 4
+  role: 2
   maxLevel: 5
   saveCostFirstLevel: 6
   saveCostPerLevel: 6

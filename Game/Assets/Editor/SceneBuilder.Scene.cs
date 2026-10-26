@@ -38,6 +38,11 @@ namespace HistoryHeroes.EditorTools
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.07f, 0.08f, 0.1f);
             cameraObject.AddComponent<CameraFit>();
+            cameraObject.AddComponent<CameraShake>(); // 손맛: 화면 흔들림 (조사 A9)
+
+            // 손맛: 피해 숫자 (조사 A9). 글꼴은 한국어 TMP 글꼴을 같이 쓴다
+            var numbers = new GameObject("DamageNumbers").AddComponent<DamageNumbers>();
+            using (var props = new Props(numbers)) props.Ref("font", _font);
 
             var light = new GameObject("Global Light 2D").AddComponent<Light2D>();
             light.lightType = Light2D.LightType.Global;
@@ -86,7 +91,7 @@ namespace HistoryHeroes.EditorTools
             var player = playerObject.AddComponent<PlayerController>();
             using (var props = new Props(player))
             {
-                props.Ref("hero", d.Khan).Ref("joystick", ui.Joystick).Ref("projectilePrefab", p.PlayerArrow)
+                props.Ref("hero", d.Khan).Ref("joystick", ui.Joystick).Ref("projectilePrefab", p.PlayerArrow).Ref("bodyRenderer", playerBody)
                     .Mask("enemyMask", Mask(EnemyLayer)).Mask("wallMask", Mask(WallLayer));
             }
 
@@ -140,7 +145,10 @@ namespace HistoryHeroes.EditorTools
             }
 
             var bootstrap = systems.AddComponent<BattleBootstrap>();
-            using (var props = new Props(bootstrap)) props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject);
+            using (var props = new Props(bootstrap))
+            {
+                props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player);
+            }
 
             var cheats = systems.AddComponent<Dev.DevCheats>();
             using (var props = new Props(cheats)) props.Ref("experience", experience).Ref("levelUp", ui.LevelUp).Ref("skills", skills);
@@ -310,6 +318,12 @@ namespace HistoryHeroes.EditorTools
             TMP_Text roomLabel = Label("RoomLabel", hudRect, "방 1/10", 38, TextAlignmentOptions.Top);
             Place(roomLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(520f, 60f));
 
+            // 방 진행 바 (조사 A6) · 알림 (A7)
+            RectTransform roomBar = Rect("RoomBar", hudRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -178f), new Vector2(600f, 36f));
+            TMP_Text hudNotice = Label("Notice", hudRect, "", 30, TextAlignmentOptions.Center, new Color(1f, 0.9f, 0.55f));
+            Place(hudNotice.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -330f), new Vector2(960f, 56f));
+            hudNotice.gameObject.SetActive(false);
+
             // 별 ★2 도전 중일 때만 보이는 맞은 횟수 (Modes 3-2)
             TMP_Text hitsLabel = Label("HitsLabel", hudRect, "맞음 0/15", 30, TextAlignmentOptions.TopRight, new Color(1f, 1f, 1f, 0.8f));
             Place(hitsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -160f), new Vector2(300f, 46f));
@@ -318,7 +332,8 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(ui.Hud))
             {
                 props.Ref("hpFill", hpFill).Ref("hpLabel", hpLabel).Ref("expFill", expFill)
-                    .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel).Ref("hitsLabel", hitsLabel);
+                    .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel).Ref("hitsLabel", hitsLabel)
+                    .Ref("roomBar", roomBar).Ref("noticeLabel", hudNotice);
             }
 
             // ----- 조이스틱 (화면 아래쪽 어디든 누르면 그 자리에 생김) -----
@@ -364,6 +379,12 @@ namespace HistoryHeroes.EditorTools
             for (int i = 0; i < 3; i++) cards[i] = BuildCard(panel, i, new Vector2(-step + step * i, 40f));
 
             Button reroll = Btn("Reroll", panel, "리롤 (광고) 2/2", new Vector2(-220f, -400f), new Vector2(390f, 120f), new Color(0.22f, 0.3f, 0.45f), out TMP_Text rerollLabel);
+            rerollLabel.enableAutoSizing = true; // "광고 보고 다시 뽑기 (남은 2)"가 한 줄에 들어가게
+            rerollLabel.fontSizeMin = 22f;
+            rerollLabel.fontSizeMax = 32f;
+            rerollLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            rerollLabel.rectTransform.offsetMin = new Vector2(14f, 0f);
+            rerollLabel.rectTransform.offsetMax = new Vector2(-14f, 0f);
             Button hide = Btn("HideFusion", panel, "이번 판 숨기기", new Vector2(220f, -400f), new Vector2(390f, 120f), new Color(0.38f, 0.25f, 0.45f), out _);
             TMP_Text note = Label("RerollNote", panel, "리롤은 다시 뽑을 기회일 뿐, 더 좋은 카드를 보장하지 않아요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.55f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -500f), new Vector2(1000f, 40f));
@@ -414,15 +435,21 @@ namespace HistoryHeroes.EditorTools
             dr.offsetMin = new Vector2(12f, 10f);
             dr.offsetMax = new Vector2(-12f, -10f);
 
-            TMP_Text material = Label("Material", card, "조합 재료", 28, TextAlignmentOptions.Bottom, new Color(1f, 0.9f, 0.3f));
-            Place(material.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 12f), new Vector2(CardWidth - 20f, 40f));
-            material.rectTransform.pivot = new Vector2(0.5f, 0f);
+            // 힌트 줄 (조합 진행·막히는 조합·★3 경고). 있으면 설명 칸이 위로 줄어든다 (SkillCardView.SetHint)
+            RectTransform hintBox = Rect("HintBox", card, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(CardWidth - 24f, 100f));
+            Img(hintBox, new Color(0.05f, 0.06f, 0.09f, 0.78f), null);
+            TMP_Text material = Label("Material", card, "", 25, TextAlignmentOptions.Center, new Color(1f, 0.9f, 0.3f));
+            Place(material.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(CardWidth - 36f, 96f));
+            material.enableAutoSizing = true;
+            material.fontSizeMin = 17f;
+            material.fontSizeMax = 25f;
+            material.lineSpacing = -4f;
 
             var view = card.gameObject.AddComponent<SkillCardView>();
             using (var props = new Props(view))
             {
                 props.Ref("button", button).Ref("background", background).Ref("kindBand", bandImage).Ref("kindLabel", kind)
-                    .Ref("nameLabel", nameLabel).Ref("levelLabel", level).Ref("descriptionLabel", description).Ref("materialLabel", material);
+                    .Ref("nameLabel", nameLabel).Ref("levelLabel", level).Ref("descriptionLabel", description).Ref("materialLabel", material).Ref("descriptionBox", box).Ref("hintBox", hintBox.gameObject);
             }
 
             return view;

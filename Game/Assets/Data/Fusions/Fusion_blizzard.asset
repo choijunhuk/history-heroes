@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c31a02d6e300bb54b80ef1a7d7f3d480, type: 3}
+  m_Name: Fusion_blizzard
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.FusionRecipe
+  id: blizzard
+  type: 1
+  materialA: {fileID: 11400000, guid: 3ea50d1963127d047bf5e6c40db16f66, type: 2}
+  materialB: {fileID: 11400000, guid: a79399ab6d81e024c8adbd6d0bfc82ed, type: 2}
+  requiredLevelA: 3
+  requiredLevelB: 3
+  result: {fileID: 11400000, guid: bf0c981baad2e2d4981c023f5c51237e, type: 2}
+  heroOnlyId: 
