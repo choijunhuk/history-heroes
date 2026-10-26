@@ -25,6 +25,10 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button unlockButton;
         [SerializeField] private TMP_Text unlockLabel;
         [SerializeField] private Button backButton;
+        [Header("v0.4 장비")]
+        [SerializeField] private Button equipButton;
+        [SerializeField] private TMP_Text equipLabel;
+        [SerializeField] private EquipmentPanel equipment;
 
         private static readonly Color Normal = new Color(0.16f, 0.18f, 0.24f);
         private static readonly Color Focused = new Color(0.25f, 0.42f, 0.7f);
@@ -45,6 +49,14 @@ namespace HistoryHeroes.UI
             selectButton.onClick.AddListener(SelectFocused);
             unlockButton.onClick.AddListener(UnlockFocused);
             backButton.onClick.AddListener(() => root.SetActive(false));
+            if (equipButton != null) equipButton.onClick.AddListener(OpenEquipment);
+        }
+
+        /// <summary>고른 영웅의 장비 화면 (장비는 영웅마다 따로 낀다)</summary>
+        private void OpenEquipment()
+        {
+            HeroData focus = roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
+            if (equipment != null) equipment.Open(focus.id, focus.displayName, Render);
         }
 
         public void Open(Action onChanged)
@@ -88,6 +100,13 @@ namespace HistoryHeroes.UI
             bool focusUnlocked = HeroUnlock.IsUnlocked(d, focus);
             selectButton.interactable = focusUnlocked && focus != selected;
             selectLabel.text = !focusUnlocked ? "잠긴 영웅" : focus == selected ? "지금 영웅" : KoreanText.Josa(focus.displayName, "으로", "로") + " 하기";
+
+            if (equipButton != null)
+            {
+                bool gear = Equipment.EquipmentInventory.Unlocked(d);
+                equipButton.interactable = focusUnlocked && gear;
+                equipLabel.text = !gear ? "장비 (1구간 보스 뒤)" : focus.displayName + "의 장비";
+            }
 
             unlockButton.gameObject.SetActive(!focusUnlocked);
             bool enough = Wallet.Gems(d) >= focus.unlockGems;

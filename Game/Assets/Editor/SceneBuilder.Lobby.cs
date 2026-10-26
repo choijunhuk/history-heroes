@@ -61,6 +61,8 @@ namespace HistoryHeroes.EditorTools
             Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -700f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
             Button settingsButton = Btn("Settings", main, "설정", new Vector2(430f, 820f), new Vector2(180f, 80f), ButtonGray, out TMP_Text settingsLabel);
             settingsLabel.fontSize = 30;
+            Button shopButton = Btn("Shop", main, "상점", new Vector2(-430f, 820f), new Vector2(180f, 80f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text shopLabel);
+            shopLabel.fontSize = 30;
             TMP_Text note = Label("Note", main, "그래픽은 아직 임시 도형이에요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
 
@@ -72,6 +74,10 @@ namespace HistoryHeroes.EditorTools
             HeartPanel heartPanel = BuildHeartPanel(root);
             HeroPanel heroPanel = BuildHeroPanel(safe, roster);
             SettingsPanel settingsPanel = BuildSettingsPanel(safe);
+            EquipmentPanel equipmentPanel = BuildEquipmentPanel(safe, meta);
+            var gacha = UnityEditor.AssetDatabase.LoadAssetAtPath<HistoryHeroes.Equipment.GachaTable>($"{DataDir}/Equipment/GachaTable.asset");
+            ShopPanel shopPanel = BuildShopPanel(safe, gacha);
+            using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
 
             using (var props = new Props(lobby))
@@ -84,7 +90,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)
                     .Ref("walletLabel", wallet).Ref("noticeLabel", notice)
                     .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("roster", roster).Ref("heroPanel", heroPanel)
-                    .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel).Ref("metaTable", meta);
+                    .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel).Ref("metaTable", meta)
+                    .Ref("shopButton", shopButton).Ref("shop", shopPanel);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
@@ -206,10 +213,12 @@ namespace HistoryHeroes.EditorTools
             Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -520f), new Vector2(440f, 130f), ButtonGreen, out TMP_Text selectLabel);
             Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -520f), new Vector2(440f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
             unlockLabel.fontSize = 28;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -680f), new Vector2(400f, 110f), ButtonGray, out _);
+            Button equip = Btn("HeroEquipment", panel, "장비", new Vector2(-250f, -680f), new Vector2(440f, 110f), ButtonBlue, out TMP_Text equipLabel);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(250f, -680f), new Vector2(440f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
+                props.Ref("equipButton", equip).Ref("equipLabel", equipLabel);
                 props.Ref("root", panel.gameObject).Ref("roster", roster).Refs("heroButtons", buttons).Refs("heroBackgrounds", backgrounds)
                     .Refs("heroLabels", labels).Ref("selectButton", select).Ref("selectLabel", selectLabel)
                     .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("backButton", back);

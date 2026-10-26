@@ -44,6 +44,11 @@ namespace HistoryHeroes.EditorTools
             var meta = AssetUtil.LoadOrCreate<MetaTable>($"{DataDir}/Meta/MetaTable.asset");
             meta.equipment = table;
             EditorUtility.SetDirty(meta);
+
+            // 상자 표 (Gacha 2장): 화면 확률과 추첨이 같이 읽는다. 숫자는 GachaTable 기본값
+            var gacha = AssetUtil.LoadOrCreate<GachaTable>($"{DataDir}/Equipment/GachaTable.asset");
+            gacha.equipment = table;
+            EditorUtility.SetDirty(gacha);
             return meta;
         }
 

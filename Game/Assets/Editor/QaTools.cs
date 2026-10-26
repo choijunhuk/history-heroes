@@ -210,6 +210,31 @@ namespace HistoryHeroes.EditorTools
 
         public static string BossBenchStatus() => Dev.BossBench.Report();
 
+        private static Records.SaveStore _realStore;
+
+        /// <summary>
+        /// 화면 점검용 임시 저장: on = 지금 데이터를 임시 폴더에 복사해 그쪽으로 바꿔 끼운다 (골드·보석을 넣어 봐도 실제 저장은 그대로).
+        /// off = 원래 저장으로 되돌린다. Play를 꺼도 다음 Play는 기기 저장을 읽는다.
+        /// </summary>
+        public static string SandboxSave(bool on)
+        {
+            bool sandboxed = Records.SaveSystem.Store.MainPath.Contains("QaSandboxSave");
+            if (on)
+            {
+                if (sandboxed) return "이미 임시 저장";
+                _realStore = Records.SaveSystem.Store;
+                var sandbox = new Records.SaveStore(System.IO.Path.Combine(Application.temporaryCachePath, "QaSandboxSave"));
+                sandbox.Save(Records.SaveSystem.Data);
+                Records.SaveSystem.Use(sandbox);
+                return "임시 저장으로 바꿈";
+            }
+
+            if (!sandboxed) return "임시 저장 아님";
+            Records.SaveSystem.Use(_realStore ?? Records.SaveStore.ForDevice());
+            _realStore = null;
+            return "원래 저장으로 되돌림";
+        }
+
         private static List<Records.RecordSkill> BenchBuild(string build)
         {
             var list = new List<Records.RecordSkill>();

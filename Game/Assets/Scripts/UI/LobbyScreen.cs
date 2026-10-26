@@ -51,6 +51,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private HeroPanel heroPanel;
         [Tooltip("장비 보상 (v0.4)")]
         [SerializeField] private Meta.MetaTable metaTable;
+        [SerializeField] private Button shopButton;
+        [SerializeField] private ShopPanel shop;
         [SerializeField] private Button settingsButton;
         [SerializeField] private SettingsPanel settings;
 
@@ -72,6 +74,7 @@ namespace HistoryHeroes.UI
             codexButton.onClick.AddListener(() => codex.Open());
             heroButton.onClick.AddListener(() => heroPanel.Open(Render));
             if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
+            if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
 
             // 놓친 별 상자가 있으면 여기서 받는다
             Reward box = Stars.ClaimBoxes(data);
