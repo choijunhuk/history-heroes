@@ -87,6 +87,10 @@ namespace HistoryHeroes.UI
             return image;
         }
 
+        private void OnEnable() => Missions.MissionEvents.Completed += OnMissionCompleted;
+        private void OnDisable() => Missions.MissionEvents.Completed -= OnMissionCompleted;
+        private void OnMissionCompleted(string line) => ShowNotice(line, 2.2f);
+
         /// <summary>잠깐 뜨는 알림 (방 클리어 때 기록 용량 등)</summary>
         public void ShowNotice(string text, float seconds = 1.8f)
         {
@@ -110,6 +114,13 @@ namespace HistoryHeroes.UI
         }
 
         public string RoomText { set => roomLabel.text = value; }
+
+        /// <summary>서바이벌: 방 진행 바·맞은 횟수 대신 남은 시간 (RoomText)</summary>
+        public void SetSurvivalMode()
+        {
+            HideRoomProgress();
+            SetHitCounter(false, null, 0);
+        }
 
         /// <summary>보스맵: 레벨업이 없으므로 레벨·경험치·처치 수를 숨긴다 (GameDesign 7-3)</summary>
         public void SetBossMode()

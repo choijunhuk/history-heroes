@@ -44,6 +44,21 @@ namespace HistoryHeroes.Runes
             if (!Owns(save, runeId)) save.runes.owned.Add(new RuneLevel { id = runeId, level = 1 });
         }
 
+        /// <summary>서바이벌 첫 클리어 보상 룬 (인연의 룬, Runes 6장). 받은 룬 이름 줄을 돌려준다 (한 번만)</summary>
+        public static List<string> GrantSurvivalRunes(SaveData save, RuneTable table)
+        {
+            var lines = new List<string>();
+            if (table == null || save.survival.clears <= 0) return lines;
+            foreach (RuneData r in table.runes)
+            {
+                if (r == null || r.source != RuneSource.Survival || Owns(save, r.id)) continue;
+                Give(save, r.id);
+                lines.Add($"룬 획득!  {r.displayName}");
+            }
+
+            return lines;
+        }
+
         // ---------------------------------------------------------------- 보스 보상 (고르기)
 
         /// <summary>받을 차례인 보스 보상 고르기 ("ch2" / "ch4"), 없으면 null</summary>

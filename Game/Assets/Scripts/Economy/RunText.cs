@@ -13,6 +13,7 @@ namespace HistoryHeroes.Economy
         {
             if (sourceId == DamageLog.BasicSource) return "기본 공격";
             if (sourceId != null && sourceId.StartsWith("sig_")) return hero != null ? hero.signatureName : "대표 효과";
+            if (sourceId != null && sourceId.StartsWith("pet_")) return Pets.PetService.SourceName(sourceId);
             SkillData data = database != null ? database.Find(sourceId) : null;
             return data != null ? data.displayName : "기타";
         }

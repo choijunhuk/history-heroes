@@ -59,9 +59,10 @@ namespace HistoryHeroes.Combat
             };
         }
 
-        public static DamageInfo Enemy(float amount)
+        /// <param name="source">무엇에 맞았나 (적 ID, 보스 패턴 — 벤치에서 "무엇에 쓰러지나"를 센다)</param>
+        public static DamageInfo Enemy(float amount, string source = null)
         {
-            return new DamageInfo { Amount = amount, IsCrit = false, Kind = DamageKind.Enemy, AttackerTeam = Team.Enemy };
+            return new DamageInfo { Amount = amount, IsCrit = false, Kind = DamageKind.Enemy, AttackerTeam = Team.Enemy, SourceId = source };
         }
     }
 }

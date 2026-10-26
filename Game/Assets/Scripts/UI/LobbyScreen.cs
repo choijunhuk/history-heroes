@@ -35,6 +35,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button dungeonButton;
         [SerializeField] private Button bossButton;
         [SerializeField] private TMP_Text bossButtonLabel;
+        [SerializeField] private Button survivalButton;
+        [SerializeField] private TMP_Text survivalButtonLabel;
         [SerializeField] private Button archiveButton;
         [SerializeField] private TMP_Text archiveButtonLabel;
         [SerializeField] private Button codexButton;
@@ -55,6 +57,10 @@ namespace HistoryHeroes.UI
         [SerializeField] private ShopPanel shop;
         [SerializeField] private Button settingsButton;
         [SerializeField] private SettingsPanel settings;
+        [Header("v0.5 미션")]
+        [SerializeField] private Button missionButton;
+        [SerializeField] private TMP_Text missionLabel;
+        [SerializeField] private MissionPanel missions;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -70,11 +76,23 @@ namespace HistoryHeroes.UI
             nextChapter.onClick.AddListener(() => ChangeChapter(+1));
             dungeonButton.onClick.AddListener(StartDungeon);
             bossButton.onClick.AddListener(OpenBoss);
+            if (survivalButton != null) survivalButton.onClick.AddListener(StartSurvival);
             archiveButton.onClick.AddListener(() => archive.Open(Render));
             codexButton.onClick.AddListener(() => codex.Open());
             heroButton.onClick.AddListener(() => heroPanel.Open(Render));
             if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
             if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
+            if (missionButton != null) missionButton.onClick.AddListener(() => missions.Open(Render));
+
+            // 미션 (v0.5): 날·주가 바뀌었으면 새로, "게임 접속" 미션
+            if (metaTable != null && metaTable.missions != null)
+            {
+                Missions.MissionEvents.Configure(metaTable.missions, roster, codex.RecipeCount);
+                Missions.MissionEvents.Completed += OnMissionCompleted;
+                Missions.MissionEvents.EnsureCurrent();
+                Missions.MissionEvents.Raise(Missions.MissionEvents.Login);
+                SaveSystem.SaveIfDirty();
+            }
 
             // 놓친 별 상자가 있으면 여기서 받는다
             Reward box = Stars.ClaimBoxes(data);
@@ -101,6 +119,17 @@ namespace HistoryHeroes.UI
                 }
             }
 
+            // 펫 (v0.5): 펫이 생기기 전에 채운 조건도 여기서
+            if (metaTable != null && metaTable.pets != null)
+            {
+                List<string> pets = Pets.PetService.CheckAll(data, metaTable.pets);
+                if (pets.Count > 0)
+                {
+                    SaveSystem.Save();
+                    ShowNotice(string.Join(" · ", pets));
+                }
+            }
+
             // 장비가 생기기 전에 깬 보스의 장비 보상 (v0.4)
             if (metaTable != null)
             {
@@ -115,6 +144,10 @@ namespace HistoryHeroes.UI
             SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
             Render();
         }
+
+        private void OnDestroy() => Missions.MissionEvents.Completed -= OnMissionCompleted;
+
+        private void OnMissionCompleted(string line) => ShowNotice(line);
 
         private void Update()
         {
@@ -145,6 +178,17 @@ namespace HistoryHeroes.UI
         private void StartDungeon()
         {
             if (!GameSession.TryStartDungeon(_chapter)) hearts.Open(Render);
+        }
+
+        private void StartSurvival()
+        {
+            if (!GameSession.SurvivalUnlocked(SaveSystem.Data))
+            {
+                ShowNotice("2구간 보스를 깨면 서바이벌이 열려요");
+                return;
+            }
+
+            if (!GameSession.TryStartSurvival()) hearts.Open(Render);
         }
 
         private static int MaxChapter(SaveData data) => Mathf.Clamp(data.unlockedChapter, 1, ChapterNames.Length);
@@ -183,12 +227,35 @@ namespace HistoryHeroes.UI
             bossButton.interactable = boss != null && hasRecord;
             bossButtonLabel.text = boss == null ? "보스 준비 중" : hasRecord ? "보스 도전" : "보스 도전 (기록이 있어야 해요)";
             archiveButtonLabel.text = $"기록 보관함  {records}/{data.recordSlots}";
+            RenderSurvival(data);
+            if (missionLabel != null && metaTable != null && metaTable.missions != null)
+            {
+                int ready = Missions.MissionService.ClaimableCount(data, metaTable.missions, Missions.MissionEvents.Context);
+                missionLabel.text = ready > 0 ? $"미션 <color=#FFD966>●{ready}</color>" : "미션";
+            }
 
             int found = data.discoveredRecipes.Count;
             codexButtonLabel.text = $"조합 도감  {found}/{codex.RecipeCount}";
             HeroData hero = HeroUnlock.Selected(data, roster);
             heroButtonLabel.text = hero != null ? $"영웅  {hero.displayName} ({hero.ClassLabel})" : "영웅";
             RenderWallet();
+        }
+
+        /// <summary>서바이벌 버튼: 잠김 / 하트 2 + 고른 영웅의 최고 기록</summary>
+        private void RenderSurvival(SaveData data)
+        {
+            if (survivalButton == null || survivalButtonLabel == null) return;
+            if (!GameSession.SurvivalUnlocked(data))
+            {
+                survivalButtonLabel.text = "서바이벌\n<size=60%>2구간 보스를 깨면 열려요</size>";
+                return;
+            }
+
+            HeroData hero = HeroUnlock.Selected(data, roster);
+            float best = hero != null ? data.survival.SecondsOf(hero.id) : 0f;
+            string dev = GameSession.SurvivalUnlockedByProgress(data) ? "" : " · 개발용 해금";
+            string record = best > 0f ? $"최고 {Survival.SurvivalRun.Format(best)}" : "10분 버티기";
+            survivalButtonLabel.text = $"서바이벌\n<size=60%>{record} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
         }
 
         private void OpenBoss()

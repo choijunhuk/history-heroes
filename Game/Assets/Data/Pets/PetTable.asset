@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82ae24310c09d0949bf7bd066b128cb1, type: 3}
+  m_Name: PetTable
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Pets.PetTable
+  pets:
+  - {fileID: 11400000, guid: c030f89f0f3ce3a4280caf4c2d48bc7a, type: 2}
+  - {fileID: 11400000, guid: ad3be3b1ade720d4b8c418df4e144bff, type: 2}
+  - {fileID: 11400000, guid: e2b28df965eeea447a2649300ba4c1f1, type: 2}
+  - {fileID: 11400000, guid: 24cfdfc4505ddb34688821a13f3dca85, type: 2}
+  maxLevel: 10
+  perLevel: 0.003
+  bondBonus: 0.02
+  costPerLevel: 1500
+  awakenFirst: 5
+  awakenSecond: 10

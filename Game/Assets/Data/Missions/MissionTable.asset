@@ -1,0 +1,474 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f07ab9adb452e9a45aab946d210cead1, type: 3}
+  m_Name: MissionTable
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Missions.MissionTable
+  resetHour: 5
+  dailyRandomTotal: 70
+  dailyRandomCount: 4
+  weeklyPointsEach: 20
+  dailyFixed:
+  - id: login
+    title: "\uAC8C\uC784 \uC811\uC18D"
+    eventKey: login
+    target: 1
+    points: 10
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: run2
+    title: "\uC544\uBB34 \uBAA8\uB4DC\uB098 {0}\uD310 \uD50C\uB808\uC774 (\uC838\uB3C4
+      \uC778\uC815)"
+    eventKey: run
+    target: 2
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  dailyPool:
+  - id: elite3
+    title: "\uC5D8\uB9AC\uD2B8 {0}\uB9C8\uB9AC \uCC98\uCE58"
+    eventKey: elite
+    target: 3
+    points: 15
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: kill300
+    title: "\uC801 {0}\uB9C8\uB9AC \uCC98\uCE58"
+    eventKey: kill
+    target: 300
+    points: 15
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: nohit3
+    title: "\uD53C\uACA9 \uC5C6\uC774 \uBC29 {0}\uAC1C \uD074\uB9AC\uC5B4"
+    eventKey: nohit_room
+    target: 3
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: basic150
+    title: "\uAE30\uBCF8 \uACF5\uACA9\uC73C\uB85C \uC801 {0}\uB9C8\uB9AC \uCC98\uCE58"
+    eventKey: basic_kill
+    target: 150
+    points: 15
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: fusion1
+    title: "\uC870\uD569 \uC2A4\uD0AC {0}\uAC1C \uB9CC\uB4E4\uAE30"
+    eventKey: fusion
+    target: 1
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: actives3
+    title: "\uC561\uD2F0\uBE0C \uC2A4\uD0AC {0}\uAC1C\uB97C Lv3 \uC774\uC0C1\uC73C\uB85C"
+    eventKey: actives_lv3
+    target: 3
+    points: 15
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: passives4
+    title: "\uD328\uC2DC\uBE0C {0}\uCE78\uC744 \uB2E4 \uCC44\uC6B0\uAE30"
+    eventKey: passives_full
+    target: 4
+    points: 15
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: herolevel
+    title: "\uC601\uC6C5 \uB808\uBCA8\uC5C5 {0}\uD68C (\uACE8\uB4DC)"
+    eventKey: hero_level
+    target: 1
+    points: 15
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: equip1
+    title: "\uC7A5\uBE44 {0}\uAC1C \uC7A5\uCC29 \uBC14\uAFB8\uAE30"
+    eventKey: equip
+    target: 1
+    points: 15
+    gate: 2
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: heroday
+    title: "\uC624\uB298\uC758 \uC601\uC6C5\uC73C\uB85C \uB358\uC804 1\uD310"
+    eventKey: hero_dungeon
+    target: 1
+    points: 20
+    gate: 0
+    modeMission: 1
+    days: 31
+    distinct: 0
+    heroOfDay: 1
+    fallbackId: 
+  - id: boss1
+    title: "\uBCF4\uC2A4\uB9F5 \uB3C4\uC804 {0}\uD68C (\uC838\uB3C4 \uC778\uC815)"
+    eventKey: boss_try
+    target: 1
+    points: 20
+    gate: 3
+    modeMission: 1
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: record1
+    title: "\uAE30\uB85D {0}\uAC1C \uC800\uC7A5\uD558\uAE30"
+    eventKey: record
+    target: 1
+    points: 15
+    gate: 0
+    modeMission: 1
+    days: 63
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: survival5
+    title: "\uC11C\uBC14\uC774\uBC8C 5\uBD84 \uC774\uC0C1 \uC0DD\uC874"
+    eventKey: survival_5min
+    target: 1
+    points: 20
+    gate: 1
+    modeMission: 1
+    days: 32
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: rift5
+    title: "\uBB34\uD55C\uC758 \uADE0\uC5F4 5\uCE35 \uC774\uC0C1"
+    eventKey: rift_floor5
+    target: 1
+    points: 20
+    gate: 4
+    modeMission: 1
+    days: 64
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: challenge1
+    title: "\uC77C\uC77C \uB3C4\uC804 \uACF5\uC2DD \uB3C4\uC804 1\uD68C"
+    eventKey: daily_challenge
+    target: 1
+    points: 15
+    gate: 4
+    modeMission: 1
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: story1
+    title: "\uB3C4\uAC10\uC5D0\uC11C \uC601\uC6C5 \uC774\uC57C\uAE30 1\uAC1C \uC77D\uAE30"
+    eventKey: story_read
+    target: 1
+    points: 15
+    gate: 4
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  weekly:
+  - id: box4
+    title: "\uC77C\uC77C \uBBF8\uC158 \uC0C1\uC790(100)\uB97C {0}\uC77C \uC5F4\uAE30"
+    eventKey: daily_box100
+    target: 4
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: twoheroes
+    title: "\uC11C\uB85C \uB2E4\uB978 \uC601\uC6C5 {0}\uBA85\uC73C\uB85C \uB358\uC804
+      \uD074\uB9AC\uC5B4"
+    eventKey: dungeon_clear
+    target: 2
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 1
+    heroOfDay: 0
+    fallbackId: 
+  - id: boss2
+    title: "\uBCF4\uC2A4\uB9F5 {0}\uD68C \uACA9\uD30C (\uAC19\uC740 \uBCF4\uC2A4\uC5EC\uB3C4
+      \uB428)"
+    eventKey: boss_win
+    target: 2
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: recipe1
+    title: "\uC0C8\uB85C\uC6B4 \uC870\uD569 {0}\uAC1C \uBC1C\uACAC"
+    eventKey: recipe_new
+    target: 1
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: fusion3
+  - id: survival20
+    title: "\uC11C\uBC14\uC774\uBC8C \uD569\uACC4 20\uBD84 \uD50C\uB808\uC774"
+    eventKey: survival_sec
+    target: 1200
+    points: 20
+    gate: 1
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: dungeon3
+  - id: nolegend
+    title: "\uC804\uC124 \uC2A4\uD0AC \uC5C6\uC774 \uB358\uC804 {0}\uD310 \uD074\uB9AC\uC5B4"
+    eventKey: nolegend_clear
+    target: 1
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  weeklyFallbacks:
+  - id: fusion3
+    title: "\uC870\uD569 {0}\uD68C \uB9CC\uB4E4\uAE30"
+    eventKey: fusion
+    target: 3
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  - id: dungeon3
+    title: "\uB358\uC804 {0}\uD310 \uD074\uB9AC\uC5B4"
+    eventKey: dungeon_clear
+    target: 3
+    points: 20
+    gate: 0
+    modeMission: 0
+    days: 127
+    distinct: 0
+    heroOfDay: 0
+    fallbackId: 
+  dailyChests:
+  - points: 20
+    gold: 200
+    gems: 0
+    gearShards: 0
+    tickets: 0
+    ancientShards: 0
+    heroShards: 0
+  - points: 40
+    gold: 200
+    gems: 10
+    gearShards: 0
+    tickets: 0
+    ancientShards: 0
+    heroShards: 0
+  - points: 60
+    gold: 300
+    gems: 15
+    gearShards: 0
+    tickets: 0
+    ancientShards: 0
+    heroShards: 0
+  - points: 80
+    gold: 300
+    gems: 0
+    gearShards: 3
+    tickets: 0
+    ancientShards: 0
+    heroShards: 0
+  - points: 100
+    gold: 0
+    gems: 25
+    gearShards: 0
+    tickets: 0
+    ancientShards: 5
+    heroShards: 0
+  weeklyChests:
+  - points: 40
+    gold: 2000
+    gems: 10
+    gearShards: 0
+    tickets: 0
+    ancientShards: 0
+    heroShards: 0
+  - points: 80
+    gold: 3000
+    gems: 10
+    gearShards: 10
+    tickets: 0
+    ancientShards: 0
+    heroShards: 5
+  - points: 120
+    gold: 0
+    gems: 10
+    gearShards: 0
+    tickets: 1
+    ancientShards: 20
+    heroShards: 0
+  achievements:
+  - id: chapters
+    title: "\uAD6C\uAC04 \uC815\uBCF5"
+    category: "\uC9C4\uD589"
+    goal: "{0}\uAD6C\uAC04 \uBCF4\uC2A4 \uACA9\uD30C"
+    kind: 0
+    targets: 0100000002000000030000000400000005000000
+    gems: 3200000032000000320000003200000032000000
+  - id: stars
+    title: "\uBCC4 \uC218\uC9D1\uAC00"
+    category: "\uC9C4\uD589"
+    goal: "\uBCC4 {0}\uAC1C"
+    kind: 1
+    targets: 0a000000140000001e000000
+    gems: 320000006400000096000000
+  - id: basic
+    title: "\uBA48\uCDA4\uC758 \uB2EC\uC778"
+    category: "\uC804\uD22C"
+    goal: "\uAE30\uBCF8 \uACF5\uACA9\uC73C\uB85C \uCC98\uCE58 {0}"
+    kind: 2
+    targets: e80300001027000050c30000
+    gems: 1e0000005000000096000000
+  - id: shadow
+    title: "\uADF8\uB9BC\uC790\uCC98\uB7FC"
+    category: "\uC804\uD22C"
+    goal: "\uD53C\uACA9 \uC5C6\uC774 \uBC29 \uD074\uB9AC\uC5B4 {0}\uD68C"
+    kind: 3
+    targets: 0a00000032000000c8000000
+    gems: 1e0000005000000096000000
+  - id: elite
+    title: "\uC5D8\uB9AC\uD2B8 \uC0AC\uB0E5\uAFBC"
+    category: "\uC804\uD22C"
+    goal: "\uC5D8\uB9AC\uD2B8 \uCC98\uCE58 {0}"
+    kind: 4
+    targets: 320000002c010000e8030000
+    gems: 140000003200000064000000
+  - id: recipes
+    title: "\uC870\uD569 \uC5F0\uAD6C\uAC00"
+    category: "\uBE4C\uB4DC"
+    goal: "\uC870\uD569 \uBC1C\uACAC {0}"
+    kind: 5
+    targets: 010000000300000006000000ffffffff
+    gems: 1e0000003c00000064000000c8000000
+  - id: legend
+    title: "\uC804\uC124\uC758 \uC21C\uAC04"
+    category: "\uBE4C\uB4DC"
+    goal: "\uC804\uC124 \uC2A4\uD0AC \uCC98\uC74C \uC5BB\uAE30"
+    kind: 6
+    targets: 01000000
+    gems: 32000000
+  - id: nolegend
+    title: "\uC804\uC124 \uC5C6\uC774\uB3C4"
+    category: "\uBE4C\uB4DC"
+    goal: "\uC804\uC124 \uC5C6\uC774 \uAD6C\uAC04 \uD074\uB9AC\uC5B4 {0}"
+    kind: 7
+    targets: 010000000300000005000000
+    gems: 320000006400000096000000
+  - id: dream
+    title: "\uB4DC\uB9BC\uD300"
+    category: "\uC601\uC6C5"
+    goal: "\uC601\uC6C5 {0}\uBA85 \uD574\uAE08"
+    kind: 8
+    targets: 020000000300000004000000
+    gems: 320000003200000032000000
+  - id: veteran
+    title: "\uB178\uB828\uD55C \uC601\uC6C5"
+    category: "\uC601\uC6C5"
+    goal: "\uD55C \uC601\uC6C5 Lv{0}"
+    kind: 9
+    targets: 0a000000140000001e000000
+    gems: 1e0000003c00000064000000
+  - id: allround
+    title: "\uB9CC\uB2A5"
+    category: "\uC601\uC6C5"
+    goal: "\uC601\uC6C5 {0}\uBA85 \uBAA8\uB450\uB85C 3\uAD6C\uAC04 \uD074\uB9AC\uC5B4"
+    kind: 10
+    targets: 04000000
+    gems: 96000000
+  - id: archivist
+    title: "\uAE30\uB85D \uBCF4\uAD00\uAC00"
+    category: "\uAE30\uB85D"
+    goal: "\uAE30\uB85D \uC800\uC7A5 {0}\uD68C"
+    kind: 11
+    targets: 010000000a00000032000000
+    gems: 140000003200000064000000
+  - id: tailored
+    title: "\uB9DE\uCDA4 \uC804\uB7B5"
+    category: "\uAE30\uB85D"
+    goal: "\uC11C\uB85C \uB2E4\uB978 \uAE30\uB85D\uC73C\uB85C \uBCF4\uC2A4 {0}\uBA85
+      \uACA9\uD30C"
+    kind: 12
+    targets: 0300000005000000
+    gems: 5000000096000000
+  - id: survivor
+    title: "\uC0DD\uC874\uC790"
+    category: "\uBAA8\uB4DC"
+    goal: "\uC11C\uBC14\uC774\uBC8C 10\uBD84 \uC0DD\uC874 {0}\uD68C"
+    kind: 13
+    targets: 010000000a000000
+    gems: 3200000064000000
+  heroOrder:
+  - khan
+  - guan
+  - napoleon
+  - tesla

@@ -9,6 +9,7 @@ namespace HistoryHeroes.Common
     {
         Dungeon,
         Boss,
+        Survival,
     }
 
     /// <summary>
@@ -58,7 +59,34 @@ namespace HistoryHeroes.Common
             return true;
         }
 
-        /// <summary>결과 화면의 "다시 도전": 같은 설정, 하트 1개</summary>
+        /// <summary>이번 모드의 하트 (던전·보스 1, 서바이벌 2 — Modes 8장)</summary>
+        public static int HeartCost => Mode == BattleMode.Survival ? SurvivalHearts : 1;
+
+        public const int SurvivalHearts = 2;
+
+        /// <summary>서바이벌 해금: 2구간 보스를 깨서 3구간이 열린 뒤 (Systems 3장). 에디터·개발 빌드는 시험용으로 늘 열림</summary>
+        public static bool SurvivalUnlocked(SaveData data) => SurvivalUnlockedByProgress(data) || Debug.isDebugBuild;
+
+        public static bool SurvivalUnlockedByProgress(SaveData data) => data != null && data.unlockedChapter >= 3;
+
+        /// <summary>서바이벌 (하트 2개, 2구간 보스 격파 뒤 — Systems 3장). 잠겨 있거나 하트가 모자라면 false</summary>
+        public static bool TryStartSurvival()
+        {
+            if (!SurvivalUnlocked(SaveSystem.Data)) return false;
+            if (!TrySpendHeart(SurvivalHearts)) return false;
+            StartSurvival();
+            return true;
+        }
+
+        public static void StartSurvival()
+        {
+            Practice = false;
+            Mode = BattleMode.Survival;
+            BossRecordId = null;
+            Load(BattleScene);
+        }
+
+        /// <summary>결과 화면의 "다시 도전": 같은 설정, 그 모드의 하트</summary>
         public static bool TryRetry()
         {
             if (Practice)
@@ -67,15 +95,15 @@ namespace HistoryHeroes.Common
                 return true;
             }
 
-            if (!TrySpendHeart()) return false;
+            if (!TrySpendHeart(HeartCost)) return false;
             Retry();
             return true;
         }
 
-        private static bool TrySpendHeart()
+        private static bool TrySpendHeart(int amount = 1)
         {
             SaveData data = SaveSystem.Data;
-            if (!Hearts.TrySpend(data, 1, Clock.UnixSeconds, Clock.Today, out bool free)) return false;
+            if (!Hearts.TrySpend(data, amount, Clock.UnixSeconds, Clock.Today, out bool free)) return false;
             HeartSpent = !free;
             SaveSystem.Save();
             return true;

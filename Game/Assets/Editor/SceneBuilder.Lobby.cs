@@ -39,7 +39,7 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text title = Label("Title", main, "역사 영웅", 96, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(900f, 130f));
-            TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v0.4", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v" + UnityEditor.PlayerSettings.bundleVersion.Substring(0, 3), 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
             Place(sub.rectTransform, Center, Center, new Vector2(0f, 615f), new Vector2(900f, 50f));
 
             Button prev = Btn("PrevChapter", main, "<", new Vector2(-420f, 400f), new Vector2(120f, 120f), ButtonGray, out TMP_Text prevLabel);
@@ -54,8 +54,21 @@ namespace HistoryHeroes.EditorTools
 
             Button dungeon = Btn("Dungeon", main, "던전 시작", new Vector2(0f, 50f), new Vector2(820f, 210f), ButtonGreen, out TMP_Text dungeonLabel);
             dungeonLabel.fontSize = 64;
-            Button boss = Btn("Boss", main, "보스 도전", new Vector2(0f, -190f), new Vector2(820f, 160f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text bossLabel);
-            bossLabel.fontSize = 44;
+            // 보스 | 서바이벌 (v0.5): 한 줄을 반씩
+            Button boss = Btn("Boss", main, "보스 도전", new Vector2(-212f, -190f), new Vector2(396f, 160f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text bossLabel);
+            bossLabel.fontSize = 38;
+            bossLabel.enableAutoSizing = true;
+            bossLabel.fontSizeMin = 22f;
+            bossLabel.fontSizeMax = 38f;
+            bossLabel.rectTransform.offsetMin = new Vector2(12f, 0f);
+            bossLabel.rectTransform.offsetMax = new Vector2(-12f, 0f);
+            Button survival = Btn("Survival", main, "서바이벌", new Vector2(212f, -190f), new Vector2(396f, 160f), new Color(0.6f, 0.38f, 0.14f), out TMP_Text survivalLabel);
+            survivalLabel.fontSize = 38;
+            survivalLabel.enableAutoSizing = true;
+            survivalLabel.fontSizeMin = 22f;
+            survivalLabel.fontSizeMax = 38f;
+            survivalLabel.rectTransform.offsetMin = new Vector2(12f, 0f);
+            survivalLabel.rectTransform.offsetMax = new Vector2(-12f, 0f);
             Button archive = Btn("Archive", main, "기록 보관함", new Vector2(0f, -380f), new Vector2(820f, 130f), ButtonBlue, out TMP_Text archiveLabel);
             Button codex = Btn("Codex", main, "조합 도감", new Vector2(0f, -540f), new Vector2(820f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text codexLabel);
             Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -700f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
@@ -63,6 +76,8 @@ namespace HistoryHeroes.EditorTools
             settingsLabel.fontSize = 30;
             Button shopButton = Btn("Shop", main, "상점", new Vector2(-430f, 820f), new Vector2(180f, 80f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text shopLabel);
             shopLabel.fontSize = 30;
+            Button missionButton = Btn("Missions", main, "미션", new Vector2(-430f, 725f), new Vector2(180f, 80f), new Color(0.2f, 0.42f, 0.3f), out TMP_Text missionLabel);
+            missionLabel.fontSize = 30;
             TMP_Text note = Label("Note", main, "그래픽은 아직 임시 도형이에요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
 
@@ -81,7 +96,9 @@ namespace HistoryHeroes.EditorTools
             ShopPanel shopPanel = BuildShopPanel(safe, gacha);
             TrainingPanel trainingPanel = BuildTrainingPanel(safe, meta);
             RunePanel runePanel = BuildRunePanel(safe, meta, database);
-            using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel);
+            PetPanel petPanel = BuildPetPanel(safe, meta);
+            MissionPanel missionPanel = BuildMissionPanel(safe, meta, roster);
+            using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
 
@@ -90,13 +107,15 @@ namespace HistoryHeroes.EditorTools
                 props.Refs("bosses", bosses).Ref("chapterLabel", chapter).Ref("chapterInfo", chapterInfo)
                     .Ref("previousChapter", prev).Ref("nextChapter", next)
                     .Ref("dungeonButton", dungeon).Ref("bossButton", boss).Ref("bossButtonLabel", bossLabel)
+                    .Ref("survivalButton", survival).Ref("survivalButtonLabel", survivalLabel)
                     .Ref("archiveButton", archive).Ref("archiveButtonLabel", archiveLabel)
                     .Ref("codexButton", codex).Ref("codexButtonLabel", codexLabel)
                     .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)
                     .Ref("walletLabel", wallet).Ref("noticeLabel", notice)
                     .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("roster", roster).Ref("heroPanel", heroPanel)
                     .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel).Ref("metaTable", meta)
-                    .Ref("shopButton", shopButton).Ref("shop", shopPanel);
+                    .Ref("shopButton", shopButton).Ref("shop", shopPanel)
+                    .Ref("missionButton", missionButton).Ref("missionLabel", missionLabel).Ref("missions", missionPanel);
             }
 
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
@@ -222,18 +241,30 @@ namespace HistoryHeroes.EditorTools
             levelLabel.fontSize = 28;
             Button awaken = Btn("HeroAwaken", panel, "각성", new Vector2(250f, -575f), new Vector2(440f, 110f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text awakenLabel);
             awakenLabel.fontSize = 28;
-            Button trainingButton = Btn("Training", panel, "수련 (모든 영웅)", new Vector2(-335f, -700f), new Vector2(325f, 110f), ButtonBlue, out TMP_Text trainingLabel);
-            trainingLabel.fontSize = 26;
-            Button runeButton = Btn("HeroRunes", panel, "룬", new Vector2(0f, -700f), new Vector2(325f, 110f), new Color(0.32f, 0.25f, 0.45f), out TMP_Text runeLabel);
-            runeLabel.fontSize = 28;
+            // 아래 줄: 수련 | 룬 | 펫 | 뒤로 (v0.5 펫)
+            Button trainingButton = Btn("Training", panel, "수련 (모든 영웅)", new Vector2(-378f, -700f), new Vector2(240f, 110f), ButtonBlue, out TMP_Text trainingLabel);
+            trainingLabel.fontSize = 24;
+            Button runeButton = Btn("HeroRunes", panel, "룬", new Vector2(-126f, -700f), new Vector2(240f, 110f), new Color(0.32f, 0.25f, 0.45f), out TMP_Text runeLabel);
+            runeLabel.fontSize = 24;
+            Button petButton = Btn("HeroPet", panel, "펫", new Vector2(126f, -700f), new Vector2(240f, 110f), new Color(0.25f, 0.42f, 0.3f), out TMP_Text petLabel);
+            petLabel.fontSize = 24;
+            foreach (TMP_Text t in new[] { trainingLabel, runeLabel, petLabel })
+            {
+                t.enableAutoSizing = true;
+                t.fontSizeMin = 18f;
+                t.fontSizeMax = 26f;
+                t.rectTransform.offsetMin = new Vector2(8f, 0f);
+                t.rectTransform.offsetMax = new Vector2(-8f, 0f);
+            }
             TMP_Text heroMessage = Label("HeroMessage", panel, "", 26, TextAlignmentOptions.Center);
             Place(heroMessage.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 50f));
             Button equip = Btn("HeroEquipment", panel, "장비", new Vector2(250f, -450f), new Vector2(440f, 110f), ButtonBlue, out TMP_Text equipLabel);
             equipLabel.fontSize = 28;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(335f, -700f), new Vector2(325f, 110f), ButtonGray, out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(378f, -700f), new Vector2(240f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
+                props.Ref("petButton", petButton).Ref("petLabel", petLabel);
                 props.Ref("equipButton", equip).Ref("equipLabel", equipLabel)
                     .Ref("levelButton", level).Ref("levelLabel", levelLabel).Ref("awakenButton", awaken).Ref("awakenLabel", awakenLabel)
                     .Ref("trainingButton", trainingButton).Ref("messageLabel", heroMessage).Ref("runeButton", runeButton).Ref("runeLabel", runeLabel);

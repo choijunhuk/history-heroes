@@ -15,6 +15,12 @@ namespace HistoryHeroes.Modes
     {
         [SerializeField] private GameObject dungeonRoot;
         [SerializeField] private GameObject bossRoot;
+        [Header("v0.5 서바이벌")]
+        [SerializeField] private GameObject survivalRoot;
+        [Tooltip("던전·보스가 같이 쓰는 방 벽 (서바이벌에서는 끈다)")]
+        [SerializeField] private GameObject arenaRoot;
+        [SerializeField] private CameraFollow cameraFollow;
+        [SerializeField] private Survival.SurvivalData survival;
         [SerializeField] private HeroRoster roster;
         [SerializeField] private PlayerController player;
         [Tooltip("판 밖 성장 표 (v0.4). 비어 있으면 판 밖 성장 없이 싸운다")]
@@ -22,6 +28,9 @@ namespace HistoryHeroes.Modes
         [Tooltip("룬 (던전만): 카드 뽑기 ②단계 배율")]
         [SerializeField] private Skills.SkillManager skills;
         [SerializeField] private Skills.SkillDatabase database;
+        [Header("v0.5 펫")]
+        [SerializeField] private Pets.PetController pet;
+        [SerializeField] private Progress.ExperienceSystem experience;
 
         /// <summary>
         /// 이번 판 영웅: 던전 = 로비에서 고른 영웅, 보스 = 기록에 저장된 영웅 (GameDesign 7-1 "사용한 영웅").
@@ -58,22 +67,46 @@ namespace HistoryHeroes.Modes
 
         private void Awake()
         {
+            if (metaTable != null) Missions.MissionEvents.Configure(metaTable.missions, roster, database != null ? database.recipes.Count : 0);
             if (roster != null && player != null)
             {
                 HeroData hero = HeroForThisBattle(roster);
                 player.SetHero(hero);
                 if (metaTable != null && hero != null) player.ApplyMeta(MetaForThisBattle(metaTable, hero.id), metaTable);
 
-                // 룬: 던전에서만 (보스맵은 레벨업이 없다, 기록에도 저장하지 않는다 — Runes 6장)
-                if (skills != null && metaTable != null && metaTable.runes != null && hero != null && GameSession.Mode == BattleMode.Dungeon)
+                // 룬: 던전·서바이벌만 (보스맵은 레벨업이 없다, 기록에도 저장하지 않는다 — Runes 6장)
+                if (skills != null && metaTable != null && metaTable.runes != null && hero != null && GameSession.Mode != BattleMode.Boss)
                 {
                     skills.WeightModifier = Runes.RuneService.ModifierFor(SaveSystem.Data, metaTable.runes, hero.id, database != null ? database.recipes : null);
                 }
             }
 
             bool boss = GameSession.Mode == BattleMode.Boss;
-            if (dungeonRoot != null) dungeonRoot.SetActive(!boss);
+            bool survive = GameSession.Mode == BattleMode.Survival;
+            if (dungeonRoot != null) dungeonRoot.SetActive(!boss && !survive);
             if (bossRoot != null) bossRoot.SetActive(boss);
+            if (survivalRoot != null) survivalRoot.SetActive(survive);
+            if (arenaRoot != null) arenaRoot.SetActive(!survive);
+            if (cameraFollow != null)
+            {
+                cameraFollow.enabled = survive;
+                if (survive && survival != null)
+                {
+                    cameraFollow.BoundsHalfSize = survival.mapHalfSize;
+                    CameraFit fit = cameraFollow.GetComponentInChildren<CameraFit>();
+                    if (fit != null) fit.Area = survival.cameraArea;
+                }
+            }
+
+            if (survive && skills != null && survival != null) skills.ConfigureSlots(survival.activeSlots, survival.passiveSlots); // 6·6
+
+            // 펫: 이번 판 스냅샷의 펫 (던전·서바이벌 = 지금 장착, 보스 = 기록의 펫). 모드 묶음을 켠 뒤라야 던전을 찾는다
+            if (pet != null)
+            {
+                Pets.PetData data = metaTable != null && metaTable.pets != null && player != null ? metaTable.pets.Find(player.Meta.petId) : null;
+                if (data != null) pet.Setup(data, player.Meta.petLevel, player, experience);
+                else pet.gameObject.SetActive(false);
+            }
         }
     }
 }

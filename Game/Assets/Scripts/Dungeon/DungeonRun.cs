@@ -52,11 +52,18 @@ namespace HistoryHeroes.Dungeon
         private int _room;
         private int _roomsCleared;
         private int _hitsTaken;
+        private int _hitsAtRoomStart;
         private int _alive;
         private bool _finished;
         private float _startTime;
 
         public int Room => _room;
+
+        /// <summary>새 방에 들어갔다 (방 번호). 흰 비둘기 보물 찾기 등</summary>
+        public event System.Action<int> RoomEntered;
+
+        /// <summary>적이 나오는 영역 (방 안쪽)</summary>
+        public Rect SpawnArea => spawnArea;
         public int RoomCount => dungeon.rooms.Count;
         public bool IsFinished => _finished;
 
@@ -80,6 +87,7 @@ namespace HistoryHeroes.Dungeon
         private void EnterRoom(int room)
         {
             _room = room;
+            _hitsAtRoomStart = _hitsTaken;
             levelUp.Floor = room;
             RoomData data = dungeon.rooms[room - 1];
             string chapter = GameSession.Chapter > 1 ? $"{GameSession.Chapter}구간 " : string.Empty;
@@ -89,6 +97,7 @@ namespace HistoryHeroes.Dungeon
             foreach (RoomData r in dungeon.rooms) elite.Add(r.kind == RoomKind.Elite);
             hud.SetRoomProgress(room, elite);
             StartCoroutine(SpawnRoom(data));
+            RoomEntered?.Invoke(room);
         }
 
         private IEnumerator SpawnRoom(RoomData data)
@@ -154,6 +163,7 @@ namespace HistoryHeroes.Dungeon
         {
             _roomsCleared = Mathf.Max(_roomsCleared, _room);
             experience.AttractAll();
+            if (_hitsTaken == _hitsAtRoomStart) Missions.MissionEvents.Raise(Missions.MissionEvents.NoHitRoom); // 피격 없이 방 클리어
 
             // 지금 끝나면 남길 수 있는 기록 용량 / 클리어하면 (조사 A7: "한 방만 더"의 동기)
             if (_room < RoomCount)
@@ -224,6 +234,7 @@ namespace HistoryHeroes.Dungeon
             int roomsCleared = victory ? RoomCount : _roomsCleared;
             summary.HitsTaken = _hitsTaken;
             summary.TopDamage = RunText.TopDamage(database, player.Hero);
+            Missions.MissionEvents.DungeonFinished(skills.HeroId, GameSession.Chapter, victory, skills.ChoseLegendary);
             summary.RewardLines = GrantRewards(victory, roomsCleared);
 
             // 기록 용량 = 기준 × 0.8 × (깬 방 ÷ 전체 방), 클리어 = 1 (GameDesign 7-2)
@@ -284,6 +295,9 @@ namespace HistoryHeroes.Dungeon
                 if (victory) Relics.RelicService.MarkHeroClear(save, skills.HeroId);
                 lines.AddRange(Relics.RelicService.CheckAll(save, metaTable.relics));
             }
+
+            // 펫 (Pets 3장): 첫 던전 클리어 = 사냥매 + 펫 칸
+            if (metaTable != null && metaTable.pets != null) lines.AddRange(Pets.PetService.CheckAll(save, metaTable.pets));
 
             SaveSystem.Save();
             return lines;

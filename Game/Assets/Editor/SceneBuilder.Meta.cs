@@ -66,7 +66,7 @@ namespace HistoryHeroes.EditorTools
             // 1. 발명의 시대
             relics.relics.Add(Relic("tesla_notes", "테슬라의 연구 노트", 0, "테슬라는 교류 전기와 무선 송전을 연구했다", Hero, 0, "tesla", "니콜라 테슬라로 던전 첫 클리어"));
             relics.relics.Add(Relic("davinci_sketch", "다빈치의 비행기계 스케치", 0, "레오나르도 다빈치는 새의 날개를 본뜬 비행 장치를 스케치로 남겼다", Achievement, 0, "recipes5", "조합 5종 발견"));
-            relics.relics.Add(Relic("galileo_telescope", "갈릴레이의 망원경", 0, "갈릴레이는 망원경으로 목성의 위성을 관찰했다", Survival, 0, "two_heroes", "서바이벌을 영웅 2명으로 클리어 (서바이벌은 v0.5)"));
+            relics.relics.Add(Relic("galileo_telescope", "갈릴레이의 망원경", 0, "갈릴레이는 망원경으로 목성의 위성을 관찰했다", Survival, 0, "two_heroes", "서바이벌을 영웅 2명으로 클리어"));
             relics.relics.Add(Relic("antikythera", "안티키테라 기계", 0, "고대 그리스의 천체 계산 장치. 톱니바퀴로 이루어졌다", Boss, 3, null, "3구간 보스 최초 격파"));
             // 2. 기록과 문자
             relics.relics.Add(Relic("rosetta_fragment", "로제타석 조각", 1, "같은 내용이 세 가지 문자로 새겨져 이집트 문자 해독의 열쇠가 되었다", Boss, 2, null, "2구간 보스 최초 격파"));
@@ -86,14 +86,16 @@ namespace HistoryHeroes.EditorTools
             // 5. 하늘과 시간
             relics.relics.Add(Relic("rain_gauge", "측우기", 4, "조선 시대에 비의 양을 재던 기구", Boss, 1, null, "1구간 보스 최초 격파"));
             relics.relics.Add(Relic("armillary_sphere", "혼천의", 4, "하늘의 움직임을 나타낸 천문 기구", StarsSource, 4, null, "4구간 별 6개"));
-            relics.relics.Add(Relic("sundial", "앙부일구", 4, "그림자로 시각을 알려준 조선의 해시계", Survival, 0, "survive5", "서바이벌 5분 생존 (v0.5)"));
-            relics.relics.Add(Relic("astrolabe", "아스트롤라베", 4, "별의 높이를 재던 천문·항해 도구", Survival, 0, "clear10", "서바이벌 10분 클리어 (v0.5)"));
+            relics.relics.Add(Relic("sundial", "앙부일구", 4, "그림자로 시각을 알려준 조선의 해시계", Survival, 0, "survive5", "서바이벌 5분 생존"));
+            relics.relics.Add(Relic("astrolabe", "아스트롤라베", 4, "별의 높이를 재던 천문·항해 도구", Survival, 0, "clear10", "서바이벌 10분 클리어"));
             EditorUtility.SetDirty(relics);
 
             var meta = AssetUtil.LoadOrCreate<MetaTable>($"{DataDir}/Meta/MetaTable.asset");
             meta.equipment = table;
             meta.runes = runes;
             meta.relics = relics;
+            meta.pets = CreatePets();
+            meta.missions = CreateMissions();
             EditorUtility.SetDirty(meta);
 
             // 상자 표 (Gacha 2장): 화면 확률과 추첨이 같이 읽는다. 숫자는 GachaTable 기본값
@@ -117,6 +119,57 @@ namespace HistoryHeroes.EditorTools
             r.howToGet = howToGet;
             EditorUtility.SetDirty(r);
             return r;
+        }
+
+        /// <summary>펫 4마리 (Pets 3장) + 성장 표 (4장: Lv1~10, +0.3%/Lv, 인연 +2%, 1,500×n 골드)</summary>
+        private static HistoryHeroes.Pets.PetTable CreatePets()
+        {
+            var table = AssetUtil.LoadOrCreate<HistoryHeroes.Pets.PetTable>($"{DataDir}/Pets/PetTable.asset");
+            table.pets.Clear();
+            table.pets.Add(Pet("hawk", "사냥매", HistoryHeroes.Pets.PetKind.Hawk, "khan", "칭기즈 칸", HistoryHeroes.Pets.PetSource.FirstDungeonClear, 0,
+                new UnityEngine.Color(0.72f, 0.52f, 0.28f), "멈춰서 버티기",
+                "2초 멈추면 하늘로 솟구쳤다가 화면에서 체력이 가장 높은 적에게 급강하 (공격력 30%) + 사냥 표식 5초: 그 적에게 기본 공격 치명타 확률 +25%. 재사용 6초",
+                "표식 대상이 죽으면 표식이 가장 가까운 적에게 옮겨 간다", "4초 넘게 멈추면 한 번 더 급강하",
+                "몽골인들은 매사냥을 즐겼다.", "칭기즈 칸의 매가 독이 든 물그릇을 쳐서 그를 구했다는 이야기가 전해진다."));
+            table.pets.Add(Pet("red_hare", "적토마", HistoryHeroes.Pets.PetKind.RedHare, "guan", "관우", HistoryHeroes.Pets.PetSource.BossFirstClear, 1,
+                new UnityEngine.Color(0.85f, 0.28f, 0.18f), "계속 움직이기",
+                "1.5초 넘게 움직이면 옆에서 질주 (이동속도 +15%, 앞의 적을 들이받아 공격력 10% + 밀치기). 질주하다 멈추면 기세: 2초 동안 기본 공격 피해 +20% (4초에 한 번)",
+                "질주한 길에 먼지 구름 (적 이동속도 -30%, 2초)", "기세 3초 + 기세 중 받는 피해 -15%",
+                "", "『삼국지연의』에서 여포에 이어 관우가 탄 명마. \"사람 중엔 여포, 말 중엔 적토\"라는 말이 전해진다."));
+            table.pets.Add(Pet("marengo", "마렝고", HistoryHeroes.Pets.PetKind.Marengo, "napoleon", "나폴레옹", HistoryHeroes.Pets.PetSource.BossFirstClear, 3,
+                new UnityEngine.Color(0.78f, 0.78f, 0.82f), "위험한 순간",
+                "적 투사체가 닿기 0.3초 전에 영웅 앞을 막아서서 1발을 몸으로 받는다. 재사용 7초 (체력 30% 아래면 4초). 돌진 같은 근접 공격은 못 막는다",
+                "막아낸 투사체를 쏜 적에게 되돌려 보낸다 (그 피해 100%)", "한 번에 2발까지 막는다",
+                "나폴레옹이 탔던 것으로 유명한 아랍 종 회색 말. 여러 전투에 함께했다 (이름은 마렝고 전투에서 따왔다).", ""));
+            table.pets.Add(Pet("dove", "흰 비둘기", HistoryHeroes.Pets.PetKind.Dove, "tesla", "니콜라 테슬라", HistoryHeroes.Pets.PetSource.SurvivalFirstClear, 0,
+                new UnityEngine.Color(0.96f, 0.97f, 1f), "돌아다니기",
+                "멀리 떨어진 경험치 보석을 하나씩 물어 온다 (경험치 양은 같다). 던전 방마다 숨은 보물 1개를 찾아 표시 (골드, 10%는 회복 열매). 멈추면 가까운 적에게 약한 전기 (공격력 15%, 2초마다)",
+                "보물 골드 5% 확률로 2배", "회복 열매 확률 25% + 서바이벌에서 30초마다 화면 보석을 전부 끌어온다",
+                "테슬라는 말년에 비둘기들을 돌봤고, 특히 흰 비둘기 한 마리를 아꼈다고 전해진다.", ""));
+            EditorUtility.SetDirty(table);
+            return table;
+        }
+
+        private static HistoryHeroes.Pets.PetData Pet(string id, string name, HistoryHeroes.Pets.PetKind kind, string bondHero, string bondName,
+            HistoryHeroes.Pets.PetSource source, int chapter, UnityEngine.Color color, string trigger, string effect, string awaken5, string awaken10, string fact, string legend)
+        {
+            var p = AssetUtil.LoadOrCreate<HistoryHeroes.Pets.PetData>($"{DataDir}/Pets/Pet_{id}.asset");
+            p.id = id;
+            p.displayName = name;
+            p.kind = kind;
+            p.bondHeroId = bondHero;
+            p.bondHeroName = bondName;
+            p.source = source;
+            p.sourceChapter = chapter;
+            p.color = color;
+            p.trigger = trigger;
+            p.effect = effect;
+            p.awaken5 = awaken5;
+            p.awaken10 = awaken10;
+            p.fact = fact;
+            p.legend = legend;
+            EditorUtility.SetDirty(p);
+            return p;
         }
 
         private static HistoryHeroes.Runes.RuneData Rune(string id, string name, Skills.SkillTag tag, string aim, HistoryHeroes.Runes.RuneSource source)

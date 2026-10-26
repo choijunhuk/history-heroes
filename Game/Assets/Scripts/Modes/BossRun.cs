@@ -119,6 +119,7 @@ namespace HistoryHeroes.Modes
             long now = Clock.UnixSeconds;
             string today = Clock.Today;
 
+            Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null); // 연습은 안 센다
             if (GameSession.Practice)
             {
                 lines.Add("연습이라 보상·별·해금은 없어요");
@@ -164,6 +165,7 @@ namespace HistoryHeroes.Modes
                     Reward box = Stars.ClaimBoxes(save);
                     if (!box.IsEmpty) lines.Add("별 상자  " + box);
                     if (metaTable != null && metaTable.relics != null) lines.AddRange(Relics.RelicService.CheckAll(save, metaTable.relics));
+                    if (metaTable != null && metaTable.pets != null) lines.AddRange(Pets.PetService.CheckAll(save, metaTable.pets)); // 1구간 적토마, 3구간 마렝고
                 }
             }
 

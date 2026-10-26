@@ -259,6 +259,12 @@ namespace HistoryHeroes.UI
                 return;
             }
 
+            if (newRecord)
+            {
+                Missions.MissionEvents.Raise(Missions.MissionEvents.Record);
+                SaveSystem.SaveIfDirty();
+            }
+
             Close();
         }
 

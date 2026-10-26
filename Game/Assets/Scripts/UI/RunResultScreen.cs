@@ -88,6 +88,26 @@ namespace HistoryHeroes.UI
             SetButtons(GameSession.Practice ? "다시 연습" : "다시 도전 (하트 1)", Retry, "로비로", GameSession.ToLobby);
         }
 
+        public void ShowSurvival(Survival.SurvivalSummary s)
+        {
+            Open();
+            titleLabel.text = s.Victory ? "생존!" : "쓰러졌다…";
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"버틴 시간  {Clock(s.Seconds)}" + (s.NewBest ? "  <color=#FFD966>최고 기록!</color>" : $"  (최고 {Clock(s.BestSeconds)})"));
+            sb.AppendLine($"처치  {s.Kills}");
+            sb.AppendLine($"레벨  {s.Level}");
+            sb.AppendLine($"기본 공격 피해 비중  {Mathf.RoundToInt(s.BasicAttackShare * 100f)}%  (서바이벌 목표 약 30%)");
+            if (!string.IsNullOrEmpty(s.TopDamage)) sb.AppendLine($"<size=85%>피해  {s.TopDamage}</size>");
+            sb.AppendLine();
+            sb.AppendLine("만든 조합");
+            sb.AppendLine(s.Fusions != null && s.Fusions.Count > 0 ? "  " + string.Join(", ", s.Fusions) : "  없음");
+            sb.AppendLine("  서바이벌은 기록을 남기지 않아요. 조합 발견은 도감에 남아요");
+            AppendRewards(sb, s.RewardLines);
+            bodyLabel.text = sb.ToString();
+            SetButtons($"다시 도전 (하트 {GameSession.HeartCost})", Retry, "로비로", GameSession.ToLobby);
+        }
+
         private static void AppendRewards(StringBuilder sb, System.Collections.Generic.List<string> lines)
         {
             if (lines == null || lines.Count == 0) return;

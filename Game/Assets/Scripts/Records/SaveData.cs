@@ -12,7 +12,8 @@ namespace HistoryHeroes.Records
     {
         /// <summary>저장 구조가 바뀌면 올린다. 읽을 때 옛 구조면 옮겨 담고(Migrate), 더 새 구조면 읽지 않고 원본을 보존한다.</summary>
         /// 1: v0.2 기록·도감·구간 / 2: v0.2b 재화·하트·계정 레벨·별 / 3: v0.4 장비·영웅 성장·수련·상자·상점
-        public const int CurrentSchemaVersion = 3;
+        /// <summary>4 (v0.5): 서바이벌·펫·미션 — 빈 상태로 시작 (Normalize가 채운다). 옛 빌드는 더 새 파일을 읽지 않고 멈춘다</summary>
+        public const int CurrentSchemaVersion = 4;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -83,6 +84,15 @@ namespace HistoryHeroes.Records
         public ShopSave shop = new ShopSave();
         public RuneSave runes = new RuneSave();
         public RelicSave relics = new RelicSave();
+
+        // ----- v0.5 서바이벌 (GameDesign 8-3: 생존 시간 기록, 영웅별 최고 기록) -----
+        public SurvivalSave survival = new SurvivalSave();
+
+        // ----- v0.5 펫 (Pets 4·5장) -----
+        public PetSave pets = new PetSave();
+
+        // ----- v0.5 미션·업적 (Missions 2·3·7장) -----
+        public MissionSave missions = new MissionSave();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
 
@@ -213,6 +223,10 @@ namespace HistoryHeroes.Records
         public List<int> training = new List<int>();
         /// <summary>효과가 있던 유물과 별 (유물 탭이 열린 뒤에만, 결정 53 "기록 당시 값")</summary>
         public List<RelicStar> relics = new List<RelicStar>();
+        /// <summary>장착한 펫 (비면 없음). 레벨·인연도 기록 당시 값 (Pets 5장: 보스맵은 기록의 펫)</summary>
+        public string petId;
+        public int petLevel;
+        public bool petBond;
     }
 
     [Serializable]
@@ -263,6 +277,137 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+    }
+
+    // ---------------------------------------------------------------- v0.5 미션·업적
+
+    [Serializable]
+    public sealed class MissionSave
+    {
+        /// <summary>오늘 (05:00 기준 날짜). 다르면 새 일일 미션</summary>
+        public string dayKey;
+        public List<MissionProgress> daily = new List<MissionProgress>();
+        public int dailyPoints;
+        /// <summary>받은 일일 상자 (포인트 구간)</summary>
+        public List<int> dailyChests = new List<int>();
+        public bool rerollUsed;
+
+        /// <summary>이번 주 (월요일 05:00 기준 그 주 월요일)</summary>
+        public string weekKey;
+        public List<MissionProgress> weekly = new List<MissionProgress>();
+        public int weeklyPoints;
+        public List<int> weeklyChests = new List<int>();
+
+        /// <summary>업적용 누적 카운터 (영구)</summary>
+        public MissionCounters counters = new MissionCounters();
+        public List<AchievementClaim> achievements = new List<AchievementClaim>();
+    }
+
+    [Serializable]
+    public sealed class MissionProgress
+    {
+        public string id;
+        public string eventKey;
+        public string title;
+        public int target;
+        public int progress;
+        public int points;
+        /// <summary>이 값일 때만 센다 (오늘의 영웅 ID). 비면 아무거나</summary>
+        public string param;
+        /// <summary>서로 다른 값만 센다 ("서로 다른 영웅 2명")</summary>
+        public bool distinct;
+        public List<string> seen = new List<string>();
+        public bool done;
+    }
+
+    [Serializable]
+    public sealed class MissionCounters
+    {
+        public long basicKills;
+        public int noHitRooms;
+        public int elites;
+        public bool legendary;
+        /// <summary>전설 없이 클리어한 구간</summary>
+        public List<int> noLegendChapters = new List<int>();
+        /// <summary>3구간 이상을 클리어한 영웅 ("만능")</summary>
+        public List<string> chapter3Heroes = new List<string>();
+        /// <summary>보스를 이긴 기록 ID ("맞춤 전략")</summary>
+        public List<string> bossWinRecords = new List<string>();
+    }
+
+    [Serializable]
+    public sealed class AchievementClaim
+    {
+        public string id;
+        /// <summary>받은 단계 수</summary>
+        public int tiers;
+    }
+
+    // ---------------------------------------------------------------- v0.5 펫
+
+    [Serializable]
+    public sealed class PetSave
+    {
+        /// <summary>가진 펫과 레벨 (Pets 7장 PetCollection)</summary>
+        public List<PetLevel> owned = new List<PetLevel>();
+        /// <summary>영웅마다 장착한 펫 (Pets 7장 HeroPetLoadout, 1칸)</summary>
+        public List<HeroPet> loadouts = new List<HeroPet>();
+    }
+
+    [Serializable]
+    public sealed class PetLevel
+    {
+        public string id;
+        public int level;
+    }
+
+    [Serializable]
+    public sealed class HeroPet
+    {
+        public string heroId;
+        public string petId;
+    }
+
+    // ---------------------------------------------------------------- v0.5 서바이벌
+
+    [Serializable]
+    public sealed class SurvivalSave
+    {
+        public List<HeroBest> best = new List<HeroBest>();
+        /// <summary>서바이벌을 클리어한 영웅 (유물 "영웅 2명으로 클리어")</summary>
+        public List<string> clearHeroes = new List<string>();
+        public int clears;
+        public float longestSeconds;
+
+        /// <summary>영웅의 최고 생존 시간 (없으면 0, 목록을 바꾸지 않는다 — 화면 표시용)</summary>
+        public float SecondsOf(string heroId)
+        {
+            foreach (HeroBest b in best)
+            {
+                if (b.heroId == heroId) return b.seconds;
+            }
+
+            return 0f;
+        }
+
+        public HeroBest BestOf(string heroId)
+        {
+            foreach (HeroBest b in best)
+            {
+                if (b.heroId == heroId) return b;
+            }
+
+            var created = new HeroBest { heroId = heroId };
+            best.Add(created);
+            return created;
+        }
+    }
+
+    [Serializable]
+    public sealed class HeroBest
+    {
+        public string heroId;
+        public float seconds;
     }
 
     // ---------------------------------------------------------------- v0.4 유물 (Relics 8장)

@@ -29,6 +29,14 @@ namespace HistoryHeroes.Skills
         private SkillLoadout _loadout;
         public SkillLoadout Loadout => _loadout ??= new SkillLoadout(activeSlots, passiveSlots);
 
+        /// <summary>모드마다 칸 수 (던전 4·4, 서바이벌 6·6 — GameDesign 6-1). 판이 시작하기 전(BattleBootstrap)에 부른다</summary>
+        public void ConfigureSlots(int actives, int passives)
+        {
+            activeSlots = Mathf.Max(1, actives);
+            passiveSlots = Mathf.Max(1, passives);
+            _loadout = null;
+        }
+
         /// <summary>조합을 처음 만들었을 때 (도감 기록·연출용)</summary>
         public event Action<FusionRecipe> FusionCompleted;
 
@@ -196,7 +204,11 @@ namespace HistoryHeroes.Skills
 
         public void Choose(SkillCard card)
         {
-            if (card.Skill != null && card.Skill.rarity == Rarity.Legendary && card.Type != CardType.Fallback) ChoseLegendary = true;
+            if (card.Skill != null && card.Skill.rarity == Rarity.Legendary && card.Type != CardType.Fallback)
+            {
+                ChoseLegendary = true;
+                Missions.MissionEvents.Raise(Missions.MissionEvents.Legendary); // 업적 "전설의 순간"
+            }
 
             switch (card.Type)
             {
@@ -219,6 +231,16 @@ namespace HistoryHeroes.Skills
                     player.Health.Heal(player.Health.Max * fallbackHeal);
                     break;
             }
+
+            // 미션 "액티브 3개를 Lv3 이상으로", "패시브 4칸을 다 채우기" (판 중 가장 높았던 값)
+            int lv3 = 0;
+            foreach (SkillInstance s in Loadout.Actives)
+            {
+                if (s.Level >= 3) lv3++;
+            }
+
+            Missions.MissionEvents.SetAtLeast(Missions.MissionEvents.ActivesLv3, lv3);
+            Missions.MissionEvents.SetAtLeast(Missions.MissionEvents.PassivesFull, Loadout.Passives.Count);
         }
 
         private void Install(SkillInstance instance)
@@ -274,7 +296,9 @@ namespace HistoryHeroes.Skills
             Install(result);
 
             Loadout.MarkCompleted(recipe);
+            if (!RecipeBook.IsDiscovered(recipe) && !string.IsNullOrEmpty(recipe.id)) Missions.MissionEvents.Raise(Missions.MissionEvents.RecipeNew);
             RecipeBook.Discover(recipe);
+            Missions.MissionEvents.Raise(Missions.MissionEvents.Fusion);
             FusionCompleted?.Invoke(recipe);
         }
     }

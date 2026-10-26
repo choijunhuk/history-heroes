@@ -33,6 +33,10 @@ namespace HistoryHeroes.Enemy
         public bool IsElite { get; private set; }
         public float Damage => data.damage * attackMultiplier;
 
+        /// <summary>공격 예고 중 / 공격 중 (화면에 보이는 예고선 그대로 — 벤치 조종 AI가 사람처럼 보고 피하는 데 쓴다)</summary>
+        public bool IsTelegraphing => state == State.Telegraph;
+        public bool IsAttacking => state == State.Attack;
+
         /// <summary>나폴레옹 총알에 밀리는가. 엘리트·보스는 밀리지 않는다</summary>
         public virtual bool CanBeKnockedBack => !IsElite;
 
@@ -56,7 +60,11 @@ namespace HistoryHeroes.Enemy
             body.gravityScale = 0f;
             body.freezeRotation = true;
             health.Died += OnDied;
+            health.Damaged += (info, dealt) => _lastHitKind = info.Kind;
         }
+
+        /// <summary>마지막으로 맞은 피해 종류 (업적 "멈춤의 달인" = 기본 공격, 판 정리(Enemy 종류)는 처치로 안 센다)</summary>
+        private DamageKind _lastHitKind;
 
         /// <param name="hpMultiplier">구간·방 강화 (Stats.md 8장)</param>
         public virtual void Spawn(Transform target, float hpMultiplier, float atkMultiplier, bool elite)
@@ -65,6 +73,7 @@ namespace HistoryHeroes.Enemy
             attackMultiplier = atkMultiplier * (elite ? 1.5f : 1f);
             IsElite = elite;
             health.Init(Team.Enemy, data.maxHp * hpMultiplier * (elite ? 5f : 1f));
+            health.IncomingModifier = null; // 풀에서 다시 쓸 때 지난 표식이 남지 않게
             transform.localScale = Vector3.one * (elite ? 1.5f : 1f);
             status.Clear();
             if (!_alive.Contains(this)) _alive.Add(this);
@@ -139,6 +148,7 @@ namespace HistoryHeroes.Enemy
             status.NotifyDeath(transform.position); // 독 구름 안에서 죽었으면 번짐 (맹독 개화)
             _alive.Remove(this);
             body.linearVelocity = Vector2.zero;
+            if (_lastHitKind != DamageKind.Enemy) Missions.MissionEvents.EnemyKilled(IsElite, _lastHitKind == DamageKind.BasicAttack);
             Killed?.Invoke(this);
             gameObject.SetActive(false);
         }

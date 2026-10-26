@@ -41,6 +41,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button runeButton;
         [SerializeField] private TMP_Text runeLabel;
         [SerializeField] private RunePanel runes;
+        [SerializeField] private Button petButton;
+        [SerializeField] private TMP_Text petLabel;
+        [SerializeField] private PetPanel pets;
 
         private static readonly Color Normal = new Color(0.16f, 0.18f, 0.24f);
         private static readonly Color Focused = new Color(0.25f, 0.42f, 0.7f);
@@ -66,6 +69,7 @@ namespace HistoryHeroes.UI
             if (awakenButton != null) awakenButton.onClick.AddListener(AwakenFocused);
             if (trainingButton != null) trainingButton.onClick.AddListener(() => training.Open(Render));
             if (runeButton != null) runeButton.onClick.AddListener(() => runes.Open(FocusHero.id, FocusHero.displayName, Render));
+            if (petButton != null) petButton.onClick.AddListener(() => pets.Open(FocusHero.id, FocusHero.displayName, Render));
         }
 
         private HeroData FocusHero => roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
@@ -75,6 +79,12 @@ namespace HistoryHeroes.UI
             HeroData focus = FocusHero;
             SaveSystem.CommitResult r = SaveSystem.Commit(() => HeroUnlock.IsUnlocked(SaveSystem.Data, focus) && Meta.HeroGrowth.TryLevelUp(SaveSystem.Data, metaTable, focus.id));
             if (r == SaveSystem.CommitResult.Rejected) return;
+            if (r == SaveSystem.CommitResult.Saved)
+            {
+                Missions.MissionEvents.Raise(Missions.MissionEvents.HeroLevel);
+                SaveSystem.SaveIfDirty();
+            }
+
             if (messageLabel != null) messageLabel.text = r == SaveSystem.CommitResult.Saved ? $"<color=#7CE38B>{focus.displayName} Lv {SaveSystem.Data.Hero(focus.id).level}</color>" : SaveSystem.SaveFailedText;
             Render();
         }
@@ -155,6 +165,15 @@ namespace HistoryHeroes.UI
                 int slots = Runes.RuneService.SlotCount(d, metaTable.runes);
                 bool pendingChoice = Runes.RuneService.PendingChoice(d, metaTable.runes) != null;
                 runeLabel.text = slots == 0 ? "룬 (2구간 보스 뒤)" : pendingChoice ? "룬 <color=#FFD966>(보상!)</color>" : $"룬 ({slots}칸)";
+            }
+
+            if (petButton != null && metaTable != null && metaTable.pets != null)
+            {
+                petButton.gameObject.SetActive(focusUnlocked);
+                Pets.PetData pet = metaTable.pets.Find(Pets.PetService.Equipped(d, focus.id));
+                bool bond = Pets.PetService.IsBond(pet, focus.id);
+                petLabel.text = !Pets.PetService.Unlocked(d) ? "펫 (첫 던전 클리어 뒤)"
+                    : pet != null ? $"펫 · {pet.displayName}{(bond ? " <color=#FF7A8A>♥</color>" : "")}" : "펫 (비어 있음)";
             }
 
             if (levelButton != null && metaTable != null)

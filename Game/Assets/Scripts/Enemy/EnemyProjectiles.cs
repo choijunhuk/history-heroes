@@ -26,11 +26,13 @@ namespace HistoryHeroes.Enemy
             _pool = new ComponentPool<Projectile>(prefab, transform, prewarm: 32);
         }
 
-        public static void Fire(Vector2 origin, Vector2 direction, float speed, DamageInfo damage, LayerMask playerMask)
+        /// <param name="owner">쏜 적 (마렝고 Lv5가 되돌려 보낼 곳)</param>
+        public static void Fire(Vector2 origin, Vector2 direction, float speed, DamageInfo damage, LayerMask playerMask, Component owner = null)
         {
             if (_instance == null) return;
             Projectile p = _instance._pool.Get(origin, Quaternion.identity);
             p.Launch(direction, speed, damage, playerMask, _instance.wallMask, pierce: 0, ricochet: 0, _instance.OnReleased);
+            p.Owner = owner;
             _instance._active.Add(p);
         }
 

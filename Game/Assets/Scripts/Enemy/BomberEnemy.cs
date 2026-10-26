@@ -68,7 +68,7 @@ namespace HistoryHeroes.Enemy
             Collider2D hit = Physics2D.OverlapCircle(_blastCenter, blastRadius, playerMask);
             if (hit != null && hit.TryGetComponent(out Health target))
             {
-                target.TryTakeDamage(DamageCalculator.Enemy(Damage));
+                target.TryTakeDamage(DamageCalculator.Enemy(Damage, data.id));
             }
         }
 

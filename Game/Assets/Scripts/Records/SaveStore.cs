@@ -235,6 +235,21 @@ namespace HistoryHeroes.Records
                 foreach (RunRecord r in data.records ?? new List<RunRecord>()) r.meta = new MetaSnapshot();
             }
 
+            if (data.schemaVersion < 4)
+            {
+                // 3 → 4 (v0.5): 서바이벌 기록·펫·미션은 처음 상태. 옛 기록은 펫 없음
+                data.survival = new SurvivalSave();
+                data.pets = new PetSave();
+                data.missions = new MissionSave();
+                foreach (RunRecord r in data.records ?? new List<RunRecord>())
+                {
+                    if (r.meta == null) continue;
+                    r.meta.petId = null;
+                    r.meta.petLevel = 0;
+                    r.meta.petBond = false;
+                }
+            }
+
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -304,6 +319,30 @@ namespace HistoryHeroes.Records
             foreach (RelicStar r in data.relics.owned) r.stars = Math.Clamp(r.stars, 1, 3);
             data.relics.sourcesClaimed ??= new List<string>();
             data.relics.heroDungeonClears ??= new List<string>();
+            data.missions ??= new MissionSave();
+            data.missions.daily ??= new List<MissionProgress>();
+            data.missions.daily.RemoveAll(m => m == null || string.IsNullOrEmpty(m.id));
+            data.missions.weekly ??= new List<MissionProgress>();
+            data.missions.weekly.RemoveAll(m => m == null || string.IsNullOrEmpty(m.id));
+            foreach (MissionProgress m in data.missions.daily) m.seen ??= new List<string>();
+            foreach (MissionProgress m in data.missions.weekly) m.seen ??= new List<string>();
+            data.missions.dailyChests ??= new List<int>();
+            data.missions.weeklyChests ??= new List<int>();
+            data.missions.counters ??= new MissionCounters();
+            data.missions.counters.noLegendChapters ??= new List<int>();
+            data.missions.counters.chapter3Heroes ??= new List<string>();
+            data.missions.counters.bossWinRecords ??= new List<string>();
+            data.missions.achievements ??= new List<AchievementClaim>();
+            data.pets ??= new PetSave();
+            data.pets.owned ??= new List<PetLevel>();
+            data.pets.owned.RemoveAll(p => p == null || string.IsNullOrEmpty(p.id));
+            foreach (PetLevel p in data.pets.owned) p.level = Mathf.Max(1, p.level);
+            data.pets.loadouts ??= new List<HeroPet>();
+            data.pets.loadouts.RemoveAll(l => l == null || string.IsNullOrEmpty(l.heroId));
+            data.survival ??= new SurvivalSave();
+            data.survival.best ??= new List<HeroBest>();
+            data.survival.best.RemoveAll(b => b == null || string.IsNullOrEmpty(b.heroId));
+            data.survival.clearHeroes ??= new List<string>();
             if (string.IsNullOrEmpty(data.selectedHero)) data.selectedHero = "khan";
             if (data.accountLevel < 1) data.accountLevel = 1;
             if (data.hearts < 0) data.hearts = 0;
