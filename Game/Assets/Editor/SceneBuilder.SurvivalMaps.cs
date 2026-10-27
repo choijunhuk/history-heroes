@@ -75,7 +75,7 @@ namespace HistoryHeroes.EditorTools
             factory.bossHpMultiplier = 3.2f; // 구간 보스는 원래 체력이 크다 [제안, 벤치로]
             factory.mission = SurvivalMission.ElitesBefore;
             factory.missionTarget = 3;
-            factory.missionDeadline = 360f;
+            factory.missionDeadline = 420f; // 검토(2장·6장) 1번: 엘리트는 2·4·6분 → 6분 전 3마리는 불가능 → 7분 전
             factory.braziers = true;
             factory.lookKey = "ch3";
             factory.mapColor = new Color(0.75f, 0.62f, 0.3f);

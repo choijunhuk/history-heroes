@@ -62,10 +62,12 @@ namespace HistoryHeroes.Tests
             d.survival.longestSeconds = 512f;
             d.survival.clears = 2;
             d.survival.BestOf("khan").seconds = 512f;
+            Assert.IsTrue(SurvivalProgress.Unlocked(d, 1), "읽기만 해도 옮겨져서 맵 2가 열린다 (로비)");
             SurvivalMapSave field = d.survival.MapOf("field");
             Assert.AreEqual(512f, field.bestSeconds, "옛 최고 시간 = 맵 1 기록");
             Assert.AreEqual(1, field.clears, "옛 클리어가 있으면 맵 2가 열린다");
-            Assert.IsTrue(SurvivalProgress.Unlocked(d, 1));
+            Assert.AreEqual(1, SurvivalProgress.StarCount(field.stars), "옛 클리어 = ★1");
+            Assert.IsTrue(field.firstClearTaken, "첫 클리어 보상은 옛 규칙으로 받았다");
             Assert.AreEqual(0f, d.survival.MapOf("city").bestSeconds, "다른 맵은 새로");
         }
     }

@@ -47,7 +47,11 @@ namespace HistoryHeroes.Combat
             _invulnerableUntil = 0f;
             Max = maxHp;
             Current = maxHp;
+            DamageScale = 1f;
         }
+
+        /// <summary>받는 피해 배수 (기믹 보스 수정 기둥 보호막: 0.25 = -75%). 다시 Init하면 1</summary>
+        public float DamageScale { get; set; } = 1f;
 
         /// <summary>최대 체력이 늘면 늘어난 만큼 회복한다 (Skills.md 최대체력 패시브).</summary>
         public void SetMax(float newMax)
@@ -82,7 +86,7 @@ namespace HistoryHeroes.Combat
                 taken = _stats.Get(StatType.DamageTaken); // 피해 감소는 0 밑으로 안 내려가서, "받는 피해 +%"는 따로 곱한다
             }
 
-            float incoming = info.Amount * (1f - reduction) * (1f + taken);
+            float incoming = info.Amount * (1f - reduction) * (1f + taken) * DamageScale;
             if (Shield > 0f)
             {
                 float absorbed = Mathf.Min(Shield, incoming);

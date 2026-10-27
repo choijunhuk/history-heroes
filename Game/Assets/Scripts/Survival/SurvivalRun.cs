@@ -72,6 +72,7 @@ namespace HistoryHeroes.Survival
             experience.ExpMultiplier = data.expMultiplier;
 
             hud.SetSurvivalMode();
+            BossGimmicks.Notice = text => hud.ShowNotice(text, 2f);
             levelUp.Floor = 1;
             StageLook.Show(string.IsNullOrEmpty(data.lookKey) ? "survival" : data.lookKey); // 맵마다 색 (들판 · 성곽 · 공장)
             StartCrates(); // 짚더미 · 화로 (확장 1차 6-4장)
@@ -285,7 +286,8 @@ namespace HistoryHeroes.Survival
             yield return new WaitForSeconds(data.bossWarning);
             if (_finished || data.bossPrefab == null) yield break;
 
-            Vector2 at = ClampToMap((Vector2)player.transform.position + Random.insideUnitCircle.normalized * 5f, 3f);
+            Vector2 me = player.transform.position;
+            Vector2 at = FreeAround(me, 5f, 1.4f, ClampToMap(me + Random.insideUnitCircle.normalized * 5f, 3f)); // 집·기계 안에 나오지 않게
             _boss = Instantiate(data.bossPrefab, at, Quaternion.identity, transform);
             _boss.Spawn(player.transform, data.bossHpMultiplier, data.bossAttackMultiplier, false);
             _boss.Killed += _ => Finish(victory: true);

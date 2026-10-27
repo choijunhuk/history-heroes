@@ -85,6 +85,7 @@ namespace HistoryHeroes.Dungeon
         private readonly object _modeOwner = new object();
         private readonly List<string> _modeLines = new List<string>();
         private LayoutKind? _lastRiftLayout;
+        private GimmickKind _riftGimmick;
         private EnemyBase _riftBoss;
         private bool _riftFloor5;
         /// <summary>이 판이 속한 주 (월요일 05:00을 넘기면 이 판의 층 보상·체크포인트는 거기까지)</summary>
@@ -480,12 +481,15 @@ namespace HistoryHeroes.Dungeon
             }
 
             if (_riftBoss is RiftWardenBoss warden) warden.RiftVersion = true;
+            _riftGimmick = BossGimmicks.PickRift(_riftBoss, RunRandom.Seed, floor); // 검토 4번: 보스마다 맞는 기믹만, 층 씨앗으로
             float hp = info.hpMultiplier * Modes.RiftRules.BossHpFactor * Modes.RiftRules.HpScale(floor) * _enemyHp;
             float atk = info.attackMultiplier * Modes.RiftRules.BossAttackFactor * Modes.RiftRules.AttackScale(floor) * _enemyAttack;
             _riftBoss.Spawn(player.transform, hp, atk, false);
             _riftBoss.Killed -= OnEnemyKilled;
             _riftBoss.Killed += OnEnemyKilled;
             if (bossHud != null) bossHud.Bind(_riftBoss, info.displayName + " (균열)");
+            BossGimmick riftGimmick = BossGimmicks.Attach(_riftBoss, _riftGimmick, RoomArena);
+            if (riftGimmick != null) hud.ShowNotice("균열 기믹: " + riftGimmick.Hint, 3f);
         }
 
         private IEnumerator SpawnRoom(RoomPlan plan, List<SpawnEntry> spawns)
@@ -536,7 +540,13 @@ namespace HistoryHeroes.Dungeon
             boss.Killed -= OnEnemyKilled;
             boss.Killed += OnEnemyKilled;
             if (bossHud != null) bossHud.Bind(boss, string.IsNullOrEmpty(_chapter.midBossName) ? "중간 보스" : _chapter.midBossName);
+            // 기믹 (확장 1차 5장): 4구간 그림자 사냥꾼 = 거울 분신, 5구간 망각의 집행자 = 불길 반쪽
+            BossGimmick gimmick = BossGimmicks.Attach(boss, BossGimmicks.For(boss), RoomArena);
+            if (gimmick != null) hud.ShowNotice(gimmick.Hint, 3f);
         }
+
+        /// <summary>방 싸움터 (기믹 자리 계산: 9×14 방, 벽 안쪽)</summary>
+        private static BossArena RoomArena => BossArena.Room(new Vector2(0f, 0.2f), new Vector2(3.6f, 6.3f));
 
         private float RoomHpMultiplier()
         {

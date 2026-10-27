@@ -63,6 +63,7 @@ namespace HistoryHeroes.Dungeon
 
         private void WireSpecials()
         {
+            BossGimmicks.Notice = text => hud.ShowNotice(text, 2f); // 기믹 보스 알림 (확장 1차 5장)
             for (int i = 0; forkGates != null && i < forkGates.Length; i++)
             {
                 if (forkGates[i] == null) continue;

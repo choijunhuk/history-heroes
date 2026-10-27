@@ -19,7 +19,7 @@ MonoBehaviour:
   mapHalf: {x: 50, y: 30}
   mission: 2
   missionTarget: 3
-  missionDeadline: 360
+  missionDeadline: 420
   duration: 600
   cameraArea: {x: 12.5, y: 20}
   maxAlive: 300

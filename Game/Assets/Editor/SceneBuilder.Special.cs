@@ -126,6 +126,15 @@ namespace HistoryHeroes.EditorTools
             if (b.size.z > 0.01f) go.transform.localScale *= height / b.size.z;
         }
 
+        /// <summary>기믹 보스 소품 (Resources/GimmickArt): 수정 기둥</summary>
+        private static void CreateGimmickArt()
+        {
+            AssetUtil.EnsureFolder("Assets/Resources");
+            var art = AssetUtil.LoadOrCreate<Enemy.GimmickArt>("Assets/Resources/GimmickArt.asset");
+            art.pillar = Art3DStage.Prefab("Deco_Crystal");
+            EditorUtility.SetDirty(art);
+        }
+
         /// <summary>구간 장치 모델 · 물 재질 (확장 1차 2장)</summary>
         private static void WireDevices(DungeonRun run)
         {

@@ -61,6 +61,8 @@ namespace HistoryHeroes.UI
             _chapter = chapter;
             titleLabel.text = boss.displayName;
             testsLabel.text = "시험하는 것: " + boss.tests;
+            string hint = boss.prefab != null ? Enemy.BossGimmicks.HintFor(Enemy.BossGimmicks.For(boss.prefab)) : string.Empty;
+            if (!string.IsNullOrEmpty(hint)) testsLabel.text += $"\n<color=#C9A8FF>기믹: {hint}</color>"; // 확장 1차 5장: 처음 나올 때 한 줄
             recommendLabel.text = boss.recommendedRole != SkillRole.None
                 ? $"추천: <color={RecordStrength.RoleColor(boss.recommendedRole)}>{RecordStrength.RoleName(boss.recommendedRole)} 강점</color> · {boss.recommend}"
                 : "추천: " + boss.recommend;

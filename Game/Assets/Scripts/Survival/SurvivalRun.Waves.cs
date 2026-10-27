@@ -61,7 +61,7 @@ namespace HistoryHeroes.Survival
 
             RaiseFence(center);
             _midBoss = GetEnemy(data.midBoss);
-            Vector2 at = center + Vector2.up * (data.fenceRadius * 0.55f);
+            Vector2 at = FreeAround(center, data.fenceRadius * 0.55f, 1.1f, center + Vector2.up * (data.fenceRadius * 0.55f));
             _midBoss.transform.position = at;
             _midBoss.gameObject.SetActive(true);
             if (_midBoss is PatternBoss pattern)
@@ -75,6 +75,8 @@ namespace HistoryHeroes.Survival
             _midBoss.Killed -= OnMidBossKilled;
             _midBoss.Killed += OnMidBossKilled;
             if (bossHud != null) bossHud.Bind(_midBoss, data.midBossName);
+            BossGimmick gimmick = BossGimmicks.Attach(_midBoss, BossGimmicks.For(_midBoss), BossArena.Circle(center, data.fenceRadius));
+            if (gimmick != null) hud.ShowNotice(gimmick.Hint, 3f);
         }
 
         private void OnMidBossKilled(EnemyBase enemy)
@@ -141,7 +143,7 @@ namespace HistoryHeroes.Survival
                 Vector2 d = (Vector2)e.transform.position - center;
                 if (d.sqrMagnitude >= radius * radius) continue;
                 Vector2 dir = d.sqrMagnitude > 0.01f ? d.normalized : Random.insideUnitCircle.normalized;
-                Vector2 to = center + dir * (radius + 1.2f);
+                Vector2 to = OutsideFence(center, radius, dir);
                 if (e.TryGetComponent(out Rigidbody2D rb)) rb.position = to;
                 e.transform.position = new Vector3(to.x, to.y, e.transform.position.z);
             }
@@ -178,6 +180,41 @@ namespace HistoryHeroes.Survival
             FxBursts.Explosion(_fenceCenter, data.fenceRadius * 0.5f, new Color(1f, 0.8f, 0.4f));
             Destroy(_fence);
             _fence = null;
+        }
+
+        /// <summary>울타리 밖 빈자리: 밀려나는 방향부터 좌우로 돌려 가며, 없으면 화면 밖 띠 (코드 검토 5번)</summary>
+        private Vector2 OutsideFence(Vector2 center, float radius, Vector2 dir)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                float turn = (i + 1) / 2 * 22f * (i % 2 == 0 ? 1f : -1f);
+                Vector2 d = Quaternion.Euler(0f, 0f, turn) * dir;
+                Vector2 p = ClampToMap(center + d * (radius + 1.2f), 1f);
+                if (IsFree(p) && !InsideFence(p)) return p;
+            }
+
+            return RingPosition();
+        }
+
+        /// <summary>around 둘레 radius 거리에서 몸(body)이 들어갈 빈자리 — preferred부터 (코드 검토 3번: 보스가 집·기계 안에 나오지 않게)</summary>
+        public Vector2 FreeAround(Vector2 around, float radius, float body, Vector2 preferred)
+        {
+            preferred = ClampToMap(preferred, body + 0.5f);
+            if (Physics2D.OverlapCircle(preferred, body, ObstacleMask) == null) return preferred;
+            Vector2 start = preferred - around;
+            float baseAngle = start.sqrMagnitude > 0.01f ? Mathf.Atan2(start.y, start.x) : Mathf.PI * 0.5f;
+            for (int ring = 0; ring < 3; ring++)
+            {
+                float r = radius * (1f - ring * 0.25f);
+                for (int i = 0; i < 12; i++)
+                {
+                    float a = baseAngle + i * Mathf.PI / 6f;
+                    Vector2 p = ClampToMap(around + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r, body + 0.5f);
+                    if (Physics2D.OverlapCircle(p, body, ObstacleMask) == null) return p;
+                }
+            }
+
+            return around;
         }
 
         /// <summary>울타리가 있으면 그 밖에서만 낸다 (검토 10번)</summary>
@@ -265,7 +302,7 @@ namespace HistoryHeroes.Survival
                 if (Mathf.Abs(i - gapA) <= 1 || Mathf.Abs(i - gapB) <= 1 || (gapA == 0 && i == count - 1) || (gapB == 0 && i == count - 1)) continue;
                 float a = i * Mathf.PI * 2f / count;
                 Vector2 p = ClampToMap(center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 6f, 1f);
-                if (!IsFree(p) || InsideFence(p) && _fence != null) continue;
+                if (!IsFree(p) || InsideFence(p)) continue;
                 EnemyBase e = SpawnAt(prefab, p, 0.8f);
                 if (e != null) e.Status.ApplyFreeze(1.5f); // 1.5초 멈췄다 조여 온다
             }
@@ -277,8 +314,9 @@ namespace HistoryHeroes.Survival
             Vector2 start = EdgePoint(view, -dir) - dir * 1.5f;
             for (int i = 0; i < 10; i++)
             {
-                Vector2 p = start + side * ((i - 4.5f) * 1.1f);
-                SpawnPasser(data.charger, ClampToMap(p, 1f), dir, view, 1.25f, 1f);
+                Vector2 p = ClampToMap(start + side * ((i - 4.5f) * 1.1f), 1f);
+                if (!IsFree(p) || InsideFence(p)) continue; // 코드 검토 4번: 울타리 안·장애물 위에는 내지 않는다
+                SpawnPasser(data.charger, p, dir, view, 1.25f, 1f);
             }
 
             yield break;
@@ -290,8 +328,9 @@ namespace HistoryHeroes.Survival
             Vector2 start = EdgePoint(view, -dir) - dir * 1.5f;
             for (int i = 0; i < count; i++)
             {
-                Vector2 p = start + side * Random.Range(-3f, 3f) - dir * Random.Range(0f, 2f);
-                SpawnPasser(prefab, ClampToMap(p, 1f), dir, view, haste, scale);
+                Vector2 p = ClampToMap(start + side * Random.Range(-3f, 3f) - dir * Random.Range(0f, 2f), 1f);
+                if (!IsFree(p) || InsideFence(p)) continue;
+                SpawnPasser(prefab, p, dir, view, haste, scale);
             }
         }
 
@@ -316,6 +355,7 @@ namespace HistoryHeroes.Survival
             for (int i = 0; i < 6; i++)
             {
                 Vector2 p = ClampToMap(start + side * ((i - 2.5f) * 1.6f), 1f);
+                if (!IsFree(p) || InsideFence(p)) continue;
                 EnemyBase e = SpawnAt(prefab, p, 2.2f); // 느리고 단단하게 (체력 ×2.2)
                 if (e != null) e.transform.localScale *= 1.2f;
             }

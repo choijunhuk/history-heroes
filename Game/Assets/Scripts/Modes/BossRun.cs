@@ -53,10 +53,14 @@ namespace HistoryHeroes.Modes
         public int HitsTaken => _hitsTaken;
         public bool IsFinished => _finished;
 
+        [Tooltip("보스 경기장 반지름 (기믹: 기둥 자리 · 불길 반쪽)")]
+        [SerializeField] private float arenaRadius = 3.9f;
+
         private void Start()
         {
             GamePause.ResetAll();
             DamageLog.Reset();
+            BossGimmicks.Notice = text => { if (hud != null) hud.ShowNotice(text, 2f); }; // 기믹 알림 (확장 1차 5장)
 
             _info = FindBoss(GameSession.Chapter);
             _record = SaveSystem.Data.FindRecord(GameSession.BossRecordId) ?? LatestRecord();
@@ -133,6 +137,10 @@ namespace HistoryHeroes.Modes
             _boss.Killed += _ => Finish(victory: true);
             _startTime = Time.time;
             if (bossHud != null) bossHud.Bind(_boss, _info.displayName);
+            // 기믹 보스 (확장 1차 5장): 쌍둥이 = 그림자 표식, 망각의 왕 = 수정 기둥 보호막 (+ 2단계 무너지는 바닥)
+            Vector2 center = transform.parent != null ? (Vector2)transform.parent.position : Vector2.zero;
+            BossGimmick gimmick = BossGimmicks.Attach(_boss, BossGimmicks.For(_boss), BossArena.Circle(center, arenaRadius));
+            if (gimmick != null && hud != null) hud.ShowNotice(gimmick.Hint, 3f);
         }
 
         /// <summary>

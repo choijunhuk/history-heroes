@@ -552,12 +552,16 @@ namespace HistoryHeroes.Records
         /// <summary>맵 기록 (없으면 null — 화면 표시용)</summary>
         public SurvivalMapSave FindMap(string id)
         {
-            if (maps == null) return null;
-            foreach (SurvivalMapSave m in maps)
+            if (maps != null)
             {
-                if (m.id == id) return m;
+                foreach (SurvivalMapSave m in maps)
+                {
+                    if (m.id == id) return m;
+                }
             }
 
+            // 옛 저장 (맵이 하나이던 때): 맵 1 기록은 읽을 때 옮긴다 → 로비에서 바로 맵 2가 열린다 (코드 검토 2026-10-28 2번)
+            if (id == "field" && (clears > 0 || longestSeconds > 0f)) return MapOf(id);
             return null;
         }
 
@@ -567,14 +571,25 @@ namespace HistoryHeroes.Records
         /// </summary>
         public SurvivalMapSave MapOf(string id)
         {
-            SurvivalMapSave found = FindMap(id);
-            if (found != null) return found;
+            if (maps != null)
+            {
+                foreach (SurvivalMapSave m in maps)
+                {
+                    if (m.id == id) return m;
+                }
+            }
+
             if (maps == null) maps = new List<SurvivalMapSave>();
             var created = new SurvivalMapSave { id = id };
             if (id == "field")
             {
                 created.bestSeconds = longestSeconds;
-                if (clears > 0) created.clears = 1;
+                if (clears > 0)
+                {
+                    created.clears = 1;
+                    created.stars = 1; // ★1 클리어 (옛 판에서 이미 깼다)
+                    created.firstClearTaken = true; // 첫 클리어 보상은 옛 규칙으로 이미 받았다
+                }
             }
 
             maps.Add(created);

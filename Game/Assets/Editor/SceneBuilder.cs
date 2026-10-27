@@ -46,6 +46,7 @@ namespace HistoryHeroes.EditorTools
             SetupFont();
             SetupUiKit(); // 그래픽 평가 3번: 게임다운 버튼·창·아이콘·제목 글꼴
             CreateSkillArt(); // 그래픽 평가 2번: 스킬 3D 모양 (Resources/SkillArt)
+            CreateGimmickArt(); // 확장 1차 5장: 기믹 보스 수정 기둥 (Resources/GimmickArt)
             CopyLegalTexts(); // v1.0 약관·개인정보·크레딧 (Docs → Resources/Legal)
             CreateSoundBank(); // v1.0 소리 표 (Assets/Audio → Resources/Audio/SoundBank)
 

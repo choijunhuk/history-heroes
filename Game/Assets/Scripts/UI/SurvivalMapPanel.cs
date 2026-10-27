@@ -78,7 +78,7 @@ namespace HistoryHeroes.UI
             blurbLabel.text = map.mapBlurb;
             starsLabel.text = Economy.Stars.Display(stars);
             string best = save != null && save.bestSeconds > 0f ? SurvivalRun.Format(save.bestSeconds) : "—";
-            infoLabel.text = $"{SurvivalRun.Format(map.duration)} 버티기 · 마지막 보스 <color=#FFD27A>{map.bossName}</color>\n" +
+            infoLabel.text = $"{SurvivalRun.Format(map.duration)} 버티기 · 마지막 보스 <color=#FFD27A>{map.bossName.Replace(" (서바이벌)", "")}</color>\n" +
                              $"최고 기록 {best}\n" +
                              $"★1 클리어  ★2 {MissionText(map)}  ★3 전설 없이 클리어";
             lockLabel.gameObject.SetActive(!open);
