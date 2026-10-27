@@ -254,7 +254,7 @@ namespace HistoryHeroes.EditorTools
             size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.35f));
 
             var renderer = go.GetComponent<ParticleSystemRenderer>();
-            renderer.sharedMaterial = FxGlowMaterial("Fire", new Color(2.4f, 1.3f, 0.55f));
+            renderer.sharedMaterial = FxGlowMaterial("Fire", new Color(1.5f, 0.8f, 0.34f)); // 그래픽 재평가 8번: 장식 불빛은 예고(빨강)보다 어둡게
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
@@ -417,10 +417,10 @@ namespace HistoryHeroes.EditorTools
             var sets = new (string key, string[] flat, string[] edge)[]
             {
                 ("ch1", new string[0], new[] { "Weeds", "Weeds", "Deco_Rubble" }), // 물웅덩이는 구덩이(위험)처럼 보여서 뺐다 (재평가)
-                ("ch2", new[] { "Floor_Rug" }, new[] { "Deco_Rubble" }),
+                ("ch2", new string[0], new[] { "Deco_Rubble", "Deco_Rubble" }), // 붉은 깔개는 위험 예고처럼 보여서 뺐다 (화면 점검 2026-10-28)
                 ("ch3", new[] { "Floor_Grate" }, new[] { "Deco_Rubble" }),
                 ("ch4", new string[0], new[] { "Bones", "Deco_Rubble" }),
-                ("ch5", new[] { "Floor_Rug" }, new[] { "Bones" }),
+                ("ch5", new string[0], new[] { "Bones", "Bones" }),
             };
             list.arraySize = sets.Length;
             for (int i = 0; i < sets.Length; i++)

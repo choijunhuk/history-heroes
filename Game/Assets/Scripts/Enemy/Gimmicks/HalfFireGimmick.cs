@@ -67,12 +67,12 @@ namespace HistoryHeroes.Enemy
 
             HideArea();
             _startedAt = -1f;
-            _next = _clock + Interval;
         }
 
         private void StartFire()
         {
             _startedAt = _clock;
+            _next = _clock + Interval; // 발동 시작 기준 12초마다 (코드 검토 6번)
             _nextTick = _clock + Telegraph;
             _side = boss.transform.position.x >= arena.Center.x ? 1 : -1;
 

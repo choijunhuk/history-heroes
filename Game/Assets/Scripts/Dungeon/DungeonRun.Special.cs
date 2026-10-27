@@ -159,10 +159,12 @@ namespace HistoryHeroes.Dungeon
             switch (CurrentSpecial)
             {
                 case RoomSpecial.ChallengeSurvive:
+                    if (!RewardAlreadyTaken) HypeFx.Banner("20초 버텨라!", ChallengeColor);
                     hud.ShowNotice(RewardAlreadyTaken ? "도전 보상은 이미 받았어요" : "도전! 20초 동안 버티세요 (다 잡지 않아도 돼요)", 2.5f);
                     StartCoroutine(RunSurvive());
                     return true;
                 case RoomSpecial.ChallengeNoHit:
+                    if (!RewardAlreadyTaken && !_challengeFailed) HypeFx.Banner("맞지 말고 깨라!", ChallengeColor);
                     hud.ShowNotice(RewardAlreadyTaken ? "도전 보상은 이미 받았어요" : _challengeFailed ? "이미 실패한 도전이에요 — 보상 없이 진행" : "도전! 한 번도 맞지 말고 깨세요 (함정 포함)", 2.5f);
                     StartCoroutine(SpawnRoom(plan, _special.NoHitEncounter));
                     return true;

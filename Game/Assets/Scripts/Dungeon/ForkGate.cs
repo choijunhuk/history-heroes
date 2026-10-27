@@ -25,6 +25,9 @@ namespace HistoryHeroes.Dungeon
 
         public event Action Entered;
 
+        /// <summary>그림판 크기 (화면 점검: 작은 폰에서 읽히게 1.4배)</summary>
+        private const float BoardScale = 1.4f;
+
         private void Awake()
         {
             _door = GetComponent<Door>();
@@ -68,7 +71,7 @@ namespace HistoryHeroes.Dungeon
             // 뽕맛: 처음 0.35초 동안 "툭" 튀어나왔다가 제 크기로, 그 뒤 살짝 둥실
             float t = Mathf.Clamp01((Time.unscaledTime - _shownAt) / 0.35f);
             float pop = t < 1f ? Mathf.Sin(t * Mathf.PI * 0.5f) * (1f + 0.25f * Mathf.Sin(t * Mathf.PI)) : 1f;
-            board.localScale = Vector3.one * Mathf.Max(0.01f, pop);
+            board.localScale = Vector3.one * (BoardScale * Mathf.Max(0.01f, pop));
             board.localPosition = _boardBase + Vector3.back * (0.08f * Mathf.Sin(Time.unscaledTime * 2.4f)); // 위 = -Z
             Face();
         }

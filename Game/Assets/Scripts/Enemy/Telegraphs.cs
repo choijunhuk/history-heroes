@@ -105,13 +105,24 @@ namespace HistoryHeroes.Enemy
             if (sr != null) sr.gameObject.SetActive(false);
         }
 
-        /// <summary>예고가 차오르는 느낌: t(0~1)만큼 진해진다</summary>
+        /// <summary>
+        /// 예고가 차오르는 느낌: t(0~1)만큼 진해진다. 마지막 30%는 **모든 예고가 같은 박자로 깜빡인다** (초당 8번, 화면 전체가 맞춰서) —
+        /// "곧 맞는다"를 보스·함정·기믹이 똑같이 알린다 (그래픽 재평가 8번: 예고 외곽선·깜빡임 박자 통일)
+        /// </summary>
         public static void Fill(SpriteRenderer sr, Color color, float t)
         {
             if (sr == null) return;
-            color.a = Mathf.Lerp(color.a * 0.35f, Mathf.Min(1f, color.a * 1.3f), Mathf.Clamp01(t));
+            t = Mathf.Clamp01(t);
+            color.a = Mathf.Lerp(color.a * 0.35f, Mathf.Min(1f, color.a * 1.3f), t);
+            if (t >= BlinkFrom) color.a *= Blink(Time.unscaledTime);
             sr.color = color;
         }
+
+        /// <summary>깜빡임이 시작되는 차오름 (마지막 30%)</summary>
+        public const float BlinkFrom = 0.7f;
+
+        /// <summary>같은 박자 깜빡임 (초당 8번: 밝게 1 · 어둡게 0.55)</summary>
+        public static float Blink(float time) => Mathf.Repeat(time * 8f, 1f) < 0.5f ? 1f : 0.55f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()

@@ -208,7 +208,7 @@ namespace HistoryHeroes.Dungeon
             int i = IndexOf(id);
             if (i < 0) return id;
             Info b = All[i];
-            return $"{b.Name}\n<size=70%><color=#9CFFB0>{b.Good}</color>  <color=#FF9C9C>{b.Bad}</color></size>";
+            return $"{b.Name}  <size=70%><color=#9CFFB0>{b.Good}</color></size>\n<size=70%><color=#FF9C9C>대가: {b.Bad}</color></size>";
         }
 
         /// <summary>능력치 보정 (출처 = Blessing). "지혜"의 바로 레벨업은 고를 때만 (DungeonRun)</summary>

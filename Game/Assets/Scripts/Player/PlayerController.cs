@@ -239,8 +239,21 @@ namespace HistoryHeroes.Player
                 return;
             }
 
+            if (Time.time < _rootedUntil)
+            {
+                _body.linearVelocity = Vector2.zero; // 기절·묶임 (이동 속도 하한 0.5와 상관없이 멈춘다)
+                return;
+            }
+
             _body.linearVelocity = ReadInput() * Stats.Get(StatType.MoveSpeed);
         }
+
+        private float _rootedUntil;
+
+        /// <summary>seconds 동안 못 움직인다 (기믹 "거울 분신" 기절 · 덩굴). 더 긴 쪽이 남는다</summary>
+        public void Root(float seconds) => _rootedUntil = Mathf.Max(_rootedUntil, Time.time + seconds);
+
+        public bool IsRooted => Time.time < _rootedUntil;
 
         /// <summary>이동과 멈춤 판정이 같은 데드존을 쓴다 (약하게 밀면서 쏘기 방지, Codex 리뷰).</summary>
         private Vector2 ReadInput()

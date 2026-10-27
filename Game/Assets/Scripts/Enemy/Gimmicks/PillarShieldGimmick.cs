@@ -37,7 +37,12 @@ namespace HistoryHeroes.Enemy
             bubble.sortingOrder = 30;
             _bubble = bubble;
             _objects.Add(bubble.gameObject);
-            if (boss is PatternBoss pattern) pattern.PhaseChanged += OnPhase;
+            if (boss is PatternBoss pattern)
+            {
+                pattern.PhaseChanged += OnPhase;
+                if (pattern.Phase >= 2) OnPhase(pattern.Phase); // 균열 버전은 2단계로 시작 (코드 검토 5번)
+            }
+
             Apply();
         }
 

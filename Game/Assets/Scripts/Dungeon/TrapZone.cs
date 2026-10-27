@@ -52,6 +52,11 @@ namespace HistoryHeroes.Dungeon
         private float _disruptUntil;
         public bool Disrupted => Time.time < _disruptUntil;
 
+        /// <summary>영웅만 맞는다 (기믹 보스의 무너지는 바닥: 보스·수정 기둥은 다치지 않게)</summary>
+        public bool HeroOnly { get; set; }
+        private static int _heroMask = -1;
+        private int Mask => HeroOnly ? (_heroMask >= 0 ? _heroMask : (_heroMask = LayerMask.GetMask("Player"))) : _mask;
+
         public void Disrupt(float seconds) => _disruptUntil = Mathf.Max(_disruptUntil, Time.time + seconds);
 
         public void SetArea(SpriteRenderer sr) => area = sr;
@@ -102,7 +107,7 @@ namespace HistoryHeroes.Dungeon
                 case Effect.Steam: return new Color(0.5f, 0.55f, 0.6f, 0.55f);
                 case Effect.Rockfall: return new Color(0.4f, 0.32f, 0.25f, 0.45f);
                 case Effect.Vines: return new Color(0.2f, 0.12f, 0.3f, 0.8f);
-                default: return new Color(0.3f, 0.15f, 0.4f, 0.55f);
+                default: return new Color(0.3f, 0.2f, 0.4f, 0.22f); // 화면 점검: 쉬는 칸은 옅게 → 금(밝게)·무너짐(검정)과 갈린다
             }
         }
 
@@ -177,7 +182,7 @@ namespace HistoryHeroes.Dungeon
             {
                 // 예고: 바닥이 깜빡인다 (화염 = 빨갛게, 증기 = 흰 연기, 균열 = 금이 감)
                 float blink = 0.5f + 0.5f * Mathf.Sin(local * 20f);
-                Color warn = effect == Effect.Oblivion ? new Color(0.7f, 0.4f, 1f, 0.6f) : effect == Effect.Steam ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0.25f, 0.2f, 0.6f);
+                Color warn = effect == Effect.Oblivion ? new Color(0.92f, 0.78f, 1f, 0.85f) : effect == Effect.Steam ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0.25f, 0.2f, 0.6f);
                 if (area != null) area.color = Color.Lerp(baseColor, warn, blink);
                 return;
             }
@@ -239,7 +244,7 @@ namespace HistoryHeroes.Dungeon
                 Telegraphs.Hide(_marker);
                 _marker = null;
                 AttackFx.Burst(_rockAt, 0.9f, new Color(0.6f, 0.5f, 0.4f, 0.8f), 0.18f);
-                int n = Physics2D.OverlapCircleNonAlloc(_rockAt, 0.9f, _hits, _mask);
+                int n = Physics2D.OverlapCircleNonAlloc(_rockAt, 0.9f, _hits, Mask);
                 for (int i = 0; i < n; i++)
                 {
                     if (_hits[i].TryGetComponent(out Health h)) h.TryTakeDamage(TrapDamage(_damage * 2.2f, h.Team == Team.Player, "trap_rock"));
@@ -259,7 +264,7 @@ namespace HistoryHeroes.Dungeon
                 {
                     _rooted = p;
                     _rootUntil = Time.time + 0.5f;
-                    p.Stats.Add(new StatModifier(StatType.MoveSpeed, ModifierKind.Percent, -1f, ModifierSource.Hero, _rootOwner));
+                    p.Root(0.5f); // 이동 속도 -100%는 하한 0.5에서 잘려서 묶이지 않았다
                     AttackFx.Burst(p.transform.position, 0.5f, new Color(0.4f, 0.2f, 0.6f, 0.7f), 0.5f);
                 }
                 else if (_hits[i].TryGetComponent(out EnemyBase e))
@@ -271,7 +276,7 @@ namespace HistoryHeroes.Dungeon
 
         // ---------------------------------------------------------------- 도우미
 
-        private int Overlap(Vector2 center, Vector2 size, float angle) => Physics2D.OverlapBoxNonAlloc(center, size, angle, _hits, _mask);
+        private int Overlap(Vector2 center, Vector2 size, float angle) => Physics2D.OverlapBoxNonAlloc(center, size, angle, _hits, Mask);
 
         private static DamageInfo TrapDamage(float amount, bool toPlayer, string source)
         {

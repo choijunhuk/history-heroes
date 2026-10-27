@@ -50,7 +50,7 @@ namespace HistoryHeroes.Enemy
         {
             Unstun();
             _stunned = player;
-            player.Stats.Add(new StatModifier(StatType.MoveSpeed, ModifierKind.Percent, -1f, ModifierSource.Hero, _owner));
+            player.Root(Stun); // 코드 검토 3번: 이동 속도 하한과 상관없이 정말 멈춘다
             FxBursts.Puff(player.transform.position + Vector3.back * 1.1f, new Color(1f, 0.9f, 0.4f), 1f);
             BossGimmicks.Notice?.Invoke(_told ? "가짜! 기절" : "가짜였다! 그림자 있는 진짜를 노려요 (0.5초 기절)");
             _told = true;
@@ -58,10 +58,6 @@ namespace HistoryHeroes.Enemy
             Unstun();
         }
 
-        private void Unstun()
-        {
-            if (_stunned != null) _stunned.Stats.RemoveAllFrom(_owner);
-            _stunned = null;
-        }
+        private void Unstun() => _stunned = null; // 묶임은 시간이 지나면 스스로 풀린다 (Root)
     }
 }

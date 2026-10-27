@@ -49,7 +49,7 @@ namespace HistoryHeroes.Dungeon
             groove.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
             groove.transform.localScale = new Vector3(dir.magnitude + size, size * 0.35f, 1f);
             groove.sprite = PlaceholderSprites.Square;
-            groove.color = new Color(0.12f, 0.1f, 0.08f, 0.7f);
+            groove.color = new Color(0.95f, 0.72f, 0.18f, 0.5f); // 화면 점검: 경로가 바닥보다 밝게 (노란 경고 띠)
             groove.sortingOrder = -8;
             room.Extras.Add(groove.gameObject);
 

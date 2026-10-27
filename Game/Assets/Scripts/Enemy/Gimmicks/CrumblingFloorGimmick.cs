@@ -11,7 +11,8 @@ namespace HistoryHeroes.Enemy
     /// </summary>
     public sealed class CrumblingFloorGimmick : BossGimmick
     {
-        public const float Cell = 1.8f;
+        public const float MaxCell = 1.8f;
+        private float _cell = MaxCell;
         public const int StartCells = 3;
         public const float AddEvery = 6f;
         public const float MaxShare = 0.45f;
@@ -27,6 +28,9 @@ namespace HistoryHeroes.Enemy
         protected override void OnBegin()
         {
             _cells.Clear();
+            // 작은 원형 경기장(반지름 3.9)은 칸을 잘게 → 늘어날 칸이 남는다 (코드 검토 4번)
+            _cell = Mathf.Clamp(arena.Radius / 2.6f, 1.2f, MaxCell);
+            float Cell = _cell;
             int n = Mathf.CeilToInt(arena.Half.x * 2f / Cell), m = Mathf.CeilToInt(arena.Half.y * 2f / Cell);
             for (int x = 0; x < n; x++)
             {
@@ -46,7 +50,7 @@ namespace HistoryHeroes.Enemy
             }
 
             _clock = 0f;
-            _nextAdd = 0f;
+            _nextAdd = AddEvery; // 처음 3칸 다음은 6초 뒤부터 (코드 검토 4번)
             for (int i = 0; i < StartCells; i++) AddZone();
             BossGimmicks.Notice?.Invoke(Hint);
         }
@@ -75,8 +79,10 @@ namespace HistoryHeroes.Enemy
             sr.sortingOrder = -9;
             var zone = go.AddComponent<TrapZone>();
             zone.SetArea(sr);
+            zone.HeroOnly = true; // 코드 검토 1번: 보스·수정 기둥은 다치지 않는다
             float damage = boss != null ? boss.Damage * 0.9f : 60f;
-            zone.Setup(TrapZone.Effect.Oblivion, at, Vector2.one * (Cell - 0.1f), 0f, damage, Random.Range(0f, 6f));
+            // 6초 주기: 0~1.8초 쉼 → 1.2초 금 → 3초 무너짐. 쉼 안에서 시작 → 늘 예고를 보고 무너진다 (코드 검토 2번)
+            zone.Setup(TrapZone.Effect.Oblivion, at, Vector2.one * (_cell - 0.1f), 0f, damage, Random.Range(0f, 1.7f));
             _zones.Add(go);
         }
     }

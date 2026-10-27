@@ -316,7 +316,7 @@ namespace HistoryHeroes.EditorTools
             RectTransform holder = Rect("SurvivalMaps", parent, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             var panel = holder.gameObject.AddComponent<SurvivalMapPanel>();
             RectTransform dim = Rect("Panel", holder, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
-            Img(dim, new Color(0.02f, 0.04f, 0.08f, 0.9f), null).raycastTarget = true;
+            Img(dim, new Color(0.02f, 0.04f, 0.08f, 0.97f), null).raycastTarget = true; // 화면 점검: 뒤 글자가 비치지 않게
 
             TMP_Text title = Label("Title", dim, "서바이벌 — 맵 고르기", 60, TextAlignmentOptions.Center, Color.white);
             Place(title.rectTransform, Center, Center, new Vector2(0f, 760f), new Vector2(900f, 110f));

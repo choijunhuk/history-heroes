@@ -85,6 +85,7 @@ namespace HistoryHeroes.Enemy
         private void Arm()
         {
             _armedAt = _clock;
+            _next = _clock + Interval; // 발동 시작 기준 15초마다 (코드 검토 6번)
             _hits = 0;
             _points.Clear();
             Vector2 me = hero.position;
@@ -134,7 +135,6 @@ namespace HistoryHeroes.Enemy
             _marks.Clear();
             _points.Clear();
             _armedAt = -1f;
-            _next = _clock + Interval;
         }
     }
 }
