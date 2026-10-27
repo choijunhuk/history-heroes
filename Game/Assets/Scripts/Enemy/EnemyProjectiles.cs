@@ -38,7 +38,7 @@ namespace HistoryHeroes.Enemy
             p.Launch(direction, speed * SpeedScale, damage, playerMask, _instance.wallMask, pierce: 0, ricochet: 0, _instance.OnReleased);
             p.Owner = owner;
             _instance._active.Add(p);
-            if (owner != null && owner.TryGetComponent(out Combat.Visual3D visual)) visual.Attack(direction); // 쏘는 동작 (탄막은 0.2초에 한 번)
+            if (owner is EnemyBase enemy && enemy.Visual != null) enemy.Visual.Attack(direction); // 쏘는 동작 (탄막은 0.2초에 한 번, 탄마다 찾지 않는다)
         }
 
         /// <summary>point 반경 안의 적 투사체 하나를 없앤다 (강철 회오리 칼날의 투사체 막기).</summary>

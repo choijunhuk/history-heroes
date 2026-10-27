@@ -197,12 +197,15 @@ namespace HistoryHeroes.Combat
 
         // ── 사건 ──
 
-        /// <summary>공격했다: 그쪽을 잠깐 보고 공격 동작 (연달아 쏘는 탄막은 0.2초에 한 번만 다시 휘두른다)</summary>
+        /// <summary>
+        /// 공격했다: 그쪽을 잠깐 보고 공격 동작. 0.2초 안에 또 부르면(탄막 · 쏜 직후의 상태 바뀜) 처음 방향을 지킨다
+        /// → 모델이 실제로 날아간 화살 쪽을 본다 (Codex 3D 코드 리뷰 1번)
+        /// </summary>
         public void Attack(Vector2 direction, float holdFacing = 0.45f)
         {
             if (_dead) return;
-            Aim(direction, holdFacing);
             if (Time.time - _lastAttack < MinAttackGap) return;
+            Aim(direction, holdFacing);
             _lastAttack = Time.time;
             if (_animator != null && _animator.isActiveAndEnabled) _animator.SetTrigger(AttackId);
         }

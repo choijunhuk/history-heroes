@@ -16,17 +16,30 @@ namespace HistoryHeroes.Common
         [Tooltip("꼭 보여야 하는 땅 네모 (벽 포함). 가운데 = 받침 자리 + center")]
         [SerializeField] private Vector2 area = new Vector2(9.2f, 15.2f); // 방 안(8×14) + 벽 조금 (옆벽은 살짝 잘린다 → 방이 크게 보인다)
         [SerializeField] private Vector2 center = Vector2.zero;
-        [Tooltip("바로 아래에서 기운 각도 (0 = 위에서 내려다봄)")]
-        [SerializeField, Range(0f, 70f)] private float tilt = 32f;
-        [SerializeField, Range(15f, 70f)] private float fieldOfView = 34f;
+        [Tooltip("바로 아래에서 기운 각도 (0 = 위에서 내려다봄). 기울기 + 시야/2가 MaxTopAngle을 넘으면 줄인다 (화면 위가 지평선을 넘지 않게)")]
+        [SerializeField, Range(0f, 55f)] private float tilt = 32f;
+        [SerializeField, Range(15f, 60f)] private float fieldOfView = 34f;
         [Tooltip("화면 위 여백 (HUD 자리, 화면 높이 비율)")]
         [SerializeField, Range(0f, 0.4f)] private float marginTop = 0.1f;
         [SerializeField, Range(0f, 0.4f)] private float marginBottom = 0.01f;
         [SerializeField, Range(0f, 0.2f)] private float marginSide = 0.01f;
 
-        private float _aspect = -1f;
-        private Vector4 _key;
+        /// <summary>화면 맨 위 광선이 바로 아래에서 기울 수 있는 최대 각도 (90° = 지평선)</summary>
+        public const float MaxTopAngle = 80f;
+
+        private Settings _key;
+        private bool _solved;
         private Solution _solution;
+
+        /// <summary>다시 풀어야 하는지 볼 값 (하나씩 비교 — 합을 키로 쓰면 다른 설정이 같아질 수 있다, Codex 3D 코드 리뷰 4번)</summary>
+        private struct Settings : System.IEquatable<Settings>
+        {
+            public Vector2 Area;
+            public float Tilt, Fov, Top, Bottom, Side, Aspect;
+
+            public bool Equals(Settings o) => Area == o.Area && Tilt == o.Tilt && Fov == o.Fov && Top == o.Top && Bottom == o.Bottom && Side == o.Side
+                                              && Mathf.Approximately(Aspect, o.Aspect);
+        }
 
         /// <summary>꼭 보여야 하는 땅 네모 (서바이벌은 넓게 — 몰려오는 무리가 벽처럼 보이지 않게)</summary>
         public Vector2 Area
@@ -67,7 +80,12 @@ namespace HistoryHeroes.Common
             public Quaternion Rotation;
             public Rect Ground;
             public float Radius;
+            /// <summary>실제로 쓴 기울기 (SafeTilt로 줄였을 수 있다)</summary>
+            public float Tilt;
         }
+
+        /// <summary>화면 맨 위 광선(기울기 + 시야/2)이 MaxTopAngle을 넘지 않는 기울기 → 화면 네 모서리가 늘 땅에 닿는다 (Codex 3D 코드 리뷰 3번)</summary>
+        public static float SafeTilt(float tiltDegrees, float fovDegrees) => Mathf.Clamp(tiltDegrees, 0f, Mathf.Max(0f, MaxTopAngle - fovDegrees * 0.5f));
 
         private void LateUpdate() => Apply();
 
@@ -77,10 +95,10 @@ namespace HistoryHeroes.Common
             if (viewCamera == null) viewCamera = GetComponentInChildren<Camera>();
             if (viewCamera == null) return;
             float aspect = Mathf.Max(0.1f, viewCamera.aspect);
-            var key = new Vector4(area.x, area.y, tilt + fieldOfView * 100f, marginTop + marginBottom * 10f + marginSide * 100f);
-            if (!Mathf.Approximately(aspect, _aspect) || key != _key)
+            var key = new Settings { Area = area, Tilt = tilt, Fov = fieldOfView, Top = marginTop, Bottom = marginBottom, Side = marginSide, Aspect = aspect };
+            if (!_solved || !key.Equals(_key))
             {
-                _aspect = aspect;
+                _solved = true;
                 _key = key;
                 _solution = Solve(area, tilt, fieldOfView, aspect, marginTop, marginBottom, marginSide);
             }
@@ -125,6 +143,7 @@ namespace HistoryHeroes.Common
         /// </summary>
         public static Solution Solve(Vector2 size, float tiltDegrees, float fovDegrees, float aspect, float top, float bottom, float side)
         {
+            tiltDegrees = SafeTilt(tiltDegrees, fovDegrees);
             Vector3 f = Forward(tiltDegrees);
             float halfW = size.x * 0.5f, halfH = size.y * 0.5f;
 
@@ -179,6 +198,7 @@ namespace HistoryHeroes.Common
                 FocusY = fy,
                 Position = CameraAt(dHi, fy),
                 Rotation = Quaternion.LookRotation(f, Up(tiltDegrees)),
+                Tilt = tiltDegrees,
             };
             GroundBounds(s.Position, tiltDegrees, fovDegrees, aspect, out s.Ground, out s.Radius);
             return s;

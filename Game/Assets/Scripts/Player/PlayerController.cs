@@ -154,9 +154,10 @@ namespace HistoryHeroes.Player
             }
         }
 
+        /// <summary>영웅 모델로 바꾼다. 모델이 없는 영웅이면 이전 모델을 내려놓고 임시 도형을 다시 보인다 (Codex 3D 코드 리뷰 2번)</summary>
         private void ShowHeroModel()
         {
-            if (Visual != null && hero != null && hero.model3D != null) Visual.SetModel(hero.model3D, hero.modelHeight);
+            if (Visual != null && hero != null) Visual.SetModel(hero.model3D, hero.modelHeight);
         }
 
         private void PlayAttack(Vector2 aim)

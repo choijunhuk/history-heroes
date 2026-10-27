@@ -71,6 +71,9 @@ namespace HistoryHeroes.Enemy
         /// <summary>3D 모델 (Art3D-Plan 4번). 없으면 임시 도형 그대로</summary>
         protected Combat.Visual3D visual;
 
+        /// <summary>3D 모델 (쏘는 쪽이 공격 동작을 부를 때. 없으면 null)</summary>
+        public Combat.Visual3D Visual => visual;
+
         protected virtual void Awake()
         {
             visual = GetComponent<Combat.Visual3D>();

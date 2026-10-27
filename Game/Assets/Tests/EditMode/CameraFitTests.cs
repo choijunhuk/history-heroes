@@ -64,6 +64,19 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(0f, s.FocusY, 0.01f);
         }
 
+        [TestCase(55f, 60f)]
+        [TestCase(70f, 70f)]
+        public void SteepAngles_StayBelowTheHorizon(float tilt, float fov)
+        {
+            // 화면 위 광선이 지평선을 넘는 조합은 기울기를 줄인다 → 땅 범위가 유한하고 방을 덮는다 (Codex 3D 코드 리뷰 3번)
+            var room = new Vector2(10f, 16f);
+            float aspect = 9f / 19.5f;
+            CameraFit.Solution s = CameraFit.Solve(room, tilt, fov, aspect, Top, Bottom, Side);
+            Assert.That(s.Tilt + fov * 0.5f, Is.LessThanOrEqualTo(CameraFit.MaxTopAngle + 0.001f));
+            foreach (Vector2 corner in Corners(room)) Assert.IsTrue(s.Ground.Contains(corner), $"땅 범위가 {corner}를 덮는다");
+            Assert.That(s.Ground.height, Is.LessThan(s.Distance * 20f), "끝없이 먼 땅이 아니다");
+        }
+
         [Test]
         public void StatusTint_FollowsTheStatusColor()
         {
