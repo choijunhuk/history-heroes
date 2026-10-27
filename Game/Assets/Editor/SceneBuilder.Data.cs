@@ -127,48 +127,49 @@ namespace HistoryHeroes.EditorTools
             d.YiSunsin.star5StopGuardCap = 3f;
 
             // ----- 이성계 (확장 결정 12: 새 영웅, 명궁 — 모으기 저격형). 칭기즈 칸 = 짧게 자주, 이성계 = 길게 한 방 -----
-            d.YiSeonggye = Hero("yiseonggye", "이성계", HeroClass.Archer, BasicAttackKind.Projectile, 950f, 120f, 1.0f, 5f, 7f, new Color(0.8f, 0.35f, 0.25f));
+            d.YiSeonggye = Hero("yiseonggye", "이성계", HeroClass.Archer, BasicAttackKind.Projectile, 950f, 100f, 1.0f, 5f, 7f, new Color(0.8f, 0.35f, 0.25f));
             d.YiSeonggye.playStyle = "오래 멈춰 활을 끝까지 당겨, 크게 한 방";
             d.YiSeonggye.signatureName = "백발백중";
-            d.YiSeonggye.signatureDescription = "멈춘 시간만큼 화살을 모은다: 1단 → 2단 관통 → 3단 관통 + 치명타 ×2.5 (1.5초, 바로 발사). 움직이면 모은 화살을 놓는다";
+            d.YiSeonggye.signatureDescription = "멈춘 시간만큼 화살을 모은다: 1단 → 2단 관통 → 3단 관통 + 치명타 확정 + 피해 ×1.6 (1.8초, 바로 발사). 움직이면 모은 화살을 놓는다";
             d.YiSeonggye.projectileSpeed = 17f;
             d.YiSeonggye.chargeShot = true;
-            d.YiSeonggye.chargeTimes = new Vector3(0.4f, 0.9f, 1.5f);
-            d.YiSeonggye.chargeMidMultiplier = 1.4f;
-            d.YiSeonggye.chargeFullMultiplier = 2.5f;
+            // 밸런스 (영웅 8명 보스 벤치 2026-10-28: 3단 1.5초 ×2.5 + 치명타 확정이 다른 영웅의 2.4배) → 1.8초 ×1.6
+            d.YiSeonggye.chargeTimes = new Vector3(0.5f, 1.1f, 1.8f);
+            d.YiSeonggye.chargeMidMultiplier = 1.2f;
+            d.YiSeonggye.chargeFullMultiplier = 1.6f;
             d.YiSeonggye.unlockAfterBossChapter = 5;
-            d.YiSeonggye.star3ChargeFull = 3f;
-            d.YiSeonggye.star5ChargeFullTime = 1.2f;
+            d.YiSeonggye.star3ChargeFull = 1.9f;
+            d.YiSeonggye.star5ChargeFullTime = 1.45f;
 
             // ----- 레오나르도 다빈치 (확장 결정 12: 새 영웅, 소환사 · 발명가) -----
-            d.Davinci = Hero("davinci", "레오나르도 다빈치", HeroClass.Summoner, BasicAttackKind.Projectile, 900f, 70f, 1.0f, 5f, 5f, new Color(0.85f, 0.65f, 0.35f));
+            d.Davinci = Hero("davinci", "레오나르도 다빈치", HeroClass.Summoner, BasicAttackKind.Projectile, 900f, 80f, 1.0f, 5f, 5f, new Color(0.85f, 0.65f, 0.35f));
             d.Davinci.playStyle = "멈춰서 비행 기계를 조립하고, 같이 쏘는 공방";
             d.Davinci.signatureName = "작업대";
-            d.Davinci.signatureDescription = "멈춰서 부품 3개(1초에 1개)를 모으면 비행 기계 (최대 2대, 20초). 기계는 멈춰 있을 때 같은 적을 쏜다 (35%)";
+            d.Davinci.signatureDescription = "멈춰서 부품 3개(1초에 1개)를 모으면 비행 기계 (최대 2대, 20초). 기계는 멈춰 있을 때 같은 적을 쏜다 (45%)";
             d.Davinci.projectileSpeed = 15f;
             d.Davinci.workbench = true;
             d.Davinci.partEvery = 1f;
             d.Davinci.partsPerMachine = 3;
             d.Davinci.maxMachines = 2;
             d.Davinci.machineLife = 20f;
-            d.Davinci.machineDamage = 0.35f;
+            d.Davinci.machineDamage = 0.45f; // 밸런스 (보스 벤치 110초, 다른 영웅 73~97초): 35% → 45%, 공격력 70 → 80
             d.Davinci.machineFireRate = 1f;
             d.Davinci.helperModel = Art3DStage.Prefab("Fx_FlyingMachine");
             d.Davinci.gemsOnly = true; // 보석으로만 (구간 해금 영웅은 6명으로 충분)
             d.Davinci.unlockGems = 2000;
-            d.Davinci.star3MachineDamage = 0.5f;
+            d.Davinci.star3MachineDamage = 0.6f;
             d.Davinci.star5MaxMachines = 3;
 
             // ----- 제갈량 (확장 결정 12: 새 영웅, 책사 — 조종형 법사). 📜 팔진도·동남풍은 『삼국지연의』 전승 (각색) -----
             d.Zhuge = Hero("zhuge", "제갈량", HeroClass.Mage, BasicAttackKind.Projectile, 900f, 85f, 1.0f, 5f, 4.5f, new Color(0.55f, 0.75f, 0.95f));
             d.Zhuge.playStyle = "멈춰 서서 바람으로 적 탄을 늦추고, 진법으로 판을 짜는 조종";
             d.Zhuge.signatureName = "동남풍";
-            d.Zhuge.signatureDescription = "멈추면 둘레 반경 3의 적 탄이 40% 느려진다. 기본 공격은 깃털 부채 바람 3갈래 (각 45%)";
+            d.Zhuge.signatureDescription = "멈추면 둘레 반경 3의 적 탄이 40% 느려진다. 기본 공격은 깃털 부채 바람 3갈래 (각 52%)";
             d.Zhuge.projectileSpeed = 12f;
             d.Zhuge.knockback = 0.15f;
             d.Zhuge.fanShots = 3;
             d.Zhuge.fanSpread = 18f;
-            d.Zhuge.fanCoefficient = 0.45f;
+            d.Zhuge.fanCoefficient = 0.52f; // 밸런스 (보스 벤치 109초): 45% → 52%
             d.Zhuge.windRadius = 3f;
             d.Zhuge.windSlow = 0.4f;
             d.Zhuge.gemsOnly = true;

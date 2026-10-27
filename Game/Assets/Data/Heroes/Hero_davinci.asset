@@ -18,7 +18,7 @@ MonoBehaviour:
   playStyle: "\uBA48\uCDB0\uC11C \uBE44\uD589 \uAE30\uACC4\uB97C \uC870\uB9BD\uD558\uACE0,
     \uAC19\uC774 \uC3D8\uB294 \uACF5\uBC29"
   maxHp: 900
-  attack: 70
+  attack: 80
   attackSpeed: 1
   moveSpeed: 5
   range: 5
@@ -33,7 +33,7 @@ MonoBehaviour:
   signatureDescription: "\uBA48\uCDB0\uC11C \uBD80\uD488 3\uAC1C(1\uCD08\uC5D0 1\uAC1C)\uB97C
     \uBAA8\uC73C\uBA74 \uBE44\uD589 \uAE30\uACC4 (\uCD5C\uB300 2\uB300, 20\uCD08).
     \uAE30\uACC4\uB294 \uBA48\uCDB0 \uC788\uC744 \uB54C \uAC19\uC740 \uC801\uC744
-    \uC3DC\uB2E4 (35%)"
+    \uC3DC\uB2E4 (45%)"
   firstShotDelay: 0.2
   firstShotBonus: 0
   damageReduction: 0
@@ -64,7 +64,7 @@ MonoBehaviour:
   partsPerMachine: 3
   maxMachines: 2
   machineLife: 20
-  machineDamage: 0.35
+  machineDamage: 0.45
   machineFireRate: 1
   helperModel: {fileID: 3371645483853028794, guid: b8f07301e45b91745b1340c3e5c1fe86, type: 3}
   star3FirstShotBonus: -1
@@ -80,7 +80,7 @@ MonoBehaviour:
   star5StopGuardCap: -1
   star3ChargeFull: -1
   star5ChargeFullTime: -1
-  star3MachineDamage: 0.5
+  star3MachineDamage: 0.6
   star5MaxMachines: 3
   star3WindRadius: -1
   star5WindSlow: -1

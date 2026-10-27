@@ -18,7 +18,7 @@ MonoBehaviour:
   playStyle: "\uC624\uB798 \uBA48\uCDB0 \uD65C\uC744 \uB05D\uAE4C\uC9C0 \uB2F9\uACA8,
     \uD06C\uAC8C \uD55C \uBC29"
   maxHp: 950
-  attack: 120
+  attack: 100
   attackSpeed: 1
   moveSpeed: 5
   range: 7
@@ -32,8 +32,8 @@ MonoBehaviour:
   signatureName: "\uBC31\uBC1C\uBC31\uC911"
   signatureDescription: "\uBA48\uCD98 \uC2DC\uAC04\uB9CC\uD07C \uD654\uC0B4\uC744
     \uBAA8\uC740\uB2E4: 1\uB2E8 \u2192 2\uB2E8 \uAD00\uD1B5 \u2192 3\uB2E8 \uAD00\uD1B5
-    + \uCE58\uBA85\uD0C0 \xD72.5 (1.5\uCD08, \uBC14\uB85C \uBC1C\uC0AC). \uC6C0\uC9C1\uC774\uBA74
-    \uBAA8\uC740 \uD654\uC0B4\uC744 \uB193\uB294\uB2E4"
+    + \uCE58\uBA85\uD0C0 \uD655\uC815 + \uD53C\uD574 \xD71.6 (1.8\uCD08, \uBC14\uB85C
+    \uBC1C\uC0AC). \uC6C0\uC9C1\uC774\uBA74 \uBAA8\uC740 \uD654\uC0B4\uC744 \uB193\uB294\uB2E4"
   firstShotDelay: 0.2
   firstShotBonus: 0
   damageReduction: 0
@@ -51,9 +51,9 @@ MonoBehaviour:
   stopGuardCap: 2
   stopGuardDecay: 2
   chargeShot: 1
-  chargeTimes: {x: 0.4, y: 0.9, z: 1.5}
-  chargeMidMultiplier: 1.4
-  chargeFullMultiplier: 2.5
+  chargeTimes: {x: 0.5, y: 1.1, z: 1.8}
+  chargeMidMultiplier: 1.2
+  chargeFullMultiplier: 1.6
   fanShots: 1
   fanSpread: 20
   fanCoefficient: 1
@@ -78,8 +78,8 @@ MonoBehaviour:
   star5NoFalloff: 0
   star3StopGuard: -1
   star5StopGuardCap: -1
-  star3ChargeFull: 3
-  star5ChargeFullTime: 1.2
+  star3ChargeFull: 1.9
+  star5ChargeFullTime: 1.45
   star3MachineDamage: -1
   star5MaxMachines: -1
   star3WindRadius: -1

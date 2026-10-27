@@ -32,7 +32,7 @@ MonoBehaviour:
   signatureName: "\uB3D9\uB0A8\uD48D"
   signatureDescription: "\uBA48\uCD94\uBA74 \uB458\uB808 \uBC18\uACBD 3\uC758 \uC801
     \uD0C4\uC774 40% \uB290\uB824\uC9C4\uB2E4. \uAE30\uBCF8 \uACF5\uACA9\uC740 \uAE43\uD138
-    \uBD80\uCC44 \uBC14\uB78C 3\uAC08\uB798 (\uAC01 45%)"
+    \uBD80\uCC44 \uBC14\uB78C 3\uAC08\uB798 (\uAC01 52%)"
   firstShotDelay: 0.2
   firstShotBonus: 0
   damageReduction: 0
@@ -55,7 +55,7 @@ MonoBehaviour:
   chargeFullMultiplier: 2.5
   fanShots: 3
   fanSpread: 18
-  fanCoefficient: 0.45
+  fanCoefficient: 0.52
   windRadius: 3
   windSlow: 0.4
   workbench: 0
