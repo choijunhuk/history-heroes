@@ -37,6 +37,7 @@ namespace HistoryHeroes.EditorTools
         public static string BuildAll()
         {
             var log = new List<string> { ExtractHead() };
+            Art3DProps.Import();
             AnimatorController baseController = BaseController();
             foreach (Look look in Heroes) log.Add(Compose(look, Override(look.name, baseController, look.attack), Characters));
             foreach (EnemyLook e in Enemies) log.Add(Compose(e.look, Override(e.look.name, baseController, e.look.attack), EnemyCharacters));
@@ -172,6 +173,8 @@ namespace HistoryHeroes.EditorTools
             public Color hairColor = new Color(0.1f, 0.075f, 0.06f); // 머리카락 텍스처는 회색 → 색을 곱한다
             public string attack = "Spell_Simple_Shoot";
             public bool shadows = true;
+            /// <summary>상징 소품 (Art3DProps, 블렌더로 만든 고정 메시)</summary>
+            public string[] props = new string[0];
 
             /// <summary>괴물 모델 (Imp · Puglin): 머리를 붙이지 않고 몸 재질만 바꾼다</summary>
             public bool Monster => body == "Imp" || body == "Puglin";
@@ -179,14 +182,14 @@ namespace HistoryHeroes.EditorTools
 
         public static readonly Look[] Heroes =
         {
-            // 칭기즈 칸: 두건 쓴 궁수 + 수염 (활 동작이 생기기 전에는 주문 쏘기)
-            new Look { name = "Khan", body = "Male_Ranger", bodyTex = "T_Ranger_3_BaseColor", hair = new[] { "Hair_Beard", "Eyebrows" } },
-            // 관우: 긴 머리 + 긴 수염, 칼 휘두르기
-            new Look { name = "Guan", body = "Male_Peasant", bodyTex = "T_Peasant_2_BaseColor", hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.04f, 0.035f, 0.035f), attack = "Sword_Regular_A" },
-            // 나폴레옹: 두건 없는 푸른 옷, 권총 쏘기
-            new Look { name = "Napoleon", body = "Male_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.55f, 0.66f, 1f), hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_SimpleParted", "Eyebrows" }, attack = "Pistol_Shoot" },
-            // 테슬라: 가르마 머리, 주문 쏘기 (전기)
-            new Look { name = "Tesla", body = "Male_Peasant", bodyTex = "T_Peasant_BaseColor", hair = new[] { "Hair_SimpleParted", "Eyebrows" }, hairColor = new Color(0.07f, 0.06f, 0.055f) },
+            // 칭기즈 칸: 몽골 털모자 + 수염 + 왼손 활 (두건은 뺀다. 활 동작이 생기기 전에는 주문 쏘기)
+            new Look { name = "Khan", body = "Male_Ranger", bodyTex = "T_Ranger_3_BaseColor", hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_Buzzed", "Hair_Beard", "Eyebrows" }, props = new[] { "Khan_Hat", "Khan_Bow" } },
+            // 관우: 녹색 두건 + 긴 머리 + 긴 수염, 오른손 청룡언월도로 휘두르기
+            new Look { name = "Guan", body = "Male_Peasant", bodyTex = "T_Peasant_2_BaseColor", hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.04f, 0.035f, 0.035f), attack = "Sword_Regular_A", props = new[] { "Guan_Hat", "Guan_Glaive" } },
+            // 나폴레옹: 이각모 + 짙은 파랑 군복 (초록 옷 무늬를 파랗게 바꾼 사본 T_Ranger_Navy), 오른손 권총 쏘기
+            new Look { name = "Napoleon", body = "Male_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = new Color(0.9f, 0.92f, 1f), hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_SimpleParted", "Eyebrows" }, attack = "Pistol_Shoot", props = new[] { "Napoleon_Bicorne", "Napoleon_Pistol" } },
+            // 테슬라: 가르마 머리 + 콧수염 + 어두운 옷(양복 느낌), 오른손 코일로 주문 쏘기 (전기)
+            new Look { name = "Tesla", body = "Male_Peasant", bodyTex = "T_Peasant_BaseColor", tint = new Color(0.36f, 0.37f, 0.42f), hair = new[] { "Hair_SimpleParted", "Eyebrows" }, hairColor = new Color(0.07f, 0.06f, 0.055f), props = new[] { "Tesla_Mustache", "Tesla_Coil" } },
         };
 
         public sealed class EnemyLook
@@ -447,6 +450,9 @@ namespace HistoryHeroes.EditorTools
                 }
             }
 
+            float bodyHeight = MeasureHeight(go); // 모자·무기를 붙이기 전 키 (소품 때문에 몸이 작아지지 않게)
+            foreach (string prop in look.props) notes.Add(Art3DProps.Attach(go, prop, look.shadows));
+
             var animator = go.GetComponent<Animator>() ?? go.AddComponent<Animator>();
             animator.avatar = AssetDatabase.LoadAssetAtPath<Avatar>($"{Models}/{look.body}.fbx");
             animator.runtimeAnimatorController = controller;
@@ -461,7 +467,7 @@ namespace HistoryHeroes.EditorTools
             }
 
             var info = go.GetComponent<Model3DInfo>() ?? go.AddComponent<Model3DInfo>();
-            info.height = MeasureHeight(go);
+            info.height = bodyHeight;
             info.castShadows = look.shadows;
 
             Directory.CreateDirectory(folder);
