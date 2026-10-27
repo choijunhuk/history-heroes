@@ -177,6 +177,17 @@ namespace HistoryHeroes.UI
             if (_waitingForAd) return;
             Audio.AudioManager.Play("card");
             skills.Choose(card);
+            // 뽕맛: 진화·합체·전설은 화면 가운데 큰 글 + 소리 (창이 닫히면 보인다)
+            if (card.Type == CardType.Fusion && card.Recipe != null)
+            {
+                Audio.AudioManager.Play("fusion");
+                HypeFx.Banner(card.Recipe.type == FusionType.Evolution ? "진화!" : "합체!", new Color(0.85f, 0.55f, 1f));
+            }
+            else if (card.Skill != null && card.Skill.rarity == Rarity.Legendary)
+            {
+                Audio.AudioManager.Play("legendary");
+                HypeFx.Banner("전설!", new Color(1f, 0.82f, 0.3f));
+            }
             _legendaryWarning &= !skills.ChoseLegendary; // 전설을 골랐으면 이번 판 ★3은 이미 실패
             Records.SaveSystem.SaveIfDirty(); // 스킬 선택 확정 = 안전한 저장 시점 (조합 도감 발견, 12-2)
             _pending--;

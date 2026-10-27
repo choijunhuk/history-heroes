@@ -56,7 +56,7 @@ namespace HistoryHeroes.EditorTools
 
             // 손맛: 피해 숫자 (조사 A9). 글꼴은 한국어 TMP 글꼴을 같이 쓴다
             var numbers = new GameObject("DamageNumbers").AddComponent<DamageNumbers>();
-            using (var props = new Props(numbers)) props.Ref("font", _font);
+            using (var props = new Props(numbers)) props.Ref("font", _titleFont != null ? _titleFont : _font); // 굵은 제목 글꼴 숫자 (뽕맛)
 
             BuildLighting(_stage, camera);
             BuildFxBursts(); // 그래픽 평가 2번: 맞음 불꽃 · 쓰러짐 연기 · 터짐 고리
@@ -452,6 +452,7 @@ namespace HistoryHeroes.EditorTools
             settings.transform.SetAsLastSibling(); // 설정이 일시정지 판 위에
             ui.Guide = BuildTutorialGuide(root);
             ui.Voice = BuildHeroVoice(root);
+            BuildHypeFx(hudRect, root);
             return ui;
         }
 

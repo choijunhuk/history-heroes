@@ -61,11 +61,22 @@ namespace HistoryHeroes.UI
 
         public void Bind(EnemyBase boss, string bossName)
         {
+            // 뽕맛: 보스를 잡는 순간 느려짐 + 큰 폭발 + "격파!" (같은 적을 다시 묶어도 한 번만 걸리게)
+            if (_killHooked != null) _killHooked.Killed -= OnBossKilled;
+            _killHooked = boss;
+            if (boss != null) boss.Killed += OnBossKilled;
             _boss = boss;
             _warden = boss as IPhasedBoss;
             _phase = -1;
             nameLabel.text = bossName;
             root.SetActive(true);
+        }
+
+        private EnemyBase _killHooked;
+
+        private static void OnBossKilled(EnemyBase boss)
+        {
+            if (boss != null) HypeFx.BossDown(boss.transform.position);
         }
 
         private void Update()

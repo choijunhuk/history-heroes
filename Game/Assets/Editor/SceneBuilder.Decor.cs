@@ -18,6 +18,36 @@ namespace HistoryHeroes.EditorTools
     {
         private static StageLook _look;
 
+        /// <summary>뽕맛 연출 화면 (연속 처치 · 가운데 큰 글 · 번쩍임) — HypeFx</summary>
+        private static void BuildHypeFx(RectTransform hud, Transform root)
+        {
+            var holder = new GameObject("HypeFx", typeof(RectTransform));
+            var rt = (RectTransform)holder.transform;
+            rt.SetParent(root, false);
+            Stretch(rt);
+            var hype = holder.AddComponent<UI.HypeFx>();
+
+            // 번쩍임 (터치를 막지 않는다)
+            RectTransform flashRect = Rect("Flash", rt, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            UnityEngine.UI.Image flash = Img(flashRect, new Color(1f, 1f, 0.92f, 0f), null);
+            flash.raycastTarget = false;
+
+            // 연속 처치 (오른쪽 위, 레벨 글 아래)
+            TMPro.TMP_Text combo = Label("Combo", hud, "", 64, TMPro.TextAlignmentOptions.Right, Color.white);
+            Place(combo.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -250f), new Vector2(520f, 90f));
+            combo.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            combo.rectTransform.pivot = new Vector2(1f, 0.5f);
+            var comboPop = combo.gameObject.AddComponent<UI.UiPop>();
+
+            // 가운데 큰 글 (격파! · 진화! · 전설!)
+            TMPro.TMP_Text banner = Label("Banner", rt, "", 150, TMPro.TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(banner.rectTransform, Center, Center, new Vector2(0f, 260f), new Vector2(1000f, 220f));
+            banner.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            var bannerPop = banner.gameObject.AddComponent<UI.UiPop>();
+
+            using (var props = new Props(hype)) props.Ref("comboLabel", combo).Ref("comboPop", comboPop).Ref("bannerLabel", banner).Ref("bannerPop", bannerPop).Ref("flash", flash);
+        }
+
         // ---------------------------------------------------------------- 빛나는 입자 재질 (불·문 빛·효과)
 
         /// <summary>더하기 섞기 입자 재질 (URP Particles/Unlit). 1 넘는 색이면 화면 후처리의 빛 번짐이 잡는다. texture null = 둥근 빛</summary>

@@ -229,12 +229,12 @@ namespace HistoryHeroes.Modes
                 RecordLabel = _record != null ? RecordFormat.Title(_record, database) : "기록 없음 (기본 공격만)",
                 RewardLines = lines,
             };
-            StartCoroutine(ShowResultAfter(victory ? 1f : 0.6f, summary));
+            StartCoroutine(ShowResultAfter(victory ? 1.8f : 0.6f, summary)); // 이기면 "격파!" 연출(느려짐·폭발)을 다 보고 나서
         }
 
         private IEnumerator ShowResultAfter(float seconds, BossSummary summary)
         {
-            yield return new WaitForSeconds(seconds);
+            yield return new WaitForSecondsRealtime(seconds); // 느려짐 중에도 실제 시간으로
             if (GameSession.Tutorial && summary.Victory)
             {
                 // 튜토리얼 보스: 별·하트 이야기 없이 받은 것 + 다음 목표 (UX 4장 9:00 "로비 → 1구간 던전에 도전하세요")

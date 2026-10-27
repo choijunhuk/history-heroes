@@ -132,6 +132,10 @@ namespace HistoryHeroes.Combat
 
                 float ease = 1f - (1f - t) * (1f - t);
                 e.Text.transform.SetPositionAndRotation(e.Start + Vector3.back * (rise * ease), facing); // 위 = -Z
+                // 뽕맛: 처음 0.12초에 크게 "팡" 했다가 제 크기로 (치명타는 더 크게)
+                float pop = Mathf.Clamp01((now - e.Born) / 0.12f);
+                float punch = Mathf.Lerp(e.Crit ? 1.9f : 1.35f, 1f, 1f - (1f - pop) * (1f - pop));
+                e.Text.transform.localScale = Vector3.one * punch;
                 Color c = e.Text.color;
                 c.a = 1f - t * t;
                 e.Text.color = c;
