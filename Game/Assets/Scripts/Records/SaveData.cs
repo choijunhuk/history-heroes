@@ -765,7 +765,10 @@ namespace HistoryHeroes.Records
     {
         /// <summary>시작한 날 (튜토리얼 보스 격파한 날, 05:00 기준). 비어 있으면 아직</summary>
         public string startDay;
-        /// <summary>사건으로 세는 미션의 카운터 ("fusion", "hero_dungeon:guan" …)</summary>
+        /// <summary>시작한 뒤 들어온 날 수 (칸이 이 수만큼 열린다, 전체 검토 11번) · 마지막으로 센 날</summary>
+        public int activeDays;
+        public string lastActiveDay;
+        /// <summary>사건으로 세는 미션의 카운터 ("fusion", "hero_dungeon:guan", "boss_try:2" …)</summary>
         public List<NamedCount> counts = new List<NamedCount>();
         public List<int> claimedDays = new List<int>();
         public bool bonusClaimed;

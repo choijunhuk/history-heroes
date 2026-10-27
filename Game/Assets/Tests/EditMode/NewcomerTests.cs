@@ -62,17 +62,49 @@ namespace HistoryHeroes.Tests
         // ---------------------------------------------------------------- 신규 7일 미션
 
         [Test]
-        public void Newcomer_DaysOpenOneByOne_AndExpireAfter14()
+        public void Newcomer_DaysOpenByPlayedDays_NoExpiry()
         {
+            // 전체 검토 11번: 달력이 아니라 들어온 날마다 한 칸, 기한 없음
             SaveData s = Fresh();
             Assert.IsTrue(Newcomer.EnsureStarted(s, At(1)));
-            Assert.IsFalse(Newcomer.EnsureStarted(s, At(2)), "한 번만 시작");
+            Assert.IsFalse(Newcomer.EnsureStarted(s, At(1)), "같은 날은 한 번만 센다");
             Assert.IsTrue(Newcomer.DayOpen(s, 1, At(1)));
             Assert.IsFalse(Newcomer.DayOpen(s, 2, At(1)));
-            Assert.IsTrue(Newcomer.DayOpen(s, 2, At(2)));
+            Assert.IsTrue(Newcomer.EnsureStarted(s, At(5)), "나흘 쉬고 들어온 날");
+            Assert.IsTrue(Newcomer.DayOpen(s, 2, At(5)));
+            Assert.IsFalse(Newcomer.DayOpen(s, 3, At(5)), "쉰 날은 칸을 열지 않는다");
             Assert.IsTrue(Newcomer.DayOpen(s, 1, At(9)), "지난 칸도 계속");
-            Assert.IsTrue(Newcomer.Visible(s, At(14)));
-            Assert.IsFalse(Newcomer.Visible(s, At(15)), "14일이 지나면 끝");
+            Assert.IsTrue(Newcomer.Visible(s, At(30)), "기한 없음 (예전에는 14일 뒤 끝)");
+        }
+
+        [Test]
+        public void Newcomer_OldSaveStartsFromCalendarDays()
+        {
+            SaveData s = Fresh();
+            Newcomer.EnsureStarted(s, At(1));
+            s.newcomer.activeDays = 0; // 옛 저장: 시작 날만 있다
+            s.newcomer.lastActiveDay = null;
+            Assert.IsTrue(Newcomer.EnsureStarted(s, At(4)));
+            Assert.AreEqual(4, s.newcomer.activeDays, "지난 날 수 + 1");
+            Assert.IsTrue(Newcomer.DayOpen(s, 4, At(4)));
+        }
+
+        [Test]
+        public void Newcomer_BossMissionCountsThreeTries()
+        {
+            SaveData s = Fresh();
+            Newcomer.EnsureStarted(s, At(1));
+            NewcomerMission boss2 = Array.Find(Newcomer.Missions, m => m.Id == "d4_boss2");
+            s.unlockedChapter = 2;
+            Assert.IsFalse(Newcomer.Done(s, boss2));
+            for (int i = 0; i < 2; i++) Newcomer.OnEvent(s, MissionEvents.BossTry, 1, "2", At(2));
+            Newcomer.OnEvent(s, MissionEvents.BossTry, 1, "1", At(2));
+            Assert.IsFalse(Newcomer.Done(s, boss2), "다른 구간 도전은 세지 않는다");
+            Newcomer.OnEvent(s, MissionEvents.BossTry, 1, "2", At(3));
+            Assert.IsTrue(Newcomer.Done(s, boss2), "2구간 보스 3번 도전");
+            SaveData beat = Fresh();
+            beat.unlockedChapter = 3;
+            Assert.IsTrue(Newcomer.Done(beat, boss2), "격파해도 된다");
         }
 
         [Test]
@@ -111,13 +143,13 @@ namespace HistoryHeroes.Tests
             SaveData s = Fresh();
             Newcomer.EnsureStarted(s, At(1));
             NewcomerMission survival = Array.Find(Newcomer.Missions, m => m.Id == "d5_survival");
-            s.unlockedChapter = 2; // 서바이벌은 3구간부터
+            s.unlockedChapter = 1; // 서바이벌은 1구간 보스 격파(= 2구간 열림)부터
             Assert.IsTrue(Newcomer.UsesFallback(s, survival));
             Assert.AreEqual(Newcomer.FallbackTitle, Newcomer.TitleOf(s, survival));
             Assert.IsFalse(Newcomer.Done(s, survival));
             Newcomer.OnEvent(s, MissionEvents.DungeonClear, 1, "khan", At(5));
             Assert.IsTrue(Newcomer.Done(s, survival), "대신 던전 1판 클리어");
-            s.unlockedChapter = 3;
+            s.unlockedChapter = 2;
             Assert.IsFalse(Newcomer.Done(s, survival), "열리면 원래 미션");
         }
 

@@ -157,8 +157,8 @@ namespace HistoryHeroes.Enemy
             {
                 case GimmickKind.PillarShield: return "수정 기둥을 부술 때마다 보스 보호막이 약해져요";
                 case GimmickKind.CrumblingFloor: return "금이 간 바닥은 곧 무너져요 — 다른 칸으로";
-                case GimmickKind.ShadowMarks: return "그림자 표식이 뜨면 4초 안에 진한 쌍둥이를 5번 맞혀요";
-                case GimmickKind.MirrorStun: return "진짜만 그림자가 있어요 — 가짜를 쏘면 잠깐 기절";
+                case GimmickKind.ShadowMarks: return "그림자 표식이 뜨면 진한 쌍둥이를 사거리에 두고 멈춰 있어요 (1.2초)";
+                case GimmickKind.MirrorStun: return "진짜만 그림자가 있어요 — 진짜를 맞히면 2초 동안 피해 +25%";
                 case GimmickKind.HalfFire: return "불길이 오면 보스가 건너간 쪽으로 피해요";
                 default: return string.Empty;
             }

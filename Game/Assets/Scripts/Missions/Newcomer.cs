@@ -12,6 +12,7 @@ namespace HistoryHeroes.Missions
         Tutorial,      // 튜토리얼 끝내기
         DungeonClear,  // value 구간 던전 클리어 (★1)
         BossBeaten,    // value 구간 보스 격파
+        BossTried,     // value 구간 보스 격파 또는 3번 도전 (전체 검토 11번: 느린 플레이어도 받게)
         RecordSaved,   // 첫 기록 저장
         EquipSlots,    // 한 영웅의 장비 value칸 채우기
         HeroDungeon,   // param 영웅으로 던전 1판 (사건)
@@ -42,15 +43,16 @@ namespace HistoryHeroes.Missions
     }
 
     /// <summary>
-    /// 신규 유저 7일 미션 (Missions 6장): 튜토리얼 보스를 깬 날부터 하루에 한 칸씩 열린다 (05:00 기준).
-    /// 날짜가 지나도 이전 칸은 계속 할 수 있다. 시작한 날부터 14일이 지나면 끝 (받지 않은 칸은 사라진다).
+    /// 신규 유저 7일 미션 (Missions 6장): 튜토리얼 보스를 깬 날부터 **들어온 날마다** 한 칸씩 열린다 (05:00 기준).
+    /// 지난 칸은 계속 할 수 있고, 기한은 없다 (전체 검토 11번: 14일 기한은 느린 플레이어의 보상만 없앴다).
     /// 칸의 미션을 다 하면 그 칸 보상, 7칸을 다 받으면 완료 보너스.
     /// </summary>
     public static class Newcomer
     {
         public const int Days = 7;
-        public const int DeadlineDays = 14;
         public const int ResetHour = 5;
+        /// <summary>보스 "도전" 미션: 이만큼 도전하면 못 깨도 된다</summary>
+        public const int BossTries = 3;
 
         public const string LowHitEvent = "clear_hits10";
         public const string FallbackTitle = "던전 1판 클리어";
@@ -61,23 +63,23 @@ namespace HistoryHeroes.Missions
             M("d1_dungeon1", 1, "1구간 던전 클리어", NewcomerCheck.DungeonClear, 1),
             M("d1_record", 1, "첫 기록 저장", NewcomerCheck.RecordSaved),
             M("d1_boss1", 1, "1구간 보스 격파", NewcomerCheck.BossBeaten, 1),
-            M("d2_equip", 2, "장비 3칸 채우기", NewcomerCheck.EquipSlots, 3),
+            M("d2_level3", 2, "영웅 Lv3 달성", NewcomerCheck.HeroLevel, 3), // 전체 검토 11번: 장비 채우기는 첫날 목표로 어색
             M("d2_guan", 2, "관우로 던전 1판", NewcomerCheck.HeroDungeon, 1, "guan"),
             M("d2_fusion", 2, "조합 1번 만들기", NewcomerCheck.Fusion),
             M("d3_dungeon2", 3, "2구간 던전 클리어", NewcomerCheck.DungeonClear, 2),
             M("d3_level5", 3, "영웅 Lv5 달성", NewcomerCheck.HeroLevel, 5),
             M("d3_upgrade", 3, "장비 강화 1회", NewcomerCheck.GearUpgrade),
-            M("d4_boss2", 4, "2구간 보스 격파", NewcomerCheck.BossBeaten, 2),
+            M("d4_boss2", 4, "2구간 보스 격파 (또는 3번 도전)", NewcomerCheck.BossTried, 2),
             M("d4_records", 4, "기록 2개 보유", NewcomerCheck.RecordsOwned, 2),
             M("d4_box", 4, "일일 미션 상자(100) 열기", NewcomerCheck.DailyBox100),
             M("d5_napoleon", 5, "나폴레옹으로 던전 1판", NewcomerCheck.HeroDungeon, 1, "napoleon"),
             M("d5_rune", 5, "룬 장착", NewcomerCheck.RuneEquipped),
-            M("d5_survival", 5, "서바이벌 3분 생존", NewcomerCheck.Survival, 180, gate: 3),
+            M("d5_survival", 5, "서바이벌 3분 생존", NewcomerCheck.Survival, 180, gate: 2), // 1구간 보스 격파 뒤 열림
             M("d5_lowhit", 5, "피격 10회 이하로 던전 클리어", NewcomerCheck.LowHitClear),
             M("d6_dungeon3", 6, "3구간 던전 클리어", NewcomerCheck.DungeonClear, 3),
             M("d6_training", 6, "수련 1회", NewcomerCheck.Training),
             M("d6_recipes", 6, "서로 다른 조합 2개 발견", NewcomerCheck.Recipes, 2),
-            M("d7_boss3", 7, "3구간 보스 격파", NewcomerCheck.BossBeaten, 3),
+            M("d7_boss3", 7, "3구간 보스 격파 (또는 3번 도전)", NewcomerCheck.BossTried, 3),
             M("d7_daily", 7, "일일 도전 참여", NewcomerCheck.DailyJoined, gate: 4),
             M("d7_level10", 7, "영웅 Lv10 달성", NewcomerCheck.HeroLevel, 10),
             M("d7_stars", 7, "별 6개 모으기", NewcomerCheck.Stars, 6),
@@ -103,23 +105,45 @@ namespace HistoryHeroes.Missions
 
         public static bool Unlocked(SaveData s) => s.tutorialDone;
 
-        /// <summary>열렸으면 시작한 날을 적는다 (한 번만)</summary>
+        /// <summary>
+        /// 열렸으면 시작한 날을 적고, 들어온 날 수를 센다 (로비가 열릴 때마다 부른다). 바뀌었으면 true.
+        /// 옛 저장(시작 날만 있고 센 날이 없음)은 달력으로 지난 날 수 + 1에서 시작한다 (최대 7)
+        /// </summary>
         public static bool EnsureStarted(SaveData s, DateTimeOffset now)
         {
-            if (!Unlocked(s) || !string.IsNullOrEmpty(s.newcomer.startDay)) return false;
-            s.newcomer.startDay = MissionService.DayKey(now, ResetHour);
+            if (!Unlocked(s)) return false;
+            string today = MissionService.DayKey(now, ResetHour);
+            if (string.IsNullOrEmpty(s.newcomer.startDay))
+            {
+                s.newcomer.startDay = today;
+                s.newcomer.activeDays = 1;
+                s.newcomer.lastActiveDay = today;
+                return true;
+            }
+
+            if (s.newcomer.activeDays <= 0 && DateTime.TryParse(s.newcomer.startDay, out DateTime start))
+            {
+                int calendar = (int)(DateTime.Parse(today) - start).TotalDays + 1;
+                s.newcomer.activeDays = Mathf.Clamp(calendar, 1, Days);
+                s.newcomer.lastActiveDay = today;
+                return true;
+            }
+
+            if (s.newcomer.lastActiveDay == today) return false;
+            s.newcomer.lastActiveDay = today;
+            s.newcomer.activeDays++;
             return true;
         }
 
-        /// <summary>시작한 날부터 며칠 지났나 (시작한 날 = 0). 시작 안 했으면 -1</summary>
+        /// <summary>몇째 날까지 열렸나 (들어온 날 수 − 1, 첫날 = 0). 시작 안 했으면 -1</summary>
         public static int DayIndex(SaveData s, DateTimeOffset now)
         {
-            if (string.IsNullOrEmpty(s.newcomer.startDay) || !DateTime.TryParse(s.newcomer.startDay, out DateTime start)) return -1;
-            DateTime today = DateTime.Parse(MissionService.DayKey(now, ResetHour));
-            return (int)(today - start).TotalDays;
+            if (string.IsNullOrEmpty(s.newcomer.startDay)) return -1;
+            return Mathf.Max(0, s.newcomer.activeDays - 1);
         }
 
-        public static bool Expired(SaveData s, DateTimeOffset now) => DayIndex(s, now) >= DeadlineDays;
+        /// <summary>기한 없음 (전체 검토 11번). 예전 호출 자리를 위해 남긴다</summary>
+        public static bool Expired(SaveData s, DateTimeOffset now) => false;
 
         public static bool AllClaimed(SaveData s) => s.newcomer.bonusClaimed;
 
@@ -159,6 +183,7 @@ namespace HistoryHeroes.Missions
                 case NewcomerCheck.Tutorial: return s.tutorialDone;
                 case NewcomerCheck.DungeonClear: return Stars.Has(s, m.Value, Stars.Dungeon, 1);
                 case NewcomerCheck.BossBeaten: return s.unlockedChapter > m.Value;
+                case NewcomerCheck.BossTried: return s.unlockedChapter > m.Value || Count(s, $"{MissionEvents.BossTry}:{m.Value}") >= BossTries;
                 case NewcomerCheck.RecordSaved: return s.records.Count > 0 || s.relics.recordsSavedTotal > 0;
                 case NewcomerCheck.EquipSlots:
                     int best = 0;
@@ -250,6 +275,9 @@ namespace HistoryHeroes.Missions
             {
                 case MissionEvents.HeroDungeon:
                     if (!string.IsNullOrEmpty(param)) Add(s, $"{MissionEvents.HeroDungeon}:{param}", amount);
+                    break;
+                case MissionEvents.BossTry:
+                    if (!string.IsNullOrEmpty(param)) Add(s, $"{MissionEvents.BossTry}:{param}", amount); // 구간마다 도전 수
                     break;
                 case MissionEvents.Fusion:
                 case MissionEvents.DailyBox100:

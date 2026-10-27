@@ -132,8 +132,10 @@ namespace HistoryHeroes.UI
 
             bool hasFusion = _current.Exists(c => c.Type == CardType.Fusion);
             // 보상을 구체적으로 쓴다 (조사 A2). 다 쓰면 버튼을 숨긴다
+            // 첫 번째는 무료, 두 번째부터 광고 (전체 검토 10번: 한 판에 광고 6번까지 가지 않게)
             rerollLabel.text = _waitingForAd ? "광고 보는 중…"
                 : _lastAdFailed ? $"광고를 못 불러왔어요 · 다시 (남은 {_rerollsLeft})"
+                : NextRerollFree ? $"무료로 다시 뽑기 (남은 {_rerollsLeft})"
                 : $"광고 보고 다시 뽑기 (남은 {_rerollsLeft})";
             rerollButton.gameObject.SetActive(_rerollsLeft > 0 || _waitingForAd);
             rerollButton.interactable = _rerollsLeft > 0 && !_waitingForAd;
@@ -204,9 +206,21 @@ namespace HistoryHeroes.UI
             GamePause.Resume(this);
         }
 
+        /// <summary>이번 판 첫 다시 뽑기는 광고 없이</summary>
+        public bool NextRerollFree => _rerollsLeft >= rerollsPerRun;
+
         private void Reroll()
         {
             if (_rerollsLeft <= 0 || _waitingForAd) return;
+            if (NextRerollFree)
+            {
+                _rerollsLeft--;
+                _lastAdFailed = false;
+                _current = skills.Reroll(_current, Floor);
+                Render();
+                return;
+            }
+
             _waitingForAd = true;
             Render();
 

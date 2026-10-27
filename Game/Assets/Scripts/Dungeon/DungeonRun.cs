@@ -941,6 +941,8 @@ namespace HistoryHeroes.Dungeon
             Missions.MissionEvents.DungeonFinished(skills.HeroId, GameSession.Chapter, victory, skills.ChoseLegendary);
             if (victory && _hitsTaken <= 10) Missions.MissionEvents.Raise(Missions.Newcomer.LowHitEvent); // 신규 7일 미션 "피격 10회 이하로 클리어"
             summary.RewardLines = GrantRewards(victory, roomsCleared);
+            if (!victory && Economy.Hearts.TryRefundEarlyDeath(SaveSystem.Data, GameSession.Chapter, _room, GameSession.HeartSpent, Clock.UnixSeconds, Clock.Today))
+                summary.RewardLines.Add("<color=#FF8FA3>♥</color> 아직 1구간을 못 깨서 하트 1개를 돌려받았어요");
 
             // 기록 용량 = 기준 × 0.8 × (깬 방 ÷ 전체 방), 클리어 = 1 (GameDesign 7-2)
             int capacity = RecordCapacity.For(roomsCleared, RoomCount, victory);

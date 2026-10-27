@@ -530,6 +530,11 @@ namespace HistoryHeroes.EditorTools
             ["toxic_bloom"] = SkillRole.Area, ["thunder_god"] = SkillRole.Area, ["twin_boomerang"] = SkillRole.Area,
             ["blizzard"] = SkillRole.Area, ["heaven_bow"] = SkillRole.Area,
             ["khan_storm"] = SkillRole.Area, ["guan_five"] = SkillRole.Area, ["napo_austerlitz"] = SkillRole.Area, ["tesla_tower"] = SkillRole.Area,
+            // 새 영웅 전용 (전체 검토 12번: 역할 표에서 빠져 기록 추천에 안 들어가던 것)
+            ["yi_turtle"] = SkillRole.Area, ["yi_hakikjin"] = SkillRole.Area, ["dav_tank"] = SkillRole.Area, ["dav_spiral"] = SkillRole.Area,
+            ["zhuge_sevenstar"] = SkillRole.Area,
+            ["ysg_pyeonjeon"] = SkillRole.Single, ["ysg_shingung"] = SkillRole.Single,
+            ["zhuge_gate"] = SkillRole.Defense,
             // 방어: 버티기·막기
             ["spin_blade"] = SkillRole.Defense, ["steel_whirl"] = SkillRole.Defense, ["def_up"] = SkillRole.Defense,
             ["hp_up"] = SkillRole.Defense, ["guard_shield"] = SkillRole.Defense, ["iron_wall"] = SkillRole.Defense,

@@ -27,7 +27,7 @@ namespace HistoryHeroes.EditorTools
             t.dailyPool.Add(M("elite3", "엘리트 {0}마리 처치", MissionEvents.Elite, 3, 15));
             t.dailyPool.Add(M("kill300", "적 {0}마리 처치", MissionEvents.Kill, 300, 15));
             t.dailyPool.Add(M("nohit3", "피격 없이 방 {0}개 클리어", MissionEvents.NoHitRoom, 3, 20));
-            t.dailyPool.Add(M("basic150", "기본 공격으로 적 {0}마리 처치", MissionEvents.BasicKill, 150, 15));
+            t.dailyPool.Add(M("basic150", "기본 공격으로 적 {0}마리 처치", MissionEvents.BasicKill, 60, 15)); // 전체 검토 11번: 150은 하루 3판 → 60 (id는 저장 호환으로 그대로)
             t.dailyPool.Add(M("fusion1", "조합 스킬 {0}개 만들기", MissionEvents.Fusion, 1, 20));
             t.dailyPool.Add(M("actives3", "액티브 스킬 {0}개를 Lv3 이상으로", MissionEvents.ActivesLv3, 3, 15));
             t.dailyPool.Add(M("passives4", "패시브 {0}칸을 다 채우기", MissionEvents.PassivesFull, 4, 15));

@@ -162,7 +162,7 @@ namespace HistoryHeroes.Modes
             long now = Clock.UnixSeconds;
             string today = Clock.Today;
 
-            if (!GameSession.Tutorial) Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null); // 연습은 안 센다
+            if (!GameSession.Tutorial) Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null, _info != null ? _info.chapter : GameSession.Chapter); // 연습은 안 센다
             if (GameSession.Tutorial)
             {
                 // 튜토리얼 보스 (UX 4장): 별·구간 해금·최초 격파 보상 없이 튜토리얼 끝 → 출석부·7일 미션·펫 칸이 열린다

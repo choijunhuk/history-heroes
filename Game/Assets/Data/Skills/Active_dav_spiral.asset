@@ -21,7 +21,7 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: f2070a535b4ec9846968351cc83f343b, type: 3}
   rarity: 1
   tags: 260
-  role: 0
+  role: 2
   maxLevel: 3
   saveCostFirstLevel: 18
   saveCostPerLevel: 4

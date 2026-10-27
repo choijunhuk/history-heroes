@@ -23,6 +23,10 @@ namespace HistoryHeroes.Economy
         public const int GemRefillAmount = 5;
         public const int GemRefillPerDay = 5;
         public const int RefundsPerDay = 5;
+        /// <summary>1구간을 아직 못 깼고 5번 방 전에 쓰러지면 하트를 돌려준다, 하루 3번 (전체 검토 10번: 일찍 죽는 초보가 먼저 막히지 않게)</summary>
+        public const int EarlyRefundsPerDay = 3;
+        public const int EarlyRefundRoom = 5;
+        private const string EarlyRefundId = "early_ch1";
 
         /// <summary>지난 시간만큼 자연 충전을 반영한다</summary>
         public static void Tick(SaveData d, long now)
@@ -119,6 +123,27 @@ namespace HistoryHeroes.Economy
             }
 
             if (counter.count >= RefundsPerDay) return false;
+            counter.count++;
+            Add(d, 1, now);
+            return true;
+        }
+
+        /// <summary>
+        /// 초보 일찍 쓰러짐 돌려주기: 1구간 던전을 아직 못 깼고, 5번 방 전에 쓰러졌고, 이번 판에 하트를 정말 썼을 때 (무료 판은 빼고). 하루 3번
+        /// </summary>
+        public static bool TryRefundEarlyDeath(SaveData d, int chapter, int room, bool heartSpent, long now, string today)
+        {
+            if (!heartSpent || chapter != 1 || room >= EarlyRefundRoom || Stars.Has(d, 1, Stars.Dungeon, 1)) return false;
+            DailyCounters daily = d.Today(today);
+            daily.heartRefunds ??= new System.Collections.Generic.List<ItemCount>();
+            ItemCount counter = daily.heartRefunds.Find(c => c.id == EarlyRefundId);
+            if (counter == null)
+            {
+                counter = new ItemCount { id = EarlyRefundId, count = 0 };
+                daily.heartRefunds.Add(counter);
+            }
+
+            if (counter.count >= EarlyRefundsPerDay) return false;
             counter.count++;
             Add(d, 1, now);
             return true;

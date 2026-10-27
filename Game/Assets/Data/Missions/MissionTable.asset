@@ -77,7 +77,7 @@ MonoBehaviour:
   - id: basic150
     title: "\uAE30\uBCF8 \uACF5\uACA9\uC73C\uB85C \uC801 {0}\uB9C8\uB9AC \uCC98\uCE58"
     eventKey: basic_kill
-    target: 150
+    target: 60
     points: 15
     gate: 0
     modeMission: 0

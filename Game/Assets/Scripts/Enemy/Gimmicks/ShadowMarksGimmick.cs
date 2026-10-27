@@ -7,7 +7,8 @@ namespace HistoryHeroes.Enemy
 {
     /// <summary>
     /// 그림자 표식 (검토 9장 3번, 그림자 쌍둥이): 15초마다 바닥에 표식 3개 (지름 2.5, 4초 뒤 터짐, 피해 최대체력 25%).
-    /// 그 4초 안에 맞는 쪽(진한) 쌍둥이를 5번 맞히면 표식이 사라진다 ("표식 해제!"). 공유 체력 · 교대는 그대로
+    /// 그 4초 안에 **진한 쌍둥이를 사거리 안에 두고 멈춰 있기를 모두 1.2초** 하면 표식이 사라진다 ("표식 해제!").
+    /// 전체 검토 5번: 예전 "5번 맞히기"는 공격 횟수가 많은 영웅(연사·장판)만 쉬웠다 → 영웅마다 같은 조건 (멈춰서 노리기). 공유 체력 · 교대는 그대로
     /// </summary>
     public sealed class ShadowMarksGimmick : BossGimmick
     {
@@ -15,7 +16,9 @@ namespace HistoryHeroes.Enemy
         public const float First = 8f;
         public const float Fuse = 4f;
         public const float Radius = 1.25f;
-        public const int HitsNeeded = 5;
+        public const float FocusNeeded = 1.2f;
+        /// <summary>사거리에 더 쳐주는 여유 (몸 크기)</summary>
+        public const float RangeSlack = 0.6f;
         public const float Damage = 0.25f;
 
         private readonly List<SpriteRenderer> _marks = new List<SpriteRenderer>();
@@ -23,43 +26,44 @@ namespace HistoryHeroes.Enemy
         private float _clock;
         private float _next;
         private float _armedAt = -1f;
-        private int _hits;
-        private bool _hooked;
+        private float _focus;
+        private int _announced;
+        private Player.PlayerController _player;
 
         public override string Hint => BossGimmicks.HintFor(GimmickKind.ShadowMarks);
         public bool Armed => _armedAt >= 0f;
-        public int Hits => _hits;
+        /// <summary>모은 시간 (0 ~ 1.2초)</summary>
+        public float Focus => _focus;
 
         protected override void OnBegin()
         {
             _clock = 0f;
             _next = First;
             _armedAt = -1f;
-            _hits = 0;
-            if (!_hooked)
-            {
-                boss.Health.Damaged += OnBossDamaged;
-                _hooked = true;
-            }
+            _focus = 0f;
+            _player = hero != null ? hero.GetComponent<Player.PlayerController>() : null;
         }
 
         protected override void OnEnd()
         {
             Clear();
-            if (_hooked && boss != null) boss.Health.Damaged -= OnBossDamaged;
-            _hooked = false;
         }
 
-        private void OnBossDamaged(DamageInfo _, float dealt)
+        /// <summary>표식이 떠 있는 동안: 멈춰 있고 진한 쌍둥이가 사거리 안이면 시간이 모인다. 1/3마다 알림</summary>
+        private void TickFocus(float dt)
         {
-            if (!Running || !Armed || dealt <= 0f) return;
-            _hits++;
-            if (_hits < HitsNeeded)
+            if (_player == null || boss == null || !_player.IsStopped) return;
+            float range = _player.Stats.Get(Stats.StatType.Range) + RangeSlack;
+            if (((Vector2)boss.transform.position - (Vector2)hero.position).sqrMagnitude > range * range) return;
+            _focus += dt;
+            int step = Mathf.Min(3, Mathf.FloorToInt(_focus / FocusNeeded * 3f));
+            if (step > _announced && step < 3)
             {
-                BossGimmicks.Notice?.Invoke($"표식 풀기 {_hits}/{HitsNeeded}");
-                return;
+                _announced = step;
+                BossGimmicks.Notice?.Invoke($"표식 풀기 {step}/3 — 멈춰서 노려요");
             }
 
+            if (_focus < FocusNeeded) return;
             // 해제: 표식이 흩어진다
             foreach (Vector2 p in _points) FxBursts.Puff((Vector3)p + Vector3.back * 0.3f, new Color(0.6f, 0.5f, 1f), 1.4f);
             Clear();
@@ -74,7 +78,8 @@ namespace HistoryHeroes.Enemy
             {
                 float t = (_clock - _armedAt) / Fuse;
                 foreach (SpriteRenderer m in _marks) Telegraphs.Fill(m, Telegraphs.Danger, t);
-                if (t >= 1f) Explode();
+                TickFocus(Time.deltaTime);
+                if (Armed && t >= 1f) Explode();
                 return;
             }
 
@@ -86,7 +91,8 @@ namespace HistoryHeroes.Enemy
         {
             _armedAt = _clock;
             _next = _clock + Interval; // 발동 시작 기준 15초마다 (코드 검토 6번)
-            _hits = 0;
+            _focus = 0f;
+            _announced = 0;
             _points.Clear();
             Vector2 me = hero.position;
             _points.Add(Clamp(me));
@@ -99,7 +105,7 @@ namespace HistoryHeroes.Enemy
 
             foreach (Vector2 p in _points) _marks.Add(Telegraphs.Circle(p, Radius, Telegraphs.Danger));
             Audio.AudioManager.Play("telegraph", 0.8f);
-            BossGimmicks.Notice?.Invoke($"그림자 표식! 4초 안에 진한 쌍둥이를 {HitsNeeded}번");
+            BossGimmicks.Notice?.Invoke("그림자 표식! 진한 쌍둥이를 사거리에 두고 멈춰서 1.2초");
         }
 
         private Vector2 Clamp(Vector2 p)

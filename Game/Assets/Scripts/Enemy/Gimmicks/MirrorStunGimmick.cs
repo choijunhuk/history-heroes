@@ -6,27 +6,34 @@ using UnityEngine;
 namespace HistoryHeroes.Enemy
 {
     /// <summary>
-    /// 거울 분신 (확장 1차 5장, 그림자 사냥꾼): 진짜만 발밑에 그림자가 있다. 가짜(분신)를 **기본 공격**으로 맞히면 0.5초 기절 (나).
-    /// 공정하게: 스킬(자동 광역)로 맞힌 건 기절 없음, 기절은 2.5초에 한 번까지. 처음 한 번은 알림으로 알려 준다
+    /// 거울 분신 (확장 1차 5장, 그림자 사냥꾼): 진짜만 발밑에 그림자가 있다.
+    /// 진짜를 **기본 공격**으로 맞히면 "간파!" — 2초 동안 공격력 +25% (다시 맞히면 2초가 새로 시작).
+    /// 전체 검토 5번: 예전에는 가짜를 맞히면 0.5초 기절이었는데, 기본 공격은 자동 조준이라 플레이어가 고를 수 없는 벌이었다 → 벌 대신 상으로.
+    /// 가짜를 맞히면 처음 한 번만 알림으로 진짜를 노리라고 알려 준다. 다빈치 비행 기계 탄은 세지 않는다
     /// </summary>
     public sealed class MirrorStunGimmick : BossGimmick
     {
-        public const float Stun = 0.5f;
-        public const float Cooldown = 2.5f;
+        public const float FocusSeconds = 2f;
+        public const float FocusBonus = 0.25f;
 
         private readonly object _owner = new object();
         private EnemyData _cloneData;
-        private float _readyAt;
-        private bool _told;
-        private Player.PlayerController _stunned;
+        private bool _toldFake;
+        private bool _toldReal;
+        private float _focusUntil;
+        private Player.PlayerController _buffed;
+        private Coroutine _focus;
 
         public override string Hint => BossGimmicks.HintFor(GimmickKind.MirrorStun);
+
+        /// <summary>지금 "간파!" 중인가 (QA · 테스트)</summary>
+        public bool Focused => _buffed != null && Time.time < _focusUntil;
 
         protected override void OnBegin()
         {
             _cloneData = boss is ShadowHunterBoss hunter && hunter.ClonePrefab != null ? hunter.ClonePrefab.Data : null;
-            _readyAt = 0f;
-            _told = false;
+            _toldFake = false;
+            _toldReal = false;
             Health.AnyDamaged -= OnAnyDamaged;
             Health.AnyDamaged += OnAnyDamaged;
         }
@@ -34,31 +41,59 @@ namespace HistoryHeroes.Enemy
         protected override void OnEnd()
         {
             Health.AnyDamaged -= OnAnyDamaged;
-            Unstun();
+            EndFocus();
         }
 
         private void OnAnyDamaged(Health h, DamageInfo info, float dealt)
         {
-            if (!Running || _cloneData == null || info.Kind != DamageKind.BasicAttack || h.Team != Team.Enemy) return;
+            if (!Running || info.Kind != DamageKind.BasicAttack || h.Team != Team.Enemy) return;
             if (info.SourceId == Player.PlayerController.HelperSourceId) return; // 다빈치 비행 기계는 영웅이 고른 탄이 아니다
-            if (!h.TryGetComponent(out EnemyBase e) || e == boss || e.Data != _cloneData) return;
-            if (Time.time < _readyAt || hero == null || !hero.TryGetComponent(out Player.PlayerController player)) return;
-            _readyAt = Time.time + Cooldown;
-            StartCoroutine(StunFor(player));
+            if (!h.TryGetComponent(out EnemyBase e) || hero == null || !hero.TryGetComponent(out Player.PlayerController player)) return;
+            if (e == boss)
+            {
+                Focus(player);
+                return;
+            }
+
+            if (_cloneData != null && e.Data == _cloneData && !_toldFake)
+            {
+                _toldFake = true;
+                BossGimmicks.Notice?.Invoke("가짜예요! 그림자 있는 진짜를 맞히면 피해 +25%");
+            }
         }
 
-        private IEnumerator StunFor(Player.PlayerController player)
+        private void Focus(Player.PlayerController player)
         {
-            Unstun();
-            _stunned = player;
-            player.Root(Stun); // 코드 검토 3번: 이동 속도 하한과 상관없이 정말 멈춘다
-            FxBursts.Puff(player.transform.position + Vector3.back * 1.1f, new Color(1f, 0.9f, 0.4f), 1f);
-            BossGimmicks.Notice?.Invoke(_told ? "가짜! 기절" : "가짜였다! 그림자 있는 진짜를 노려요 (0.5초 기절)");
-            _told = true;
-            yield return new WaitForSeconds(Stun);
-            Unstun();
+            _focusUntil = Time.time + FocusSeconds;
+            if (_buffed == null)
+            {
+                _buffed = player;
+                player.Stats.Add(new StatModifier(StatType.Attack, ModifierKind.Percent, FocusBonus, ModifierSource.Skill, _owner));
+                FxBursts.Puff(player.transform.position + Vector3.back * 1.1f, new Color(1f, 0.85f, 0.35f), 1.1f);
+                BossGimmicks.Notice?.Invoke(_toldReal ? "간파!" : "간파! 진짜를 맞혔다 — 2초 동안 피해 +25%");
+                _toldReal = true;
+            }
+
+            if (_focus == null) _focus = StartCoroutine(FocusTimer());
         }
 
-        private void Unstun() => _stunned = null; // 묶임은 시간이 지나면 스스로 풀린다 (Root)
+        private IEnumerator FocusTimer()
+        {
+            while (Time.time < _focusUntil) yield return null;
+            _focus = null;
+            EndFocus();
+        }
+
+        private void EndFocus()
+        {
+            if (_focus != null)
+            {
+                StopCoroutine(_focus);
+                _focus = null;
+            }
+
+            if (_buffed != null) _buffed.Stats.RemoveAllFrom(_owner);
+            _buffed = null;
+        }
     }
 }

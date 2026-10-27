@@ -126,12 +126,12 @@ namespace HistoryHeroes.Missions
             if (chapter >= 3 && !string.IsNullOrEmpty(heroId) && !c.chapter3Heroes.Contains(heroId)) c.chapter3Heroes.Add(heroId);
         }
 
-        /// <summary>보스맵 한 판이 끝났다 (연습 제외)</summary>
-        public static void BossFinished(bool victory, string recordId)
+        /// <summary>보스맵 한 판이 끝났다 (연습 제외). chapter = 그 보스의 구간 (신규 미션 "격파 또는 3번 도전")</summary>
+        public static void BossFinished(bool victory, string recordId, int chapter = 0)
         {
             if (Suppressed) return;
             Raise(Run);
-            Raise(BossTry);
+            Raise(BossTry, 1, chapter > 0 ? chapter.ToString() : null);
             if (!victory) return;
             Raise(BossWin);
             MissionCounters c = SaveSystem.Data.missions.counters;
