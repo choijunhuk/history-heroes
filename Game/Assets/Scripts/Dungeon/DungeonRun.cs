@@ -661,9 +661,42 @@ namespace HistoryHeroes.Dungeon
             enemy.gameObject.SetActive(true);
             enemy.Spawn(player.transform, RoomHpMultiplier(), RoomAttackMultiplier(), entry.elite);
             if (_chapter != null && _chapter.enhanced) enemy.TelegraphScale = _chapter.enhancedTelegraph;
+            if (entry.elite) GiveAffixes(enemy, entry.prefab);
             experience.Register(enemy);
             enemy.Killed -= OnEnemyKilled;
             enemy.Killed += OnEnemyKilled;
+        }
+
+        /// <summary>엘리트 속성 (확장 1차 4장): 구간·층에 따라 0~2개, 적 난수로 (같은 씨앗이면 같은 속성)</summary>
+        private void GiveAffixes(EnemyBase enemy, EnemyBase prefab)
+        {
+            int chapter = _chapter != null ? _chapter.chapter : 1;
+            System.Random random = RunRandom.Enemies;
+            int count = EliteAffixes.CountFor(chapter, _rift ? _room : 0, random) + _extraAffixes;
+            EliteAffix affixes = EliteAffixes.Roll(random, Mathf.Min(count, 2));
+            if (affixes == EliteAffix.None) return;
+            if (!enemy.TryGetComponent(out EliteAffixes holder)) holder = enemy.gameObject.AddComponent<EliteAffixes>();
+            if (EliteAffixes.MinionPrefab == null) EliteAffixes.MinionPrefab = MinionFor(_chapter);
+            holder.Apply(affixes, prefab);
+            hud.ShowNotice($"{EliteAffixes.Names(affixes)} {enemy.Data.displayName}!", 2f);
+        }
+
+        /// <summary>저주받은 엘리트 방이면 속성 +1 (확장 1차 3-4장)</summary>
+        private int _extraAffixes;
+
+        /// <summary>부르는 속성이 낼 졸개: 그 구간의 졸개, 없으면 돌진병, 없으면 첫 적</summary>
+        private static EnemyBase MinionFor(ChapterData chapter)
+        {
+            if (chapter == null || chapter.enemies == null || chapter.enemies.Count == 0) return null;
+            EnemyBase fallback = chapter.enemies[0].prefab;
+            foreach (EnemyCost e in chapter.enemies)
+            {
+                if (e.prefab == null) continue;
+                if (e.prefab.Data != null && e.prefab.Data.id == "minion") return e.prefab;
+                if (e.prefab.Data != null && e.prefab.Data.id == "charger") fallback = e.prefab;
+            }
+
+            return fallback;
         }
 
         private Vector2 PickSpawnPoint()

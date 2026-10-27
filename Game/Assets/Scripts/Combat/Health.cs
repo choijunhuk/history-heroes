@@ -31,6 +31,9 @@ namespace HistoryHeroes.Combat
         /// <summary>누군가 피해를 받았을 때 (피해 숫자·화면 흔들림, 조사 A9). 장면마다 듣는 쪽이 붙고 뗀다</summary>
         public static event Action<Health, DamageInfo, float> AnyDamaged;
 
+        /// <summary>적이 받는 피해를 고친다 (엘리트 "지키는" 속성: 둘레 적 -30%). 없으면 그대로</summary>
+        public static Func<Health, DamageInfo, DamageInfo> EnemyIncoming;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => AnyDamaged = null;
 
@@ -68,6 +71,7 @@ namespace HistoryHeroes.Combat
             }
 
             if (IncomingModifier != null) info = IncomingModifier(info); // 사냥매 표식: 기본 공격 치명타 확률 +25%
+            if (team == Team.Enemy && EnemyIncoming != null) info = EnemyIncoming(this, info);
             if (Invulnerable || Time.time < _invulnerableUntil) return false;
 
             float reduction = 0f;

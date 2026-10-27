@@ -74,6 +74,9 @@ namespace HistoryHeroes.Enemy
         /// <summary>3D 모델 (쏘는 쪽이 공격 동작을 부를 때. 없으면 null)</summary>
         public Combat.Visual3D Visual => visual;
 
+        /// <summary>쫓는 대상 (영웅). 엘리트 속성이 쓴다</summary>
+        public Transform Target => player;
+
         protected virtual void Awake()
         {
             visual = GetComponent<Combat.Visual3D>();
@@ -119,7 +122,7 @@ namespace HistoryHeroes.Enemy
                 return;
             }
 
-            stateTimer -= Time.deltaTime;
+            stateTimer -= Time.deltaTime * status.Haste; // 엘리트 "분노한": 예고·공격·쉬는 시간도 빨라진다
             Tick();
         }
 

@@ -49,7 +49,10 @@ namespace HistoryHeroes.Enemy
         private float _pullUntil;
 
         public bool IsFrozen => Time.time < _freezeUntil;
-        public float SpeedMultiplier => Time.time < _slowUntil ? 1f - _slowFraction : 1f;
+        public float SpeedMultiplier => (Time.time < _slowUntil ? 1f - _slowFraction : 1f) * Haste;
+
+        /// <summary>빨라짐 배수 (엘리트 "분노한" 속성: 1.3). 이동과 공격 시간이 함께 빨라진다</summary>
+        public float Haste { get; set; } = 1f;
         public bool IsPulled => Time.time < _pullUntil;
 
         private bool IsBoss => _enemy != null && !_enemy.CanBeKnockedBack && !_enemy.IsElite;
@@ -66,6 +69,7 @@ namespace HistoryHeroes.Enemy
         public void Clear()
         {
             _slowUntil = _freezeUntil = _chillUntil = _pullUntil = 0f;
+            Haste = 1f;
             _chillStacks = 0;
             _poison.Clear();
             if (_tint != null) _tint.color = _baseColor;
