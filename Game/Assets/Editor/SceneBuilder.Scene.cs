@@ -115,7 +115,19 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(playerObject.AddComponent<StopIndicator>())) props.Ref("player", player).Ref("fill", stopFill);
 
             // 영웅 표시: 발밑에 늘 보이는 하늘색 원 (무리 속에서도 영웅을 바로 찾게 — Codex 화면 점검 1번)
-            Visual(playerObject.transform, "HeroRing", _circle, new Color(0.35f, 0.85f, 1f, 0.38f), Vector2.one * 1.25f, -2);
+            // 재평가 1번: 예고 원(꽉 찬 원)과 다른 모양 = 밝은 고리. 고리 그림이 없으면 예전 원
+            if (_kit != null && _kit.Ring != null) Visual(playerObject.transform, "HeroRing", _kit.Ring, new Color(0.45f, 0.95f, 1f, 0.95f), Vector2.one * 1.5f, -2);
+            else Visual(playerObject.transform, "HeroRing", _circle, new Color(0.35f, 0.85f, 1f, 0.38f), Vector2.one * 1.25f, -2);
+
+            // 재평가 1번 "캐릭터를 먼저 보이게": 영웅 머리 위 은은한 점 조명 (영웅과 발밑이 주변보다 밝다)
+            var heroLight = new GameObject("HeroLight").AddComponent<Light>();
+            heroLight.transform.SetParent(playerObject.transform, false);
+            heroLight.transform.localPosition = new Vector3(0f, -0.6f, -2.6f);
+            heroLight.type = LightType.Point;
+            heroLight.range = 4.5f;
+            heroLight.intensity = 1.6f;
+            heroLight.color = new Color(1f, 0.95f, 0.85f);
+            heroLight.shadows = LightShadows.None;
 
             // 3D 모델 (Art3D-Plan 4번): 임시 도형 몸·방향 표시는 숨기고, 멈춤 고리는 땅에 남긴다
             var playerVisual = playerObject.AddComponent<Visual3D>();

@@ -18,3 +18,4 @@ MonoBehaviour:
   meteor: {fileID: 1517781499401558637, guid: d07bc4c1f2a17a64a8f00664dfef1402, type: 3}
   shield: {fileID: 2715443471627401452, guid: 1651b6e757993d64f83a57d83bba839f, type: 3}
   trail: {fileID: 2100000, guid: 80e6b1b681fceaf419568505389ccd0c, type: 2}
+  glow: {fileID: 2100000, guid: 29d6cab1002ccd34d94a17d2e75a6409, type: 2}

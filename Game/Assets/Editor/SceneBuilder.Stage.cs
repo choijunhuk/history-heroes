@@ -148,7 +148,7 @@ namespace HistoryHeroes.EditorTools
             color.colorFilter.Override(Color.white);
 
             var vignette = Get<UnityEngine.Rendering.Universal.Vignette>();
-            vignette.intensity.Override(0.2f);
+            vignette.intensity.Override(0.12f); // 재평가: 벽 옆 적·탄을 가리지 않게 약하게
             vignette.smoothness.Override(0.45f);
             vignette.color.Override(Color.black);
 

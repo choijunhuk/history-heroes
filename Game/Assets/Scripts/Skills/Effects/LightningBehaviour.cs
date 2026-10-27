@@ -50,6 +50,7 @@ namespace HistoryHeroes.Skills
                     boltSize, new Vector2(0f, boltSize.y * 0.5f), boltColor, null, _bolts.Release);
 
                 enemy.Health.TryTakeDamage(RollDamage(data.DamageAt(level)));
+                HistoryHeroes.Combat.FxBursts.Explosion(point, 0.55f, new Color(0.65f, 0.85f, 1f)); // 그래픽 평가 5번: 떨어진 자리에 전기 불꽃 + 고리
                 if (chainTargets > 0) Chain(enemy);
 
                 if (leaveField)

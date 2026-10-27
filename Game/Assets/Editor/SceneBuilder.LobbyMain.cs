@@ -47,11 +47,11 @@ namespace HistoryHeroes.EditorTools
             const float pitch = 24f;
             float aspect = 9f / 19.5f;
             float halfTan = Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
-            float distance = 6.6f / aspect / (2f * halfTan);
+            float distance = 5.6f / aspect / (2f * halfTan); // 섬을 크게 (재평가: 작은 덩어리로 보인다)
             Quaternion rotation = Quaternion.Euler(pitch, 0f, 0f);
             Vector3 up = rotation * Vector3.up;
             float visibleHeight = 2f * distance * halfTan;
-            Vector3 aim = new Vector3(0f, 0f, -0.3f) - up * (0.05f * visibleHeight); // 발밑이 화면 55% 높이 (이름표 바로 위)
+            Vector3 aim = new Vector3(0f, 0f, -0.3f) - up * (0.09f * visibleHeight); // 발밑이 화면 55% 높이 (이름표 바로 위)
             cameraObject.transform.SetPositionAndRotation(aim - rotation * Vector3.forward * distance, rotation);
 
             var volume = new GameObject("PostFx").AddComponent<Volume>();

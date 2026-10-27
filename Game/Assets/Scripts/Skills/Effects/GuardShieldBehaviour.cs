@@ -50,8 +50,39 @@ namespace HistoryHeroes.Skills
                 _bubble.sortingOrder = 4;
             }
 
-            _bubble.enabled = player.Health.Shield > 0f;
+            bool on = player.Health.Shield > 0f;
+            _bubble.enabled = on;
+
+            // 그래픽 평가 5번: 영웅 둘레를 도는 3D 방패 2개 (평평한 원만으로는 막는 느낌이 약하다)
+            SkillArt art = SkillArt.Get;
+            if (_orbit == null && art != null && art.shield != null)
+            {
+                _orbit = new Transform[2];
+                for (int i = 0; i < _orbit.Length; i++)
+                {
+                    _orbit[i] = Instantiate(art.shield, player.transform).transform;
+                    _orbit[i].name = "OrbitShield";
+                    _orbit[i].localScale = Vector3.one * 0.85f;
+                }
+            }
+
+            if (_orbit == null) return;
+            float spin = Time.time * 140f;
+            for (int i = 0; i < _orbit.Length; i++)
+            {
+                Transform s = _orbit[i];
+                if (s == null) continue;
+                if (s.gameObject.activeSelf != on) s.gameObject.SetActive(on);
+                if (!on) continue;
+                float a = (spin + 180f * i) * Mathf.Deg2Rad;
+                var offset = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * 0.95f;
+                // 방패 면(모델 위 = 게임의 위)이 바깥을 보게 세운다
+                s.SetPositionAndRotation(player.transform.position + offset + new Vector3(0f, 0f, -0.8f),
+                    Quaternion.LookRotation(Vector3.back, offset) * Quaternion.Euler(-90f, 0f, 0f));
+            }
         }
+
+        private Transform[] _orbit;
 
         private void OnBroken()
         {
@@ -66,6 +97,14 @@ namespace HistoryHeroes.Skills
         {
             if (player != null && _subscribed) player.Health.ShieldBroken -= OnBroken;
             if (_bubble != null) Destroy(_bubble.gameObject);
+            if (_orbit != null)
+            {
+                foreach (Transform s in _orbit)
+                {
+                    if (s != null) Destroy(s.gameObject);
+                }
+            }
+
             base.OnDestroy();
         }
     }

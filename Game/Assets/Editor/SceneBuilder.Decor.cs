@@ -137,6 +137,7 @@ namespace HistoryHeroes.EditorTools
             art.meteor = Art3DStage.Prefab("Fx_Meteor");
             art.shield = Art3DStage.Prefab("Fx_Shield");
             art.trail = FxGlowMaterial("Trail", new Color(1.8f, 1.8f, 1.8f), plain: true);
+            art.glow = FxGlowMaterial("Particle", new Color(2f, 2f, 2f));
             EditorUtility.SetDirty(art);
         }
 
@@ -412,10 +413,10 @@ namespace HistoryHeroes.EditorTools
         {
             var sets = new (string key, string[] flat, string[] edge)[]
             {
-                ("ch1", new[] { "Puddle_Mesh" }, new[] { "Weeds", "Weeds", "Deco_Rubble" }),
+                ("ch1", new string[0], new[] { "Weeds", "Weeds", "Deco_Rubble" }), // 물웅덩이는 구덩이(위험)처럼 보여서 뺐다 (재평가)
                 ("ch2", new[] { "Floor_Rug" }, new[] { "Deco_Rubble" }),
-                ("ch3", new[] { "Floor_Grate", "Puddle_Mesh" }, new[] { "Deco_Rubble" }),
-                ("ch4", new[] { "Puddle_Mesh" }, new[] { "Bones", "Deco_Rubble" }),
+                ("ch3", new[] { "Floor_Grate" }, new[] { "Deco_Rubble" }),
+                ("ch4", new string[0], new[] { "Bones", "Deco_Rubble" }),
                 ("ch5", new[] { "Floor_Rug" }, new[] { "Bones" }),
             };
             list.arraySize = sets.Length;

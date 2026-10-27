@@ -520,7 +520,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95cf8f6a9b6bcf14aabdece59db61048, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Model3DInfo
-  height: 1.0877484
+  height: 1.1002429
   castShadows: 0
 --- !u!1 &2315664080798602872
 GameObject:
@@ -698,8 +698,8 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 3193195069345584072}
   m_AABB:
-    m_Center: {x: -0.000000014901161, y: -0.3301176, z: 0.7063825}
-    m_Extent: {x: 0.17405577, y: 0.0245035, z: 0.034868896}
+    m_Center: {x: -0.000000014901161, y: -0.33001235, z: 0.7063825}
+    m_Extent: {x: 0.17405577, y: 0.024398237, z: 0.034868896}
   m_DirtyAABB: 0
 --- !u!1 &2451768976929361237
 GameObject:
@@ -1134,8 +1134,8 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 3193195069345584072}
   m_AABB:
-    m_Center: {x: 0.00000032782555, y: -0.10552926, z: 0.4874507}
-    m_Extent: {x: 0.73232234, y: 0.3976202, z: 0.5438741}
+    m_Center: {x: 0.00000023841858, y: -0.11038682, z: 0.48794603}
+    m_Extent: {x: 0.7328241, y: 0.39099684, z: 0.5501213}
   m_DirtyAABB: 0
 --- !u!1 &4071372290966030076
 GameObject:
@@ -1471,8 +1471,8 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 3193195069345584072}
   m_AABB:
-    m_Center: {x: 0.55783516, y: -0.16945979, z: 0.62306654}
-    m_Extent: {x: 0.08665824, y: 0.25451243, z: 0.036688507}
+    m_Center: {x: 0.55783516, y: -0.16921926, z: 0.6234256}
+    m_Extent: {x: 0.086658254, y: 0.25475293, z: 0.03632945}
   m_DirtyAABB: 0
 --- !u!1 &4818634995111468800
 GameObject:

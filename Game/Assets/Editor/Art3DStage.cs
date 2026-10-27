@@ -48,7 +48,7 @@ namespace HistoryHeroes.EditorTools
                 foreach (string file in Directory.GetFiles(folder, "*.fbx"))
                 {
                     string path = file.Replace('\\', '/');
-                    ImportSettings(path);
+                    ImportSettings(path, folder.EndsWith("/Floor"));
                     if (MakePrefab(path) != null) made.Add(Path.GetFileNameWithoutExtension(path));
                 }
             }
@@ -78,17 +78,26 @@ namespace HistoryHeroes.EditorTools
             return copied;
         }
 
-        private static void ImportSettings(string path)
+        /// <param name="calculate">true = Unity가 면을 이어 계산 (바닥 장식). false = 블렌더가 넣은 부드러운 면 정보를 그대로 (Fx·Deco, 블렌더 창 "다듬기" 2026-10-27)</param>
+        private static void ImportSettings(string path, bool calculate)
         {
             if (!(AssetImporter.GetAtPath(path) is ModelImporter importer)) return;
-            bool smooth = importer.importNormals == ModelImporterNormals.Calculate && Mathf.Approximately(importer.normalSmoothingAngle, SmoothAngle);
-            if (importer.animationType == ModelImporterAnimationType.None && !importer.importAnimation && !importer.isReadable && smooth) return;
+            bool normalsOk = calculate
+                ? importer.importNormals == ModelImporterNormals.Calculate && Mathf.Approximately(importer.normalSmoothingAngle, SmoothAngle)
+                : importer.importNormals == ModelImporterNormals.Import;
+            if (importer.animationType == ModelImporterAnimationType.None && !importer.importAnimation && !importer.isReadable && normalsOk) return;
             importer.animationType = ModelImporterAnimationType.None;
             importer.importAnimation = false;
             importer.importBlendShapes = false;
             importer.isReadable = false;
             importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription; // 재질 이름(역할)을 읽으려고
-            SetSmooth(importer, SmoothAngle);
+            if (calculate) SetSmooth(importer, SmoothAngle);
+            else
+            {
+                importer.importNormals = ModelImporterNormals.Import; // 모서리는 날카롭게, 둥근 곳은 부드럽게 — 블렌더에서 정해 넣었다
+                importer.importTangents = ModelImporterTangents.CalculateMikk;
+            }
+
             importer.SaveAndReimport();
         }
 
@@ -106,19 +115,41 @@ namespace HistoryHeroes.EditorTools
             importer.importTangents = ModelImporterTangents.CalculateMikk;
         }
 
-        /// <summary>영웅 소품(모자·무기)·펫 FBX도 같은 방식으로 부드럽게 (무늬 없는 단색이라 이음매 걱정 없음)</summary>
+        /// <summary>
+        /// 영웅 소품(모자·무기) · 펫 · 무리 적 가벼운 모델: 블렌더 창의 "다듬기" 결과(D:\HH_Blender\props·pets·lod)를 복사하고,
+        /// 블렌더가 넣은 부드러운 면 정보를 그대로 쓴다 (Normals = Import). 휴머노이드 설정 같은 나머지는 건드리지 않는다
+        /// </summary>
         public static int SmoothProps()
         {
             int changed = 0;
-            foreach (string folder in new[] { Art3DProps.Folder, Art3DAssets.Root + "/Pets" })
+            var sets = new (string source, string folder, string filter)[]
+            {
+                (@"D:\HH_Blender\props", Art3DProps.Folder, "*.fbx"),
+                (@"D:\HH_Blender\pets", Art3DAssets.Root + "/Pets", "*.fbx"),
+                (@"D:\HH_Blender\lod", Art3DAssets.Root + "/Models", "*_LOD.fbx"),
+            };
+            foreach ((string source, string folder, string filter) in sets)
+            {
+                if (Directory.Exists(source) && Directory.Exists(folder))
+                {
+                    foreach (string file in Directory.GetFiles(source, filter))
+                    {
+                        string target = Path.Combine(folder, Path.GetFileName(file));
+                        if (!File.Exists(target) || File.GetLastWriteTimeUtc(target) < File.GetLastWriteTimeUtc(file)) File.Copy(file, target, true);
+                    }
+                }
+            }
+
+            AssetDatabase.Refresh();
+            foreach ((string _, string folder, string filter) in sets)
             {
                 if (!Directory.Exists(folder)) continue;
-                foreach (string file in Directory.GetFiles(folder, "*.fbx"))
+                foreach (string file in Directory.GetFiles(folder, filter))
                 {
                     if (!(AssetImporter.GetAtPath(file.Replace('\\', '/')) is ModelImporter importer)) continue;
-                    float angle = folder.EndsWith("Pets") ? 70f : 60f;
-                    if (importer.importNormals == ModelImporterNormals.Calculate && Mathf.Approximately(importer.normalSmoothingAngle, angle)) continue;
-                    SetSmooth(importer, angle);
+                    if (importer.importNormals == ModelImporterNormals.Import && importer.importTangents == ModelImporterTangents.CalculateMikk) continue;
+                    importer.importNormals = ModelImporterNormals.Import;
+                    importer.importTangents = ModelImporterTangents.CalculateMikk;
                     importer.SaveAndReimport();
                     changed++;
                 }

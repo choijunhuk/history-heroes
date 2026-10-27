@@ -624,8 +624,8 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 8057507999428949014}
   m_AABB:
-    m_Center: {x: -0.000009804964, y: 0.009002563, z: 0.791013}
-    m_Extent: {x: 0.17152616, y: 0.10364547, z: 0.16749597}
+    m_Center: {x: -0.000009432435, y: 0.010435741, z: 0.79242885}
+    m_Extent: {x: 0.17195405, y: 0.105078846, z: 0.16906396}
   m_DirtyAABB: 0
 --- !u!1 &2920345685477705530
 GameObject:
@@ -1219,8 +1219,8 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 8057507999428949014}
   m_AABB:
-    m_Center: {x: 0.7232644, y: -0.163304, z: 1.1985782}
-    m_Extent: {x: 0.13270897, y: 0.35481057, z: 0.23167682}
+    m_Center: {x: 0.72326547, y: -0.16301066, z: 1.198495}
+    m_Extent: {x: 0.13271004, y: 0.3551039, z: 0.23175994}
   m_DirtyAABB: 0
 --- !u!1 &5403834479509199280
 GameObject:
@@ -1398,8 +1398,8 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 8057507999428949014}
   m_AABB:
-    m_Center: {x: 0.00000035762787, y: -0.04286176, z: 0.7861707}
-    m_Extent: {x: 0.8771329, y: 0.23106784, z: 0.8904419}
+    m_Center: {x: 0.0000004172325, y: -0.044208646, z: 0.78644913}
+    m_Extent: {x: 0.8782432, y: 0.23103333, z: 0.8896591}
   m_DirtyAABB: 0
 --- !u!1 &5774275376992972586
 GameObject:
@@ -1505,7 +1505,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95cf8f6a9b6bcf14aabdece59db61048, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Model3DInfo
-  height: 1.780884
+  height: 1.7793185
   castShadows: 0
 --- !u!1 &5905717398067267644
 GameObject:
@@ -2038,8 +2038,8 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 8057507999428949014}
   m_AABB:
-    m_Center: {x: -0.00000031292439, y: -0.0334028, z: 1.3373564}
-    m_Extent: {x: 0.16662341, y: 0.16872886, z: 0.105371594}
+    m_Center: {x: -0.00000032782555, y: -0.03714536, z: 1.3362402}
+    m_Extent: {x: 0.16662341, y: 0.1724986, z: 0.10648787}
   m_DirtyAABB: 0
 --- !u!1 &7800201041340758271
 GameObject:

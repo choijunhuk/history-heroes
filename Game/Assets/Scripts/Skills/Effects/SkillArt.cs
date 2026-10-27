@@ -17,6 +17,8 @@ namespace HistoryHeroes.Skills
         public GameObject shield;
         [Tooltip("꼬리 빛 (더하기 섞기, 1 넘는 색이면 빛 번짐)")]
         public Material trail;
+        [Tooltip("장판·불씨 입자 (더하기 섞기, 둥근 빛)")]
+        public Material glow;
 
         private static SkillArt _cached;
         private static bool _loaded;
@@ -53,6 +55,58 @@ namespace HistoryHeroes.Skills
             go.transform.localRotation = Quaternion.identity;
             go.transform.localScale = new Vector3(size / Mathf.Max(0.0001f, Mathf.Abs(s.x)), size / Mathf.Max(0.0001f, Mathf.Abs(s.y)), size / Mathf.Max(0.0001f, Mathf.Abs(s.z)));
             return go;
+        }
+
+        /// <summary>
+        /// 장판 위로 피어오르는 빛 알갱이 (불꽃 장판 = 불씨, 독 구름 = 초록 거품, 눈보라 = 눈송이 …). 그래픽 평가 5번 "평평한 스킬 효과".
+        /// owner의 크기(지름 1 기준)에 맞춰 동그랗게 흩어진다. 알갱이 크기는 owner 크기와 상관없다
+        /// </summary>
+        public static ParticleSystem Embers(Transform owner, Color color, float rate, float rise, float size)
+        {
+            SkillArt art = Get;
+            if (art == null || art.glow == null || owner == null) return null;
+            var go = new GameObject("Embers");
+            go.transform.SetParent(owner, false);
+            go.transform.localRotation = Quaternion.LookRotation(Vector3.back); // 입자의 +Z → 게임의 위(-Z)
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ParticleSystem.MainModule main = ps.main;
+            main.loop = true;
+            main.playOnAwake = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1f);
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(size * 0.6f, size);
+            main.startColor = new Color(color.r, color.g, color.b, 1f);
+            main.maxParticles = 80;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.scalingMode = ParticleSystemScalingMode.Shape; // 장판 크기만큼 넓게, 알갱이는 그대로
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = rate;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 0.5f;
+            shape.radiusThickness = 1f;
+            ParticleSystem.VelocityOverLifetimeModule velocity = ps.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.Local;
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.12f, 0.12f);
+            velocity.y = new ParticleSystem.MinMaxCurve(-0.12f, 0.12f);
+            velocity.z = new ParticleSystem.MinMaxCurve(rise * 0.6f, rise);
+            ParticleSystem.ColorOverLifetimeModule col = ps.colorOverLifetime;
+            col.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.9f, 0.2f), new GradientAlphaKey(0f, 1f) });
+            col.color = gradient;
+            ParticleSystem.SizeOverLifetimeModule sol = ps.sizeOverLifetime;
+            sol.enabled = true;
+            sol.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.6f, 1f, 0.15f));
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = art.glow;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            ps.Play();
+            return ps;
         }
 
         /// <summary>움직이는 것 뒤에 꼬리 빛 (회전 칼날의 원 · 부메랑 · 얼음 파편)</summary>

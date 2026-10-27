@@ -44,6 +44,7 @@ namespace HistoryHeroes.Skills
             sr.sprite = PlaceholderSprites.RimCircle; // 장판도 테두리가 보이게 (3D 화면 점검 2번)
             sr.color = color;
             sr.sortingOrder = sortingOrder;
+            SkillArt.Embers(template.transform, color, 10f, 1.4f, 0.5f); // 그래픽 평가 5번: 장판 위로 피어오르는 알갱이
             DamageZone zone = template.AddComponent<DamageZone>();
             zone.sourceId = sourceId; // 직렬화된 칸이라 풀에서 복사한 장판에도 들어간다
             return new ComponentPool<DamageZone>(zone, root, prewarm: 4);
@@ -53,7 +54,10 @@ namespace HistoryHeroes.Skills
         {
             _renderer = GetComponent<SpriteRenderer>();
             _color = _renderer.color;
+            _embers = GetComponentInChildren<ParticleSystem>(true);
         }
+
+        private ParticleSystem _embers;
 
         /// <param name="coefficientPerSecond">초당 피해 (공격력 배수). 0.3 = 초당 30%</param>
         /// <param name="onKill">장판 안에서 적이 죽으면 그 자리 (맹독 개화: 독이 번짐)</param>
@@ -74,6 +78,11 @@ namespace HistoryHeroes.Skills
             _release = release;
             transform.localScale = Vector3.one * radius * 2f;
             _renderer.color = _color;
+            if (_embers != null)
+            {
+                ParticleSystem.EmissionModule emission = _embers.emission;
+                emission.rateOverTime = 8f + 14f * radius * radius; // 넓은 장판은 알갱이도 많이 (밀도는 비슷하게)
+            }
         }
 
         private void Update()
