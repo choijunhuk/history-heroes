@@ -86,9 +86,18 @@ namespace HistoryHeroes.Player
             bool stopped = alive && _player.IsStopped;
 
             // 머리 위 자리: 모델 키 + 0.5 위 (위 = -Z), 카메라를 본다
-            _head.position = _player.transform.position + new Vector3(0f, 0f, -(_player.Hero.modelHeight + 0.5f));
-            Camera cam = Camera.main;
-            if (cam != null) _head.rotation = cam.transform.rotation;
+            if (Common.Art2D.Enabled)
+            {
+                // 2D 그림: 머리는 화면 위(+Y) 쪽, 카메라가 바로 위에서 보므로 돌리지 않는다
+                _head.position = _player.transform.position + new Vector3(0f, _player.Hero.modelHeight * 1.12f + 0.3f, -0.05f);
+                _head.rotation = Quaternion.identity;
+            }
+            else
+            {
+                _head.position = _player.transform.position + new Vector3(0f, 0f, -(_player.Hero.modelHeight + 0.5f));
+                Camera cam = Camera.main;
+                if (cam != null) _head.rotation = cam.transform.rotation;
+            }
 
             UpdateIronclad(alive);
             UpdatePips(alive, stopped);

@@ -127,6 +127,12 @@ namespace HistoryHeroes.Dungeon
         public static GameObject FitModel(Transform owner, GameObject prefab, float footprint)
         {
             if (prefab == null) return null;
+            if (Common.Art2D.Enabled)
+            {
+                // 2D 그림 시험판: 그림이 있는 장치는 그림 한 장 (받침점 = 자리 아래 끝, 너비 = 자리)
+                Sprite art = Common.Art2D.Library.PropFor(prefab.name);
+                if (art != null) return FitSprite(owner, art, footprint);
+            }
             GameObject go = UnityEngine.Object.Instantiate(prefab, owner, false);
             go.name = "Model";
             go.transform.localPosition = Vector3.zero;
@@ -143,6 +149,21 @@ namespace HistoryHeroes.Dungeon
             }
 
             StageLook.Retint(go);
+            return go;
+        }
+
+        /// <summary>2D 그림 시험판: 주인 자리에 그림을 세운다 (주인 배율을 되돌려 찌그러지지 않게)</summary>
+        public static GameObject FitSprite(Transform owner, Sprite art, float footprint)
+        {
+            var go = new GameObject("Model");
+            go.transform.SetParent(owner, false);
+            Vector3 s = owner.lossyScale;
+            float k = footprint * 1.1f / Mathf.Max(0.01f, art.bounds.size.x);
+            go.transform.localScale = new Vector3(k / Mathf.Max(0.0001f, Mathf.Abs(s.x)), k / Mathf.Max(0.0001f, Mathf.Abs(s.y)), 1f);
+            go.transform.position = owner.position + new Vector3(0f, -footprint * 0.4f, -0.01f);
+            var r = go.AddComponent<SpriteRenderer>();
+            r.sprite = art;
+            r.sortingOrder = Common.Art2D.SortOrder(go.transform.position.y);
             return go;
         }
 

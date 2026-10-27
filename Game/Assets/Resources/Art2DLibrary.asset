@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa70bcd6f36a9de4eb623df3bbb74024, type: 3}
+  m_Name: Art2DLibrary
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Common.Art2DLibrary
+  characters:
+  - modelName: Guan3D
+    front: {fileID: 21300000, guid: 71b9ced707c563742ae6fa24e63eb897, type: 3}
+    back: {fileID: 21300000, guid: d10635e14a563734798805431cee981c, type: 3}
+    side: {fileID: 21300000, guid: 3949adc944266d548b1770cf97a7ad71, type: 3}
+    heightScale: 1.28
+  - modelName: YiSunsin3D
+    front: {fileID: 21300000, guid: a5510a5abbe1c254a935161a1abdf187, type: 3}
+    back: {fileID: 21300000, guid: a35001e03027d264daefbd02f0538390, type: 3}
+    side: {fileID: 21300000, guid: a0738f5fd6698df4b8ba31542e61e908, type: 3}
+    heightScale: 1.1
+  - modelName: E_Charger3D
+    front: {fileID: 21300000, guid: 61c3b6dfc4e1470429cf7628ff21879a, type: 3}
+    back: {fileID: 21300000, guid: c8d75f9697a9c9c4581c15bc97a53ec5, type: 3}
+    side: {fileID: 21300000, guid: 6df1ccf2adf4eb54bb41f89afd5e832b, type: 3}
+    heightScale: 1.08
+  - modelName: E_Archer3D
+    front: {fileID: 21300000, guid: 1c9d17fd0b853fe43a599f7e19015514, type: 3}
+    back: {fileID: 21300000, guid: b44fd9b16f8822141b54fc244c8c0535, type: 3}
+    side: {fileID: 21300000, guid: 496442e70fb9b124385832cdb7fdcf99, type: 3}
+    heightScale: 1.12
+  - modelName: E_Bomber3D
+    front: {fileID: 21300000, guid: 448af5afd1f11394394eeb84fabf1ac9, type: 3}
+    back: {fileID: 21300000, guid: b021415fff8ded54eb5e28d7871e5b67, type: 3}
+    side: {fileID: 21300000, guid: afe9644abc560d84c9f1bd95e9cd3fcf, type: 3}
+    heightScale: 1.05
+  - modelName: Pet_Hawk3D
+    front: {fileID: 21300000, guid: b7d319046dbcaf34b8e532d60c3e96a5, type: 3}
+    back: {fileID: 21300000, guid: b7d319046dbcaf34b8e532d60c3e96a5, type: 3}
+    side: {fileID: 21300000, guid: 049ba945e48fdd446ac170c5b7dfef22, type: 3}
+    heightScale: 1
+  floor: {fileID: 21300000, guid: a7c57be63e4108c4b9a560efb6e91614, type: 3}
+  wallTop: {fileID: 21300000, guid: 1b74c0efad2dc9b41a43e53cbfaabc38, type: 3}
+  wallSide: {fileID: 21300000, guid: cfe99cafe2a5eea4995463971a47eb1e, type: 3}
+  doorClosed: {fileID: 21300000, guid: dd6332ff3ea860c418ddfab60cd783a8, type: 3}
+  doorOpen: {fileID: 21300000, guid: d52d8854f7796fd4fa3e0eded27ce2c1, type: 3}
+  pillar: {fileID: 21300000, guid: 1a72b00ccc76c974d9856b8a8f91cd83, type: 3}
+  crate: {fileID: 21300000, guid: 4f912f07d5ea631478ca3c01fc191848, type: 3}
+  brazier: {fileID: 21300000, guid: 0dceec958f026bb4986830e00f8b9e85, type: 3}
+  banner: {fileID: 21300000, guid: 520a7fb9dcdcd6940a45d0f3875fd8c5, type: 3}
+  water: {fileID: 21300000, guid: ffa5ac0615e08cc4ca1685b6ae393e49, type: 3}
+  moss: {fileID: 21300000, guid: 7c1eae2254087064caa80388122df7f2, type: 3}
+  bones: {fileID: 21300000, guid: a447989902c7d2d499446e6fbda4b252, type: 3}
+  healOrb: {fileID: 21300000, guid: 2c9e6b337e03da642b22ba8e2a75a821, type: 3}
+  thorns: {fileID: 21300000, guid: 9c9b645bb22a4e840b34111d256db720, type: 3}
+  props:
+  - modelName: Berry_Bush
+    sprite: {fileID: 21300000, guid: 013080a04ef45d344b5755a34b697775, type: 3}
+  cardFrame: {fileID: 21300000, guid: a1154f06c56a5764a96fed78df7c71e1, type: 3}
+  cardFrameRare: {fileID: 21300000, guid: 0b4a32ee083173a419eb762677127d1a, type: 3}
+  cardFrameLegend: {fileID: 21300000, guid: a3151823db2ad134d894faf2fbfbd9a1, type: 3}
+  panel: {fileID: 21300000, guid: 84462f273f97f024791f373a1628a5a1, type: 3}
+  buttonPrimary: {fileID: 21300000, guid: 3212234ecc9a3564487f88fd752e68f3, type: 3}
+  buttonSecondary: {fileID: 21300000, guid: ac5eef7e01f673b44a2c7589b52f645c, type: 3}
+  ribbon: {fileID: 21300000, guid: 3b67a15749466c34e8b2ddef27e482c6, type: 3}

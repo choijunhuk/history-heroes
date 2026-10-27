@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HistoryHeroes.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -51,6 +52,17 @@ namespace HistoryHeroes.Combat
         private GameObject _modelSource;
         private Material _outline;
         private const string OutlineShader = "HistoryHeroes/HeroOutline";
+
+        // ── 2D 그림 시험판 (Art2D): 그림이 있으면 3D 모델 대신 그림 한 장 + 코드 움직임 ──
+        private SpriteRenderer _sprite2D;
+        private SpriteRenderer _shadow2D;
+        private Art2DLibrary.Character _art;
+        private float _punch;
+        private float _walkPhase;
+        private bool _flip2D;
+
+        /// <summary>2D 그림으로 보이는 중인가</summary>
+        public bool Is2D => _sprite2D != null;
         private Animator _animator;
         private Slot[] _slots = new Slot[0];
         private MaterialPropertyBlock _block;
@@ -103,7 +115,13 @@ namespace HistoryHeroes.Combat
             else ResetAnimator();
             _lastPosition = transform.position;
             ApplyTint(Color.white, force: true);
-            SetHidden(_model != null);
+            if (_sprite2D != null)
+            {
+                _sprite2D.enabled = true;
+                _shadow2D.enabled = true;
+            }
+
+            SetHidden(_model != null || _sprite2D != null);
         }
 
         /// <summary>영웅을 바꿀 때 (같은 플레이어 오브젝트)</summary>
@@ -120,13 +138,21 @@ namespace HistoryHeroes.Combat
             _model = null;
             _animator = null;
             _slots = new Slot[0];
+            Clear2D();
             modelPrefab = prefab;
             if (modelPrefab != null && isActiveAndEnabled) Take();
-            SetHidden(_model != null);
+            SetHidden(_model != null || _sprite2D != null);
         }
 
         private void Take()
         {
+            Art2DLibrary.Character art = Art2D.Find(modelPrefab != null ? modelPrefab.name : null);
+            if (art != null)
+            {
+                Build2D(art);
+                return;
+            }
+
             Transform model = Pool.Take(modelPrefab);
             if (model == null)
             {
@@ -225,6 +251,147 @@ namespace HistoryHeroes.Combat
             _animator.SetFloat(SpeedId, 0f);
         }
 
+        // ── 2D 그림 ──
+
+        private void Build2D(Art2DLibrary.Character art)
+        {
+            _art = art;
+            if (_sprite2D == null)
+            {
+                var shadow = new GameObject("Shadow2D");
+                shadow.transform.SetParent(transform, false);
+                _shadow2D = shadow.AddComponent<SpriteRenderer>();
+                _shadow2D.sprite = PlaceholderSprites.Circle;
+                _shadow2D.color = new Color(0f, 0f, 0f, 0.32f);
+
+                var go = new GameObject("Sprite2D");
+                go.transform.SetParent(transform, false);
+                _sprite2D = go.AddComponent<SpriteRenderer>();
+            }
+
+            _sprite2D.sprite = art.front;
+            _sprite2D.color = Color.white;
+            _sprite2D.transform.localRotation = Quaternion.identity;
+            _dead = false;
+            _punch = 0f;
+            SetHidden(true);
+            Update2D(0f);
+        }
+
+        private void Clear2D()
+        {
+            if (_sprite2D != null) Destroy(_sprite2D.gameObject);
+            if (_shadow2D != null) Destroy(_shadow2D.gameObject);
+            _sprite2D = null;
+            _shadow2D = null;
+            _art = null;
+        }
+
+        /// <summary>그림 키 (월드): 3D 모델 키 × 그림 배율. 앞모습 크기로 세 방향을 같은 배율로</summary>
+        private float Scale2D()
+        {
+            float spriteHeight = _art.front != null ? Mathf.Max(0.01f, _art.front.bounds.size.y) : 1f;
+            return height * Mathf.Max(0.5f, _art.heightScale) / spriteHeight;
+        }
+
+        private void Update2D(float dt)
+        {
+            if (_dead && _health != null && !_health.IsDead) // 부활
+            {
+                _dead = false;
+                _sprite2D.transform.localRotation = Quaternion.identity;
+            }
+
+            Vector3 now = transform.position;
+            Vector2 velocity = _body != null ? _body.linearVelocity : (dt > 0f ? (Vector2)(now - _lastPosition) / dt : Vector2.zero);
+            _lastPosition = now;
+            float speed = velocity.magnitude;
+            if (!_dead && dt > 0f)
+            {
+                if (Time.time < _aimUntil) _facing = _aim;
+                else if (speed > 0.25f) _facing = velocity / speed;
+                else if (LookTarget != null && LookTarget.gameObject.activeInHierarchy)
+                {
+                    Vector2 to = LookTarget.position - now;
+                    if (to.sqrMagnitude > 0.01f) _facing = to.normalized;
+                }
+            }
+
+            // 방향 그림: 옆(왼쪽은 뒤집기) · 뒤 · 앞
+            Sprite pick = _art.front;
+            bool flip = false;
+            if (Mathf.Abs(_facing.x) > Mathf.Abs(_facing.y) * 0.9f && _art.side != null)
+            {
+                pick = _art.side;
+                flip = _facing.x < 0f;
+            }
+            else if (_facing.y > 0.1f && _art.back != null)
+            {
+                pick = _art.back;
+            }
+
+            _sprite2D.sprite = pick;
+            _sprite2D.flipX = flip;
+            _flip2D = flip;
+
+            // 코드 움직임: 걷기 = 통통 튐 + 기우뚱 + 눌림, 멈춤 = 숨쉬기, 공격 = 톡 커지며 앞으로
+            float k = Scale2D();
+            float moving = _dead ? 0f : Mathf.Clamp01(speed / Mathf.Max(0.1f, runSpeed) * 1.6f);
+            _walkPhase += dt * Mathf.Lerp(0f, 13f, moving);
+            float bob = Mathf.Abs(Mathf.Sin(_walkPhase)) * 0.07f * height * moving;
+            float breathe = 1f + 0.018f * Mathf.Sin(Time.time * 2.3f) * (1f - moving);
+            float squash = 1f - 0.045f * Mathf.Abs(Mathf.Cos(_walkPhase)) * moving;
+            float lean = Mathf.Sin(_walkPhase) * 5f * moving;
+            _punch = Mathf.MoveTowards(_punch, 0f, dt * 7f);
+            float punch = 1f + 0.12f * _punch;
+            Vector2 shove = _facing * (0.12f * _punch);
+
+            Transform t = _sprite2D.transform;
+            if (_dead)
+            {
+                t.localRotation = Quaternion.Slerp(t.localRotation, Quaternion.Euler(0f, 0f, flip ? -82f : 82f), 1f - Mathf.Exp(-10f * dt));
+            }
+            else
+            {
+                t.localRotation = Quaternion.Euler(0f, 0f, lean);
+            }
+
+            t.localPosition = new Vector3(shove.x, bob + shove.y, -0.01f);
+            t.localScale = new Vector3(k * punch / Mathf.Sqrt(Mathf.Max(0.5f, squash * breathe)), k * punch * squash * breathe, 1f);
+            int order = Art2D.SortOrder(now.y);
+            _sprite2D.sortingOrder = order;
+            _shadow2D.sortingOrder = order - 1;
+            float w = height * 0.42f;
+            _shadow2D.transform.localPosition = new Vector3(0f, 0.02f, 0f);
+            _shadow2D.transform.localScale = new Vector3(w * (1f - bob * 0.8f), w * 0.4f, 1f);
+
+            // 색: 맞으면 붉게 번쩍, 상태 이상은 2D 몸 색을 따라
+            Color tint = Time.unscaledTime < _flashUntil ? new Color(1f, 0.45f, 0.45f) : CurrentTint();
+            if (tint.r > 1f || tint.g > 1f || tint.b > 1f) tint = Color.white;
+            tint.a = _dead ? 0.75f : 1f;
+            _sprite2D.color = tint;
+        }
+
+        private void Died2D()
+        {
+            if (_dead) return;
+            _dead = true;
+            if (keepOnDeath) return; // 영웅: 그 자리에 쓰러진 채 (Update2D가 눕힌다)
+
+            // 적: 오브젝트가 곧 꺼진다 → 그림 사본을 남겨 쓰러지며 사라지게
+            var corpse = new GameObject("Corpse2D");
+            corpse.transform.position = _sprite2D.transform.position;
+            corpse.transform.localScale = _sprite2D.transform.lossyScale;
+            var sr = corpse.AddComponent<SpriteRenderer>();
+            sr.sprite = _sprite2D.sprite;
+            sr.flipX = _flip2D;
+            sr.sortingOrder = _sprite2D.sortingOrder - 2;
+            corpse.AddComponent<Corpse2D>().Begin(sr, _flip2D);
+            _dead = false; // 같은 오브젝트가 풀에서 다시 나오면 서 있다
+            _sprite2D.enabled = false;
+            _shadow2D.enabled = false;
+        }
+
         private void SetHidden(bool hidden)
         {
             foreach (Renderer r in hideRenderers)
@@ -245,6 +412,7 @@ namespace HistoryHeroes.Combat
             if (Time.time - _lastAttack < MinAttackGap) return;
             Aim(direction, holdFacing);
             _lastAttack = Time.time;
+            _punch = 1f; // 2D: 그림이 톡 앞으로
             if (_animator != null && _animator.isActiveAndEnabled) _animator.SetTrigger(AttackId);
         }
 
@@ -267,6 +435,12 @@ namespace HistoryHeroes.Combat
 
         private void OnDied(Health h)
         {
+            if (_sprite2D != null)
+            {
+                Died2D();
+                return;
+            }
+
             if (_dead || _model == null) return;
             _dead = true;
             ApplyTint(Color.white, force: true);
@@ -285,6 +459,12 @@ namespace HistoryHeroes.Combat
         private void LateUpdate()
         {
             Pool.Tick();
+            if (_sprite2D != null)
+            {
+                Update2D(Time.deltaTime);
+                return;
+            }
+
             if (_model == null) return;
             float dt = Time.deltaTime;
 

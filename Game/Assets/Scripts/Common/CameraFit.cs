@@ -41,6 +41,13 @@ namespace HistoryHeroes.Common
                                               && Mathf.Approximately(Aspect, o.Aspect);
         }
 
+        /// <summary>바로 아래에서 기운 각도 (2D 그림 시험판은 0 = 바로 위에서)</summary>
+        public float Tilt
+        {
+            get => tilt;
+            set => tilt = Mathf.Clamp(value, 0f, 55f);
+        }
+
         /// <summary>꼭 보여야 하는 땅 네모 (서바이벌은 넓게 — 몰려오는 무리가 벽처럼 보이지 않게)</summary>
         public Vector2 Area
         {

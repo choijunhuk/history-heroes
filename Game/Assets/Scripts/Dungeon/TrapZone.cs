@@ -43,6 +43,7 @@ namespace HistoryHeroes.Dungeon
         private float _nextTick;
         private SpriteRenderer _marker;
         private ConveyorArrows _arrows;
+        private Sprite _placeholder;
         private Vector2 _rockAt;
         private bool _rockPending;
         private static int _mask = -1;
@@ -92,6 +93,20 @@ namespace HistoryHeroes.Dungeon
             {
                 area.transform.localScale = new Vector3(size.x, size.y, 1f);
                 area.color = BaseColor(effect);
+                // 2D 그림 시험판: 가시덤불은 코덱스 그림 (색은 그대로 곱해져 예고 · 깜빡임이 보인다)
+                Sprite art2D = Common.Art2D.Enabled && effect == Effect.Thorns ? Common.Art2D.Library.thorns : null;
+                if (art2D != null)
+                {
+                    if (_placeholder == null) _placeholder = area.sprite;
+                    area.sprite = art2D;
+                    Vector2 b = art2D.bounds.size;
+                    area.transform.localScale = new Vector3(size.x / Mathf.Max(0.01f, b.x), size.y / Mathf.Max(0.01f, b.y), 1f);
+                    area.color = Color.white;
+                }
+                else if (_placeholder != null)
+                {
+                    area.sprite = _placeholder; // 풀에서 다른 함정으로 다시 쓰일 때
+                }
             }
 
             // 컨베이어: 미는 쪽으로 흐르는 꺾쇠 화살표 (화면 점검 5번의 남은 것). 다른 함정으로 다시 쓰이면 숨긴다

@@ -56,7 +56,9 @@ namespace HistoryHeroes.Common
         /// <summary>게임 중 (방 레이아웃): 장애물 스프라이트에 3D 모양을 붙이고 스프라이트를 숨긴다. Stage3D가 없으면 2D 그대로</summary>
         public static void Dress(SpriteRenderer sprite, Kind kind, bool circle)
         {
-            if (_instance == null || sprite == null) return;
+            if (sprite == null) return;
+            if (Art2D.Enabled && Dress2D(sprite, kind)) return; // 2D 그림 시험판: 돌기둥 · 상자 그림
+            if (_instance == null) return;
             Vector3 s = sprite.transform.lossyScale;
             float size = Mathf.Max(s.x, s.y);
             float height = kind == Kind.Crate ? Mathf.Min(1.1f, size) : kind == Kind.Rock ? size * 0.55f : circle ? 1.8f : 1.5f;
@@ -77,6 +79,30 @@ namespace HistoryHeroes.Common
             Material mat = StageLook.Resolve(kind == Kind.Crate ? _instance.crate : kind == Kind.Rock ? _instance.rock : _instance.stone); // 구간 색을 입힌 사본
             Add(sprite.transform, kind == Kind.Rock ? Shape.Rock : circle ? Shape.Pillar : Shape.Box, height, mat, castShadows: true);
             sprite.enabled = false;
+        }
+
+        /// <summary>
+        /// 2D 그림 시험판: 장애물 자리(스프라이트 배율 = 바닥 크기)에 그림 한 장을 세운다. 아래 끝 = 자리 아래 끝, 너비 = 자리 너비.
+        /// 부모의 가로·세로 배율이 달라도 그림이 찌그러지지 않게 되돌린다. 그림이 없으면 false (3D 그대로)
+        /// </summary>
+        private static bool Dress2D(SpriteRenderer sprite, Kind kind)
+        {
+            Art2DLibrary lib = Art2D.Library;
+            Sprite art = kind == Kind.Crate ? lib.crate : lib.pillar;
+            if (art == null) return false;
+            Transform owner = sprite.transform;
+            Vector3 s = owner.lossyScale;
+            float width = Mathf.Abs(s.x) * (kind == Kind.Crate ? 1.15f : 1.25f);
+            float k = width / Mathf.Max(0.01f, art.bounds.size.x);
+            var go = new GameObject(ShapeName);
+            go.transform.SetParent(owner, false);
+            go.transform.localPosition = new Vector3(0f, -0.5f, -0.01f); // 그림 받침점(아래 가운데) = 자리 아래 끝
+            go.transform.localScale = new Vector3(k / Mathf.Max(0.0001f, Mathf.Abs(s.x)), k / Mathf.Max(0.0001f, Mathf.Abs(s.y)), 1f);
+            var r = go.AddComponent<SpriteRenderer>();
+            r.sprite = art;
+            r.sortingOrder = Art2D.SortOrder(owner.position.y - Mathf.Abs(s.y) * 0.5f);
+            sprite.enabled = false;
+            return true;
         }
 
         private static GameObject Pick(GameObject[] list, int hash) => list == null || list.Length == 0 ? null : list[hash % list.Length];

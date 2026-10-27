@@ -65,10 +65,26 @@ namespace HistoryHeroes.UI
             button.onClick.AddListener(() => _onClick?.Invoke());
         }
 
-        /// <summary>등급에 맞춰 테두리·아이콘 칸·뒤 빛 색을 정한다 (뒤 빛은 희귀부터)</summary>
-        private void Paint(Color rarity, float glowAlpha, Sprite iconSprite)
+        /// <summary>
+        /// 등급에 맞춰 테두리·아이콘 칸·뒤 빛 색을 정한다 (뒤 빛은 희귀부터).
+        /// tier: 0 보통 · 1 희귀 · 2 전설·조합. 2D 그림 시험판이면 카드 바탕이 코덱스 그림 틀(놋쇠 테두리)로 바뀐다
+        /// </summary>
+        private void Paint(Color rarity, float glowAlpha, Sprite iconSprite, int tier = 0)
         {
-            if (background != null) background.color = CardBase;
+            HistoryHeroes.Common.Art2DLibrary art = HistoryHeroes.Common.Art2D.Enabled ? HistoryHeroes.Common.Art2D.Library : null; // (이 클래스의 Common = 보통 등급 색이라 이름을 다 쓴다)
+            Sprite cardArt = art == null ? null : tier >= 2 ? art.cardFrameLegend : tier == 1 ? art.cardFrameRare : art.cardFrame;
+            if (cardArt != null && background != null)
+            {
+                background.sprite = cardArt;
+                background.type = Image.Type.Sliced;
+                background.color = Color.white;
+                if (frame != null) frame.enabled = false;
+            }
+            else if (background != null)
+            {
+                background.color = CardBase;
+            }
+
             if (frame != null) frame.color = rarity;
             if (iconSlot != null) iconSlot.color = Color.Lerp(rarity, CardBase, 0.35f);
             _glowAlpha = glowAlpha;
@@ -104,7 +120,7 @@ namespace HistoryHeroes.UI
                     levelLabel.text = "NEW";
                     descriptionLabel.text = $"{r.materialA.displayName} + {r.materialB.displayName}\n\n{r.result.description}";
                     hint = skills.BlockedWarning(r);
-                    Paint(FusionBand, 0.8f, r.result.icon);
+                    Paint(FusionBand, 0.8f, r.result.icon, 2);
                     break;
 
                 case CardType.RiftBoost:
@@ -133,7 +149,7 @@ namespace HistoryHeroes.UI
                     nameLabel.text = s.displayName;
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";
                     descriptionLabel.text = s.DescriptionFor(skills.HeroClass);
-                    Paint(RarityColor(s.rarity), GlowFor(s.rarity), s.icon);
+                    Paint(RarityColor(s.rarity), GlowFor(s.rarity), s.icon, s.rarity == Rarity.Legendary ? 2 : s.rarity == Rarity.Rare ? 1 : 0);
                     hint = skills.CardHint(card);
                     if (legendaryWarning && s.rarity == Rarity.Legendary)
                     {
