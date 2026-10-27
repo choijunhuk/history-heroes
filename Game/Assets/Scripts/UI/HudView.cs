@@ -23,6 +23,11 @@ namespace HistoryHeroes.UI
         [Header("방 진행 바 · 알림 (조사 A6·A7)")]
         [SerializeField] private RectTransform roomBar;
         [SerializeField] private TMP_Text noticeLabel;
+        [Header("그래픽 재평가 2번: 방 칸 모양 · 표시 아이콘 (없으면 글자)")]
+        [SerializeField] private Sprite cellSprite;
+        [SerializeField] private Sprite eliteIcon;
+        [SerializeField] private Sprite rewardIcon;
+        [SerializeField] private Sprite bossIcon;
         private readonly System.Collections.Generic.List<Image> _cells = new System.Collections.Generic.List<Image>();
         private float _noticeUntil;
 
@@ -57,7 +62,9 @@ namespace HistoryHeroes.UI
                 Color color = elite[i] ? CellElite : past ? CellPast : current ? Color.white : CellNext;
                 if (past && elite[i]) color = new Color(0.75f, 0.6f, 0.25f, 0.9f);
                 cell.color = color;
-                cell.transform.GetChild(0).gameObject.SetActive(elite[i]);
+                Transform mark = cell.transform.GetChild(0);
+                mark.gameObject.SetActive(elite[i]);
+                if (elite[i] && mark.TryGetComponent(out Image icon)) icon.sprite = eliteIcon;
             }
         }
 
@@ -70,8 +77,17 @@ namespace HistoryHeroes.UI
             for (int i = 0; i < kinds.Count && i < _cells.Count; i++)
             {
                 Transform mark = _cells[i].transform.GetChild(0);
-                if (!mark.TryGetComponent(out TMPro.TMP_Text label)) continue;
-                label.text = kinds[i] == Dungeon.RoomKind.Reward ? "+" : kinds[i] == Dungeon.RoomKind.MidBoss || kinds[i] == Dungeon.RoomKind.Boss ? "!" : "★";
+                bool boss = kinds[i] == Dungeon.RoomKind.MidBoss || kinds[i] == Dungeon.RoomKind.Boss;
+                if (mark.TryGetComponent(out Image icon))
+                {
+                    // 아이콘으로: 보스 = 해골, 보상 = 상자, 엘리트 = 별 (작아도 모양으로 갈린다)
+                    icon.sprite = kinds[i] == Dungeon.RoomKind.Reward ? rewardIcon : boss ? bossIcon : eliteIcon;
+                }
+                else if (mark.TryGetComponent(out TMPro.TMP_Text label))
+                {
+                    label.text = kinds[i] == Dungeon.RoomKind.Reward ? "+" : boss ? "!" : "★";
+                }
+                else continue;
                 bool past = i < room - 1;
                 if (kinds[i] == Dungeon.RoomKind.Reward) _cells[i].color = past ? new Color(0.35f, 0.6f, 0.45f, 0.9f) : new Color(0.45f, 0.85f, 0.6f, 0.95f);
                 if (kinds[i] == Dungeon.RoomKind.MidBoss || kinds[i] == Dungeon.RoomKind.Boss) _cells[i].color = past ? new Color(0.6f, 0.3f, 0.3f, 0.9f) : new Color(0.95f, 0.35f, 0.35f, 0.95f);
@@ -89,6 +105,25 @@ namespace HistoryHeroes.UI
             go.transform.SetParent(roomBar, false);
             var image = go.AddComponent<Image>();
             image.raycastTarget = false;
+            if (cellSprite != null)
+            {
+                // 둥근 칸 + 아이콘 (그래픽 재평가 2번)
+                image.sprite = cellSprite;
+                image.type = Image.Type.Sliced;
+                image.pixelsPerUnitMultiplier = 3f;
+                var markGo = new GameObject("Mark", typeof(RectTransform));
+                markGo.transform.SetParent(go.transform, false);
+                var mark = markGo.AddComponent<Image>();
+                mark.raycastTarget = false;
+                mark.preserveAspect = true;
+                mark.color = new Color(0.15f, 0.08f, 0.02f, 0.95f);
+                var mrt = (RectTransform)markGo.transform;
+                mrt.anchorMin = new Vector2(0.15f, 0.15f);
+                mrt.anchorMax = new Vector2(0.85f, 0.85f);
+                mrt.offsetMin = mrt.offsetMax = Vector2.zero;
+                return image;
+            }
+
             var star = new GameObject("Star", typeof(RectTransform));
             star.transform.SetParent(go.transform, false);
             var label = star.AddComponent<TextMeshProUGUI>();

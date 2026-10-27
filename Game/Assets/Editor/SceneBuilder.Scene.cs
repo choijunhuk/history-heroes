@@ -403,19 +403,51 @@ namespace HistoryHeroes.EditorTools
             hudRect.gameObject.AddComponent<SafeAreaFitter>(); // 카메라 구멍·상태 표시줄 피하기
             ui.Hud = hudRect.gameObject.AddComponent<HudView>();
 
-            RectTransform expBg = Rect("ExpBar", hudRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(-40f, 18f));
+            RectTransform expBg = Rect("ExpBar", hudRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(-40f, 24f));
             Fill(expBg, new Color(0.1f, 0.1f, 0.12f, 0.85f), new Color(0.3f, 0.85f, 1f), out Image expFill);
 
             RectTransform hpBg = Rect("HpBar", hudRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -50f), new Vector2(560f, 46f));
             Fill(hpBg, new Color(0.1f, 0.1f, 0.12f, 0.85f), new Color(0.85f, 0.22f, 0.25f), out Image hpFill);
             TMP_Text hpLabel = Label("HpLabel", hpBg, "1000 / 1000", 28, TextAlignmentOptions.Center);
             Stretch(hpLabel.rectTransform);
+            if (_kit != null)
+            {
+                // 그래픽 재평가 2번 "HUD 정리": 체력 막대 왼쪽 끝에 하트, 오른쪽 위 처치 수에 해골, 방 이름 뒤 어두운 칸
+                RectTransform heart = Rect("Heart", hpBg, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-6f, 0f), new Vector2(70f, 70f));
+                Image heartImage = Img(heart, new Color(1f, 0.35f, 0.4f), Icon("heart"));
+                heartImage.preserveAspect = true;
+                var heartOutline = heart.gameObject.AddComponent<Outline>();
+                heartOutline.effectColor = new Color(0f, 0f, 0f, 0.8f);
+                heartOutline.effectDistance = new Vector2(2f, -2f);
+            }
 
             TMP_Text levelLabel = Label("LevelLabel", hudRect, "Lv 1", 46, TextAlignmentOptions.TopRight);
+            if (_titleFont != null)
+            {
+                levelLabel.font = _titleFont;
+                if (_buttonMat != null) levelLabel.fontSharedMaterial = _buttonMat;
+            }
             Place(levelLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -40f), new Vector2(260f, 64f));
             TMP_Text killLabel = Label("KillLabel", hudRect, "처치 0", 32, TextAlignmentOptions.TopRight);
-            Place(killLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -108f), new Vector2(300f, 50f));
+            Place(killLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(_kit != null ? -92f : -40f, -108f), new Vector2(300f, 50f));
+            if (_kit != null)
+            {
+                RectTransform skull = Rect("Skull", hudRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -104f), new Vector2(46f, 46f));
+                Img(skull, new Color(1f, 1f, 1f, 0.9f), Icon("skull")).preserveAspect = true;
+            }
+            if (_kit != null)
+            {
+                RectTransform roomPill = Rect("RoomPill", hudRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -104f), new Vector2(380f, 64f));
+                Image pill = Img(roomPill, new Color(0.04f, 0.06f, 0.12f, 0.75f), _kit.Badge);
+                pill.type = Image.Type.Sliced;
+            }
+
             TMP_Text roomLabel = Label("RoomLabel", hudRect, "방 1/10", 38, TextAlignmentOptions.Top);
+            if (_titleFont != null)
+            {
+                roomLabel.font = _titleFont;
+                if (_buttonMat != null) roomLabel.fontSharedMaterial = _buttonMat;
+            }
             Place(roomLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(520f, 60f));
 
             // 방 진행 바 (조사 A6) · 알림 (A7)
@@ -433,7 +465,8 @@ namespace HistoryHeroes.EditorTools
             {
                 props.Ref("hpFill", hpFill).Ref("hpLabel", hpLabel).Ref("expFill", expFill)
                     .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel).Ref("hitsLabel", hitsLabel)
-                    .Ref("roomBar", roomBar).Ref("noticeLabel", hudNotice);
+                    .Ref("roomBar", roomBar).Ref("noticeLabel", hudNotice)
+                    .Ref("cellSprite", _kit != null ? _kit.Badge : null).Ref("eliteIcon", Icon("star")).Ref("rewardIcon", Icon("chest")).Ref("bossIcon", Icon("skull"));
             }
 
             // ----- 조이스틱 (화면 아래쪽 어디든 누르면 그 자리에 생김) -----
@@ -509,6 +542,14 @@ namespace HistoryHeroes.EditorTools
         {
             Button open = Btn("PauseButton", hud, "II", Vector2.zero, new Vector2(100f, 84f), new Color(0.2f, 0.22f, 0.28f, 0.85f), out TMP_Text openLabel);
             openLabel.fontSize = 40;
+            Sprite pauseIcon = Icon("pause");
+            if (pauseIcon != null)
+            {
+                // 글자 "II" 대신 일시정지 아이콘
+                openLabel.text = string.Empty;
+                RectTransform pauseRect = Rect("Icon", open.transform, Center, Center, Center, new Vector2(0f, 4f), new Vector2(46f, 46f));
+                Img(pauseRect, Color.white, pauseIcon).preserveAspect = true;
+            }
             var openRect = (RectTransform)open.transform;
             openRect.anchorMin = openRect.anchorMax = new Vector2(0f, 1f);
             openRect.pivot = new Vector2(0f, 1f);
