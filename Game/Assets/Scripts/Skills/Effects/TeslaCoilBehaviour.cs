@@ -35,6 +35,8 @@ namespace HistoryHeroes.Skills
             _fx ??= FxSprite.CreatePool(EffectRoot);
             FxSprite coil = _fx.Get(position, Quaternion.identity);
             coil.Hold(PlaceholderSprites.Square, position, coilSize, coilColor, 1);
+            // 3D: 코일 탑을 세운다 (스프라이트 위 = 하늘 -Z, 카메라 쪽을 본다), 땅에서 반 높이만큼 위에
+            coil.transform.SetPositionAndRotation(new Vector3(position.x, position.y, -coilSize.y * 0.5f), Quaternion.Euler(-90f, 0f, 0f));
 
             float duration = data.DurationAt(level);
             float radius = data.RadiusAt(level);

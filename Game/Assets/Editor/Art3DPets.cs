@@ -16,20 +16,20 @@ namespace HistoryHeroes.EditorTools
     {
         public const string Folder = Art3DAssets.Root + "/Pets";
 
-        /// <summary>펫 id → (FBX 이름, 게임 속 키, 오르내림)</summary>
-        private static readonly Dictionary<string, (string file, float height, float bob)> Table = new Dictionary<string, (string, float, float)>
+        /// <summary>펫 id → (FBX 이름, 게임 속 키, 오르내림, 더 띄우는 높이 — 새는 영웅 어깨께로 날게, 월드 유닛)</summary>
+        private static readonly Dictionary<string, (string file, float height, float bob, float lift)> Table = new Dictionary<string, (string, float, float, float)>
         {
-            ["hawk"] = ("Pet_Hawk", 0.75f, 0.08f),
-            ["red_hare"] = ("Pet_RedHare", 0.95f, 0.025f),
-            ["marengo"] = ("Pet_Marengo", 0.9f, 0.025f),
-            ["dove"] = ("Pet_Dove", 0.6f, 0.07f),
+            ["hawk"] = ("Pet_Hawk", 0.55f, 0.08f, 0.75f),
+            ["red_hare"] = ("Pet_RedHare", 1.2f, 0.025f, 0f),
+            ["marengo"] = ("Pet_Marengo", 1.12f, 0.025f, 0f),
+            ["dove"] = ("Pet_Dove", 0.45f, 0.07f, 0.7f),
         };
 
         public static string BuildAll()
         {
             if (!Directory.Exists(Folder)) return "펫 모델 없음";
             var log = new List<string>();
-            foreach (KeyValuePair<string, (string file, float height, float bob)> pair in Table)
+            foreach (KeyValuePair<string, (string file, float height, float bob, float lift)> pair in Table)
             {
                 string fbxPath = $"{Folder}/{pair.Value.file}.fbx";
                 var importer = AssetImporter.GetAtPath(fbxPath) as ModelImporter;
@@ -72,6 +72,8 @@ namespace HistoryHeroes.EditorTools
                 foreach (Renderer r in root.GetComponentsInChildren<Renderer>()) bounds.Encapsulate(r.bounds);
                 info.height = Mathf.Max(0.1f, bounds.max.y);
                 info.castShadows = true;
+                // 새는 더 높이 난다: 게임 속 배율(키 / 원래 키)을 되돌려 모델 공간에서 띄운다 (키는 띄우기 전에 쟀다)
+                if (pair.Value.lift > 0f) body.localPosition = new Vector3(0f, pair.Value.lift * info.height / pair.Value.height, 0f);
 
                 string path = $"{Folder}/{root.name}.prefab";
                 PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -87,7 +89,7 @@ namespace HistoryHeroes.EditorTools
         public static GameObject Model(string id, out float height)
         {
             height = 0.7f;
-            if (!Table.TryGetValue(id, out (string file, float height, float bob) entry)) return null;
+            if (!Table.TryGetValue(id, out (string file, float height, float bob, float lift) entry)) return null;
             height = entry.height;
             return AssetDatabase.LoadAssetAtPath<GameObject>($"{Folder}/{entry.file}3D.prefab");
         }

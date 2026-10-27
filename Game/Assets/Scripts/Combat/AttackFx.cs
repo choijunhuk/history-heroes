@@ -36,13 +36,18 @@ namespace HistoryHeroes.Combat
                 Vector2.one * radius * 2f, color, duration, 6, Pool.Release, 1.08f);
         }
 
-        /// <summary>두 점을 잇는 선 (튕기는 전기)</summary>
+        /// <summary>몸 높이 (3D: 튕기는 전기는 발이 아니라 몸과 몸을 잇는다, 위 = -Z)</summary>
+        public const float BodyHeight = 0.9f;
+
+        /// <summary>두 점을 잇는 선 (튕기는 전기). 몸 높이에 띄운다</summary>
         public static void Line(Vector2 from, Vector2 to, float width, Color color, float duration = 0.12f)
         {
             Vector2 delta = to - from;
             float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
-            Pool.Get(from, Quaternion.identity).Play(PlaceholderSprites.Square, (from + to) * 0.5f, angle,
-                new Vector2(delta.magnitude, width), color, duration, 7, Pool.Release);
+            FxSprite fx = Pool.Get(from, Quaternion.identity);
+            fx.Play(PlaceholderSprites.Square, (from + to) * 0.5f, angle, new Vector2(delta.magnitude, width), color, duration, 7, Pool.Release);
+            Vector3 p = fx.transform.position;
+            fx.transform.position = new Vector3(p.x, p.y, -BodyHeight);
         }
 
         /// <summary>이 반지름 이상 폭발은 화면을 크게 덮는 섬광으로 본다 (번쩍임 줄이기 대상)</summary>

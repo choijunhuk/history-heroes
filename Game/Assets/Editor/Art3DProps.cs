@@ -33,6 +33,10 @@ namespace HistoryHeroes.EditorTools
             ["Wood"] = (Hex(0x815938), false), ["Metal"] = (Hex(0xC4C7CB), true), ["Black"] = (Hex(0x212124), false),
             ["Copper"] = (Hex(0xCE8955), true), ["Hair"] = (Hex(0x453527), false), ["Red"] = (Hex(0x992727), false),
             ["White"] = (Hex(0xE7E5DA), false), ["Blue"] = (Hex(0x2745A0), false),
+            // 펫 (블렌더 pets/notes.txt, 선형 색을 화면 색으로)
+            ["Feather"] = (Hex(0x7A5639), false), ["Beak"] = (Hex(0xEDBA47), false), ["Eye"] = (Hex(0x1C1917), false),
+            ["Horse"] = (Hex(0x944530), false), ["Horse_Gray"] = (Hex(0xC9C9CC), false), ["Horse_Dapple"] = (Hex(0xB3B3B8), false),
+            ["Mane_White"] = (Hex(0xF0F0ED), false), ["Gray"] = (Hex(0xABB0B5), false),
         };
 
         private static Color Hex(int rgb) => new Color(((rgb >> 16) & 255) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f);

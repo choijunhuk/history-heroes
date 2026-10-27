@@ -20,8 +20,8 @@ MonoBehaviour:
   source: 0
   sourceChapter: 0
   color: {r: 0.72, g: 0.52, b: 0.28, a: 1}
-  model3D: {fileID: 0}
-  modelHeight: 0.75
+  model3D: {fileID: 6205014606433147882, guid: 07c87289c1764da47b444ac160e5bc59, type: 3}
+  modelHeight: 0.55
   trigger: "\uBA48\uCDB0\uC11C \uBC84\uD2F0\uAE30"
   effect: "2\uCD08 \uBA48\uCD94\uBA74 \uD558\uB298\uB85C \uC19F\uAD6C\uCCE4\uB2E4\uAC00
     \uD654\uBA74\uC5D0\uC11C \uCCB4\uB825\uC774 \uAC00\uC7A5 \uB192\uC740 \uC801\uC5D0\uAC8C
