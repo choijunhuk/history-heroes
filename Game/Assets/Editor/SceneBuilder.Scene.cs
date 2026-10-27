@@ -30,29 +30,34 @@ namespace HistoryHeroes.EditorTools
 
         private static void BuildBattleScene(Scene scene, Data d, Prefabs p)
         {
-            // ----- 카메라·빛 -----
-            // 받침(rig)이 플레이어를 따라가고(서바이벌만), 카메라는 받침 안에서 HUD 자리만큼 위로 올라가 있다.
-            // 흔들림은 카메라의 local 위치라 따라가기와 안 싸운다
+            // ----- 카메라·빛 (Art3D-Plan 3번: 비스듬한 원근 카메라 + 해·그림자) -----
+            // 받침(rig, 서바이벌은 플레이어를 따라감) → 거치대(CameraFit: 방이 한 화면에 들어오는 거리·기울기) → 카메라(흔들림).
+            // 흔들림은 카메라의 local 위치라 따라가기·맞춤과 안 싸운다
+            _stage = CreateStageMaterials();
             var rig = new GameObject("CameraRig");
             var cameraFollow = rig.AddComponent<CameraFollow>();
             cameraFollow.enabled = false; // BattleBootstrap이 서바이벌에서만 켠다
+            var mount = new GameObject("CameraMount");
+            mount.transform.SetParent(rig.transform, false);
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
-            cameraObject.transform.SetParent(rig.transform, false);
-            cameraObject.transform.localPosition = new Vector3(0f, 1f, -10f); // 위쪽 HUD 자리만큼 올림
+            cameraObject.transform.SetParent(mount.transform, false);
             var camera = cameraObject.AddComponent<Camera>();
-            camera.orthographic = true;
+            camera.orthographic = false;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.07f, 0.08f, 0.1f);
-            cameraObject.AddComponent<CameraFit>();
+            UniversalAdditionalCameraData cameraData = camera.GetUniversalAdditionalCameraData();
+            cameraData.SetRenderer(1); // UniversalRenderer3D (0번은 로비가 쓰는 2D 렌더러)
+            cameraData.renderShadows = true;
+            var fit = mount.AddComponent<CameraFit>();
+            using (var props = new Props(fit)) props.Ref("viewCamera", camera);
             cameraObject.AddComponent<CameraShake>(); // 손맛: 화면 흔들림 (조사 A9)
+            fit.Apply();
 
             // 손맛: 피해 숫자 (조사 A9). 글꼴은 한국어 TMP 글꼴을 같이 쓴다
             var numbers = new GameObject("DamageNumbers").AddComponent<DamageNumbers>();
             using (var props = new Props(numbers)) props.Ref("font", _font);
 
-            var light = new GameObject("Global Light 2D").AddComponent<Light2D>();
-            light.lightType = Light2D.LightType.Global;
-            light.intensity = 1f;
+            BuildLighting(_stage);
 
             // ----- 모드별 묶음: 장면이 열릴 때 BattleBootstrap이 한쪽만 켠다 -----
             var dungeonRoot = new GameObject("DungeonMode").transform;
@@ -61,12 +66,12 @@ namespace HistoryHeroes.EditorTools
 
             // ----- 방: 바닥, 벽, 문 (벽은 두 모드가 같이 쓴다) -----
             var arena = new GameObject("Arena").transform;
-            Block("Floor", dungeonRoot, Vector2.zero, new Vector2(ArenaHalfWidth * 2f, ArenaHalfHeight * 2f), new Color(0.18f, 0.24f, 0.18f), -10, collider: false);
+            DressFloor(Block("Floor", dungeonRoot, Vector2.zero, new Vector2(ArenaHalfWidth * 2f, ArenaHalfHeight * 2f), new Color(0.18f, 0.24f, 0.18f), -10, collider: false), _stage.RoomFloor);
             Color wall = new Color(0.36f, 0.31f, 0.26f);
-            Block("Wall Left", arena, new Vector2(-ArenaHalfWidth - 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true);
-            Block("Wall Right", arena, new Vector2(ArenaHalfWidth + 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true);
-            Block("Wall Bottom", arena, new Vector2(0f, -ArenaHalfHeight - 0.5f), new Vector2(ArenaHalfWidth * 2f + 2f, 1f), wall, -5, collider: true);
-            Block("Wall Top", arena, new Vector2(0f, ArenaHalfHeight + 0.5f), new Vector2(ArenaHalfWidth * 2f + 2f, 1f), wall, -5, collider: true);
+            DressWall(Block("Wall Left", arena, new Vector2(-ArenaHalfWidth - 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true), _stage.WallSide, _stage.WallEnd);
+            DressWall(Block("Wall Right", arena, new Vector2(ArenaHalfWidth + 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true), _stage.WallSide, _stage.WallEnd);
+            DressWall(Block("Wall Bottom", arena, new Vector2(0f, -ArenaHalfHeight - 0.5f), new Vector2(ArenaHalfWidth * 2f + 2f, 1f), wall, -5, collider: true), _stage.WallSide, _stage.WallEnd);
+            DressWall(Block("Wall Top", arena, new Vector2(0f, ArenaHalfHeight + 0.5f), new Vector2(ArenaHalfWidth * 2f + 2f, 1f), wall, -5, collider: true), _stage.WallSide, _stage.WallEnd);
 
             GameObject doorObject = Block("Door", dungeonRoot, new Vector2(0f, ArenaHalfHeight - 0.3f), new Vector2(1.8f, 0.6f), Color.gray, -4, collider: true);
             doorObject.layer = 0;
@@ -104,6 +109,14 @@ namespace HistoryHeroes.EditorTools
 
             using (var props = new Props(playerObject.AddComponent<StopIndicator>())) props.Ref("player", player).Ref("fill", stopFill);
 
+            // 3D 모델 (Art3D-Plan 4번): 임시 도형 몸·방향 표시는 숨기고, 멈춤 고리는 땅에 남긴다
+            var playerVisual = playerObject.AddComponent<Visual3D>();
+            using (var props = new Props(playerVisual))
+            {
+                props.Ref("modelPrefab", d.Khan.model3D).Float("height", d.Khan.modelHeight).Float("runSpeed", 5f).Bool("keepOnDeath", true)
+                    .Refs("hideRenderers", new Object[] { playerBody, playerObject.transform.Find("Facing").GetComponent<SpriteRenderer>() });
+            }
+
             // 펫 (v0.5): BattleBootstrap이 장착한 펫으로 켠다. 충돌 없음 (적이 공격하지 않는다)
             var petObject = new GameObject("Pet");
             SpriteRenderer petBody = Visual(petObject.transform, "Body", _circle, Color.white, Vector2.one * 0.42f, 4);
@@ -111,7 +124,7 @@ namespace HistoryHeroes.EditorTools
             var pet = petObject.AddComponent<HistoryHeroes.Pets.PetController>();
             using (var props = new Props(pet)) props.Ref("body", petBody).Ref("marker", petMarker).Mask("enemyMask", Mask(EnemyLayer));
             petObject.SetActive(false);
-            using (var props = new Props(cameraFollow)) props.Ref("target", playerObject.transform).Ref("viewCamera", camera).Float("boundsHalfSize", SurvivalHalf);
+            using (var props = new Props(cameraFollow)) props.Ref("target", playerObject.transform).Ref("fit", fit).Float("boundsHalfSize", SurvivalHalf);
 
             // ----- 시스템 -----
             var systems = new GameObject("Systems");
@@ -148,6 +161,7 @@ namespace HistoryHeroes.EditorTools
 
             // ----- 보스맵: 원형 경기장 + 보스 (Modes 2-9) -----
             BuildBossArena(bossRoot);
+            DressBossArena(bossRoot, _stage);
             var bossStart = new GameObject("BossPlayerStart").transform;
             bossStart.SetParent(bossRoot, false);
             bossStart.position = new Vector2(0f, -BossArenaRadius + 1.2f);

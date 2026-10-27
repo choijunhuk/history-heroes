@@ -196,6 +196,7 @@ GameObject:
   - component: {fileID: 5604674769983654029}
   - component: {fileID: 3001975729663985855}
   - component: {fileID: 3293022744939537318}
+  - component: {fileID: 1425338310431854331}
   - component: {fileID: 2731093488286354877}
   m_Layer: 9
   m_Name: Boss_RiftWarden
@@ -373,6 +374,26 @@ MonoBehaviour:
   target: {fileID: 1788784896733825008}
   duration: 0.08
   flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &1425338310431854331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3694629891196356535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b28267fcbf9054244bbd55ad71d89540, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Visual3D
+  modelPrefab: {fileID: 2813645417422067990, guid: c03f1bacc4bad6a4392d28902bc6e452, type: 3}
+  height: 1.5
+  runSpeed: 3.5200002
+  hideRenderers:
+  - {fileID: 1788784896733825008}
+  tintSource: {fileID: 1788784896733825008}
+  turnSharpness: 16
+  keepOnDeath: 0
 --- !u!114 &2731093488286354877
 MonoBehaviour:
   m_ObjectHideFlags: 0

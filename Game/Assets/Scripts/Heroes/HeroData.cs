@@ -114,6 +114,11 @@ namespace HistoryHeroes.Heroes
         [Header("화면 (임시 도형)")]
         public Color color = new Color(0.95f, 0.75f, 0.2f);
 
+        [Header("3D (Art3D-Plan)")]
+        [Tooltip("3D 캐릭터 프리팹 (Assets/Art/3D/Characters). 비어 있으면 임시 도형")]
+        public GameObject model3D;
+        public float modelHeight = 1.5f;
+
         public string ClassLabel
         {
             get

@@ -11,6 +11,7 @@ namespace HistoryHeroes.Combat
     /// - 기본 공격 흰색, 액티브 하늘색(멈춰서 쏜 피해가 눈에 띄게), 치명타 노란색 1.4배
     /// - 동시에 최대 40개 (넘으면 가장 오래된 것을 다시 쓴다), 0.6초 동안 위로 뜨며 사라짐
     /// 오브젝트는 미리 만들어 두고 다시 쓴다 (GameDesign 8-5). 설정에서 끌 수 있다.
+    /// 3D (Art3D-Plan 3번): 머리 위(-Z)에서 시작해 위로 뜨고, 글자는 늘 카메라를 본다 (비스듬한 카메라라 눕지 않게).
     /// </summary>
     public sealed class DamageNumbers : MonoBehaviour
     {
@@ -21,7 +22,9 @@ namespace HistoryHeroes.Combat
         [Tooltip("사라질 때까지 위로 뜨는 거리 (유닛)")]
         [SerializeField] private float rise = 0.9f;
         [Tooltip("글자 크기 (TextMeshPro 월드 글자)")]
-        [SerializeField] private float fontSize = 5f;
+        [SerializeField] private float fontSize = 3.6f;
+        [Tooltip("숫자가 시작하는 높이 (몸 크기 1일 때, 머리 위)")]
+        [SerializeField] private float headHeight = 1.7f;
         [SerializeField] private float critScale = 1.4f;
         [SerializeField] private int sortingOrder = 60;
 
@@ -83,7 +86,7 @@ namespace HistoryHeroes.Combat
                 Amount = dealt,
                 Crit = info.IsCrit,
                 Color = info.Kind == DamageKind.Active ? ActiveColor : BasicColor,
-                Start = target.transform.position + new Vector3(Random.Range(-0.3f, 0.3f), 0.6f, 0f),
+                Start = target.transform.position + new Vector3(Random.Range(-0.3f, 0.3f), 0f, -headHeight * Mathf.Max(0.6f, target.transform.lossyScale.x)),
             };
             if (target.IsDead) entry.Target = null; // 처치 피해는 보여주되, 같은 오브젝트가 풀에서 다시 나오면 새 숫자로
             _active.Add(entry);
@@ -95,7 +98,14 @@ namespace HistoryHeroes.Combat
             e.Text.text = Format(e.Amount);
             e.Text.fontSize = fontSize * (e.Crit ? critScale : 1f);
             e.Text.color = e.Crit ? CritColor : e.Color;
-            e.Text.transform.position = e.Start;
+            e.Text.transform.SetPositionAndRotation(e.Start, Facing());
+        }
+
+        /// <summary>글자가 카메라를 보게 (카메라가 없으면 그대로)</summary>
+        private static Quaternion Facing()
+        {
+            Camera cam = Camera.main;
+            return cam != null ? cam.transform.rotation : Quaternion.identity;
         }
 
         /// <summary>정수로. 1만이 넘으면 "1.2만"</summary>
@@ -109,6 +119,7 @@ namespace HistoryHeroes.Combat
         private void Update()
         {
             float now = Time.unscaledTime; // 멈춘 동안(레벨업 창)에도 마저 사라지게
+            Quaternion facing = _active.Count > 0 ? Facing() : Quaternion.identity;
             for (int i = _active.Count - 1; i >= 0; i--)
             {
                 Entry e = _active[i];
@@ -120,7 +131,7 @@ namespace HistoryHeroes.Combat
                 }
 
                 float ease = 1f - (1f - t) * (1f - t);
-                e.Text.transform.position = e.Start + Vector3.up * (rise * ease);
+                e.Text.transform.SetPositionAndRotation(e.Start + Vector3.back * (rise * ease), facing); // 위 = -Z
                 Color c = e.Text.color;
                 c.a = 1f - t * t;
                 e.Text.color = c;

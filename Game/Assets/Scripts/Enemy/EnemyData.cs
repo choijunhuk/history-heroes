@@ -21,5 +21,11 @@ namespace HistoryHeroes.Enemy
         public Color color = new Color(0.85f, 0.25f, 0.25f);
         [Tooltip("몸 크기 (작은 분열체·졸개는 작게)")]
         public float scale = 1f;
+
+        [Header("3D (Art3D-Plan)")]
+        [Tooltip("3D 모델 프리팹. 비어 있으면 임시 도형")]
+        public GameObject model3D;
+        [Tooltip("모델 키 (배율 1일 때)")]
+        public float modelHeight = 1.4f;
     }
 }

@@ -186,9 +186,9 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 4023359119612079893}
   m_AABB:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  m_DirtyAABB: 1
+    m_Center: {x: -0.002285689, y: 0.014608279, z: 1.7497617}
+    m_Extent: {x: 0.08771069, y: 0.09544478, z: 0.093924046}
+  m_DirtyAABB: 0
 --- !u!1 &337861310290760710
 GameObject:
   m_ObjectHideFlags: 0
@@ -1681,9 +1681,9 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 4023359119612079893}
   m_AABB:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  m_DirtyAABB: 1
+    m_Center: {x: 0, y: -0.07574773, z: 1.7101697}
+    m_Extent: {x: 0.0623406, y: 0.019186407, z: 0.015824676}
+  m_DirtyAABB: 0
 --- !u!1 &4409923079828612028
 GameObject:
   m_ObjectHideFlags: 0
@@ -2059,9 +2059,9 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 4023359119612079893}
   m_AABB:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  m_DirtyAABB: 1
+    m_Center: {x: 0, y: 0.035418876, z: 0.8560526}
+    m_Extent: {x: 0.929872, y: 0.22038502, z: 0.95778996}
+  m_DirtyAABB: 0
 --- !u!1 &5122136723474650947
 GameObject:
   m_ObjectHideFlags: 0
@@ -3432,6 +3432,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3390044546099459747}
   - component: {fileID: 6846969681761048372}
+  - component: {fileID: 5301167138640002817}
   m_Layer: 0
   m_Name: Napoleon3D
   m_TagString: Untagged
@@ -3489,6 +3490,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5301167138640002817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8106513289646298463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95cf8f6a9b6bcf14aabdece59db61048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Model3DInfo
+  height: 1.9499402
+  castShadows: 1
 --- !u!1 &8187138849508581707
 GameObject:
   m_ObjectHideFlags: 0
@@ -3832,9 +3847,9 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 4023359119612079893}
   m_AABB:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  m_DirtyAABB: 1
+    m_Center: {x: 0, y: -0.06593637, z: 1.6985731}
+    m_Extent: {x: 0.04874882, y: 0.015123129, z: 0.015385866}
+  m_DirtyAABB: 0
 --- !u!1 &8553620177944565871
 GameObject:
   m_ObjectHideFlags: 0

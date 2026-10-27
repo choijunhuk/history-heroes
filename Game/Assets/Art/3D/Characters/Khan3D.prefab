@@ -1105,9 +1105,9 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 1908603302263575567}
   m_AABB:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  m_DirtyAABB: 1
+    m_Center: {x: 0, y: -0.06593637, z: 1.6985731}
+    m_Extent: {x: 0.04874882, y: 0.015123129, z: 0.015385866}
+  m_DirtyAABB: 0
 --- !u!1 &1947450984035456799
 GameObject:
   m_ObjectHideFlags: 0
@@ -1452,9 +1452,9 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 1908603302263575567}
   m_AABB:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  m_DirtyAABB: 1
+    m_Center: {x: 0, y: -0.04393796, z: 1.6195877}
+    m_Extent: {x: 0.08075309, y: 0.05429194, z: 0.07057202}
+  m_DirtyAABB: 0
 --- !u!1 &3216768476854145467
 GameObject:
   m_ObjectHideFlags: 0
@@ -1925,9 +1925,9 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 1908603302263575567}
   m_AABB:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  m_DirtyAABB: 1
+    m_Center: {x: 0, y: 0.035418876, z: 0.8560526}
+    m_Extent: {x: 0.929872, y: 0.22038502, z: 0.95778996}
+  m_DirtyAABB: 0
 --- !u!1 &4087757561423487741
 GameObject:
   m_ObjectHideFlags: 0
@@ -3182,6 +3182,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4930525153319553097}
   - component: {fileID: 2744317466598674783}
+  - component: {fileID: 5190658052368292023}
   m_Layer: 0
   m_Name: Khan3D
   m_TagString: Untagged
@@ -3240,6 +3241,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5190658052368292023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6913236723767224575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95cf8f6a9b6bcf14aabdece59db61048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Model3DInfo
+  height: 1.9753709
+  castShadows: 1
 --- !u!1 &6921247437725278974
 GameObject:
   m_ObjectHideFlags: 0
@@ -3806,9 +3821,9 @@ SkinnedMeshRenderer:
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 1908603302263575567}
   m_AABB:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  m_DirtyAABB: 1
+    m_Center: {x: 0, y: -0.07574773, z: 1.7101697}
+    m_Extent: {x: 0.0623406, y: 0.019186407, z: 0.015824676}
+  m_DirtyAABB: 0
 --- !u!1 &7877398225178576394
 GameObject:
   m_ObjectHideFlags: 0

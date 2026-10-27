@@ -47,7 +47,7 @@ namespace HistoryHeroes.Survival
         private EnemyBase _boss;
         private bool _finished;
         private int _lastShownSecond = -1;
-        private Camera _camera;
+        private CameraFit _fit;
 
         public float Elapsed => _elapsed;
         public bool IsFinished => _finished;
@@ -58,7 +58,7 @@ namespace HistoryHeroes.Survival
         {
             GamePause.ResetAll();
             DamageLog.Reset();
-            _camera = Camera.main;
+            _fit = Camera.main != null ? Camera.main.GetComponentInParent<CameraFit>() : null;
 
             player.Teleport(playerStart != null ? (Vector2)playerStart.position : Vector2.zero);
             player.Health.Died += _ => Finish(victory: false);
@@ -158,11 +158,41 @@ namespace HistoryHeroes.Survival
             }
         }
 
+        /// <summary>땅에 보이는 범위 (월드). 원근이라 위(먼 쪽)가 넓다</summary>
+        private Rect WorldView()
+        {
+            if (_fit == null) return new Rect((Vector2)player.transform.position - new Vector2(6f, 9f), new Vector2(12f, 20f));
+            Rect v = _fit.GroundView;
+            Transform rig = _fit.transform.parent;
+            v.position += rig != null ? (Vector2)rig.position : Vector2.zero;
+            return v;
+        }
+
+        /// <summary>플레이어에서 보이는 범위의 가장 먼 모서리까지 + 여유 (너무 멀리 떨어진 적을 옮기는 기준)</summary>
         private float SpawnRadius()
         {
-            float halfH = _camera != null ? _camera.orthographicSize : 9f;
-            float halfW = halfH * (_camera != null ? _camera.aspect : 0.56f);
-            return Mathf.Sqrt(halfW * halfW + halfH * halfH) + data.spawnMargin;
+            Rect v = WorldView();
+            Vector2 me = player.transform.position;
+            float r = 0f;
+            r = Mathf.Max(r, (new Vector2(v.xMin, v.yMin) - me).magnitude);
+            r = Mathf.Max(r, (new Vector2(v.xMax, v.yMin) - me).magnitude);
+            r = Mathf.Max(r, (new Vector2(v.xMin, v.yMax) - me).magnitude);
+            r = Mathf.Max(r, (new Vector2(v.xMax, v.yMax) - me).magnitude);
+            return r + data.spawnMargin;
+        }
+
+        /// <summary>플레이어에서 dir 쪽으로 보이는 범위를 벗어나는 거리 + 여유 (화면 바로 밖에서 낸다)</summary>
+        private float SpawnDistance(Vector2 dir)
+        {
+            Rect v = WorldView();
+            Vector2 me = player.transform.position;
+            float t = float.MaxValue;
+            if (dir.x > 0.0001f) t = Mathf.Min(t, (v.xMax - me.x) / dir.x);
+            else if (dir.x < -0.0001f) t = Mathf.Min(t, (v.xMin - me.x) / dir.x);
+            if (dir.y > 0.0001f) t = Mathf.Min(t, (v.yMax - me.y) / dir.y);
+            else if (dir.y < -0.0001f) t = Mathf.Min(t, (v.yMin - me.y) / dir.y);
+            if (t == float.MaxValue || t < 0f) t = 0f;
+            return t + data.spawnMargin;
         }
 
         private EnemyBase PickEnemy()
@@ -190,12 +220,12 @@ namespace HistoryHeroes.Survival
         public Vector2 RingPosition()
         {
             Vector2 center = player.transform.position;
-            float radius = SpawnRadius();
             float limit = data.mapHalfSize - 1f;
             for (int attempt = 0; attempt < 12; attempt++)
             {
                 float angle = Random.value * Mathf.PI * 2f;
-                Vector2 p = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                var around = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                Vector2 p = center + around * SpawnDistance(around);
                 if (Mathf.Abs(p.x) <= limit && Mathf.Abs(p.y) <= limit && IsFree(p)) return p;
             }
 
@@ -203,12 +233,13 @@ namespace HistoryHeroes.Survival
             for (int attempt = 0; attempt < 8; attempt++)
             {
                 Vector2 dir = Quaternion.Euler(0f, 0f, Random.Range(-60f, 60f)) * inward;
+                float radius = SpawnDistance(dir);
                 Vector2 q = center + dir * radius;
                 q = new Vector2(Mathf.Clamp(q.x, -limit, limit), Mathf.Clamp(q.y, -limit, limit));
                 if (IsFree(q) && (q - center).sqrMagnitude > radius * radius * 0.5f) return q;
             }
 
-            return center + inward * radius;
+            return center + inward * SpawnDistance(inward);
         }
 
         private static readonly int ObstacleMask = 1 << 10 | 1 << 0; // 바위(Wall) + 연못(Default)

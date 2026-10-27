@@ -196,6 +196,7 @@ GameObject:
   - component: {fileID: 2270411347157822432}
   - component: {fileID: 4884364798423096279}
   - component: {fileID: 6096639190476470482}
+  - component: {fileID: 567119591290749271}
   - component: {fileID: 6819175174072159056}
   m_Layer: 9
   m_Name: Mid_Hunter
@@ -372,6 +373,26 @@ MonoBehaviour:
   target: {fileID: 7999240671847385271}
   duration: 0.08
   flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &567119591290749271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8662073679260544675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b28267fcbf9054244bbd55ad71d89540, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Visual3D
+  modelPrefab: {fileID: 5931940359744444419, guid: d52050c5a2a685e458024bf80bafc2c6, type: 3}
+  height: 1.5
+  runSpeed: 4.16
+  hideRenderers:
+  - {fileID: 7999240671847385271}
+  tintSource: {fileID: 7999240671847385271}
+  turnSharpness: 16
+  keepOnDeath: 0
 --- !u!114 &6819175174072159056
 MonoBehaviour:
   m_ObjectHideFlags: 0

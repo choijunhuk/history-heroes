@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2304828987212064889}
   - component: {fileID: 3602507882788119931}
   - component: {fileID: 7066096250427925122}
+  - component: {fileID: 1588544060880332144}
   - component: {fileID: 6894294411169155086}
   m_Layer: 9
   m_Name: Mid_Executor
@@ -189,6 +190,26 @@ MonoBehaviour:
   target: {fileID: 4485753350375756797}
   duration: 0.08
   flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &1588544060880332144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 19478847950665485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b28267fcbf9054244bbd55ad71d89540, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Visual3D
+  modelPrefab: {fileID: 8563477024563711951, guid: a4914542d60a21942bf24b7ebdcc0178, type: 3}
+  height: 1.55
+  runSpeed: 3.2
+  hideRenderers:
+  - {fileID: 4485753350375756797}
+  tintSource: {fileID: 4485753350375756797}
+  turnSharpness: 16
+  keepOnDeath: 0
 --- !u!114 &6894294411169155086
 MonoBehaviour:
   m_ObjectHideFlags: 0

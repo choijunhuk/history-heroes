@@ -638,6 +638,9 @@ namespace HistoryHeroes.Dungeon
             if (o.circle) go.AddComponent<CircleCollider2D>().radius = 0.5f;
             else go.AddComponent<BoxCollider2D>();
             if (o.kind == ObstacleKind.Breakable) go.AddComponent<Breakable>().Setup(o.hits, sr);
+            // 3D (Art3D-Plan 3번): 높은 장애물 = 돌덩이·돌기둥, 부서지는 = 나무 상자. 낮은 장애물(구덩이)은 바닥 그림 그대로
+            if (o.kind == ObstacleKind.High) Stage3D.Dress(sr, Stage3D.Kind.High, o.circle);
+            else if (o.kind == ObstacleKind.Breakable) Stage3D.Dress(sr, Stage3D.Kind.Crate, o.circle);
             return go;
         }
 

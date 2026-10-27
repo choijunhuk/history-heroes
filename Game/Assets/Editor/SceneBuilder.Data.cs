@@ -54,6 +54,8 @@ namespace HistoryHeroes.EditorTools
             d.Khan.attackSpeed = 1f;
             d.Khan.moveSpeed = 5f;
             d.Khan.range = 6f;
+            d.Khan.model3D = Art3DCharacters.HeroModel("khan");
+            d.Khan.modelHeight = 1.5f;
             d.Khan.firstShotDelay = 0f;
             d.Khan.firstShotBonus = 0.5f;
             d.Khan.projectileSpeed = 14f;
@@ -443,6 +445,8 @@ namespace HistoryHeroes.EditorTools
             h.range = range;
             h.critRate = 0.05f;
             h.critDamage = 1.5f;
+            h.model3D = Art3DCharacters.HeroModel(id); // 3D 모델 (없으면 임시 도형)
+            h.modelHeight = 1.5f;
             h.firstShotDelay = 0.2f;
             h.firstShotBonus = 0f;
             h.damageReduction = 0f;
@@ -477,6 +481,8 @@ namespace HistoryHeroes.EditorTools
             e.telegraphTime = telegraph;
             e.recoverTime = recover;
             e.color = color;
+            e.model3D = Art3DCharacters.EnemyModel(id, out float height); // 3D 모델 (없으면 임시 도형)
+            e.modelHeight = height;
             return e;
         }
 

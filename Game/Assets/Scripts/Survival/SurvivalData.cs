@@ -15,8 +15,8 @@ namespace HistoryHeroes.Survival
         public float duration = 600f;
         [Tooltip("맵 절반 크기 (80×80 → 40)")]
         public float mapHalfSize = 40f;
-        [Tooltip("카메라에 꼭 보이는 영역 (던전 10×18). 넓게 → 적이 작게 보이고 무리 사이 길이 보인다")]
-        public Vector2 cameraArea = new Vector2(13.5f, 24f);
+        [Tooltip("카메라에 꼭 보이는 땅 (던전 9.2×15.2, HUD 자리 빼고). 넓게 → 적이 작게 보이고 무리 사이 길이 보인다")]
+        public Vector2 cameraArea = new Vector2(12.5f, 20f);
         [Tooltip("동시에 살아 있는 적 상한 (GameDesign 8-5)")]
         public int maxAlive = 300;
 

@@ -156,6 +156,7 @@ GameObject:
   - component: {fileID: 8287421307876261224}
   - component: {fileID: 1030771253821810554}
   - component: {fileID: 1833802695602084718}
+  - component: {fileID: 8970765196716049976}
   - component: {fileID: 969386731622236859}
   m_Layer: 9
   m_Name: Enemy_Summoner
@@ -330,6 +331,26 @@ MonoBehaviour:
   target: {fileID: 8198268456046061434}
   duration: 0.08
   flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &8970765196716049976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3942542699520541233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b28267fcbf9054244bbd55ad71d89540, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Visual3D
+  modelPrefab: {fileID: 7033730495920572992, guid: c6af90b61afb159429624229c6270a76, type: 3}
+  height: 1.4
+  runSpeed: 3.36
+  hideRenderers:
+  - {fileID: 8198268456046061434}
+  tintSource: {fileID: 8198268456046061434}
+  turnSharpness: 16
+  keepOnDeath: 0
 --- !u!114 &969386731622236859
 MonoBehaviour:
   m_ObjectHideFlags: 0

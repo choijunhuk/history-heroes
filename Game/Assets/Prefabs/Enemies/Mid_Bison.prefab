@@ -247,6 +247,7 @@ GameObject:
   - component: {fileID: 7071896618363993377}
   - component: {fileID: 5986979614220229792}
   - component: {fileID: 6781079248730141553}
+  - component: {fileID: 113624151318836994}
   - component: {fileID: 5013067583048451430}
   m_Layer: 9
   m_Name: Mid_Bison
@@ -422,6 +423,26 @@ MonoBehaviour:
   target: {fileID: 887612511152852385}
   duration: 0.08
   flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &113624151318836994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7445193870741672728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b28267fcbf9054244bbd55ad71d89540, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Visual3D
+  modelPrefab: {fileID: 7693931026244644887, guid: 8c17226d39d80004e8fdd58c1bbc9998, type: 3}
+  height: 1.4
+  runSpeed: 3.5200002
+  hideRenderers:
+  - {fileID: 887612511152852385}
+  tintSource: {fileID: 887612511152852385}
+  turnSharpness: 16
+  keepOnDeath: 0
 --- !u!114 &5013067583048451430
 MonoBehaviour:
   m_ObjectHideFlags: 0

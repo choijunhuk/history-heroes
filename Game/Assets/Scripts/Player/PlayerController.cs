@@ -99,6 +99,7 @@ namespace HistoryHeroes.Player
             if (newHero == null) return;
             hero = newHero;
             if (bodyRenderer != null) bodyRenderer.color = hero.color;
+            ShowHeroModel();
             if (!_awake) return;
 
             // Awake 뒤에 바뀌면 능력치를 다시 만든다 (개발·테스트용)
@@ -125,11 +126,42 @@ namespace HistoryHeroes.Player
             _targets = new TargetSelector(enemyMask, wallMask);
             CreateProjectilePool();
             if (bodyRenderer != null) bodyRenderer.color = hero.color;
+            ShowHeroModel();
 
             Stop.Moved += () => _firstShotPending = true;
             Stop.Stopped += () => _momentumUntil = Time.time + MomentumSeconds;
             Health.PreventDeath = TryUndying;
             _awake = true;
+        }
+
+        // ---------------------------------------------------------------- 3D 그림 (Art3D-Plan 4번)
+
+        private Combat.Visual3D _visual;
+        private bool _visualLooked;
+
+        /// <summary>3D 모델 (없으면 임시 도형 그대로)</summary>
+        public Combat.Visual3D Visual
+        {
+            get
+            {
+                if (!_visualLooked)
+                {
+                    _visual = GetComponent<Combat.Visual3D>();
+                    _visualLooked = true;
+                }
+
+                return _visual;
+            }
+        }
+
+        private void ShowHeroModel()
+        {
+            if (Visual != null && hero != null && hero.model3D != null) Visual.SetModel(hero.model3D, hero.modelHeight);
+        }
+
+        private void PlayAttack(Vector2 aim)
+        {
+            if (Visual != null) Visual.Attack(aim);
         }
 
         private void CreateProjectilePool()
@@ -312,6 +344,7 @@ namespace HistoryHeroes.Player
 
             Vector2 origin = transform.position;
             Vector2 aim = ((Vector2)target.transform.position - origin).normalized;
+            PlayAttack(aim);
             float start = -spreadDegrees * (count - 1) * 0.5f;
             bool needsTarget = hero.knockback > 0f || _sig.ChainBounces > 0;
 
@@ -427,6 +460,7 @@ namespace HistoryHeroes.Player
         {
             float reach = Stats.Get(StatType.Range) + 0.4f;
             AttackFx.Arc(origin, aim, reach, arc, slashColor);
+            PlayAttack(aim);
 
             _overlap.Clear();
             Physics2D.OverlapCircle(origin, reach, _enemyFilter, _overlap);

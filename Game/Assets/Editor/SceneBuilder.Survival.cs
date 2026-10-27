@@ -1,3 +1,4 @@
+using HistoryHeroes.Common;
 using HistoryHeroes.Survival;
 using UnityEngine;
 
@@ -18,6 +19,7 @@ namespace HistoryHeroes.EditorTools
             var defaults = ScriptableObject.CreateInstance<SurvivalData>();
             UnityEditor.EditorUtility.CopySerialized(defaults, data);
             Object.DestroyImmediate(defaults);
+            data.name = "Survival_Main"; // 기본값을 통째로 복사하면 이름도 비워진다
             data.mapHalfSize = SurvivalHalf;
             data.charger = p.Charger;
             data.archer = p.Archer;
@@ -31,28 +33,15 @@ namespace HistoryHeroes.EditorTools
         /// <summary>서바이벌 맵을 survivalRoot 아래에 만든다. 플레이어 시작 자리를 돌려준다</summary>
         private static Transform BuildSurvivalMap(Transform survivalRoot)
         {
-            // 바닥: 8×8 칸 체크무늬 (카메라가 움직이는 게 보이게)
-            const float tile = 8f;
-            int count = Mathf.RoundToInt(SurvivalHalf * 2f / tile);
-            var floor = new GameObject("SurvivalFloor").transform;
-            floor.SetParent(survivalRoot, false);
-            Color a = new Color(0.17f, 0.23f, 0.17f);
-            Color b = new Color(0.2f, 0.26f, 0.19f);
-            for (int x = 0; x < count; x++)
-            {
-                for (int y = 0; y < count; y++)
-                {
-                    Vector2 at = new Vector2(-SurvivalHalf + tile * (x + 0.5f), -SurvivalHalf + tile * (y + 0.5f));
-                    Block($"Tile {x},{y}", floor, at, new Vector2(tile, tile), (x + y) % 2 == 0 ? a : b, -10, collider: false);
-                }
-            }
+            // 바닥: 풀밭 한 장 (3D, Art3D-Plan 3번). 무늬가 카메라가 움직이는 걸 보여 준다 (옛 8×8 체크무늬 대신)
+            float len = SurvivalHalf * 2f + 2f;
+            DressFloor(Block("SurvivalFloor", survivalRoot, Vector2.zero, new Vector2(len, len), new Color(0.17f, 0.23f, 0.17f), -10, collider: false), _stage.Grass);
 
             Color wall = new Color(0.36f, 0.31f, 0.26f);
-            float len = SurvivalHalf * 2f + 2f;
-            Block("Wall Left", survivalRoot, new Vector2(-SurvivalHalf - 0.5f, 0f), new Vector2(1f, len), wall, -5, collider: true);
-            Block("Wall Right", survivalRoot, new Vector2(SurvivalHalf + 0.5f, 0f), new Vector2(1f, len), wall, -5, collider: true);
-            Block("Wall Bottom", survivalRoot, new Vector2(0f, -SurvivalHalf - 0.5f), new Vector2(len, 1f), wall, -5, collider: true);
-            Block("Wall Top", survivalRoot, new Vector2(0f, SurvivalHalf + 0.5f), new Vector2(len, 1f), wall, -5, collider: true);
+            DressWall(Block("Wall Left", survivalRoot, new Vector2(-SurvivalHalf - 0.5f, 0f), new Vector2(1f, len), wall, -5, collider: true), _stage.LongSide, _stage.LongEnd);
+            DressWall(Block("Wall Right", survivalRoot, new Vector2(SurvivalHalf + 0.5f, 0f), new Vector2(1f, len), wall, -5, collider: true), _stage.LongSide, _stage.LongEnd);
+            DressWall(Block("Wall Bottom", survivalRoot, new Vector2(0f, -SurvivalHalf - 0.5f), new Vector2(len, 1f), wall, -5, collider: true), _stage.LongSide, _stage.LongEnd);
+            DressWall(Block("Wall Top", survivalRoot, new Vector2(0f, SurvivalHalf + 0.5f), new Vector2(len, 1f), wall, -5, collider: true), _stage.LongSide, _stage.LongEnd);
 
             var random = new System.Random(5);
             float Range(float min, float max) => min + (float)random.NextDouble() * (max - min);
@@ -69,7 +58,9 @@ namespace HistoryHeroes.EditorTools
                 {
                     float size = Range(1.1f, 2.2f);
                     Vector2 offset = new Vector2(Range(-1.2f, 1.2f), Range(-1.2f, 1.2f));
-                    Obstacle($"Rock {i}-{j}", rocks, center + offset, size, rock, -6, WallLayer);
+                    SpriteRenderer stone = Obstacle($"Rock {i}-{j}", rocks, center + offset, size, rock, -6, WallLayer);
+                    Stage3D.Add(stone.transform, Stage3D.Shape.Rock, size * 0.55f, _stage.Rock, castShadows: true); // 3D 바위 (판정은 원 그대로)
+                    stone.enabled = false;
                 }
             }
 
@@ -102,12 +93,13 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>동그란 장애물 (원 콜라이더 → 적이 옆으로 미끄러져 지나간다)</summary>
-        private static void Obstacle(string name, Transform parent, Vector2 position, float diameter, Color color, int order, int layer)
+        private static SpriteRenderer Obstacle(string name, Transform parent, Vector2 position, float diameter, Color color, int order, int layer)
         {
             SpriteRenderer sr = Visual(parent, name, _circle, color, Vector2.one * diameter, order);
             sr.transform.position = position;
             sr.gameObject.layer = layer;
             sr.gameObject.AddComponent<CircleCollider2D>().radius = 0.5f; // 스프라이트 지름 1 × 스케일
+            return sr;
         }
     }
 }

@@ -22,6 +22,7 @@ namespace HistoryHeroes.Dungeon
             _max = Mathf.Max(1, hits);
             _hits = _max;
             _color = renderer != null ? renderer.color : Color.white;
+            Common.Stage3D.ShowWear(transform, 1f);
             gameObject.SetActive(true);
         }
 
@@ -35,6 +36,8 @@ namespace HistoryHeroes.Dungeon
                 c.a = Mathf.Lerp(0.35f, 1f, (float)_hits / _max);
                 sprite.color = c;
             }
+
+            Common.Stage3D.ShowWear(transform, (float)_hits / _max); // 3D 상자는 어두워진다
 
             if (_hits > 0) return;
             AttackFx.Burst(transform.position, Mathf.Max(transform.localScale.x, transform.localScale.y) * 0.6f, new Color(0.7f, 0.55f, 0.35f, 0.7f), 0.2f);

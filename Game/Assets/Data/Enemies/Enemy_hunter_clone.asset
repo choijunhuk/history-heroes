@@ -22,3 +22,5 @@ MonoBehaviour:
   recoverTime: 1
   color: {r: 0.3, g: 0.25, b: 0.4, a: 1}
   scale: 1
+  model3D: {fileID: 5931940359744444419, guid: d52050c5a2a685e458024bf80bafc2c6, type: 3}
+  modelHeight: 1.5

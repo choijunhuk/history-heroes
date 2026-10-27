@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1808743609784735412}
   - component: {fileID: 7898096298157002602}
   - component: {fileID: 7756173128922993195}
+  - component: {fileID: 8824506952175121397}
   - component: {fileID: 6137346808069602103}
   m_Layer: 9
   m_Name: Enemy_SplitterSmall
@@ -188,6 +189,26 @@ MonoBehaviour:
   target: {fileID: 3259225219759317886}
   duration: 0.08
   flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &8824506952175121397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4373576497361622517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b28267fcbf9054244bbd55ad71d89540, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Visual3D
+  modelPrefab: {fileID: 5883919349424565969, guid: f77ea60389e92ca4783b43aa1708c76d, type: 3}
+  height: 1.35
+  runSpeed: 4.6400003
+  hideRenderers:
+  - {fileID: 3259225219759317886}
+  tintSource: {fileID: 3259225219759317886}
+  turnSharpness: 16
+  keepOnDeath: 0
 --- !u!114 &6137346808069602103
 MonoBehaviour:
   m_ObjectHideFlags: 0

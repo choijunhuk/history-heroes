@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 72180cf430d45c74f8b1a240d8dd9900, type: 3}
-  m_Name: 
+  m_Name: Survival_Main
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Survival.SurvivalData
   duration: 600
   mapHalfSize: 40
-  cameraArea: {x: 13.5, y: 24}
+  cameraArea: {x: 12.5, y: 20}
   maxAlive: 300
   charger: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
   archer: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}

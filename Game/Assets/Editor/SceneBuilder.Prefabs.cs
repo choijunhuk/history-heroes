@@ -162,6 +162,17 @@ namespace HistoryHeroes.EditorTools
             body.freezeRotation = true;
             go.AddComponent<Health>();
             using (var flash = new Props(go.AddComponent<HitFlash>())) flash.Ref("target", sr);
+
+            // 3D 모델 (Art3D-Plan 4·5번): 임시 도형 몸은 숨긴 채 상태 이상 색만 읽는다. 모델이 아직 없으면 도형 그대로
+            if (data.model3D != null)
+            {
+                using (var v = new Props(go.AddComponent<Visual3D>()))
+                {
+                    v.Ref("modelPrefab", data.model3D).Float("height", data.modelHeight).Float("runSpeed", Mathf.Max(1.5f, data.moveSpeed * 1.6f))
+                        .Refs("hideRenderers", new Object[] { sr }).Ref("tintSource", sr);
+                }
+            }
+
             T enemy = go.AddComponent<T>();
 
             // 공격 예고선 (돌진 방향, 조준선)

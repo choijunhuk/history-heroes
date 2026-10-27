@@ -91,10 +91,20 @@ namespace HistoryHeroes.EditorTools
                 }
 
                 string path = $"{Animations}/{name}.anim";
-                AssetDatabase.DeleteAsset(path);
                 AnimationClip copy = Object.Instantiate(clip);
                 copy.name = name;
-                AssetDatabase.CreateAsset(copy, path);
+                var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+                if (existing != null)
+                {
+                    EditorUtility.CopySerialized(copy, existing); // 그 자리에서 (GUID 그대로 — 컨트롤러 연결 유지, Codex 3D 리뷰 10번)
+                    existing.name = name;
+                    EditorUtility.SetDirty(existing);
+                    Object.DestroyImmediate(copy);
+                }
+                else
+                {
+                    AssetDatabase.CreateAsset(copy, path);
+                }
                 bytes += new FileInfo(path).Length;
             }
 
