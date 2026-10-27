@@ -38,6 +38,22 @@ namespace HistoryHeroes.EditorTools
             ["Feather"] = (Hex(0x7A5639), false), ["Beak"] = (Hex(0xEDBA47), false), ["Eye"] = (Hex(0x1C1917), false),
             ["Horse"] = (Hex(0x944530), false), ["Horse_Gray"] = (Hex(0xC9C9CC), false), ["Horse_Dapple"] = (Hex(0xB3B3B8), false),
             ["Mane_White"] = (Hex(0xF0F0ED), false), ["Gray"] = (Hex(0xABB0B5), false),
+            // 무대·스킬 소품 (블렌더 Fx·Deco·Floor README, 그래픽 평가 2·4번)
+            ["Cloth_Red"] = (Hex(0x992727), false), ["Ice"] = (Hex(0xB3E7FF), false), ["Rock_Hot"] = (Hex(0x3F3530), false), ["Lava"] = (Hex(0xFF9530), false),
+            ["Stone"] = (Hex(0xA29E97), false), ["Stone_Dark"] = (Hex(0x6C6965), false), ["Marble"] = (Hex(0xDDDAD1), false), ["Brick"] = (Hex(0xA25D45), false),
+            ["Iron"] = (Hex(0x59595D), true), ["Wood_Dark"] = (Hex(0x553824), false), ["Crystal_Shadow"] = (Hex(0x653090), false), ["Rust"] = (Hex(0x955530), false),
+            ["Leaf"] = (Hex(0x4B8638), false), ["Leaf_Dark"] = (Hex(0x305D2C), false), ["Grass"] = (Hex(0x59993F), false), ["Petal"] = (Hex(0xF9DA59), false),
+            ["Cloth_Dark"] = (Hex(0x551D1D), false), ["Cloth_Gold"] = (Hex(0xC4A24B), false), ["Water"] = (Hex(0x3F6173), false), ["Wet"] = (Hex(0x45423F), false),
+            ["Bone"] = (Hex(0xCEC5AD), false),
+        };
+
+        /// <summary>스스로 빛나는 역할 → 빛 색 (화면 후처리의 빛 번짐이 잡는다: 1 넘게)</summary>
+        private static readonly Dictionary<string, Color> Glows = new Dictionary<string, Color>
+        {
+            ["Copper"] = new Color(0.35f, 0.75f, 1f) * 1.6f, // 테슬라 코일 = 푸른 전기 빛 (Codex 화면 점검 5번)
+            ["Ice"] = new Color(0.45f, 0.85f, 1f) * 1.3f,
+            ["Lava"] = new Color(1f, 0.5f, 0.12f) * 3f,
+            ["Crystal_Shadow"] = new Color(0.45f, 0.18f, 0.85f) * 0.9f,
         };
 
         private static Color Hex(int rgb) => new Color(((rgb >> 16) & 255) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f);
@@ -72,11 +88,11 @@ namespace HistoryHeroes.EditorTools
 
             mat.SetColor("_BaseColor", r.color);
             mat.SetFloat("_Metallic", r.metal ? 0.85f : 0f);
-            mat.SetFloat("_Smoothness", r.metal ? 0.6f : 0.15f);
-            if (role == "Copper")
+            mat.SetFloat("_Smoothness", r.metal ? 0.6f : role == "Water" ? 0.9f : role == "Ice" ? 0.7f : 0.15f);
+            if (Glows.TryGetValue(role, out Color glow))
             {
-                // 테슬라 코일만 구리를 쓴다 → 푸른 전기 빛 (멀리서도 테슬라로 보이게 — Codex 화면 점검 5번)
-                mat.SetColor("_EmissionColor", new Color(0.35f, 0.75f, 1f) * 1.6f);
+                // 구리 = 테슬라 코일만 쓴다 → 푸른 전기 빛 (멀리서도 테슬라로 보이게). 용암·얼음·그림자 수정도 빛난다
+                mat.SetColor("_EmissionColor", glow);
                 mat.EnableKeyword("_EMISSION");
                 mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
             }

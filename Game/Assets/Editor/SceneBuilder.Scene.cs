@@ -80,6 +80,8 @@ namespace HistoryHeroes.EditorTools
             doorObject.GetComponent<BoxCollider2D>().isTrigger = true;
             var door = doorObject.AddComponent<Door>();
             using (var props = new Props(door)) props.Ref("sprite", doorObject.GetComponent<SpriteRenderer>());
+            DressDoor(dungeonRoot, doorObject, door); // 그래픽 평가 4번: 돌 아치 문
+            WireStageDecor(BuildDecoGroups(arena)); // 구간별 벽 장식 · 바닥 장식
 
             var playerStart = new GameObject("PlayerStart").transform;
             playerStart.position = new Vector2(0f, -ArenaHalfHeight + 1.5f);

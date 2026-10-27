@@ -86,7 +86,10 @@ namespace HistoryHeroes.EditorTools
             {
                 props.Ref("stone", stage.Stone).Ref("crate", stage.Crate).Ref("rock", stage.Rock)
                     .Ref("cube", Builtin(Stage3D.Shape.Box)).Ref("cylinder", Builtin(Stage3D.Shape.Pillar))
-                    .Ref("sphere", Builtin(Stage3D.Shape.Rock)).Ref("quad", Builtin(Stage3D.Shape.Floor));
+                    .Ref("sphere", Builtin(Stage3D.Shape.Rock)).Ref("quad", Builtin(Stage3D.Shape.Floor))
+                    // 블렌더 소품 (그래픽 평가 4번): 돌덩이 · 돌기둥 · 상자 3종
+                    .Ref("block", Art3DStage.Prefab("Block_Stone")).Ref("pillar", Art3DStage.Prefab("Pillar_Stone"))
+                    .Refs("crates", new[] { Art3DStage.Prefab("Crate_A"), Art3DStage.Prefab("Crate_B"), Art3DStage.Prefab("Crate_C") });
             }
 
             // 화면 후처리 (그래픽 평가 1번): 톤 매핑 · 약한 빛 번짐(1 넘는 밝은 색만) · 색 보정 · 가장자리 어둡게
@@ -96,11 +99,13 @@ namespace HistoryHeroes.EditorTools
             volume.sharedProfile = BattleVolumeProfile();
 
             var look = new GameObject("StageLook").AddComponent<StageLook>();
+            _look = look;
             using (var props = new Props(look))
             {
+                // 블렌더 돌 소품(돌덩이·돌기둥·아치·석상 받침)도 벽처럼 구간 색을 입는다
                 props.Ref("sun", sun).Ref("volume", volume).Ref("viewCamera", camera)
                     .Refs("floorMaterials", new[] { stage.RoomFloor, stage.BossFloor, stage.BossOuter })
-                    .Refs("wallMaterials", new[] { stage.WallSide, stage.WallEnd, stage.Rim, stage.Stone });
+                    .Refs("wallMaterials", new[] { stage.WallSide, stage.WallEnd, stage.Rim, stage.Stone, Art3DProps.RoleMaterial("Stone"), Art3DProps.RoleMaterial("Stone_Dark") });
                 Looks(props.Property("looks"));
             }
         }
@@ -255,8 +260,26 @@ namespace HistoryHeroes.EditorTools
         {
             Vector3 s = block.transform.localScale;
             float height = block.name == "Wall Bottom" ? NearWallHeight : WallHeight;
-            Stage3D.Add(block.transform, Stage3D.Shape.Box, height, s.y > s.x ? side : end, castShadows: true);
             block.GetComponent<SpriteRenderer>().enabled = false;
+            // 던전 방 위 벽만 (서바이벌 울타리에는 문이 없다)
+            if (block.name == "Wall Top" && block.transform.parent != null && block.transform.parent.name == "Arena" && Art3DStage.Prefab("Door_Gate_Parts") != null)
+            {
+                // 가운데에 아치 문이 들어갈 틈 (판정 벽은 그대로 한 덩어리)
+                const float gap = 2.3f;
+                float half = (s.x - gap) * 0.5f;
+                foreach (float sign in new[] { -1f, 1f })
+                {
+                    var piece = new GameObject(sign < 0f ? "Left" : "Right");
+                    piece.transform.SetParent(block.transform, false);
+                    piece.transform.localPosition = new Vector3(sign * (gap * 0.5f + half * 0.5f) / s.x, 0f, 0f);
+                    piece.transform.localScale = new Vector3(half / s.x, 1f, 1f);
+                    Stage3D.Add(piece.transform, Stage3D.Shape.Box, height, end, castShadows: true);
+                }
+
+                return;
+            }
+
+            Stage3D.Add(block.transform, Stage3D.Shape.Box, height, s.y > s.x ? side : end, castShadows: true);
         }
 
         /// <summary>보스맵: 둥근 돌바닥 + 둘레 낮은 돌담 (판정은 EdgeCollider2D 원 그대로)</summary>

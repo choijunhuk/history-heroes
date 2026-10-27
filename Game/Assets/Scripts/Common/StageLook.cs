@@ -30,12 +30,25 @@ namespace HistoryHeroes.Common
             [Tooltip("방 밖 빈 곳 (카메라 배경)")] public Color background;
         }
 
+        /// <summary>방마다 흩뿌리는 바닥 장식 (그래픽 평가 4번): flat = 방 안 아무 데나 (아주 납작하게), edge = 벽 가장자리</summary>
+        [Serializable]
+        public struct FloorSet
+        {
+            public string key;
+            public GameObject[] flat;
+            public GameObject[] edge;
+        }
+
         [SerializeField] private Light sun;
         [SerializeField] private Volume volume;
         [SerializeField] private Camera viewCamera;
         [SerializeField] private Material[] floorMaterials;
         [SerializeField] private Material[] wallMaterials;
         [SerializeField] private Look[] looks;
+        [Header("구간 장식 (이름 = 모습 이름, 그 구간에서만 켠다)")]
+        [SerializeField] private GameObject[] decoGroups;
+        [SerializeField] private FloorSet[] floorSets;
+        [SerializeField] private Vector2 roomHalf = new Vector2(4f, 7f);
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static StageLook _instance;
@@ -75,10 +88,93 @@ namespace HistoryHeroes.Common
         public static Material Resolve(Material source) =>
             _instance != null && source != null && _instance._copies.TryGetValue(source, out Material copy) ? copy : source;
 
+        /// <summary>게임 중 새로 놓은 모델의 재질을 구간 색 사본으로 바꿔 끼운다 (돌덩이·돌기둥이 벽과 같은 색을 입게)</summary>
+        public static void Retint(GameObject go)
+        {
+            if (_instance == null || go == null || _instance._copies.Count == 0) return;
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                Material[] mats = r.sharedMaterials;
+                bool changed = false;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null || !_instance._copies.TryGetValue(mats[i], out Material copy)) continue;
+                    mats[i] = copy;
+                    changed = true;
+                }
+
+                if (changed) r.sharedMaterials = mats;
+            }
+        }
+
+        /// <summary>
+        /// 방마다 바닥 장식을 흩뿌린다 (금 간 바닥 · 깔개 · 쇠창살 · 물웅덩이 · 뼈 · 잡초). 판정 없음, 보기만.
+        /// 납작한 것은 예고 원·함정 그림보다 아래에 깔리게 아주 얇게 누른다. 같은 방(같은 seed)은 늘 같은 모습
+        /// </summary>
+        public static void Scatter(Transform parent, int seed, List<GameObject> into)
+        {
+            if (_instance == null) return;
+            _instance.EnsureStarted(); // 첫 방이 StageLook.Start보다 먼저 만들어질 수 있다
+            _instance.ScatterFloor(parent, seed, into);
+        }
+
+        private void ScatterFloor(Transform parent, int seed, List<GameObject> into)
+        {
+            if (floorSets == null) return;
+            int index = Array.FindIndex(floorSets, f => f.key == _current);
+            if (index < 0) return;
+            FloorSet set = floorSets[index];
+            var rng = new System.Random(seed);
+            float Range(float a, float b) => a + (float)rng.NextDouble() * (b - a);
+
+            int flat = set.flat != null && set.flat.Length > 0 ? 2 + rng.Next(3) : 0;
+            for (int i = 0; i < flat; i++)
+            {
+                GameObject prefab = set.flat[rng.Next(set.flat.Length)];
+                if (prefab == null) continue;
+                var pos = new Vector3(Range(-roomHalf.x + 0.9f, roomHalf.x - 0.9f), Range(-roomHalf.y + 1.5f, roomHalf.y - 1.8f), 0.019f); // 바닥(+0.02) 바로 위
+                float size = Range(0.8f, 1.25f);
+                into.Add(Place(prefab, parent, pos, Range(0f, 360f), new Vector3(size, size, 0.35f)));
+            }
+
+            int edge = set.edge != null && set.edge.Length > 0 ? 2 + rng.Next(3) : 0;
+            for (int i = 0; i < edge; i++)
+            {
+                GameObject prefab = set.edge[rng.Next(set.edge.Length)];
+                if (prefab == null) continue;
+                // 벽 쪽(등)이 벽을 보게: 위 벽 0°, 왼쪽 90°, 오른쪽 -90°, 아래 180°
+                int side = rng.Next(4);
+                Vector3 pos;
+                float turn;
+                switch (side)
+                {
+                    case 0: pos = new Vector3(Range(-roomHalf.x + 0.6f, roomHalf.x - 0.6f), roomHalf.y - 0.3f, 0f); turn = 0f; break;
+                    case 1: pos = new Vector3(-roomHalf.x + 0.3f, Range(-roomHalf.y + 1f, roomHalf.y - 1f), 0f); turn = 90f; break;
+                    case 2: pos = new Vector3(roomHalf.x - 0.3f, Range(-roomHalf.y + 1f, roomHalf.y - 1f), 0f); turn = -90f; break;
+                    default: pos = new Vector3(Range(-roomHalf.x + 0.6f, roomHalf.x - 0.6f), -roomHalf.y + 0.3f, 0f); turn = 180f; break;
+                }
+
+                into.Add(Place(prefab, parent, pos, turn + Range(-20f, 20f), Vector3.one * Range(0.85f, 1.15f)));
+            }
+        }
+
+        private static GameObject Place(GameObject prefab, Transform parent, Vector3 position, float turn, Vector3 scale)
+        {
+            GameObject go = Instantiate(prefab, parent, false);
+            go.transform.position = position;
+            go.transform.rotation = Quaternion.Euler(0f, 0f, turn);
+            go.transform.localScale = scale;
+            Retint(go);
+            return go;
+        }
+
         private void Awake() => _instance = this;
 
-        private void Start()
+        private void Start() => EnsureStarted();
+
+        private void EnsureStarted()
         {
+            if (_started) return;
             _started = true;
             ApplyPost();
             Apply(_pending ?? KeyFor(GameSession.Mode, GameSession.Chapter));
@@ -113,6 +209,13 @@ namespace HistoryHeroes.Common
 
             RenderSettings.ambientLight = look.ambient;
             if (viewCamera != null) viewCamera.backgroundColor = look.background;
+            if (decoGroups != null)
+            {
+                foreach (GameObject group in decoGroups)
+                {
+                    if (group != null) group.SetActive(group.name == key); // 이 구간 장식만
+                }
+            }
 
             bool created = Tint(floorMaterials, look.floor) | Tint(wallMaterials, look.wall);
             if (created) SwapRenderers();
@@ -151,9 +254,19 @@ namespace HistoryHeroes.Common
 
         private void SwapRenderers()
         {
+            // 재질이 여러 개인 블렌더 소품도 있어서 칸마다 본다
             foreach (MeshRenderer r in FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                if (r.sharedMaterial != null && _copies.TryGetValue(r.sharedMaterial, out Material copy)) r.sharedMaterial = copy;
+                Material[] mats = r.sharedMaterials;
+                bool changed = false;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null || !_copies.TryGetValue(mats[i], out Material copy)) continue;
+                    mats[i] = copy;
+                    changed = true;
+                }
+
+                if (changed) r.sharedMaterials = mats;
             }
         }
     }

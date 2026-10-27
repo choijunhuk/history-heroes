@@ -17,6 +17,10 @@ namespace HistoryHeroes.Common
         [SerializeField] private Material stone;
         [SerializeField] private Material crate;
         [SerializeField] private Material rock;
+        [Header("블렌더 소품 (그래픽 평가 4번: 맵이 단조롭다). 없으면 기본 상자·원기둥")]
+        [SerializeField] private GameObject block;
+        [SerializeField] private GameObject pillar;
+        [SerializeField] private GameObject[] crates;
         [Header("기본 메시 (빌더가 넣는다)")]
         [SerializeField] private Mesh cube;
         [SerializeField] private Mesh cylinder;
@@ -53,12 +57,44 @@ namespace HistoryHeroes.Common
         public static void Dress(SpriteRenderer sprite, Kind kind, bool circle)
         {
             if (_instance == null || sprite == null) return;
-            Material mat = StageLook.Resolve(kind == Kind.Crate ? _instance.crate : kind == Kind.Rock ? _instance.rock : _instance.stone); // 구간 색을 입힌 사본
             Vector3 s = sprite.transform.lossyScale;
             float size = Mathf.Max(s.x, s.y);
             float height = kind == Kind.Crate ? Mathf.Min(1.1f, size) : kind == Kind.Rock ? size * 0.55f : circle ? 1.8f : 1.5f;
+
+            // 블렌더 모델: 돌덩이 · 돌기둥 · 상자 3종 (자리마다 다른 상자, 정사각이면 90°씩 돌려 똑같아 보이지 않게)
+            Vector2 p = sprite.transform.position;
+            int hash = Mathf.Abs(Mathf.RoundToInt(p.x * 7f) * 31 + Mathf.RoundToInt(p.y * 13f));
+            GameObject model = kind == Kind.Crate ? Pick(_instance.crates, hash) : kind == Kind.High ? (circle ? _instance.pillar : _instance.block) : null;
+            if (model != null)
+            {
+                float native = kind == Kind.Crate ? 1f : circle ? 1.8f : 1.49f;
+                bool square = Mathf.Abs(s.x - s.y) < 0.01f;
+                AddModel(sprite.transform, model, height / native, square ? (hash % 4) * 90f : (hash % 2) * 180f);
+                sprite.enabled = false;
+                return;
+            }
+
+            Material mat = StageLook.Resolve(kind == Kind.Crate ? _instance.crate : kind == Kind.Rock ? _instance.rock : _instance.stone); // 구간 색을 입힌 사본
             Add(sprite.transform, kind == Kind.Rock ? Shape.Rock : circle ? Shape.Pillar : Shape.Box, height, mat, castShadows: true);
             sprite.enabled = false;
+        }
+
+        private static GameObject Pick(GameObject[] list, int hash) => list == null || list.Length == 0 ? null : list[hash % list.Length];
+
+        /// <summary>
+        /// owner(크기 = x·y 배율) 밑에 1×1 바닥 크기 모델을 놓는다. heightScale = 높이 배율, turn = 위에서 본 돌림(도).
+        /// 모델 프리팹은 이미 게임 방향(XY 바닥, -Z 위)으로 세워져 있다 (Art3DStage)
+        /// </summary>
+        public static GameObject AddModel(Transform owner, GameObject prefab, float heightScale, float turn = 0f)
+        {
+            float ownerZ = Mathf.Max(0.0001f, Mathf.Abs(owner.lossyScale.z));
+            GameObject go = Instantiate(prefab, owner, false);
+            go.name = ShapeName;
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localRotation = Quaternion.Euler(0f, 0f, turn);
+            go.transform.localScale = new Vector3(1f, 1f, heightScale / ownerZ);
+            StageLook.Retint(go);
+            return go;
         }
 
         public enum Shape
@@ -136,18 +172,27 @@ namespace HistoryHeroes.Common
         public static void ShowWear(Transform owner, float left)
         {
             Transform shape = owner != null ? owner.Find(ShapeName) : null;
-            if (shape == null || !shape.TryGetComponent(out MeshRenderer r)) return;
-            if (left >= 0.999f)
+            if (shape == null) return;
+            // 기본 상자는 렌더러 하나, 블렌더 상자는 재질이 여러 개 → 렌더러마다·재질마다 어둡게
+            foreach (MeshRenderer r in shape.GetComponentsInChildren<MeshRenderer>())
             {
-                r.SetPropertyBlock(null);
-                return;
-            }
+                Material[] mats = r.sharedMaterials;
+                if (left >= 0.999f)
+                {
+                    r.SetPropertyBlock(null);
+                    for (int i = 0; i < mats.Length; i++) r.SetPropertyBlock(null, i);
+                    continue;
+                }
 
-            _block ??= new MaterialPropertyBlock();
-            Color baseColor = r.sharedMaterial != null && r.sharedMaterial.HasProperty(BaseColorId) ? r.sharedMaterial.GetColor(BaseColorId) : Color.white;
-            _block.Clear();
-            _block.SetColor(BaseColorId, baseColor * Mathf.Lerp(0.45f, 1f, left));
-            r.SetPropertyBlock(_block);
+                _block ??= new MaterialPropertyBlock();
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    Color baseColor = mats[i] != null && mats[i].HasProperty(BaseColorId) ? mats[i].GetColor(BaseColorId) : Color.white;
+                    _block.Clear();
+                    _block.SetColor(BaseColorId, baseColor * Mathf.Lerp(0.45f, 1f, left));
+                    r.SetPropertyBlock(_block, i);
+                }
+            }
         }
     }
 }

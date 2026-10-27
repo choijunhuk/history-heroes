@@ -602,6 +602,7 @@ namespace HistoryHeroes.Dungeon
             if (layout == null || layoutRoot == null) return;
 
             foreach (ObstacleDef o in layout.obstacles) _layoutObjects.Add(Obstacle(o));
+            StageLook.Scatter(layoutRoot, _room * 7919 + GameSession.Chapter * 104729 + layout.obstacles.Count, _layoutObjects); // 방마다 바닥 장식 (맵이 단조롭다)
 
             TrapKind trap = _chapter != null ? _chapter.trap : TrapKind.None;
             if (trap == TrapKind.None || layout.traps.Count == 0) return;

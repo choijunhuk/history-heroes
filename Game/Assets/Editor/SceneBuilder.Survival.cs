@@ -74,6 +74,8 @@ namespace HistoryHeroes.EditorTools
                 Obstacle($"Pond {i}", ponds, center, Range(4f, 6f), water, -8, 0);
             }
 
+            DressSurvivalField(survivalRoot); // 그래픽 평가 4번: 풀포기 · 꽃 · 덤불 · 울타리 밖 숲
+
             var start = new GameObject("SurvivalPlayerStart").transform;
             start.SetParent(survivalRoot, false);
             start.position = Vector2.zero;
