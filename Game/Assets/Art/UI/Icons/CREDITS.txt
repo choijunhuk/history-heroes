@@ -86,3 +86,5 @@ door | exit-door | delapouite | https://game-icons.net/1x1/delapouite/exit-door.
 Icons from game-icons.net, CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
 yi_turtle | turtle-shell | lorc | https://game-icons.net/1x1/lorc/turtle-shell.html
 yi_hakikjin | galleon | lorc | https://game-icons.net/1x1/lorc/galleon.html
+ysg_pyeonjeon | striking-arrows | lorc | https://game-icons.net/1x1/lorc/striking-arrows.html
+ysg_shingung | high-shot | lorc | https://game-icons.net/1x1/lorc/high-shot.html

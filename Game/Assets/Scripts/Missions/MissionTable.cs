@@ -126,7 +126,7 @@ namespace HistoryHeroes.Missions
         public List<ChestDef> weeklyChests = new List<ChestDef>();
         public List<AchievementDef> achievements = new List<AchievementDef>();
         [Tooltip("오늘의 영웅 순서")]
-        public List<string> heroOrder = new List<string> { "khan", "guan", "napoleon", "tesla", "yisunsin" };
+        public List<string> heroOrder = new List<string> { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye" };
 
         public MissionDef FindDaily(string id) => dailyPool.Find(m => m.id == id) ?? dailyFixed.Find(m => m.id == id);
         public MissionDef FindWeekly(string id) => weekly.Find(m => m.id == id) ?? weeklyFallbacks.Find(m => m.id == id);

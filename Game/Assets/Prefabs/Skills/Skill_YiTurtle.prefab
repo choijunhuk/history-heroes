@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e9d8d7533bd09f45b782ae0c1b85785, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.TurtleShipBehaviour
-  shipModel: {fileID: 0}
+  shipModel: {fileID: 2071237439802822423, guid: c2f8fc75a76d7684e88070346e323557, type: 3}
   speed: 11
   distance: 7.5
   hitRadius: 0.8

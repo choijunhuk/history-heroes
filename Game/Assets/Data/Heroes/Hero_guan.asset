@@ -48,6 +48,10 @@ MonoBehaviour:
   stopGuardStore: 0.5
   stopGuardCap: 2
   stopGuardDecay: 2
+  chargeShot: 0
+  chargeTimes: {x: 0.4, y: 0.9, z: 1.5}
+  chargeMidMultiplier: 1.4
+  chargeFullMultiplier: 2.5
   star3FirstShotBonus: -1
   star5FirstShotBonus: -1
   star5FirstShotPierce: 0
@@ -59,6 +63,8 @@ MonoBehaviour:
   star5NoFalloff: 0
   star3StopGuard: -1
   star5StopGuardCap: -1
+  star3ChargeFull: -1
+  star5ChargeFullTime: -1
   exclusiveActive: {fileID: 11400000, guid: 4a27ffbd0b3686f4bb0d6d41fad541d0, type: 2}
   unlockAfterBossChapter: 1
   unlockGems: 1500

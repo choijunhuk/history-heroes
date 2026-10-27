@@ -29,6 +29,7 @@ namespace HistoryHeroes.EditorTools
         private static readonly Dictionary<string, float> TurnY = new Dictionary<string, float>
         {
             ["Fx_IceShard"] = 180f, ["Fx_Blade"] = 180f,
+            ["Fx_TurtleShip"] = 90f, // 용머리가 Unity +Z (블렌더 choij-23) → 날아가는 쪽 +X
         };
 
         /// <summary>그림자를 드리우지 않는 것 (바닥 장식 · 작은 풀 · 스킬 소품은 가볍게)</summary>

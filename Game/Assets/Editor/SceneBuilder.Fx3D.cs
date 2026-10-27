@@ -23,6 +23,7 @@ namespace HistoryHeroes.EditorTools
             Shard,
             Wave,
             Cannonball,
+            BigArrow,
         }
 
         /// <summary>투사체가 뜨는 높이 (가슴께)</summary>
@@ -91,6 +92,24 @@ namespace HistoryHeroes.EditorTools
             Quaternion alongX = Quaternion.Euler(0f, 0f, 90f); // 원기둥(Y축)을 날아가는 쪽(+X)으로 눕힌다
             switch (fx)
             {
+                case Fx.BigArrow:
+                {
+                    // 이성계 큰 화살: 블렌더 화살 (없으면 보통 화살을 1.5배로)
+                    GameObject big = Art3DStage.Prefab("Fx_BigArrow");
+                    if (big != null)
+                    {
+                        var model = (GameObject)Object.Instantiate(big, root, false);
+                        model.transform.localScale = Vector3.one * 0.95f;
+                        break;
+                    }
+
+                    Material shaft = FxMat("ArrowShaft", new Color(0.55f, 0.38f, 0.2f));
+                    Material head = FxMat("ArrowHead", new Color(0.82f, 0.84f, 0.88f), 0f, 0.8f);
+                    FxPart(root, Stage3D.Shape.Pillar, shaft, Vector3.zero, alongX, new Vector3(0.07f, 0.95f, 0.07f));
+                    FxPart(root, Stage3D.Shape.Box, head, new Vector3(0.5f, 0f, 0f), Quaternion.Euler(0f, 0f, 45f), new Vector3(0.16f, 0.16f, 0.05f));
+                    FxPart(root, Stage3D.Shape.Box, FxMat("FletchRed", new Color(0.8f, 0.2f, 0.18f)), new Vector3(-0.4f, 0f, 0f), Quaternion.identity, new Vector3(0.2f, 0.02f, 0.14f));
+                    break;
+                }
                 case Fx.Arrow:
                 case Fx.EnemyArrow:
                 {
@@ -152,6 +171,7 @@ namespace HistoryHeroes.EditorTools
                 case Fx.Bullet: AddTrail(root.gameObject, new Color(1f, 0.8f, 0.35f), 0.14f, 0.1f); break;
                 case Fx.Orb: AddTrail(root.gameObject, new Color(0.45f, 0.85f, 1f), 0.3f, 0.2f); break;
                 case Fx.Cannonball: AddTrail(root.gameObject, new Color(1f, 0.6f, 0.25f), 0.26f, 0.18f); break;
+                case Fx.BigArrow: AddTrail(root.gameObject, new Color(1f, 0.9f, 0.6f), 0.18f, 0.16f); break;
                 case Fx.Wave: AddTrail(root.gameObject, new Color(0.6f, 1f, 0.8f), 0.5f, 0.12f); break;
                 case Fx.Shard: AddTrail(root.gameObject, new Color(0.6f, 0.9f, 1f), 0.18f, 0.15f); break;
             }

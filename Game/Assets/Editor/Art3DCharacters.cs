@@ -200,7 +200,9 @@ namespace HistoryHeroes.EditorTools
             // 테슬라: 가르마 머리 + 콧수염 + 어두운 옷(양복 느낌), 오른손 코일로 주문 쏘기 (전기)
             new Look { name = "Tesla", body = "Male_Peasant", bodyTex = "T_Peasant_BaseColor", tint = new Color(0.36f, 0.37f, 0.42f), hair = new[] { "Hair_SimpleParted", "Eyebrows" }, hairColor = new Color(0.07f, 0.06f, 0.055f), props = new[] { "Tesla_Mustache", "Tesla_Coil" } },
             // 이순신: 짙은 남색 옷 + 수염 + 조선 장군 투구 · 두정갑 가슴판 · 오른손 총통으로 권총 쏘기 (확장: 새 영웅)
-            new Look { name = "YiSunsin", body = "Male_Peasant", bodyTex = "T_Peasant_2_BaseColor", tint = new Color(0.42f, 0.48f, 0.82f), hair = new[] { "Hair_Buzzed", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.05f, 0.045f, 0.045f), attack = "Pistol_Shoot", props = new[] { "YiSunsin_Helmet", "YiSunsin_Armor", "YiSunsin_Chongtong" } },
+            new Look { name = "YiSunsin", body = "Male_Peasant", bodyTex = "T_Peasant_2_BaseColor", tint = new Color(0.62f, 0.7f, 1f), hair = new[] { "Hair_Buzzed", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.05f, 0.045f, 0.045f), attack = "Pistol_Shoot", props = new[] { "YiSunsin_Helmet", "YiSunsin_Armor", "YiSunsin_Chongtong" } },
+            // 이성계: 붉은 갈색 옷 + 수염 + 고려 말 투구 · 왼손 각궁 (활 동작이 생기기 전에는 주문 쏘기)
+            new Look { name = "YiSeonggye", body = "Male_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(1f, 0.72f, 0.62f), hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_Buzzed", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.06f, 0.05f, 0.045f), props = new[] { "Yi_Helmet", "Yi_Bow" } },
         };
 
         public sealed class EnemyLook

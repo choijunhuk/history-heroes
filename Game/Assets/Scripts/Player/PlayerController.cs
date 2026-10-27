@@ -131,6 +131,7 @@ namespace HistoryHeroes.Player
             Stop.Moved += () => _firstShotPending = true;
             Stop.Stopped += () => _momentumUntil = Time.time + MomentumSeconds;
             Health.Damaged += OnDamagedIronclad; // 이순신 철갑
+            Stop.Moved += OnMovedCharge; // 이성계 백발백중: 움직이기 시작하면 모은 화살을 놓는다
             Health.PreventDeath = TryUndying;
             _awake = true;
         }
@@ -230,6 +231,7 @@ namespace HistoryHeroes.Player
             UpdateLowHpBonus();
             UpdateMomentum();
             UpdateIronclad(dt);
+            UpdateCharge(dt);
             if (Stop.IsStopped) TryBasicAttack();
         }
 
@@ -351,8 +353,104 @@ namespace HistoryHeroes.Player
             return store;
         }
 
+        // ---------------------------------------------------------------- 이성계 백발백중
+
+        private float _charge;
+        private int _chargeStage;
+        private readonly Dictionary<Health, float> _marks = new Dictionary<Health, float>();
+
+        /// <summary>지금 모은 단계 (0 = 아직, 1·2·3)</summary>
+        public int ChargeStage => _chargeStage;
+
+        /// <summary>신궁: 이 적의 다음 3단 화살 피해 +100% (seconds 동안)</summary>
+        public void MarkForCharge(Health target, float seconds)
+        {
+            if (target != null) _marks[target] = Time.time + seconds;
+        }
+
+        private int StageOf(float charge)
+        {
+            float full = _sig.ChargeFullTime > 0f ? _sig.ChargeFullTime : hero.chargeTimes.z;
+            float scale = full / Mathf.Max(0.01f, hero.chargeTimes.z); // ★5: 3단까지 빨라지면 1·2단도 같은 비율로
+            return charge >= full ? 3 : charge >= hero.chargeTimes.y * scale ? 2 : charge >= hero.chargeTimes.x * scale ? 1 : 0;
+        }
+
+        /// <summary>멈춰 있는 동안 활을 모은다 (공격속도가 빠르면 빨리). 3단이 되면 바로 쏜다</summary>
+        private void UpdateCharge(float dt)
+        {
+            if (!hero.chargeShot) return;
+            if (!Stop.IsStopped) return;
+            float speed = Stats.Get(StatType.AttackSpeed, StatTarget.BasicAttack) / Mathf.Max(0.1f, hero.attackSpeed);
+            _charge += dt * speed;
+            int stage = StageOf(_charge);
+            if (stage != _chargeStage)
+            {
+                _chargeStage = stage;
+                Color c = stage >= 3 ? new Color(1f, 0.85f, 0.3f, 0.9f) : stage == 2 ? new Color(0.5f, 0.9f, 1f, 0.8f) : new Color(1f, 1f, 1f, 0.6f);
+                AttackFx.Burst(transform.position, 0.45f + 0.2f * stage, c, 0.12f);
+                if (stage >= 3) Audio.AudioManager.Play("card", 0.6f, 0.05f);
+            }
+
+            if (_chargeStage >= 3) ReleaseCharge();
+        }
+
+        private void OnMovedCharge()
+        {
+            if (!hero.chargeShot) return;
+            if (_chargeStage >= 1) ReleaseCharge(); // 1·2단은 움직이기 시작할 때 놓는다
+            _charge = 0f;
+            _chargeStage = 0;
+        }
+
+        /// <summary>모은 단계로 쏜다: 2단 관통, 3단 관통 + 치명타 확정 + 큰 피해. 표적이 없으면 3단은 들고 기다린다</summary>
+        private void ReleaseCharge()
+        {
+            Health target = _targets.Find(transform.position, Stats.Get(StatType.Range));
+            if (target == null) return;
+            int stage = _chargeStage;
+            float coefficient = stage >= 3 ? _sig.ChargeFull : stage == 2 ? hero.chargeMidMultiplier : 1f;
+            Audio.AudioManager.Play("shoot", stage >= 3 ? 0.7f : 0.4f, 0.08f);
+            int extra = Attack.Get(AttackModifierKind.ExtraProjectiles);
+            int count = 1 + extra;
+            float perProjectile = coefficient * (1f - 0.1f * extra);
+            Vector2 origin = transform.position;
+            Vector2 aim = ((Vector2)target.transform.position - origin).normalized;
+            PlayAttack(aim);
+            float start = -spreadDegrees * (count - 1) * 0.5f;
+            for (int i = 0; i < count; i++)
+            {
+                Vector2 direction = Quaternion.Euler(0f, 0f, start + spreadDegrees * i) * aim;
+                DamageInfo damage = DamageCalculator.Roll(Stats, perProjectile, DamageKind.BasicAttack, forceCrit: stage >= 3);
+                Projectile p = _projectiles.Get(origin, Quaternion.identity);
+                int pierce = Attack.Get(AttackModifierKind.Pierce) + (stage >= 2 ? 1 : 0);
+                p.Launch(direction, hero.projectileSpeed * (stage >= 3 ? 1.3f : 1f), damage, enemyMask, wallMask,
+                    pierce, Attack.Get(AttackModifierKind.Ricochet), _projectiles.Release, OnBasicAttackHit,
+                    onHitTarget: stage >= 3 ? OnFullArrowHit : (System.Action<Health, Vector2>)null);
+            }
+
+            if (stage >= 3)
+            {
+                AttackFx.Burst(origin + aim * 0.6f, 0.8f, new Color(1f, 0.85f, 0.3f, 0.9f), 0.15f);
+                CameraShake.Add(0.08f);
+            }
+
+            _charge = 0f;
+            _chargeStage = 0;
+        }
+
+        /// <summary>신궁 표식이 있는 적: 3단 화살 피해 +100% (한 번 쓰면 사라진다)</summary>
+        private void OnFullArrowHit(Health target, Vector2 point)
+        {
+            if (target == null || !_marks.TryGetValue(target, out float until)) return;
+            _marks.Remove(target);
+            if (Time.time > until || target.IsDead) return;
+            target.TryTakeDamage(DamageCalculator.Roll(Stats, _sig.ChargeFull, DamageKind.BasicAttack, forceCrit: true));
+            AttackFx.Burst(point, 0.9f, new Color(1f, 0.5f, 0.25f, 0.9f), 0.2f);
+        }
+
         private void TryBasicAttack()
         {
+            if (hero.chargeShot) return; // 이성계: 공격속도가 아니라 모으는 시간 (UpdateCharge)
             if (_attackCooldown > 0f) return;
             if (Stop.StoppedTime < hero.firstShotDelay) return;
 

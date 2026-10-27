@@ -38,6 +38,35 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void YiSeonggye_ChargeShot_StarsAndRoster()
+        {
+            var ysg = ScriptableObject.CreateInstance<HeroData>();
+            ysg.chargeShot = true;
+            ysg.chargeTimes = new Vector3(0.4f, 0.9f, 1.5f);
+            ysg.chargeFullMultiplier = 2.5f;
+            ysg.star3ChargeFull = 3f;
+            ysg.star5ChargeFullTime = 1.2f;
+            try
+            {
+                Assert.AreEqual(2.5f, HeroSignature.For(ysg, 1).ChargeFull, 1e-5f);
+                Assert.AreEqual(1.5f, HeroSignature.For(ysg, 1).ChargeFullTime, 1e-5f);
+                Assert.AreEqual(3f, HeroSignature.For(ysg, 3).ChargeFull, 1e-5f, "★3 3단 ×3");
+                Assert.AreEqual(1.2f, HeroSignature.For(ysg, 5).ChargeFullTime, 1e-5f, "★5 3단까지 1.2초");
+            }
+            finally
+            {
+                Object.DestroyImmediate(ysg);
+            }
+
+            HeroData hero = UnityEditor.AssetDatabase.LoadAssetAtPath<HeroRoster>("Assets/Data/Heroes/HeroRoster.asset")?.Find("yiseonggye");
+            Assert.IsNotNull(hero, "명단에 이성계");
+            Assert.IsTrue(hero.chargeShot);
+            Assert.AreEqual("ysg_pyeonjeon", hero.exclusiveActive.id);
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            Assert.AreEqual("yiseonggye", db.FindRecipe("ysg_shingung").heroOnlyId);
+        }
+
+        [Test]
         public void Roster_HasYiWithExclusiveAndFusion()
         {
             HeroData yi = Load();

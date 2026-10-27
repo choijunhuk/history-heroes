@@ -19,10 +19,16 @@ namespace HistoryHeroes.Heroes
         /// <summary>이순신 철갑: 멈춰 있는 동안 받는 피해 감소 · 쌓기 상한(공격력 배수)</summary>
         public readonly float StopGuard;
         public readonly float StopGuardCap;
+        /// <summary>이성계 백발백중: 3단 피해 배수 · 3단까지 시간 (0이면 모으지 않는 영웅)</summary>
+        public readonly float ChargeFull;
+        public readonly float ChargeFullTime;
 
         private HeroSignature(float firstShotBonus, bool firstShotPierce, float damageReduction, float lowHpAttackBonus,
-            float cannonRadius, int cannonEvery, int chainBounces, float chainFalloff, float stopGuard = 0f, float stopGuardCap = 0f)
+            float cannonRadius, int cannonEvery, int chainBounces, float chainFalloff, float stopGuard = 0f, float stopGuardCap = 0f,
+            float chargeFull = 0f, float chargeFullTime = 0f)
         {
+            ChargeFull = chargeFull;
+            ChargeFullTime = chargeFullTime;
             StopGuard = stopGuard;
             StopGuardCap = stopGuardCap;
             FirstShotBonus = firstShotBonus;
@@ -53,7 +59,9 @@ namespace HistoryHeroes.Heroes
 
             float guard = s3 && hero.star3StopGuard >= 0f ? hero.star3StopGuard : hero.stopGuard;
             float guardCap = s5 && hero.star5StopGuardCap > 0f ? hero.star5StopGuardCap : hero.stopGuardCap;
-            return new HeroSignature(firstShot, s5 && hero.star5FirstShotPierce, reduction, lowHp, radius, every, bounces, falloff, guard, guardCap);
+            float chargeFull = hero.chargeShot ? (s3 && hero.star3ChargeFull > 0f ? hero.star3ChargeFull : hero.chargeFullMultiplier) : 0f;
+            float chargeTime = hero.chargeShot ? (s5 && hero.star5ChargeFullTime > 0f ? hero.star5ChargeFullTime : hero.chargeTimes.z) : 0f;
+            return new HeroSignature(firstShot, s5 && hero.star5FirstShotPierce, reduction, lowHp, radius, every, bounces, falloff, guard, guardCap, chargeFull, chargeTime);
         }
 
         /// <summary>별 강화 설명 ("★3 첫 발 피해 +75% · ★5 첫 발 +100%, 관통")</summary>
@@ -66,11 +74,13 @@ namespace HistoryHeroes.Heroes
             if (hero.star3CannonRadiusScale > 0f) s3 = $"포탄 범위 +{(hero.star3CannonRadiusScale - 1f) * 100f:0}%";
             if (hero.star3ExtraBounces > 0) s3 = $"튕김 +{hero.star3ExtraBounces}";
             if (hero.star3StopGuard >= 0f) s3 = $"멈춤 받는 피해 -{hero.star3StopGuard * 100f:0}%";
+            if (hero.star3ChargeFull > 0f) s3 = $"3단 화살 피해 ×{hero.star3ChargeFull:0.#}";
             if (hero.star5FirstShotBonus >= 0f) s5 = $"첫 발 피해 +{hero.star5FirstShotBonus * 100f:0}%" + (hero.star5FirstShotPierce ? ", 첫 발 관통" : string.Empty);
             if (hero.star5LowHpAttackBonus >= 0f) s5 = $"체력 50% 아래 공격력 +{hero.star5LowHpAttackBonus * 100f:0}%";
             if (hero.star5CannonEvery > 0) s5 = $"{hero.star5CannonEvery}발마다 포탄";
             if (hero.star5NoFalloff) s5 = "튕겨도 피해가 줄지 않음";
             if (hero.star5StopGuardCap > 0f) s5 = $"쌓기 상한 공격력 {hero.star5StopGuardCap * 100f:0}%";
+            if (hero.star5ChargeFullTime > 0f) s5 = $"3단까지 {hero.star5ChargeFullTime:0.#}초";
             return $"★3 {s3 ?? "—"} · ★5 {s5 ?? "—"}";
         }
     }

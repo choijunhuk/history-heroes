@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -125,6 +125,20 @@ namespace HistoryHeroes.EditorTools
             d.YiSunsin.unlockAfterBossChapter = 4;
             d.YiSunsin.star3StopGuard = 0.3f;
             d.YiSunsin.star5StopGuardCap = 3f;
+
+            // ----- 이성계 (확장 결정 12: 새 영웅, 명궁 — 모으기 저격형). 칭기즈 칸 = 짧게 자주, 이성계 = 길게 한 방 -----
+            d.YiSeonggye = Hero("yiseonggye", "이성계", HeroClass.Archer, BasicAttackKind.Projectile, 950f, 120f, 1.0f, 5f, 7f, new Color(0.8f, 0.35f, 0.25f));
+            d.YiSeonggye.playStyle = "오래 멈춰 활을 끝까지 당겨, 크게 한 방";
+            d.YiSeonggye.signatureName = "백발백중";
+            d.YiSeonggye.signatureDescription = "멈춘 시간만큼 화살이 모인다: 0.4초 1단 · 0.9초 2단(관통) · 1.5초 3단(관통 + 치명타 확정 + 피해 ×2.5, 바로 발사). 움직이기 시작하면 모은 화살을 놓는다";
+            d.YiSeonggye.projectileSpeed = 17f;
+            d.YiSeonggye.chargeShot = true;
+            d.YiSeonggye.chargeTimes = new Vector3(0.4f, 0.9f, 1.5f);
+            d.YiSeonggye.chargeMidMultiplier = 1.4f;
+            d.YiSeonggye.chargeFullMultiplier = 2.5f;
+            d.YiSeonggye.unlockAfterBossChapter = 5;
+            d.YiSeonggye.star3ChargeFull = 3f;
+            d.YiSeonggye.star5ChargeFullTime = 1.2f;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -352,6 +366,12 @@ namespace HistoryHeroes.EditorTools
             d.YiTurtle.heroOnlyId = "yisunsin";
             d.Pool.Add(d.YiTurtle);
             d.YiSunsin.exclusiveActive = d.YiTurtle;
+            d.YsgPyeonjeon = Active("ysg_pyeonjeon", "편전", Rarity.Rare, SkillTag.Projectile, 5, 3,
+                "5초마다 아주 빠른 작은 화살 3발이\n체력이 가장 많은 적에게 (각 60%)\n레벨마다 +1발",
+                cooldown: 5f, damage: 0.6f, damagePerLevel: 0f, count: 3, countPerLevel: 1);
+            d.YsgPyeonjeon.heroOnlyId = "yiseonggye";
+            d.Pool.Add(d.YsgPyeonjeon);
+            d.YiSeonggye.exclusiveActive = d.YsgPyeonjeon;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -377,7 +397,12 @@ namespace HistoryHeroes.EditorTools
                 cooldown: 8f, damage: 1.8f, damagePerLevel: 0f, count: 3, countPerLevel: 0, saveCostFirst: 12);
             d.YiHakIkJin.saveCostPerLevel = 0;
             d.YiHakIkJin.heroOnlyId = "yisunsin";
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin }) UnityEditor.EditorUtility.SetDirty(s);
+            d.YsgShingung = Active("ysg_shingung", "신궁", Rarity.Rare, SkillTag.Projectile, 1, 12,
+                "편전 7발 (각 60%)\n맞은 적에게 표식 6초:\n다음 3단 화살 피해 +100%",
+                cooldown: 5f, damage: 0.6f, damagePerLevel: 0f, count: 7, countPerLevel: 0, saveCostFirst: 12);
+            d.YsgShingung.saveCostPerLevel = 0;
+            d.YsgShingung.heroOnlyId = "yiseonggye";
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -389,9 +414,10 @@ namespace HistoryHeroes.EditorTools
             AddHeroRecipe(d, "napo_austerlitz", FusionType.Merge, d.NapoCannon, 3, d.FlameField, 3, d.NapoAusterlitz, "napoleon");
             AddHeroRecipe(d, "tesla_tower", FusionType.Merge, d.TeslaCoil, 3, d.Lightning, 3, d.TeslaTower, "tesla");
             AddHeroRecipe(d, "yi_hakikjin", FusionType.Evolution, d.YiTurtle, 5, (PassiveSkillData)d.Pool.Find(s => s.id == "hp_up"), 1, d.YiHakIkJin, "yisunsin");
+            AddHeroRecipe(d, "ysg_shingung", FusionType.Evolution, d.YsgPyeonjeon, 5, (PassiveSkillData)d.Pool.Find(s => s.id == "crit_dmg"), 1, d.YsgShingung, "yiseonggye");
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -400,7 +426,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -590,6 +616,9 @@ namespace HistoryHeroes.EditorTools
             d.YiSunsin.projectilePrefab = p.Cannonball;
             d.YiTurtle.behaviourPrefab = p.YiTurtle;
             d.YiHakIkJin.behaviourPrefab = p.YiHakIkJin;
+            d.YiSeonggye.projectilePrefab = p.BigArrow;
+            d.YsgPyeonjeon.behaviourPrefab = p.YsgPyeonjeon;
+            d.YsgShingung.behaviourPrefab = p.YsgShingung;
             d.KhanVolley.behaviourPrefab = p.KhanVolley;
             d.KhanStorm.behaviourPrefab = p.KhanStorm;
             d.GuanSpin.behaviourPrefab = p.GuanSpin;

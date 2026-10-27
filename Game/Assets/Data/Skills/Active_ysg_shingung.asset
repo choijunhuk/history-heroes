@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_ysg_shingung
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: ysg_shingung
+  displayName: "\uC2E0\uAD81"
+  description: "\uD3B8\uC804 7\uBC1C (\uAC01 60%)\n\uB9DE\uC740 \uC801\uC5D0\uAC8C
+    \uD45C\uC2DD 6\uCD08:\n\uB2E4\uC74C 3\uB2E8 \uD654\uC0B4 \uD53C\uD574 +100%"
+  warriorDescription: 
+  icon: {fileID: 21300000, guid: 157defcf6ac6c99428dea7dcc3eced4a, type: 3}
+  rarity: 1
+  tags: 4
+  role: 0
+  maxLevel: 1
+  saveCostFirstLevel: 12
+  saveCostPerLevel: 0
+  recordable: 1
+  heroOnlyId: yiseonggye
+  cooldown: 5
+  damageFirstLevel: 0.6
+  damagePerLevel: 0
+  countFirstLevel: 7
+  countPerLevel: 0
+  radius: 1.5
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 5032786924963909594, guid: e07c50969d09666499a0a9e458771d46, type: 3}

@@ -91,6 +91,16 @@ namespace HistoryHeroes.Heroes
         [Tooltip("움직이면 쌓인 것이 이 시간에 걸쳐 사라진다 (초)")]
         public float stopGuardDecay = 2f;
 
+        [Header("이성계 백발백중 (확장: 새 영웅)")]
+        [Tooltip("멈춰서 활을 모으는 영웅 (공격속도 대신 모으는 시간)")]
+        public bool chargeShot;
+        [Tooltip("1단 · 2단(관통) · 3단(관통 + 치명타 확정 + 큰 피해)까지 멈춘 시간 (초)")]
+        public Vector3 chargeTimes = new Vector3(0.4f, 0.9f, 1.5f);
+        [Tooltip("2단 피해 배수")]
+        public float chargeMidMultiplier = 1.4f;
+        [Tooltip("3단 피해 배수")]
+        public float chargeFullMultiplier = 2.5f;
+
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
         public float star3FirstShotBonus = -1f;
@@ -114,6 +124,10 @@ namespace HistoryHeroes.Heroes
         public float star3StopGuard = -1f;
         [Tooltip("★5 쌓기 상한 (이순신 공격력 300%)")]
         public float star5StopGuardCap = -1f;
+        [Tooltip("★3 3단 피해 배수 (이성계 ×3)")]
+        public float star3ChargeFull = -1f;
+        [Tooltip("★5 3단까지 시간 (이성계 1.2초)")]
+        public float star5ChargeFullTime = -1f;
 
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]
