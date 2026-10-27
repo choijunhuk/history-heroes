@@ -44,10 +44,14 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button petButton;
         [SerializeField] private TMP_Text petLabel;
         [SerializeField] private PetPanel pets;
+        [Header("그래픽 재평가 3번: 고른 영웅을 크게 · 이름·역할·고유 능력 먼저 (있으면 줄 글은 짧게)")]
+        [SerializeField] private RawImage bigPortrait;
+        [SerializeField] private TMP_Text detailName;
+        [SerializeField] private TMP_Text detailBody;
 
-        private static readonly Color Normal = new Color(0.16f, 0.18f, 0.24f);
-        private static readonly Color Focused = new Color(0.25f, 0.42f, 0.7f);
-        private static readonly Color Locked = new Color(0.12f, 0.12f, 0.14f);
+        private static readonly Color Normal = new Color(0.32f, 0.4f, 0.6f);
+        private static readonly Color Focused = new Color(1f, 0.78f, 0.25f);
+        private static readonly Color Locked = new Color(0.2f, 0.21f, 0.26f);
 
         private int _focus;
         private Action _onChanged;
@@ -146,6 +150,14 @@ namespace HistoryHeroes.UI
                 string growth = unlocked ? $"  <size=80%><color=#9FD8FF>Lv {progress.level}</color> <color=#FFD966>{new string('★', progress.stars)}{new string('☆', 5 - progress.stars)}</color></size>" : string.Empty;
                 mark = growth + mark;
                 string lockText = unlocked ? string.Empty : $"\n<color=#FFB347>잠김 · {HeroUnlock.Condition(h)} (또는 보석 {Wallet.Format(h.unlockGems)})</color>";
+                if (detailBody != null)
+                {
+                    // 칸에는 이름과 레벨만 (자세한 것은 위 큰 카드)
+                    string state = !unlocked ? "<color=#FFB347>잠김</color>" : h == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"Lv {progress.level} <color=#FFD966>{new string('★', progress.stars)}</color>";
+                    heroLabels[i].text = $"<b>{h.displayName}</b>\n<size=70%>{state}</size>";
+                    continue;
+                }
+
                 heroLabels[i].text =
                     $"<b>{h.displayName}</b>  <size=80%>{h.ClassLabel}</size>{mark}\n" +
                     $"<size=78%>체력 {h.maxHp:0} · 공격 {h.attack:0} · 공속 {h.attackSpeed:0.0} · 사거리 {h.range:0.#} · 이동 {h.moveSpeed:0.#}</size>\n" +
@@ -155,6 +167,23 @@ namespace HistoryHeroes.UI
 
             HeroData focus = roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
             bool focusUnlocked = HeroUnlock.IsUnlocked(d, focus);
+            if (detailBody != null)
+            {
+                Records.HeroProgress fp = d.Hero(focus.id);
+                string state = !focusUnlocked ? "<color=#FFB347>잠김</color>" : focus == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"<color=#9FD8FF>Lv {fp.level}</color> <color=#FFD966>{new string('★', fp.stars)}{new string('☆', 5 - fp.stars)}</color>";
+                if (detailName != null) detailName.text = $"{focus.displayName}  <size=55%>{focus.ClassLabel} · {state}</size>";
+                string lockText = focusUnlocked ? string.Empty : $"\n<color=#FFB347>{HeroUnlock.Condition(focus)} (또는 보석 {Wallet.Format(focus.unlockGems)})</color>";
+                detailBody.text =
+                    $"<color=#FFD966><b>{focus.signatureName}</b></color>  {focus.signatureDescription}\n" +
+                    $"<size=80%><color=#A9B4C2>{Heroes.HeroSignature.StarText(focus)}</color></size>\n" +
+                    $"<size=80%>체력 {focus.maxHp:0} · 공격 {focus.attack:0} · 공속 {focus.attackSpeed:0.0} · 사거리 {focus.range:0.#} · 이동 {focus.moveSpeed:0.#}</size>" + lockText;
+                if (bigPortrait != null && _portraits != null)
+                {
+                    bigPortrait.texture = _portraits.TextureOf(_focus);
+                    bigPortrait.color = bigPortrait.texture == null ? new Color(1f, 1f, 1f, 0f) : focusUnlocked ? Color.white : new Color(0.35f, 0.35f, 0.42f, 1f);
+                }
+            }
+
             selectButton.interactable = focusUnlocked && focus != selected;
             selectLabel.text = !focusUnlocked ? "잠긴 영웅" : focus == selected ? "지금 영웅" : KoreanText.Josa(focus.displayName, "으로", "로") + " 하기";
 

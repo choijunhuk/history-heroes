@@ -297,35 +297,73 @@ namespace HistoryHeroes.EditorTools
             var screen = holder.AddComponent<HeroPanel>();
 
             TMP_Text title = Label("Title", panel, "영웅", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 800f), new Vector2(900f, 100f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 850f), new Vector2(900f, 100f));
 
+            // 그래픽 재평가 3번: 고른 영웅을 크게 (무대 빛 + 받침 고리 + 큰 초상), 그 아래 이름·역할·고유 능력 카드
+            RawImage big = null;
+            if (_kit != null)
+            {
+                RectTransform stage = Rect("StageGlow", panel, Center, Center, Center, new Vector2(0f, 470f), new Vector2(820f, 820f));
+                Img(stage, new Color(1f, 0.8f, 0.4f, 0.28f), _kit.Glow);
+                RectTransform pedestal = Rect("Pedestal", panel, Center, Center, Center, new Vector2(0f, 205f), new Vector2(460f, 130f));
+                Img(pedestal, new Color(1f, 0.85f, 0.45f, 0.75f), _kit.Ring);
+            }
+
+            RectTransform bigRect = Rect("BigPortrait", panel, Center, Center, Center, new Vector2(0f, 480f), new Vector2(540f, 620f));
+            big = bigRect.gameObject.AddComponent<RawImage>();
+            big.color = new Color(1f, 1f, 1f, 0f);
+            big.raycastTarget = false;
+
+            RectTransform card = Rect("DetailCard", panel, Center, Center, Center, new Vector2(0f, 45f), new Vector2(1000f, 250f));
+            Image cardImage = Img(card, new Color(0.12f, 0.16f, 0.28f, 0.96f), _kit != null ? _kit.Panel : null);
+            if (_kit != null) cardImage.type = Image.Type.Sliced;
+            TMP_Text detailName = Label("Name", card, "", 54, TextAlignmentOptions.Center, Color.white);
+            Place(detailName.rectTransform, Center, Center, new Vector2(0f, 84f), new Vector2(960f, 66f));
+            detailName.enableAutoSizing = true;
+            detailName.fontSizeMin = 30f;
+            detailName.fontSizeMax = 54f;
+            TMP_Text detailBody = Label("Body", card, "", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.9f));
+            Place(detailBody.rectTransform, Center, Center, new Vector2(0f, -36f), new Vector2(940f, 160f));
+            detailBody.lineSpacing = 14f; // 세 줄이 겹치지 않게
+            detailBody.enableAutoSizing = true;
+            detailBody.fontSizeMin = 17f;
+            detailBody.fontSizeMax = 26f;
+
+            // 영웅 고르기 칸 4개 (가로 줄): 작은 초상 + 이름 · 레벨
             var buttons = new Button[4];
             var backgrounds = new Image[4];
             var labels = new TMP_Text[4];
             var portraits = new RawImage[4];
             for (int i = 0; i < 4; i++)
             {
-                buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(0f, 560f - i * 265f), new Vector2(980f, 245f), RowColor, out TMP_Text label);
+                buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(-375f + i * 250f, -220f), new Vector2(232f, 255f), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
-                label.fontSize = 32;
-                label.alignment = TextAlignmentOptions.MidlineLeft;
-                label.rectTransform.offsetMin = new Vector2(30f, 8f);
-                label.rectTransform.offsetMax = new Vector2(-230f, -8f); // 오른쪽은 3D 초상 자리
+                RectTransform lr = label.rectTransform;
+                lr.anchorMin = new Vector2(0f, 0f);
+                lr.anchorMax = new Vector2(1f, 0.27f);
+                lr.offsetMin = new Vector2(6f, 12f);
+                lr.offsetMax = new Vector2(-6f, 0f);
+                label.margin = Vector4.zero;
+                label.fontSize = 28f;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 16f;
+                label.fontSizeMax = 28f;
+                label.lineSpacing = -12f;
                 labels[i] = label;
 
-                // 3D 초상 (Art3D-Plan 7번): 끌면 돈다. 누르면 줄 버튼이 받는다
-                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-12f, 0f), new Vector2(205f, 236f));
+                // 3D 초상 (Art3D-Plan 7번): 끌면 돈다. 누르면 칸 버튼이 받는다
+                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(150f, 168f));
                 portraits[i] = portrait.gameObject.AddComponent<RawImage>();
                 portraits[i].color = new Color(1f, 1f, 1f, 0f); // 그림이 생기기 전에는 투명
                 portraits[i].raycastTarget = true;
                 // 잠긴 영웅: 초상 아래에 "잠김" (어두운 옷과 헷갈리지 않게 — 화면 점검 2차)
-                TMP_Text lockLabel = Label("Lock", portrait, "잠김", 30, TextAlignmentOptions.Bottom, new Color(1f, 0.85f, 0.35f));
+                TMP_Text lockLabel = Label("Lock", portrait, "잠김", 30, TextAlignmentOptions.Top, new Color(1f, 0.85f, 0.35f));
                 Stretch(lockLabel.rectTransform);
                 lockLabel.raycastTarget = false;
                 lockLabel.gameObject.SetActive(false);
             }
 
-            using (var props = new Props(panel.gameObject.AddComponent<HeroPortraits>())) props.Ref("roster", roster).Refs("images", portraits);
+            using (var props = new Props(panel.gameObject.AddComponent<HeroPortraits>())) props.Ref("roster", roster).Refs("images", portraits).Int("textureSize", 480);
 
             Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -450f), new Vector2(440f, 110f), ButtonGreen, out TMP_Text selectLabel);
             Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -450f), new Vector2(440f, 110f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
@@ -363,7 +401,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("trainingButton", trainingButton).Ref("messageLabel", heroMessage).Ref("runeButton", runeButton).Ref("runeLabel", runeLabel);
                 props.Ref("root", panel.gameObject).Ref("roster", roster).Refs("heroButtons", buttons).Refs("heroBackgrounds", backgrounds)
                     .Refs("heroLabels", labels).Ref("selectButton", select).Ref("selectLabel", selectLabel)
-                    .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("backButton", back);
+                    .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("backButton", back)
+                    .Ref("bigPortrait", big).Ref("detailName", detailName).Ref("detailBody", detailBody);
             }
 
             return screen;

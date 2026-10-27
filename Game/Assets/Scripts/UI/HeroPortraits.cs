@@ -73,6 +73,9 @@ namespace HistoryHeroes.UI
             if (_stage != null) Destroy(_stage.gameObject);
         }
 
+        /// <summary>영웅 한 명의 초상 그림 (영웅 화면의 큰 초상이 같은 그림을 쓴다). 없으면 null</summary>
+        public Texture TextureOf(int index) => index >= 0 && index < images.Length && images[index] != null ? images[index].texture : null;
+
         /// <summary>지금 고른(포커스) 영웅: 이 초상만 계속 움직인다</summary>
         public void SetFocus(int index) => _focus = index;
 
