@@ -20,3 +20,6 @@ MonoBehaviour:
   trail: {fileID: 2100000, guid: 80e6b1b681fceaf419568505389ccd0c, type: 2}
   glow: {fileID: 2100000, guid: 29d6cab1002ccd34d94a17d2e75a6409, type: 2}
   heroOutline: {fileID: 2100000, guid: 50ed6b6b709b30044ab36791162d0d7c, type: 2}
+  hudIron: {fileID: 21300000, guid: 07eaf87ade54b6845b2c59a2b3431a72, type: 3}
+  hudCharge: {fileID: 21300000, guid: 6fa1ce5ebbf2f56468103c95757b880c, type: 3}
+  hudParts: {fileID: 21300000, guid: 78576181a2a97de4b925c9300eeae3e6, type: 3}

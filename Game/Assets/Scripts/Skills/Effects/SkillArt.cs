@@ -21,6 +21,10 @@ namespace HistoryHeroes.Skills
         public Material glow;
         [Tooltip("영웅 외곽선 (HistoryHeroes/HeroOutline, 새 영웅 화면 점검 1번)")]
         public Material heroOutline;
+        [Header("머리 위 대표 효과 아이콘 (화면 점검 2차 4번: 뜻이 읽히게)")]
+        public Sprite hudIron;
+        public Sprite hudCharge;
+        public Sprite hudParts;
 
         private static SkillArt _cached;
         private static bool _loaded;

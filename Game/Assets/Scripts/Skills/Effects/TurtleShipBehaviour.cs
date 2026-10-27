@@ -44,7 +44,7 @@ namespace HistoryHeroes.Skills
             Vector2 dir = ((Vector2)target.transform.position - origin).normalized;
             if (dir.sqrMagnitude < 0.01f) dir = Vector2.up;
             // 불길 판정 원은 옅게: 보이는 불은 배가 끄는 불꽃 입자가 맡는다 (화면 점검 3번: "겹친 원 장판처럼 보인다")
-            if (fireTrail) _zones ??= DamageZone.CreatePool(EffectRoot, new Color(trailColor.r, trailColor.g, trailColor.b, Mathf.Min(trailColor.a, 0.16f)), -1, data.id);
+            if (fireTrail) _zones ??= DamageZone.CreatePool(EffectRoot, new Color(trailColor.r, trailColor.g, trailColor.b, Mathf.Min(trailColor.a, 0.1f)), -1, data.id);
 
             float coefficient = data.DamageAt(level);
             var side = new Vector2(-dir.y, dir.x);
@@ -81,12 +81,12 @@ namespace HistoryHeroes.Skills
             if (fireTrail)
             {
                 // 지나간 자리에 길게 남는 불꽃 (월드에 남아서 배 셋이 V자로 그은 줄이 보인다)
-                flames = SkillArt.Embers(ship, new Color(1f, 0.5f, 0.12f), 70f, 0.9f, 0.55f);
+                flames = SkillArt.Embers(ship, new Color(1f, 0.5f, 0.12f), 36f, 0.9f, 0.6f); // 화면 점검 2차 1번: 불티 절반 (배·적 공격선이 묻히지 않게)
                 if (flames != null)
                 {
                     ParticleSystem.MainModule main = flames.main;
                     main.startLifetime = new ParticleSystem.MinMaxCurve(trailDuration * 0.6f, trailDuration);
-                    main.maxParticles = 220;
+                    main.maxParticles = 120;
                     ParticleSystem.ShapeModule shape = flames.shape;
                     shape.radius = 0.35f;
                 }

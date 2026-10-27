@@ -70,6 +70,14 @@ namespace HistoryHeroes.Skills
             // 바닥 팔각 문양 (돌기둥을 잇는 금빛 선 + 안쪽 옅은 선): 장애물이 아니라 "진"으로 읽히게 (화면 점검 4번)
             LineRenderer outer = Polygon(root, "Octagon", center, corners, 1f, new Color(1f, 0.85f, 0.4f, 0.75f), 0.09f);
             LineRenderer inner = Polygon(root, "OctagonInner", center, corners, 0.55f, new Color(1f, 0.9f, 0.6f, 0.4f), 0.05f);
+            // 가운데 표식 (금빛 작은 고리, 두근): 진의 한가운데가 읽히게 (화면 점검 2차 3번)
+            var heart = new GameObject("Center").transform;
+            heart.SetParent(root, false);
+            heart.position = new Vector3(center.x, center.y, -0.035f);
+            var heartSprite = heart.gameObject.AddComponent<SpriteRenderer>();
+            heartSprite.sprite = PlaceholderSprites.RimCircle;
+            heartSprite.color = new Color(1f, 0.88f, 0.45f, 0.7f);
+            heartSprite.sortingOrder = -3;
             // 칠성단의 바람: 가운데로 휘어 들어가는 바람 띠 3줄 (돈다)
             var arms = new List<LineRenderer>();
             if (whirlwinds)
@@ -125,6 +133,8 @@ namespace HistoryHeroes.Skills
 
                 float fade = Mathf.Clamp01(t / 0.3f) * Mathf.Clamp01((duration - t) / 0.4f);
                 SetAlpha(outer, 0.75f * fade);
+                heart.localScale = Vector3.one * (0.7f + 0.12f * Mathf.Sin(t * 6f));
+                heartSprite.color = new Color(1f, 0.88f, 0.45f, 0.7f * fade);
                 SetAlpha(inner, 0.4f * fade);
                 for (int i = 0; i < arms.Count; i++) Spiral(arms[i], center, radius * 0.95f, t * 2.4f + i * Mathf.PI * 2f / 3f, 0.6f * fade);
 

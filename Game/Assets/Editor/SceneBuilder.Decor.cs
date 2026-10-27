@@ -142,10 +142,13 @@ namespace HistoryHeroes.EditorTools
             art.trail = FxGlowMaterial("Trail", new Color(1.8f, 1.8f, 1.8f), plain: true);
             art.glow = FxGlowMaterial("Particle", new Color(2f, 2f, 2f));
             art.heroOutline = HeroOutlineMaterial();
+            art.hudIron = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Icons/icon_shield.png");
+            art.hudCharge = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Icons/icon_heaven_bow.png");
+            art.hudParts = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Icons/icon_dav_tank.png");
             EditorUtility.SetDirty(art);
         }
 
-        /// <summary>영웅 외곽선 재질: 옅은 금빛, 두께 0.045 (새 영웅 화면 점검 1번)</summary>
+        /// <summary>영웅 외곽선 재질: 옅은 금빛, 두께 0.035 (새 영웅 화면 점검 1번)</summary>
         private static Material HeroOutlineMaterial()
         {
             string path = $"{Art3DAssets.Root}/Materials/M_HeroOutline.mat";
@@ -158,7 +161,7 @@ namespace HistoryHeroes.EditorTools
 
             mat.shader = Shader.Find("HistoryHeroes/HeroOutline");
             mat.SetColor("_Color", new Color(1f, 0.92f, 0.62f));
-            mat.SetFloat("_Width", 0.045f);
+            mat.SetFloat("_Width", 0.035f); // 화면 점검 2차 2번: 바깥 윤곽 위주로 얇게
             mat.enableInstancing = true;
             EditorUtility.SetDirty(mat);
             return mat;

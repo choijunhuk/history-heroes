@@ -115,7 +115,7 @@ namespace HistoryHeroes.EditorTools
             d.YiSunsin = Hero("yisunsin", "이순신", HeroClass.Gunner, BasicAttackKind.Projectile, 1250f, 115f, 0.75f, 4.8f, 5.5f, new Color(0.35f, 0.45f, 0.85f));
             d.YiSunsin.playStyle = "멈춰 서서 맞으며 버티다, 쌓인 힘을 포탄 한 방에";
             d.YiSunsin.signatureName = "철갑";
-            d.YiSunsin.signatureDescription = "멈춰 있는 동안 받는 피해 -25%. 막은 피해의 절반을 쌓아 다음 기본 공격에 더함 (상한 공격력 200%). 움직이면 2초에 걸쳐 사라짐";
+            d.YiSunsin.signatureDescription = "멈추면 받는 피해 -25%. 막은 피해의 절반을 다음 포탄에 싣는다 (최대 공격력 200%, 움직이면 2초에 사라짐)";
             d.YiSunsin.projectileSpeed = 11f; // 느리고 무거운 총통 포탄
             d.YiSunsin.knockback = 0.2f;
             d.YiSunsin.stopGuard = 0.25f;
@@ -130,7 +130,7 @@ namespace HistoryHeroes.EditorTools
             d.YiSeonggye = Hero("yiseonggye", "이성계", HeroClass.Archer, BasicAttackKind.Projectile, 950f, 120f, 1.0f, 5f, 7f, new Color(0.8f, 0.35f, 0.25f));
             d.YiSeonggye.playStyle = "오래 멈춰 활을 끝까지 당겨, 크게 한 방";
             d.YiSeonggye.signatureName = "백발백중";
-            d.YiSeonggye.signatureDescription = "멈춘 시간만큼 화살이 모인다: 0.4초 1단 · 0.9초 2단(관통) · 1.5초 3단(관통 + 치명타 확정 + 피해 ×2.5, 바로 발사). 움직이기 시작하면 모은 화살을 놓는다";
+            d.YiSeonggye.signatureDescription = "멈춘 시간만큼 화살을 모은다: 1단 → 2단 관통 → 3단 관통 + 치명타 ×2.5 (1.5초, 바로 발사). 움직이면 모은 화살을 놓는다";
             d.YiSeonggye.projectileSpeed = 17f;
             d.YiSeonggye.chargeShot = true;
             d.YiSeonggye.chargeTimes = new Vector3(0.4f, 0.9f, 1.5f);
@@ -144,7 +144,7 @@ namespace HistoryHeroes.EditorTools
             d.Davinci = Hero("davinci", "레오나르도 다빈치", HeroClass.Summoner, BasicAttackKind.Projectile, 900f, 70f, 1.0f, 5f, 5f, new Color(0.85f, 0.65f, 0.35f));
             d.Davinci.playStyle = "멈춰서 비행 기계를 조립하고, 같이 쏘는 공방";
             d.Davinci.signatureName = "작업대";
-            d.Davinci.signatureDescription = "멈춰 있는 1초마다 부품 1개, 3개면 비행 기계 조립 (최대 2대, 20초). 비행 기계는 영웅이 멈춰 있을 때만 같은 적을 쏜다 (공격력 35%)";
+            d.Davinci.signatureDescription = "멈춰서 부품 3개(1초에 1개)를 모으면 비행 기계 (최대 2대, 20초). 기계는 멈춰 있을 때 같은 적을 쏜다 (35%)";
             d.Davinci.projectileSpeed = 15f;
             d.Davinci.workbench = true;
             d.Davinci.partEvery = 1f;
@@ -163,7 +163,7 @@ namespace HistoryHeroes.EditorTools
             d.Zhuge = Hero("zhuge", "제갈량", HeroClass.Mage, BasicAttackKind.Projectile, 900f, 85f, 1.0f, 5f, 4.5f, new Color(0.55f, 0.75f, 0.95f));
             d.Zhuge.playStyle = "멈춰 서서 바람으로 적 탄을 늦추고, 진법으로 판을 짜는 조종";
             d.Zhuge.signatureName = "동남풍";
-            d.Zhuge.signatureDescription = "멈춰 있는 동안 내 둘레 반경 3 안의 적 탄이 40% 느려진다. 기본 공격 = 깃털 부채 바람 3갈래 (각 45%, 살짝 밀어냄)";
+            d.Zhuge.signatureDescription = "멈추면 둘레 반경 3의 적 탄이 40% 느려진다. 기본 공격은 깃털 부채 바람 3갈래 (각 45%)";
             d.Zhuge.projectileSpeed = 12f;
             d.Zhuge.knockback = 0.15f;
             d.Zhuge.fanShots = 3;

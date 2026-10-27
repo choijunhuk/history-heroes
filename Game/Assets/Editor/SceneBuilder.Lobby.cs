@@ -331,8 +331,8 @@ namespace HistoryHeroes.EditorTools
             Place(detailBody.rectTransform, Center, Center, new Vector2(0f, -36f), new Vector2(940f, 160f));
             detailBody.lineSpacing = 14f; // 세 줄이 겹치지 않게
             detailBody.enableAutoSizing = true;
-            detailBody.fontSizeMin = 17f;
-            detailBody.fontSizeMax = 26f;
+            detailBody.fontSizeMin = 20f; // 화면 점검 2차 5번: 설명이 너무 작다 → 대표 효과 글을 줄이고 글씨 하한을 올림
+            detailBody.fontSizeMax = 28f;
 
             // 영웅 고르기 칸 (영웅 수만큼): 작은 초상 + 이름 · 레벨. 5명까지 한 줄, 6명부터 한 줄 4칸씩 두 줄
             int perRow = twoRows ? 4 : heroCount;

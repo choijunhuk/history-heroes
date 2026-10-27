@@ -94,7 +94,7 @@ namespace HistoryHeroes.UI
         public void SetLocked(int index, bool locked)
         {
             if (index < 0 || index >= images.Length || images[index] == null || images[index].texture == null) return;
-            images[index].color = locked ? new Color(0.45f, 0.45f, 0.52f, 1f) : Color.white;
+            images[index].color = locked ? new Color(0.6f, 0.6f, 0.68f, 1f) : Color.white; // 잠긴 영웅도 알아보게 ("잠김" 띠가 따로 알린다)
             Transform badge = images[index].transform.Find("LockBack") ?? images[index].transform.Find("Lock"); // "잠김" 글 + 받침 띠 (어두운 옷이 아니라 잠긴 것으로 보이게)
             if (badge != null) badge.gameObject.SetActive(locked);
         }

@@ -27,6 +27,8 @@ namespace HistoryHeroes.Skills
         [SerializeField] private float liftHeight = 1.4f;
 
         private readonly List<EnemyBase> _near = new List<EnemyBase>();
+        private const int Inward = 6;
+        private readonly SpriteRenderer[] _inward = new SpriteRenderer[Inward];
         private bool _running;
 
         protected override bool Activate()
@@ -59,6 +61,7 @@ namespace HistoryHeroes.Skills
             {
                 pullRing = FloorSprite("PullRange", PlaceholderSprites.RimCircle, new Color(0.55f, 0.95f, 1f, 0.45f), pullRadius * 2f);
                 shadow = FloorSprite("Shadow", PlaceholderSprites.Circle, new Color(0f, 0f, 0f, 0.3f), 1.1f);
+                for (int i = 0; i < Inward; i++) _inward[i] = FloorSprite($"Inward{i}", PlaceholderSprites.Chevron, new Color(0.7f, 1f, 1f, 0.8f), 0.5f);
             }
             float duration = data.DurationAt(level) > 0f ? data.DurationAt(level) : 6f;
             float coefficient = data.DamageAt(level);
@@ -92,6 +95,22 @@ namespace HistoryHeroes.Skills
                 }
 
                 if (shadow != null) shadow.transform.position = new Vector3(pos.x, pos.y, -0.01f);
+                if (spiral)
+                {
+                    // 꺾쇠 6개가 가장자리에서 가운데로 미끄러져 들어간다 (화면 점검 2차 3번: 끌어당기는 방향)
+                    for (int i = 0; i < Inward; i++)
+                    {
+                        float ang = i * Mathf.PI * 2f / Inward - t * 2f;
+                        float k = Mathf.Repeat(t * 1.2f + i * 0.37f, 1f); // 0 가장자리 → 1 가운데
+                        float r = Mathf.Lerp(pullRadius * 0.95f, pullRadius * 0.3f, k);
+                        Transform c = _inward[i].transform;
+                        c.position = new Vector3(pos.x + Mathf.Cos(ang) * r, pos.y + Mathf.Sin(ang) * r, -0.025f);
+                        c.rotation = Quaternion.Euler(0f, 0f, ang * Mathf.Rad2Deg + 180f);
+                        Color cc = _inward[i].color;
+                        cc.a = 0.8f * Mathf.Sin(k * Mathf.PI);
+                        _inward[i].color = cc;
+                    }
+                }
                 tank.rotation = Quaternion.Euler(0f, 0f, t * (spiral ? 540f : 90f)); // 빙글 (전차는 천천히, 비행기는 빠르게)
 
                 if (t >= nextVolley)
@@ -125,6 +144,11 @@ namespace HistoryHeroes.Skills
 
             if (swirl != null) swirl.Stop();
             if (pullRing != null) Destroy(pullRing.gameObject);
+            for (int i = 0; i < Inward; i++)
+            {
+                if (_inward[i] != null) Destroy(_inward[i].gameObject);
+                _inward[i] = null;
+            }
             if (shadow != null) Destroy(shadow.gameObject);
             FxBursts.Puff(tank.position + Vector3.back * 0.4f, new Color(0.8f, 0.8f, 0.8f), 1.2f);
             Destroy(tank.gameObject);

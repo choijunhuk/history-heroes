@@ -117,7 +117,7 @@ namespace HistoryHeroes.EditorTools
 
             // 영웅 표시: 발밑에 늘 보이는 하늘색 원 (무리 속에서도 영웅을 바로 찾게 — Codex 화면 점검 1번)
             // 재평가 1번: 예고 원(꽉 찬 원)과 다른 모양 = 밝은 고리. 고리 그림이 없으면 예전 원
-            if (_kit != null && _kit.Ring != null) Visual(playerObject.transform, "HeroRing", _kit.Ring, new Color(0.45f, 0.95f, 1f, 0.95f), Vector2.one * 1.5f, -2);
+            if (_kit != null && _kit.Ring != null) Visual(playerObject.transform, "HeroRing", _kit.Ring, new Color(0.45f, 0.95f, 1f, 0.55f), Vector2.one * 1.5f, -2); // 화면 점검 2차 3번: 외곽선이 생겨서 고리는 옅게
             else Visual(playerObject.transform, "HeroRing", _circle, new Color(0.35f, 0.85f, 1f, 0.38f), Vector2.one * 1.25f, -2);
 
             // 재평가 1번 "캐릭터를 먼저 보이게": 영웅 머리 위 은은한 점 조명 (영웅과 발밑이 주변보다 밝다)

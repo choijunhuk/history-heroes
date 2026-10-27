@@ -20,7 +20,7 @@ namespace HistoryHeroes.Player
         private static readonly Color Empty = new Color(1f, 1f, 1f, 0.22f);
         private static readonly Color Iron = new Color(1f, 0.55f, 0.15f, 0.95f);
         private static readonly Color Part = new Color(0.95f, 0.68f, 0.35f, 1f);
-        private static readonly Color Wind = new Color(0.45f, 0.95f, 1f, 0.5f);
+        private static readonly Color Wind = new Color(0.45f, 0.95f, 1f, 0.32f); // 화면 점검 2차: 벽 밖까지 보이는 원이 헷갈리지 않게 옅게
         private static readonly Color[] Stage = { new Color(1f, 1f, 1f, 0.95f), new Color(0.45f, 0.85f, 1f, 1f), new Color(1f, 0.82f, 0.25f, 1f) };
 
         private PlayerController _player;
@@ -29,7 +29,10 @@ namespace HistoryHeroes.Player
         private readonly SpriteRenderer[] _pips = new SpriteRenderer[3];
         private readonly SpriteRenderer[] _pipBacks = new SpriteRenderer[3];
         private SpriteRenderer _wind;
+        private SpriteRenderer _icon;
         private float _windAlpha;
+        private int _lastFilled;
+        private float _pop; // 점이 새로 켜질 때 톡 (1 → 0)
 
         public static HeroSignatureHud Create(PlayerController player)
         {
@@ -57,6 +60,9 @@ namespace HistoryHeroes.Player
                 _pips[i].transform.localScale = Vector3.one * PipSize;
             }
 
+            // 뜻을 알리는 작은 아이콘 (방패 = 철갑, 활 = 모으기, 톱니 = 부품), 막대·점 왼쪽
+            _icon = Make("Icon", _head, null, Color.white, Order + 2);
+            _icon.transform.localScale = Vector3.one * 0.42f;
             _wind = Make("WindRange", transform, PlaceholderSprites.RimCircle, Wind, -4);
             _wind.transform.localPosition = new Vector3(0f, 0f, -0.02f);
         }
@@ -87,6 +93,32 @@ namespace HistoryHeroes.Player
             UpdateIronclad(alive);
             UpdatePips(alive, stopped);
             UpdateWind(stopped);
+            UpdateIcon();
+        }
+
+        private void UpdateIcon()
+        {
+            Skills.SkillArt art = Skills.SkillArt.Get;
+            Sprite sprite = null;
+            float left = 0f;
+            if (_barFill.enabled)
+            {
+                sprite = art != null ? art.hudIron : null;
+                left = -BarWidth * 0.5f - 0.3f;
+            }
+            else if (_pips[0].enabled)
+            {
+                sprite = art != null ? (_player.Hero.chargeShot ? art.hudCharge : art.hudParts) : null;
+                int total = _player.Hero.chargeShot ? 3 : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
+                left = -(total - 1) * 0.5f * PipGap - 0.42f;
+            }
+
+            _icon.enabled = sprite != null;
+            if (!_icon.enabled) return;
+            _icon.sprite = sprite;
+            _icon.transform.localPosition = new Vector3(left, 0f, 0f);
+            float k = Mathf.Max(0.0001f, sprite.bounds.size.x);
+            _icon.transform.localScale = Vector3.one * (0.42f / k);
         }
 
         private void UpdateIronclad(bool alive)
@@ -121,6 +153,9 @@ namespace HistoryHeroes.Player
             }
 
             bool show = alive && total > 0 && (stopped || filled > 0);
+            if (filled > _lastFilled) _pop = 1f; // 새 칸이 켜졌다
+            _lastFilled = filled;
+            _pop = Mathf.MoveTowards(_pop, 0f, Time.deltaTime * 5f);
             for (int i = 0; i < _pips.Length; i++)
             {
                 SpriteRenderer pip = _pips[i];
@@ -134,7 +169,8 @@ namespace HistoryHeroes.Player
                 Color c = lit ? (charge ? Stage[i] : on) : Empty;
                 if (!lit && i == filled && stopped) c.a = 0.25f + 0.2f * Mathf.PingPong(Time.time * 3f, 1f); // 다음 칸이 차오르는 중
                 pip.color = c;
-                pip.transform.localScale = Vector3.one * (lit && charge && i == 2 ? PipSize * 1.3f : PipSize); // 3단은 크게
+                float pop = lit && i == filled - 1 ? 1f + 0.6f * _pop : 1f; // 방금 켜진 칸은 톡 커졌다 돌아온다
+                pip.transform.localScale = Vector3.one * (lit && charge && i == 2 ? PipSize * 1.3f : PipSize) * pop; // 3단은 크게
             }
         }
 

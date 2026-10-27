@@ -30,10 +30,10 @@ MonoBehaviour:
   meleeArcDegrees: 120
   meleeWaveCoefficient: 0.4
   signatureName: "\uC791\uC5C5\uB300"
-  signatureDescription: "\uBA48\uCDB0 \uC788\uB294 1\uCD08\uB9C8\uB2E4 \uBD80\uD488
-    1\uAC1C, 3\uAC1C\uBA74 \uBE44\uD589 \uAE30\uACC4 \uC870\uB9BD (\uCD5C\uB300 2\uB300,
-    20\uCD08). \uBE44\uD589 \uAE30\uACC4\uB294 \uC601\uC6C5\uC774 \uBA48\uCDB0 \uC788\uC744
-    \uB54C\uB9CC \uAC19\uC740 \uC801\uC744 \uC3DC\uB2E4 (\uACF5\uACA9\uB825 35%)"
+  signatureDescription: "\uBA48\uCDB0\uC11C \uBD80\uD488 3\uAC1C(1\uCD08\uC5D0 1\uAC1C)\uB97C
+    \uBAA8\uC73C\uBA74 \uBE44\uD589 \uAE30\uACC4 (\uCD5C\uB300 2\uB300, 20\uCD08).
+    \uAE30\uACC4\uB294 \uBA48\uCDB0 \uC788\uC744 \uB54C \uAC19\uC740 \uC801\uC744
+    \uC3DC\uB2E4 (35%)"
   firstShotDelay: 0.2
   firstShotBonus: 0
   damageReduction: 0
