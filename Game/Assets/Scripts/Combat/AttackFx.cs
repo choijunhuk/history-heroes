@@ -72,6 +72,7 @@ namespace HistoryHeroes.Combat
 
             Pool.Get(center, Quaternion.identity).Play(PlaceholderSprites.Circle, center, 0f,
                 Vector2.one * radius * 1.6f, color, duration, 5, Pool.Release, 1.25f);
+            FxBursts.Explosion(center, radius, new Color(color.r, color.g, color.b, 1f)); // 그래픽 평가 2번: 퍼지는 고리 + 불꽃 + 연기
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

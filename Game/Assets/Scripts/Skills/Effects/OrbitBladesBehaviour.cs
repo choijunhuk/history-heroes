@@ -59,6 +59,15 @@ namespace HistoryHeroes.Skills
             sr.sprite = PlaceholderSprites.Square;
             sr.color = color;
             sr.sortingOrder = 6;
+            // 3D 칼 (끝이 도는 쪽을 본다) + 원을 그리는 꼬리 빛 (그래픽 평가 2번: "흰 막대 같은 칼날"). 모델이 없으면 예전 네모
+            SkillArt art = SkillArt.Get;
+            if (art != null && art.blade != null)
+            {
+                SkillArt.Attach(art.blade, go.transform, 1.1f);
+                SkillArt.Trail(go, new Color(0.35f, 0.65f, 1f), 0.22f, 0.16f);
+                sr.enabled = false;
+            }
+
             return new Blade { Transform = go.transform };
         }
 

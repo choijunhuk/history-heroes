@@ -20,8 +20,8 @@ namespace HistoryHeroes.EditorTools
 
         // ---------------------------------------------------------------- 빛나는 입자 재질 (불·문 빛·효과)
 
-        /// <summary>더하기 섞기 입자 재질 (URP Particles/Unlit). 1 넘는 색이면 화면 후처리의 빛 번짐이 잡는다</summary>
-        private static Material FxGlowMaterial(string name, Color hdr)
+        /// <summary>더하기 섞기 입자 재질 (URP Particles/Unlit). 1 넘는 색이면 화면 후처리의 빛 번짐이 잡는다. texture null = 둥근 빛</summary>
+        private static Material FxGlowMaterial(string name, Color hdr, Sprite texture = null, bool plain = false)
         {
             string path = $"{Art3DAssets.Root}/Materials/M_FxGlow_{name}.mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -42,11 +42,140 @@ namespace HistoryHeroes.EditorTools
             mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
             mat.renderQueue = (int)RenderQueue.Transparent;
-            if (_kit != null && _kit.Glow != null) mat.SetTexture("_BaseMap", _kit.Glow.texture);
+            Sprite tex = texture != null ? texture : _kit != null ? _kit.Glow : null;
+            mat.SetTexture("_BaseMap", plain || tex == null ? null : tex.texture); // plain = 꼬리 빛처럼 무늬 없이
             mat.SetColor("_BaseColor", hdr);
             mat.enableInstancing = true;
             EditorUtility.SetDirty(mat);
             return mat;
+        }
+
+        /// <summary>반투명 연기 재질 (알파 섞기)</summary>
+        private static Material FxSmokeMaterial()
+        {
+            const string path = Art3DAssets.Root + "/Materials/M_FxSmoke.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+                AssetDatabase.CreateAsset(mat, path);
+            }
+
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 0f); // 알파
+            mat.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            mat.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            mat.SetFloat("_ZWrite", 0f);
+            mat.SetOverrideTag("RenderType", "Transparent");
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)RenderQueue.Transparent;
+            if (_kit != null && _kit.Glow != null) mat.SetTexture("_BaseMap", _kit.Glow.texture);
+            mat.SetColor("_BaseColor", Color.white);
+            mat.enableInstancing = true;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>투사체 꼬리 빛 (빌더에서 붙인다, 풀에서 다시 나올 때 Projectile이 지운다)</summary>
+        private static void AddTrail(GameObject go, Color color, float width, float time)
+        {
+            var trail = go.AddComponent<TrailRenderer>();
+            trail.sharedMaterial = FxGlowMaterial("Trail", new Color(1.8f, 1.8f, 1.8f), plain: true);
+            trail.time = time;
+            trail.minVertexDistance = 0.04f;
+            trail.widthMultiplier = width;
+            trail.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(color, 0f), new GradientColorKey(color, 1f) },
+                new[] { new GradientAlphaKey(0.85f, 0f), new GradientAlphaKey(0f, 1f) });
+            trail.colorGradient = gradient;
+            trail.alignment = LineAlignment.View;
+            trail.shadowCastingMode = ShadowCastingMode.Off;
+            trail.receiveShadows = false;
+        }
+
+        // ---------------------------------------------------------------- 스킬 모양 · 맞음 불꽃 (그래픽 평가 2번)
+
+        /// <summary>Resources/SkillArt: 스킬이 게임 중 꺼내 쓰는 블렌더 모델 + 꼬리 빛 재질</summary>
+        private static void CreateSkillArt()
+        {
+            AssetUtil.EnsureFolder("Assets/Resources");
+            var art = AssetUtil.LoadOrCreate<Skills.SkillArt>("Assets/Resources/SkillArt.asset");
+            art.blade = Art3DStage.Prefab("Fx_Blade");
+            art.boomerang = Art3DStage.Prefab("Fx_Boomerang");
+            art.iceShard = Art3DStage.Prefab("Fx_IceShard");
+            art.meteor = Art3DStage.Prefab("Fx_Meteor");
+            art.shield = Art3DStage.Prefab("Fx_Shield");
+            art.trail = FxGlowMaterial("Trail", new Color(1.8f, 1.8f, 1.8f), plain: true);
+            EditorUtility.SetDirty(art);
+        }
+
+        /// <summary>장면에 하나: 맞음 불꽃 · 연기 · 퍼지는 고리 입자 장치 (FxBursts가 Emit만 한다)</summary>
+        private static void BuildFxBursts()
+        {
+            var root = new GameObject("FxBursts");
+            ParticleSystem System(string name, Material mat, int max, bool stretch, bool flat)
+            {
+                var go = new GameObject(name);
+                go.transform.SetParent(root.transform, false);
+                var ps = go.AddComponent<ParticleSystem>();
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                ParticleSystem.MainModule main = ps.main;
+                main.loop = false;
+                main.playOnAwake = false;
+                main.maxParticles = max;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                main.startSpeed = 0f;
+                ParticleSystem.EmissionModule emission = ps.emission;
+                emission.enabled = false; // Emit()로만 낸다
+                ParticleSystem.ShapeModule shape = ps.shape;
+                shape.enabled = false;
+                var renderer = go.GetComponent<ParticleSystemRenderer>();
+                renderer.sharedMaterial = mat;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                if (stretch)
+                {
+                    renderer.renderMode = ParticleSystemRenderMode.Stretch;
+                    renderer.lengthScale = 2.2f;
+                    renderer.velocityScale = 0.04f;
+                }
+
+                if (flat) renderer.alignment = ParticleSystemRenderSpace.World; // 땅에 누운 고리 (XY 평면)
+                return ps;
+            }
+
+            ParticleSystem sparks = System("Sparks", FxGlowMaterial("Spark", new Color(2.6f, 2.2f, 1.6f)), 400, stretch: true, flat: false);
+            ParticleSystem.MainModule sm = sparks.main;
+            sm.gravityModifier = 0f;
+            ParticleSystem.SizeOverLifetimeModule ss = sparks.sizeOverLifetime;
+            ss.enabled = true;
+            ss.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.2f));
+            ParticleSystem.LimitVelocityOverLifetimeModule drag = sparks.limitVelocityOverLifetime;
+            drag.enabled = true;
+            drag.drag = 6f; // 확 튀었다가 멈춘다
+
+            ParticleSystem puffs = System("Puffs", FxSmokeMaterial(), 200, stretch: false, flat: false);
+            ParticleSystem.SizeOverLifetimeModule ps2 = puffs.sizeOverLifetime;
+            ps2.enabled = true;
+            ps2.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.7f, 1f, 1.4f));
+            ParticleSystem.ColorOverLifetimeModule pc = puffs.colorOverLifetime;
+            pc.enabled = true;
+            var fade = new Gradient();
+            fade.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0.75f, 0f), new GradientAlphaKey(0f, 1f) });
+            pc.color = fade;
+
+            ParticleSystem rings = System("Rings", FxGlowMaterial("Ring", new Color(2f, 1.8f, 1.5f), _kit != null ? _kit.Ring : null), 40, stretch: false, flat: true);
+            ParticleSystem.SizeOverLifetimeModule rs = rings.sizeOverLifetime;
+            rs.enabled = true;
+            rs.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.25f, 1f, 1f));
+            ParticleSystem.ColorOverLifetimeModule rc = rings.colorOverLifetime;
+            rc.enabled = true;
+            rc.color = fade;
+
+            var bursts = root.AddComponent<Combat.FxBursts>();
+            using (var props = new Props(bursts)) props.Ref("sparks", sparks).Ref("puffs", puffs).Ref("rings", rings);
         }
 
         /// <summary>화로 불: 위(-Z)로 올라가며 노랑 → 주황 → 사라지는 입자</summary>
@@ -253,11 +382,11 @@ namespace HistoryHeroes.EditorTools
         {
             var sets = new (string key, string[] flat, string[] edge)[]
             {
-                ("ch1", new[] { "Floor_Cracks", "Puddle_Mesh" }, new[] { "Weeds", "Weeds", "Deco_Rubble" }),
-                ("ch2", new[] { "Floor_Rug", "Floor_Cracks" }, new[] { "Deco_Rubble" }),
-                ("ch3", new[] { "Floor_Grate", "Puddle_Mesh", "Floor_Cracks" }, new[] { "Deco_Rubble" }),
-                ("ch4", new[] { "Floor_Cracks", "Puddle_Mesh" }, new[] { "Bones", "Deco_Rubble" }),
-                ("ch5", new[] { "Floor_Rug", "Floor_Cracks" }, new[] { "Bones" }),
+                ("ch1", new[] { "Puddle_Mesh" }, new[] { "Weeds", "Weeds", "Deco_Rubble" }),
+                ("ch2", new[] { "Floor_Rug" }, new[] { "Deco_Rubble" }),
+                ("ch3", new[] { "Floor_Grate", "Puddle_Mesh" }, new[] { "Deco_Rubble" }),
+                ("ch4", new[] { "Puddle_Mesh" }, new[] { "Bones", "Deco_Rubble" }),
+                ("ch5", new[] { "Floor_Rug" }, new[] { "Bones" }),
             };
             list.arraySize = sets.Length;
             for (int i = 0; i < sets.Length; i++)

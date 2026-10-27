@@ -117,8 +117,29 @@ namespace HistoryHeroes.EditorTools
                     FxPart(root, Stage3D.Shape.Box, wave, new Vector3(-0.05f, -0.38f, 0f), Quaternion.Euler(0f, 0f, 25f), new Vector3(0.08f, 0.22f, 0.06f));
                     break;
                 case Fx.Shard:
-                    FxPart(root, Stage3D.Shape.Box, FxMat("Ice", new Color(0.65f, 0.9f, 1f), 1.3f), Vector3.zero, Quaternion.Euler(45f, 0f, 0f), new Vector3(0.44f, 0.09f, 0.09f));
+                {
+                    // 블렌더 얼음 결정 (빛나는 Ice 역할, 끝이 날아가는 쪽). 없으면 예전 상자
+                    GameObject crystal = Art3DStage.Prefab("Fx_IceShard");
+                    if (crystal != null)
+                    {
+                        var model = (GameObject)Object.Instantiate(crystal, root, false);
+                        model.transform.localScale = Vector3.one * 1.1f;
+                    }
+                    else FxPart(root, Stage3D.Shape.Box, FxMat("Ice", new Color(0.65f, 0.9f, 1f), 1.3f), Vector3.zero, Quaternion.Euler(45f, 0f, 0f), new Vector3(0.44f, 0.09f, 0.09f));
+
                     break;
+                }
+            }
+
+            // 꼬리 빛 (그래픽 평가 2번): 적 탄은 진한 분홍(피할 것이 잘 보이게), 내 것은 옅게
+            switch (fx)
+            {
+                case Fx.Arrow: AddTrail(root.gameObject, new Color(1f, 0.95f, 0.8f), 0.12f, 0.12f); break;
+                case Fx.EnemyArrow: AddTrail(root.gameObject, new Color(1f, 0.3f, 0.6f), 0.16f, 0.16f); break;
+                case Fx.Bullet: AddTrail(root.gameObject, new Color(1f, 0.8f, 0.35f), 0.14f, 0.1f); break;
+                case Fx.Orb: AddTrail(root.gameObject, new Color(0.45f, 0.85f, 1f), 0.3f, 0.2f); break;
+                case Fx.Wave: AddTrail(root.gameObject, new Color(0.6f, 1f, 0.8f), 0.5f, 0.12f); break;
+                case Fx.Shard: AddTrail(root.gameObject, new Color(0.6f, 0.9f, 1f), 0.18f, 0.15f); break;
             }
 
             var sr = go.GetComponent<SpriteRenderer>();

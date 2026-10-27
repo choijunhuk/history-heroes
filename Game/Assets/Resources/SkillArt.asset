@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19964b026c1b2ae49bd763716e3a378d, type: 3}
+  m_Name: SkillArt
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.SkillArt
+  blade: {fileID: 1333879357172725722, guid: 3589bdc504a7273468d36e7fd096a842, type: 3}
+  boomerang: {fileID: 6538519846269247124, guid: 582009f1437e245428abd1ebb6c3f637, type: 3}
+  iceShard: {fileID: 3822611236703381804, guid: 070619aabbfb2f14fabd3dbe17844c02, type: 3}
+  meteor: {fileID: 1517781499401558637, guid: d07bc4c1f2a17a64a8f00664dfef1402, type: 3}
+  shield: {fileID: 2715443471627401452, guid: 1651b6e757993d64f83a57d83bba839f, type: 3}
+  trail: {fileID: 2100000, guid: 80e6b1b681fceaf419568505389ccd0c, type: 2}

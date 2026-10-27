@@ -42,6 +42,15 @@ namespace HistoryHeroes.Skills
             sr.sprite = PlaceholderSprites.Square;
             sr.color = color;
             sr.sortingOrder = 5;
+            // 3D 나무 부메랑 + 빙글 도는 꼬리 빛 (그래픽 평가 2번). 모델이 없으면 예전 네모
+            SkillArt art = SkillArt.Get;
+            if (art != null && art.boomerang != null)
+            {
+                SkillArt.Attach(art.boomerang, template.transform, 1.25f);
+                SkillArt.Trail(template, new Color(1f, 0.75f, 0.4f), 0.2f, 0.12f);
+                sr.enabled = false;
+            }
+
             return new ComponentPool<BoomerangMover>(template.AddComponent<BoomerangMover>(), root, prewarm: 4);
         }
 

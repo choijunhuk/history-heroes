@@ -59,6 +59,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(numbers)) props.Ref("font", _font);
 
             BuildLighting(_stage, camera);
+            BuildFxBursts(); // 그래픽 평가 2번: 맞음 불꽃 · 쓰러짐 연기 · 터짐 고리
             BuildOutside(_stage);
 
             // ----- 모드별 묶음: 장면이 열릴 때 BattleBootstrap이 한쪽만 켠다 -----

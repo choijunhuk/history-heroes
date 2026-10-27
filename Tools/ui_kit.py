@@ -171,6 +171,11 @@ def radial(size, fn):
     return img
 
 
+def ring(size=256):
+    """퍼지는 고리 (폭발·내려찍기): 가장자리 0.8 근처만 밝다"""
+    return radial(size, lambda d: max(0.0, 1.0 - abs(d - 0.78) / 0.16) ** 1.5 * (1.0 if d < 1.0 else 0.0))
+
+
 def glow(size=256):
     return radial(size, lambda d: max(0.0, 1.0 - d) ** 2.2)
 
@@ -346,6 +351,7 @@ def main(out):
         "ui_frame_gold": frame(gold=True),
         "ui_shadow": shadow(),
         "ui_glow": glow(),
+        "ui_ring": ring(),
         "ui_rays": ray_burst(),
         "ui_ribbon": ribbon(),
         "ui_bar_bg": bar_bg(),

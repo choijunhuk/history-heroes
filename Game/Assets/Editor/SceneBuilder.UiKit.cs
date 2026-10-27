@@ -23,7 +23,7 @@ namespace HistoryHeroes.EditorTools
 
         private sealed class UiKitSprites
         {
-            public Sprite Button, Panel, Row, Frame, FrameGold, Shadow, Glow, Rays, Ribbon, BarBg, BarFill, Slot, Badge, Tab, Screen, Pattern, Vignette, Star, Sparkle, Divider;
+            public Sprite Button, Panel, Row, Frame, FrameGold, Shadow, Glow, Ring, Rays, Ribbon, BarBg, BarFill, Slot, Badge, Tab, Screen, Pattern, Vignette, Star, Sparkle, Divider;
         }
 
         private static UiKitSprites _kit;
@@ -92,7 +92,7 @@ namespace HistoryHeroes.EditorTools
             _kit = new UiKitSprites
             {
                 Button = S("ui_button"), Panel = S("ui_panel"), Row = S("ui_row"), Frame = S("ui_frame"), FrameGold = S("ui_frame_gold"),
-                Shadow = S("ui_shadow"), Glow = S("ui_glow"), Rays = S("ui_rays"), Ribbon = S("ui_ribbon"), BarBg = S("ui_bar_bg"),
+                Shadow = S("ui_shadow"), Glow = S("ui_glow"), Ring = S("ui_ring"), Rays = S("ui_rays"), Ribbon = S("ui_ribbon"), BarBg = S("ui_bar_bg"),
                 BarFill = S("ui_bar_fill"), Slot = S("ui_slot"), Badge = S("ui_badge"), Tab = S("ui_tab"), Screen = S("ui_screen"),
                 Pattern = S("ui_pattern"), Vignette = S("ui_vignette"), Star = S("ui_star"), Sparkle = S("ui_sparkle"), Divider = S("ui_divider"),
             };

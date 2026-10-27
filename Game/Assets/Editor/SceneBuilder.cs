@@ -45,6 +45,7 @@ namespace HistoryHeroes.EditorTools
             CreateSprites();
             SetupFont();
             SetupUiKit(); // 그래픽 평가 3번: 게임다운 버튼·창·아이콘·제목 글꼴
+            CreateSkillArt(); // 그래픽 평가 2번: 스킬 3D 모양 (Resources/SkillArt)
             CopyLegalTexts(); // v1.0 약관·개인정보·크레딧 (Docs → Resources/Legal)
             CreateSoundBank(); // v1.0 소리 표 (Assets/Audio → Resources/Audio/SoundBank)
 

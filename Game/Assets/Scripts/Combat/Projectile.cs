@@ -26,6 +26,7 @@ namespace HistoryHeroes.Combat
         private Action<Projectile> _release;
         private Action<DamageInfo, float> _onHit;
         private Action<Health, Vector2> _onHitTarget;
+        private TrailRenderer[] _trails;
 
         // 한 번에 여러 개를 받아서, 방금 뚫고 지나온 적은 빼고 가장 가까운 것을 고른다
         // (첫 결과가 방금 그 적이면 뒤의 벽을 못 보고 통과하던 문제 방지)
@@ -58,6 +59,9 @@ namespace HistoryHeroes.Combat
             _lastHit = null;
             Owner = null;
             transform.right = _direction;
+            // 꼬리 빛 (그래픽 평가 2번): 풀에서 다시 나온 투사체가 예전 자리에서 줄을 끌고 오지 않게
+            _trails ??= GetComponentsInChildren<TrailRenderer>(true);
+            foreach (TrailRenderer trail in _trails) trail.Clear();
         }
 
         private void Update()
