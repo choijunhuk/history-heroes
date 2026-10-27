@@ -82,7 +82,8 @@ namespace HistoryHeroes.Skills
                 Vector2 position = center + offset;
 
                 Blade blade = _blades[i];
-                blade.Transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 0f, degrees + 90f));
+                // 3D: 칼날은 가슴 높이(-Z)에서 돈다 (땅에 누워 보이지 않게, Art3D-Plan 6번). 판정은 XY 그대로
+                blade.Transform.SetPositionAndRotation(new Vector3(position.x, position.y, -0.75f), Quaternion.Euler(0f, 0f, degrees + 90f));
 
                 HitEnemies(position, now);
 

@@ -54,7 +54,7 @@ namespace HistoryHeroes.EditorTools
             }
         }
 
-        private static Material RoleMaterial(string role)
+        public static Material RoleMaterial(string role)
         {
             if (!Roles.TryGetValue(role, out (Color color, bool metal) r)) r = (Color.gray, false);
             string path = $"{Materials}/M_Prop_{role}.mat";
@@ -82,7 +82,7 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>FBX 재질 이름 → 역할 (블렌더가 "Gold" · "Gold.001" 등으로 내보낸다)</summary>
-        private static string RoleOf(Material m)
+        public static string RoleOf(Material m)
         {
             if (m == null) return "Black";
             string n = m.name;

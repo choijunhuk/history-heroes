@@ -37,7 +37,7 @@ namespace HistoryHeroes.EditorTools
                 // 영웅별 기본 공격 (Heroes.md): 나폴레옹 총알, 테슬라 전기 구체, 관우 검기 (벽 튕김 패시브)
                 Bullet = ProjectilePrefab("Bullet_Napoleon", new Color(1f, 0.85f, 0.4f), new Vector2(0.32f, 0.14f), 0.12f, 2.5f, fx: Fx.Bullet),
                 Orb = ProjectilePrefab("Orb_Tesla", new Color(0.55f, 0.9f, 1f), new Vector2(0.34f, 0.34f), 0.17f, 3f, _circle, Fx.Orb),
-                SwordWave = ProjectilePrefab("SwordWave_Guan", new Color(0.85f, 1f, 0.9f, 0.85f), new Vector2(0.2f, 0.8f), 0.3f, 1.2f),
+                SwordWave = ProjectilePrefab("SwordWave_Guan", new Color(0.85f, 1f, 0.9f, 0.85f), new Vector2(0.2f, 0.8f), 0.3f, 1.2f, fx: Fx.Wave),
             };
 
             Material line = AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");

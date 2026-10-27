@@ -162,6 +162,8 @@ namespace HistoryHeroes.EditorTools
             p.source = source;
             p.sourceChapter = chapter;
             p.color = color;
+            p.model3D = Art3DPets.Model(id, out float petHeight); // 3D 모델 (없으면 임시 도형)
+            p.modelHeight = petHeight;
             p.trigger = trigger;
             p.effect = effect;
             p.awaken5 = awaken5;

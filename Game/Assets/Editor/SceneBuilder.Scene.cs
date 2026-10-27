@@ -127,6 +127,8 @@ namespace HistoryHeroes.EditorTools
             SpriteRenderer petMarker = Visual(petObject.transform, "Marker", _circle, Color.white, Vector2.one * 0.35f, 6);
             var pet = petObject.AddComponent<HistoryHeroes.Pets.PetController>();
             using (var props = new Props(pet)) props.Ref("body", petBody).Ref("marker", petMarker).Mask("enemyMask", Mask(EnemyLayer));
+            // 3D 펫 (Art3D-Plan 5번): 장착한 펫 모델을 PetController가 고른다. 몸 도형은 모델이 있으면 숨긴다
+            using (var props = new Props(petObject.AddComponent<Visual3D>())) props.Float("runSpeed", 6f).Refs("hideRenderers", new Object[] { petBody });
             petObject.SetActive(false);
             using (var props = new Props(cameraFollow)) props.Ref("target", playerObject.transform).Ref("fit", fit).Float("boundsHalfSize", SurvivalHalf);
 

@@ -41,6 +41,7 @@ namespace HistoryHeroes.EditorTools
             AnimatorController baseController = BaseController();
             foreach (Look look in Heroes) log.Add(Compose(look, Override(look.name, baseController, look.attack), Characters));
             foreach (EnemyLook e in Enemies) log.Add(Compose(e.look, Override(e.look.name, baseController, e.look.attack), EnemyCharacters));
+            log.Add(Art3DPets.BuildAll());
             AssetDatabase.SaveAssets();
             return string.Join("\n", log);
         }

@@ -69,7 +69,7 @@ namespace HistoryHeroes.Skills
             _onApex = onApex;
             _release = release;
             _hitThisPass.Clear();
-            transform.position = origin;
+            transform.position = Lift(origin);
         }
 
         private void Update()
@@ -84,7 +84,7 @@ namespace HistoryHeroes.Skills
                 // 감속하며 나간다 (끝에서 잠깐 머무는 느낌)
                 float t = Mathf.Clamp01(_age / _outTime);
                 float eased = 1f - (1f - t) * (1f - t);
-                transform.position = _origin + _direction * (_distance * eased);
+                transform.position = Lift(_origin + _direction * (_distance * eased));
                 if (t >= 1f)
                 {
                     _returning = true;
@@ -112,7 +112,7 @@ namespace HistoryHeroes.Skills
                     return;
                 }
 
-                transform.position = (Vector2)transform.position + to.normalized * Mathf.Min(_returnSpeed * dt, to.magnitude);
+                transform.position = Lift((Vector2)transform.position + to.normalized * Mathf.Min(_returnSpeed * dt, to.magnitude));
             }
 
             HitAround();
@@ -128,5 +128,8 @@ namespace HistoryHeroes.Skills
                 h.TryTakeDamage(DamageCalculator.Roll(_stats, _coefficient, DamageKind.Active, false, _sourceId));
             }
         }
+
+        /// <summary>3D: 가슴 높이(-Z)로 띄운다 (판정은 XY 그대로, Art3D-Plan 6번)</summary>
+        private static Vector3 Lift(Vector2 p) => new Vector3(p.x, p.y, -0.75f);
     }
 }

@@ -21,6 +21,7 @@ namespace HistoryHeroes.EditorTools
             Bullet,
             Orb,
             Shard,
+            Wave,
         }
 
         /// <summary>투사체가 뜨는 높이 (가슴께)</summary>
@@ -107,6 +108,13 @@ namespace HistoryHeroes.EditorTools
                     break;
                 case Fx.Orb:
                     FxPart(root, Stage3D.Shape.Rock, FxMat("Orb", new Color(0.5f, 0.88f, 1f), 2.2f), Vector3.zero, Quaternion.identity, Vector3.one * 0.34f);
+                    break;
+                case Fx.Wave:
+                    // 관우 검기: 날아가는 쪽에 가로로 선 빛나는 날 (얇은 상자 + 끝이 가는 두 조각)
+                    Material wave = FxMat("Wave", new Color(0.8f, 1f, 0.9f), 1.6f);
+                    FxPart(root, Stage3D.Shape.Box, wave, Vector3.zero, Quaternion.identity, new Vector3(0.12f, 0.6f, 0.08f));
+                    FxPart(root, Stage3D.Shape.Box, wave, new Vector3(-0.05f, 0.38f, 0f), Quaternion.Euler(0f, 0f, -25f), new Vector3(0.08f, 0.22f, 0.06f));
+                    FxPart(root, Stage3D.Shape.Box, wave, new Vector3(-0.05f, -0.38f, 0f), Quaternion.Euler(0f, 0f, 25f), new Vector3(0.08f, 0.22f, 0.06f));
                     break;
                 case Fx.Shard:
                     FxPart(root, Stage3D.Shape.Box, FxMat("Ice", new Color(0.65f, 0.9f, 1f), 1.3f), Vector3.zero, Quaternion.Euler(45f, 0f, 0f), new Vector3(0.44f, 0.09f, 0.09f));

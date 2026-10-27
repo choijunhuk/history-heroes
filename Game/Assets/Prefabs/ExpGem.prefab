@@ -246,3 +246,4 @@ MonoBehaviour:
   degreesPerSecond: 120
   bobHeight: 0.06
   bobSpeed: 3
+  yUp: 0

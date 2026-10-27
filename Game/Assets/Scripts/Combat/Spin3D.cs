@@ -11,6 +11,8 @@ namespace HistoryHeroes.Combat
         [SerializeField] private float degreesPerSecond = 120f;
         [SerializeField] private float bobHeight = 0.06f;
         [SerializeField] private float bobSpeed = 3f;
+        [Tooltip("모델 공간에서 위가 +Y (펫 모델처럼 Visual3D가 세워 주는 것). 끄면 위 = -Z (전투 땅에 바로 놓인 보석)")]
+        [SerializeField] private bool yUp;
 
         private Vector3 _basePosition;
         private Quaternion _baseRotation;
@@ -26,8 +28,9 @@ namespace HistoryHeroes.Combat
         private void LateUpdate()
         {
             float t = Time.time + _phase;
-            transform.localRotation = Quaternion.AngleAxis(t * degreesPerSecond, Vector3.forward) * _baseRotation;
-            transform.localPosition = _basePosition + new Vector3(0f, 0f, -bobHeight * Mathf.Sin(t * bobSpeed));
+            Vector3 up = yUp ? Vector3.up : Vector3.back;
+            transform.localRotation = Quaternion.AngleAxis(t * degreesPerSecond, up) * _baseRotation;
+            transform.localPosition = _basePosition + up * (bobHeight * Mathf.Sin(t * bobSpeed));
         }
     }
 }
