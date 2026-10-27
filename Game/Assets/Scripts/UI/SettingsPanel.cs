@@ -29,6 +29,9 @@ namespace HistoryHeroes.UI
         [Header("v1.0 프레임 · 조이스틱")]
         [SerializeField] private Button frameButton;
         [SerializeField] private TMP_Text frameLabel;
+        [Tooltip("그래픽 품질 3단 (낮음 · 보통 · 높음)")]
+        [SerializeField] private Button graphicsButton;
+        [SerializeField] private TMP_Text graphicsLabel;
         [SerializeField] private Button joystickModeButton;
         [SerializeField] private TMP_Text joystickModeLabel;
         [SerializeField] private Button joystickSizeButton;
@@ -60,6 +63,7 @@ namespace HistoryHeroes.UI
             if (sfxButton != null) sfxButton.onClick.AddListener(() => Change(s => s.sfxVolume = (s.sfxVolume + 1) % 5));
             if (vibrationButton != null) vibrationButton.onClick.AddListener(() => Change(s => s.vibration = !s.vibration));
             if (frameButton != null) frameButton.onClick.AddListener(() => Change(s => s.frame60 = !s.frame60));
+            if (graphicsButton != null) graphicsButton.onClick.AddListener(() => Change(s => s.graphics = (Mathf.Clamp(s.graphics, 0, 2) + 1) % 3));
             if (joystickModeButton != null) joystickModeButton.onClick.AddListener(() => Change(s => s.joystickFixed = !s.joystickFixed));
             if (joystickSizeButton != null) joystickSizeButton.onClick.AddListener(() => Change(s => s.joystickSize = (s.joystickSize + 1) % 3));
             if (joystickOpacityButton != null) joystickOpacityButton.onClick.AddListener(() => Change(s => s.joystickOpacity = (s.joystickOpacity + 1) % 3));
@@ -114,6 +118,7 @@ namespace HistoryHeroes.UI
             if (sfxLabel != null) sfxLabel.text = $"효과음: {s.sfxVolume * 25}%";
             if (vibrationLabel != null) vibrationLabel.text = $"진동: {(s.vibration ? "켜기" : "끄기")}";
             if (frameLabel != null) frameLabel.text = $"프레임: {(s.frame60 ? "60 (부드럽게)" : "30 (배터리 절약)")}";
+            if (graphicsLabel != null) graphicsLabel.text = $"그래픽: {Common.SettingsApplier.GraphicsName(s.graphics)}";
             if (joystickModeLabel != null) joystickModeLabel.text = $"조이스틱: {(s.joystickFixed ? "고정" : "누른 자리")}";
             if (joystickSizeLabel != null) joystickSizeLabel.text = $"조이스틱 크기: {Steps3[Mathf.Clamp(s.joystickSize, 0, 2)]}";
             if (joystickOpacityLabel != null) joystickOpacityLabel.text = $"조이스틱 진하기: {Opacity3[Mathf.Clamp(s.joystickOpacity, 0, 2)]}";

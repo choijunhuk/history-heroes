@@ -503,11 +503,13 @@ namespace HistoryHeroes.EditorTools
                 return b;
             }
 
-            Section("SectionSound", "소리", 720f);
+            Section("SectionSound", "소리 · 그래픽", 720f);
             Color sound = new Color(0.42f, 0.3f, 0.22f);
             Button music = Half("MusicVolume", "배경음: 75%", left, 645f, sound, out TMP_Text musicLabel);
             Button sfx = Half("SfxVolume", "효과음: 100%", right, 645f, sound, out TMP_Text sfxLabel);
             Button vibration = Half("Vibration", "진동: 켜기", left, 525f, sound, out TMP_Text vibrationLabel);
+            // 그래픽 품질 3단 (v1.0 17번): 낮음 = 그림자 끔 · 해상도 75% (느린 폰), 높음 = 계단 줄임
+            Button graphics = Half("Graphics", "그래픽: 보통", right, 525f, ButtonBlue, out TMP_Text graphicsLabel);
 
             Section("SectionScreen", "화면", 440f);
             Button shake = Half("Shake", "화면 흔들림: 보통", left, 365f, ButtonBlue, out TMP_Text shakeLabel);
@@ -549,7 +551,7 @@ namespace HistoryHeroes.EditorTools
                     .Ref("flashButton", flash).Ref("flashLabel", flashLabel).Ref("backButton", back)
                     .Ref("heartsButton", hearts).Ref("heartsLabel", heartsLabel).Ref("patrolButton", patrol).Ref("patrolLabel", patrolLabel)
                     .Ref("replayTutorialButton", replay).Ref("infoButton", infoButton).Ref("info", info)
-                    .Ref("frameButton", frame).Ref("frameLabel", frameLabel)
+                    .Ref("frameButton", frame).Ref("frameLabel", frameLabel).Ref("graphicsButton", graphics).Ref("graphicsLabel", graphicsLabel)
                     .Ref("musicButton", music).Ref("musicLabel", musicLabel).Ref("sfxButton", sfx).Ref("sfxLabel", sfxLabel)
                     .Ref("vibrationButton", vibration).Ref("vibrationLabel", vibrationLabel)
                     .Ref("joystickModeButton", joyMode).Ref("joystickModeLabel", joyModeLabel)

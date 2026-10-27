@@ -78,6 +78,18 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void GraphicsQuality_OldSavesAreMedium_AndScalesGrow()
+        {
+            // 그래픽 품질 3단 (v1.0 17번): 이 칸이 없는 옛 저장은 보통(1)
+            Assert.AreEqual(1, new HistoryHeroes.Records.GameSettings().graphics);
+            Assert.AreEqual(1, JsonUtility.FromJson<HistoryHeroes.Records.GameSettings>("{\"frame60\":true}").graphics);
+            Assert.That(SettingsApplier.RenderScale(0), Is.LessThan(SettingsApplier.RenderScale(1)));
+            Assert.That(SettingsApplier.RenderScale(1), Is.LessThan(SettingsApplier.RenderScale(2)));
+            Assert.AreEqual(1f, SettingsApplier.RenderScale(2), 0.0001f);
+            Assert.AreNotEqual(SettingsApplier.GraphicsName(0), SettingsApplier.GraphicsName(2));
+        }
+
+        [Test]
         public void StatusTint_FollowsTheStatusColor()
         {
             var red = new Color(0.85f, 0.25f, 0.25f);

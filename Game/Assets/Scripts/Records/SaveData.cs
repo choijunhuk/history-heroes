@@ -655,6 +655,8 @@ namespace HistoryHeroes.Records
         public bool notifyAsked;
         /// <summary>프레임: true 60 / false 30 (배터리 절약)</summary>
         public bool frame60 = true;
+        /// <summary>그래픽 품질 (v1.0 17번 · 3D): 0 낮음(그림자 끔 · 해상도 75%) / 1 보통(그림자 · 90%) / 2 높음(그림자 · 100% · 계단 줄임). 옛 저장은 보통</summary>
+        public int graphics = 1;
         /// <summary>조이스틱: false = 누른 자리에 생김 (기본, UX 2장) / true = 아래 가운데 고정</summary>
         public bool joystickFixed;
         /// <summary>조이스틱 크기: 0 작게 · 1 보통 · 2 크게</summary>
