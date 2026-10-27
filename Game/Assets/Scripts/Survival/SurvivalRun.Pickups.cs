@@ -244,10 +244,14 @@ namespace HistoryHeroes.Survival
         {
             float r = Random.value;
             int levels = r < 0.7f ? 1 : r < 0.95f ? 2 : 3;
-            for (int i = 0; i < levels; i++) experience.GrantLevelUp();
-            FxBursts.Explosion(at, 1.4f, new Color(1f, 0.85f, 0.3f));
-            HypeFx.Banner(levels == 1 ? "보물 상자!" : $"보물 상자 ×{levels}!", new Color(1f, 0.82f, 0.3f));
-            Audio.AudioManager.Play(levels >= 3 ? "legendary" : "levelup", 0.9f);
+            // 뽕맛 (확장 1차 7장): 흔들리다 열리며 빛기둥 → 그때 레벨업 (한 번씩 차례로)
+            ChestOpening.Play(this, at, art.chest, levels, () =>
+            {
+                if (_finished) return;
+                for (int i = 0; i < levels; i++) experience.GrantLevelUp();
+                HypeFx.Banner(levels == 1 ? "보물 상자!" : $"보물 상자 ×{levels}!", levels >= 3 ? new Color(1f, 0.6f, 1f) : new Color(1f, 0.82f, 0.3f));
+                Audio.AudioManager.Play(levels >= 3 ? "legendary" : "levelup", 0.9f);
+            });
         }
     }
 }
