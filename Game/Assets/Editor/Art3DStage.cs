@@ -22,6 +22,7 @@ namespace HistoryHeroes.EditorTools
             (@"D:\HH_Blender\Fx", Root + "/Fx"),
             (@"D:\HH_Blender\Deco", Root + "/Deco"),
             (@"D:\HH_Blender\Floor", Root + "/Floor"),
+            (@"D:\HH_Blender\Deco2", Root + "/Deco2"), // 확장 1차: 장치 · 특수 방 · 상자 · 서바이벌 소품
         };
 
         /// <summary>모델 앞쪽 돌리기 (FBX 기준). 얼음 파편·칼날은 끝이 Unity -X라 날아가는 쪽(+X)으로 돌린다</summary>

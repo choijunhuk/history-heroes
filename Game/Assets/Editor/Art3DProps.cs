@@ -61,6 +61,10 @@ namespace HistoryHeroes.EditorTools
             ["Helm_Red"] = (Hex(0xD9442B), false), ["Horn"] = (Hex(0xF2E3C2), false), ["Hood_Green"] = (Hex(0x3DB54A), false),
             ["Wood_Light"] = (Hex(0xC9955A), false), ["Bomb"] = (Hex(0x2A2E3D), false), ["Cap_Yellow"] = (Hex(0xF5C518), false),
             ["Fuse_Glow"] = (Hex(0xFFC23D), false), ["Orb_Glow"] = (Hex(0x6FF3FF), false), ["Crystal_Green"] = (Hex(0x4CE08A), false),
+            // 확장 1차 소품 (블렌더 Deco2 README)
+            ["Berry"] = (Hex(0xD92B3A), false), ["Hay"] = (Hex(0xE0B04E), false), ["Hay_Dark"] = (Hex(0xB8862F), false), ["Meat"] = (Hex(0xA8452E), false),
+            ["Hazard"] = (Hex(0xF2B705), false), ["Sign_Face"] = (Hex(0xEADFC4), false), ["Belt"] = (Hex(0x3B3D44), false), ["Plaster"] = (Hex(0xD8CDB8), false),
+            ["Glyph_Glow"] = (Hex(0x8FF0FF), false),
         };
 
         /// <summary>스스로 빛나는 역할 → 빛 색 (화면 후처리의 빛 번짐이 잡는다: 1 넘게)</summary>
@@ -70,6 +74,7 @@ namespace HistoryHeroes.EditorTools
             ["Ice"] = new Color(0.45f, 0.85f, 1f) * 1.3f,
             ["Lava"] = new Color(1f, 0.5f, 0.12f) * 3f,
             ["Crystal_Shadow"] = new Color(0.45f, 0.18f, 0.85f) * 0.9f,
+            ["Glyph_Glow"] = new Color(0.55f, 0.95f, 1f) * 2f,
             ["Fuse_Glow"] = new Color(1f, 0.6f, 0.15f) * 3f, ["Orb_Glow"] = new Color(0.4f, 0.95f, 1f) * 2f, ["Crystal_Green"] = new Color(0.3f, 1f, 0.55f) * 0.8f,
         };
 
