@@ -222,6 +222,14 @@ namespace HistoryHeroes.EditorTools
             tint = tint, head = false, attack = attack, shadows = shadows,
         };
 
+        /// <summary>적에게 장식 소품을 입힌다 (그래픽 재평가 6번: 종류마다 실루엣이 다르게). hide = 숨길 원래 무기 이름</summary>
+        private static Look Dress(Look look, string first, string second = null, string hide = null)
+        {
+            look.props = second != null ? new[] { first, second } : new[] { first };
+            if (hide != null) look.hide = new[] { hide };
+            return look;
+        }
+
         private static Look Soldier(string name, string body, string tex, Color tint, string attack, bool shadows, bool hood = true, string[] props = null, float ghost = 0f) => new Look
         {
             name = name, body = body, bodyTex = tex, tint = tint, attack = attack, shadows = shadows && ghost <= 0f,
@@ -246,13 +254,13 @@ namespace HistoryHeroes.EditorTools
         /// </summary>
         public static readonly EnemyLook[] Enemies =
         {
-            new EnemyLook { ids = new[] { "charger" }, height = 1.49f, look = Puglin("E_Charger", 1, new Color(1f, 0.8f, 0.78f), "Melee_Hook", false, light: true) },
-            new EnemyLook { ids = new[] { "archer" }, height = 1.49f, look = Puglin("E_Archer", 2, new Color(0.9f, 0.8f, 1f), "Spell_Simple_Shoot", false, light: true) },
-            new EnemyLook { ids = new[] { "bomber" }, height = 1.49f, look = Puglin("E_Bomber", 3, new Color(1f, 0.88f, 0.7f), "OverhandThrow", false, light: true) },
-            new EnemyLook { ids = new[] { "minion" }, height = 1.32f, look = Puglin("E_Minion", 3, new Color(0.7f, 0.66f, 0.8f), "Zombie_Scratch", false, light: true) },
+            new EnemyLook { ids = new[] { "charger" }, height = 1.49f, look = Dress(Puglin("E_Charger", 1, new Color(1f, 0.8f, 0.78f), "Melee_Hook", false, light: true), "Enemy_HornHelm") },
+            new EnemyLook { ids = new[] { "archer" }, height = 1.49f, look = Dress(Puglin("E_Archer", 2, new Color(0.9f, 0.8f, 1f), "Spell_Simple_Shoot", false, light: true), "Enemy_Hood", "Enemy_ShortBow", hide: "Puglin_Stick") },
+            new EnemyLook { ids = new[] { "bomber" }, height = 1.49f, look = Dress(Puglin("E_Bomber", 3, new Color(1f, 0.88f, 0.7f), "OverhandThrow", false, light: true), "Enemy_BombPack", "Enemy_HandBomb", hide: "Puglin_Stick") },
+            new EnemyLook { ids = new[] { "minion" }, height = 1.32f, look = Dress(Puglin("E_Minion", 3, new Color(0.7f, 0.66f, 0.8f), "Zombie_Scratch", false, light: true), "Enemy_Cap", "Enemy_Dagger", hide: "Puglin_Stick") },
             new EnemyLook { ids = new[] { "shield" }, height = 1.78f, look = Soldier("E_Shield", "Male_Peasant", "T_Peasant_BaseColor", new Color(0.75f, 0.8f, 0.9f), "Melee_Hook", false, props: new[] { "Enemy_TowerShield" }) }, // 방패를 앞에 세우고 밀어붙인다 (Shield_Dash는 방패가 눕는다 — 화면 점검 2차)
-            new EnemyLook { ids = new[] { "splitter", "splitter_small" }, height = 1.55f, look = Imp("E_Splitter", 1, new Color(0.75f, 1f, 0.78f), "Punch_Jab", false, light: true) },
-            new EnemyLook { ids = new[] { "summoner" }, height = 1.61f, look = Imp("E_Summoner", 2, new Color(0.9f, 0.78f, 1f), "Spell_Simple_Shoot", false, glow: true, light: true) },
+            new EnemyLook { ids = new[] { "splitter", "splitter_small" }, height = 1.55f, look = Dress(Imp("E_Splitter", 1, new Color(0.75f, 1f, 0.78f), "Punch_Jab", false, light: true), "Enemy_BackSpikes") },
+            new EnemyLook { ids = new[] { "summoner" }, height = 1.61f, look = Dress(Imp("E_Summoner", 2, new Color(0.9f, 0.78f, 1f), "Spell_Simple_Shoot", false, glow: true, light: true), "Enemy_Staff", "Enemy_SkullMask", hide: "Imp_Mace") },
             // 중간 보스 (bossScale로 더 커진다)
             new EnemyLook { ids = new[] { "mid_bison" }, height = 1.61f, look = Puglin("M_Bison", 1, new Color(0.85f, 0.72f, 0.6f), "Shield_Dash", true) },
             new EnemyLook { ids = new[] { "mid_torch" }, height = 1.72f, look = Soldier("M_Torch", "Male_Ranger", "T_Ranger_3_BaseColor", new Color(1f, 0.7f, 0.5f), "Sword_Attack", true) },

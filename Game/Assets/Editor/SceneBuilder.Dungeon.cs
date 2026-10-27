@@ -172,18 +172,48 @@ namespace HistoryHeroes.EditorTools
             RectTransform holder = Rect("RewardRoom", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             var screen = holder.gameObject.AddComponent<RewardRoomPanel>();
             RectTransform panel = Rect("Panel", holder, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
-            Img(panel, new Color(0f, 0f, 0f, 0.75f), null).raycastTarget = true;
+            Img(panel, new Color(0.02f, 0.04f, 0.08f, 0.85f), null).raycastTarget = true;
 
-            TMP_Text title = Label("Title", panel, "보상 방", 60, TextAlignmentOptions.Center, new Color(0.55f, 1f, 0.7f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 420f), new Vector2(960f, 100f));
+            // 그래픽 평가 "보상 화면은 검은 배경에 색 블록 3개": 빛살 + 초록 리본 제목 + 아이콘 카드 3장 (차례로 튀어나온다)
+            if (_kit != null)
+            {
+                RectTransform rays = Rect("Rays", panel, Center, Center, Center, new Vector2(0f, 430f), new Vector2(900f, 900f));
+                Img(rays, new Color(0.55f, 1f, 0.7f, 0.18f), _kit.Rays);
+                rays.gameObject.AddComponent<UiSpin>();
+                RectTransform ribbon = Rect("Ribbon", panel, Center, Center, Center, new Vector2(0f, 425f), new Vector2(820f, 150f));
+                Image ribbonImage = Img(ribbon, new Color(0.25f, 0.7f, 0.45f), _kit.Ribbon);
+                ribbonImage.type = Image.Type.Sliced;
+                ribbon.gameObject.AddComponent<UiPop>();
+            }
+
+            TMP_Text title = Label("Title", panel, "보상 방", 60, TextAlignmentOptions.Center, Color.white);
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 438f), new Vector2(760f, 100f));
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 30f;
+            title.fontSizeMax = 56f;
 
             var buttons = new Button[3];
             var labels = new TMP_Text[3];
-            Color[] colors = { new Color(0.25f, 0.5f, 0.32f), new Color(0.25f, 0.35f, 0.6f), new Color(0.55f, 0.42f, 0.15f) };
+            Color[] colors = { new Color(0.3f, 0.8f, 0.45f), new Color(0.35f, 0.55f, 1f), new Color(1f, 0.75f, 0.2f) };
+            string[] icons = { "heal", "cards", "chest" };
             for (int i = 0; i < 3; i++)
             {
-                buttons[i] = Btn($"Reward{i + 1}", panel, "", new Vector2(0f, 180f - i * 230f), new Vector2(820f, 200f), colors[i], out labels[i]);
+                buttons[i] = Btn($"Reward{i + 1}", panel, "", new Vector2(0f, 180f - i * 240f), new Vector2(840f, 210f), colors[i], out labels[i]);
                 labels[i].fontSize = 48;
+                labels[i].alignment = TextAlignmentOptions.MidlineLeft;
+                labels[i].rectTransform.offsetMin = new Vector2(220f, 0f);
+                Sprite icon = Icon(icons[i]);
+                if (icon != null)
+                {
+                    RectTransform slot = Rect("IconSlot", buttons[i].transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(30f, 6f), new Vector2(150f, 150f));
+                    Image slotImage = Img(slot, Color.Lerp(colors[i], Color.black, 0.35f), _kit != null ? _kit.Slot : null);
+                    if (_kit != null) slotImage.type = Image.Type.Sliced;
+                    RectTransform iconRect = Rect("Icon", slot, Center, Center, Center, Vector2.zero, new Vector2(104f, 104f));
+                    Img(iconRect, Color.white, icon).preserveAspect = true;
+                }
+
+                var pop = buttons[i].gameObject.AddComponent<UiPop>();
+                using (var pp = new Props(pop)) pp.Float("delay", 0.08f * (i + 1));
             }
 
             using (var props = new Props(screen))

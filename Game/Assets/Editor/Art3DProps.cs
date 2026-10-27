@@ -25,6 +25,18 @@ namespace HistoryHeroes.EditorTools
             ["Napoleon_Bicorne"] = "Head", ["Napoleon_Pistol"] = "hand_r",
             ["Tesla_Mustache"] = "Head", ["Tesla_Coil"] = "hand_r",
             ["Enemy_TowerShield"] = "hand_l", // 방패병의 큰 나무 방패 (앞을 막는다)
+            // 그래픽 재평가 6번 "적을 실루엣으로 구분": 무리 적마다 머리 · 등 · 손 장식 (블렌더 notes_enemies.txt)
+            ["Enemy_HornHelm"] = "Head", ["Enemy_Hood"] = "Head", ["Enemy_ShortBow"] = "hand_l", ["Enemy_BombPack"] = "spine_03",
+            ["Enemy_HandBomb"] = "hand_l", ["Enemy_Cap"] = "Head", ["Enemy_Dagger"] = "hand_l", ["Enemy_BackSpikes"] = "spine_03",
+            ["Enemy_Staff"] = "hand_l", ["Enemy_SkullMask"] = "Head",
+        };
+
+        /// <summary>소품을 맞춘 기본 몸 (없으면 Superhero). 적 장식은 그 적의 몸에 맞춰 만들었다 (같은 뼈대의 큰 모델에도 맞는다)</summary>
+        private static readonly Dictionary<string, string> Basis = new Dictionary<string, string>
+        {
+            ["Enemy_HornHelm"] = "Puglin_LOD", ["Enemy_Hood"] = "Puglin_LOD", ["Enemy_ShortBow"] = "Puglin_LOD", ["Enemy_BombPack"] = "Puglin_LOD",
+            ["Enemy_HandBomb"] = "Puglin_LOD", ["Enemy_Cap"] = "Puglin_LOD", ["Enemy_Dagger"] = "Puglin_LOD",
+            ["Enemy_BackSpikes"] = "Imp_LOD", ["Enemy_Staff"] = "Imp_LOD", ["Enemy_SkullMask"] = "Imp_LOD",
         };
 
         /// <summary>역할 이름 → 색 (sRGB) · 금속 여부 (블렌더 notes.txt의 색)</summary>
@@ -45,6 +57,10 @@ namespace HistoryHeroes.EditorTools
             ["Leaf"] = (Hex(0x4B8638), false), ["Leaf_Dark"] = (Hex(0x305D2C), false), ["Grass"] = (Hex(0x59993F), false), ["Petal"] = (Hex(0xF9DA59), false),
             ["Cloth_Dark"] = (Hex(0x551D1D), false), ["Cloth_Gold"] = (Hex(0xC4A24B), false), ["Water"] = (Hex(0x3F6173), false), ["Wet"] = (Hex(0x45423F), false),
             ["Bone"] = (Hex(0xCEC5AD), false),
+            // 적 장식 (블렌더 notes_enemies.txt)
+            ["Helm_Red"] = (Hex(0xD9442B), false), ["Horn"] = (Hex(0xF2E3C2), false), ["Hood_Green"] = (Hex(0x3DB54A), false),
+            ["Wood_Light"] = (Hex(0xC9955A), false), ["Bomb"] = (Hex(0x2A2E3D), false), ["Cap_Yellow"] = (Hex(0xF5C518), false),
+            ["Fuse_Glow"] = (Hex(0xFFC23D), false), ["Orb_Glow"] = (Hex(0x6FF3FF), false), ["Crystal_Green"] = (Hex(0x4CE08A), false),
         };
 
         /// <summary>스스로 빛나는 역할 → 빛 색 (화면 후처리의 빛 번짐이 잡는다: 1 넘게)</summary>
@@ -54,6 +70,7 @@ namespace HistoryHeroes.EditorTools
             ["Ice"] = new Color(0.45f, 0.85f, 1f) * 1.3f,
             ["Lava"] = new Color(1f, 0.5f, 0.12f) * 3f,
             ["Crystal_Shadow"] = new Color(0.45f, 0.18f, 0.85f) * 0.9f,
+            ["Fuse_Glow"] = new Color(1f, 0.6f, 0.15f) * 3f, ["Orb_Glow"] = new Color(0.4f, 0.95f, 1f) * 2f, ["Crystal_Green"] = new Color(0.3f, 1f, 0.55f) * 0.8f,
         };
 
         private static Color Hex(int rgb) => new Color(((rgb >> 16) & 255) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f);
@@ -121,7 +138,8 @@ namespace HistoryHeroes.EditorTools
             var prop = AssetDatabase.LoadAssetAtPath<GameObject>($"{Folder}/{propName}.fbx");
             if (prop == null) return $"{propName}: 소품 없음";
             if (!Bones.TryGetValue(propName, out string boneName)) return $"{propName}: 뼈 모름";
-            var basis = AssetDatabase.LoadAssetAtPath<GameObject>($"{Art3DAssets.Models}/Superhero_Male_FullBody.fbx");
+            string basisName = Basis.TryGetValue(propName, out string b) ? b : "Superhero_Male_FullBody";
+            var basis = AssetDatabase.LoadAssetAtPath<GameObject>($"{Art3DAssets.Models}/{basisName}.fbx");
             Transform sourceBone = Find(basis.transform, boneName);
             Transform targetBone = Find(target.transform, boneName);
             if (sourceBone == null || targetBone == null) return $"{propName}: 뼈 {boneName} 없음";
