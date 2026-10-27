@@ -111,14 +111,26 @@ namespace HistoryHeroes.Common
         /// 방마다 바닥 장식을 흩뿌린다 (금 간 바닥 · 깔개 · 쇠창살 · 물웅덩이 · 뼈 · 잡초). 판정 없음, 보기만.
         /// 납작한 것은 예고 원·함정 그림보다 아래에 깔리게 아주 얇게 누른다. 같은 방(같은 seed)은 늘 같은 모습
         /// </summary>
-        public static void Scatter(Transform parent, int seed, List<GameObject> into)
+        /// <param name="avoid">바닥 장식을 피할 곳 (개울 · 쇠창살 줄 · 톱니 홈 — 장식이 장치를 덮으면 읽기 어렵다)</param>
+        public static void Scatter(Transform parent, int seed, List<GameObject> into, IReadOnlyList<Rect> avoid = null)
         {
             if (_instance == null) return;
             _instance.EnsureStarted(); // 첫 방이 StageLook.Start보다 먼저 만들어질 수 있다
-            _instance.ScatterFloor(parent, seed, into);
+            _instance.ScatterFloor(parent, seed, into, avoid);
         }
 
-        private void ScatterFloor(Transform parent, int seed, List<GameObject> into)
+        private static bool Blocked(IReadOnlyList<Rect> avoid, Vector2 p, float margin)
+        {
+            if (avoid == null) return false;
+            foreach (Rect r in avoid)
+            {
+                if (p.x > r.xMin - margin && p.x < r.xMax + margin && p.y > r.yMin - margin && p.y < r.yMax + margin) return true;
+            }
+
+            return false;
+        }
+
+        private void ScatterFloor(Transform parent, int seed, List<GameObject> into, IReadOnlyList<Rect> avoid)
         {
             if (floorSets == null) return;
             int index = Array.FindIndex(floorSets, f => f.key == _current);
@@ -133,6 +145,9 @@ namespace HistoryHeroes.Common
                 GameObject prefab = set.flat[rng.Next(set.flat.Length)];
                 if (prefab == null) continue;
                 var pos = new Vector3(Range(-roomHalf.x + 0.9f, roomHalf.x - 0.9f), Range(-roomHalf.y + 1.5f, roomHalf.y - 1.8f), 0.019f); // 바닥(+0.02) 바로 위
+                for (int tries = 0; tries < 6 && Blocked(avoid, pos, 0.8f); tries++)
+                    pos = new Vector3(Range(-roomHalf.x + 0.9f, roomHalf.x - 0.9f), Range(-roomHalf.y + 1.5f, roomHalf.y - 1.8f), 0.019f);
+                if (Blocked(avoid, pos, 0.8f)) continue; // 자리가 없으면 깔지 않는다
                 float size = Range(0.8f, 1.25f);
                 into.Add(Place(prefab, parent, pos, Range(0f, 360f), new Vector3(size, size, 0.35f)));
             }

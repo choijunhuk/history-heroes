@@ -47,6 +47,34 @@ namespace HistoryHeroes.Common
             return true;
         }
 
+        /// <summary>
+        /// 방에 들어갈 때: 적 난수를 (씨앗, 방 번호)로 새로 시작한다 (코드 검토 2026-10-28 1번).
+        /// 앞 방에서 적을 몇 번 뽑았든(갈림길의 도전 방 · 플레이 차이) 이 방의 적 자리·속성은 같다
+        /// </summary>
+        public static void BeginRoom(int room)
+        {
+            Ensure();
+            _enemies = new StreamRandom(Mix(Mix(Seed, 0x2B79), 0x7F4A + room * 0x10DCD));
+        }
+
+        /// <summary>
+        /// 특수 방 보상 카드(도전 성공 · 저주받은 엘리트)는 카드 난수 대신 갈림길 난수로 뽑는다 → 문을 골라도 뒤 카드 난수가 밀리지 않는다.
+        /// using (RunRandom.CardDetour()) { ... } 안에서 Cards가 갈림길 난수를 돌려준다
+        /// </summary>
+        public static IDisposable CardDetour()
+        {
+            Ensure();
+            _detour = _forks;
+            return new DetourScope();
+        }
+
+        private static StreamRandom _detour;
+
+        private sealed class DetourScope : IDisposable
+        {
+            public void Dispose() => _detour = null;
+        }
+
         /// <summary>시드를 정할 이유가 없는 판 (던전·서바이벌)</summary>
         public static int BeginRandom()
         {
@@ -93,7 +121,7 @@ namespace HistoryHeroes.Common
             get
             {
                 Ensure();
-                return _cards;
+                return _detour ?? _cards; // 특수 방 보상 카드는 갈림길 난수 (CardDetour)
             }
         }
 

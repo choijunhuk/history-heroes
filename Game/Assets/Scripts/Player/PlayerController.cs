@@ -484,7 +484,7 @@ namespace HistoryHeroes.Player
             Physics2D.OverlapCircle(origin, reach, new ContactFilter2D { useLayerMask = true, layerMask = wallMask }, _overlap);
             for (int i = 0; i < _overlap.Count; i++)
             {
-                if (!_overlap[i].TryGetComponent(out Dungeon.Breakable b)) continue;
+                if (!_overlap[i].TryGetComponent(out Dungeon.IShotTarget b)) continue;
                 Vector2 to = (Vector2)b.transform.position - origin;
                 if (to.sqrMagnitude > 0.5f && Vector2.Angle(aim, to) > half) continue;
                 b.Hit();

@@ -52,7 +52,8 @@ namespace HistoryHeroes.Enemy
         private Vector2 _lastTrail;
         private float _nextBurnTick;
         // 깜빡이는
-        private float _stoppedFor;
+        private bool _wasAiming;
+        private bool _blinkFlashed;
         private float _blinkAt = -1f;
         private float _blinkReady;
 
@@ -145,7 +146,8 @@ namespace HistoryHeroes.Enemy
             _enraged = false;
             _summoned.Clear();
             _trail.Clear();
-            _stoppedFor = 0f;
+            _wasAiming = false;
+            _blinkFlashed = false;
             _blinkAt = -1f;
             _blinkReady = Time.time + 3f;
             _nextSummon = Time.time + 4f;
@@ -260,9 +262,18 @@ namespace HistoryHeroes.Enemy
 
         private void Blink(float now)
         {
-            if (_enemy.Target == null || !_enemy.Target.TryGetComponent(out Player.PlayerController hero)) return;
+            if (_enemy.Target == null) return;
+            bool aiming = _enemy.IsAiming;
+            bool started = aiming && !_wasAiming;
+            _wasAiming = aiming;
             if (_blinkAt > 0f)
             {
+                if (!_blinkFlashed && now >= _blinkAt - 0.5f)
+                {
+                    _blinkFlashed = true; // 0.5초 전 반짝 (예고)
+                    FxBursts.Puff(transform.position + Vector3.back * 0.9f, new Color(0.7f, 0.95f, 1f), 0.8f);
+                }
+
                 if (now < _blinkAt) return;
                 _blinkAt = -1f;
                 // 영웅을 잇는 선에 수직으로 3칸 (벽이면 반대쪽, 둘 다 막히면 그대로)
@@ -284,15 +295,14 @@ namespace HistoryHeroes.Enemy
                 }
 
                 _blinkReady = now + 6f;
-                _stoppedFor = 0f;
                 return;
             }
 
-            _stoppedFor = hero.IsStopped ? _stoppedFor + Time.deltaTime : 0f;
-            if (_stoppedFor >= 2f && now >= _blinkReady)
+            // 검토 반영 9번: 적이 멈춰 쏘기를 "시작"하고 2초 뒤 한 번만 (영웅이 멈춘 시간이 아니라)
+            if (started && now >= _blinkReady)
             {
-                _blinkAt = now + 0.5f; // 0.5초 전 반짝 (예고)
-                FxBursts.Puff(transform.position + Vector3.back * 0.9f, new Color(0.7f, 0.95f, 1f), 0.8f);
+                _blinkAt = now + 2f;
+                _blinkFlashed = false;
             }
         }
 

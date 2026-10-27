@@ -149,17 +149,20 @@ namespace HistoryHeroes.Dungeon
         private static Color ColorOf(RoomSpecial special) =>
             special == RoomSpecial.Cursed ? CursedColor : special == RoomSpecial.Stele ? SteleColor : ChallengeColor;
 
+        /// <summary>이어하기: 이 방 보상을 이미 받았다</summary>
+        private bool RewardAlreadyTaken => _resumeRewardTaken && _room == _resumeRoom;
+
         /// <summary>도전 방이면 여기서 돌린다 (true = 맡았다)</summary>
         private bool StartChallenge(RoomPlan plan)
         {
             switch (CurrentSpecial)
             {
                 case RoomSpecial.ChallengeSurvive:
-                    hud.ShowNotice(_challengeFailed ? "이미 실패한 도전이에요 — 보상 없이 진행" : "도전! 20초 동안 버티세요 (다 잡지 않아도 돼요)", 2.5f);
+                    hud.ShowNotice(RewardAlreadyTaken ? "도전 보상은 이미 받았어요" : "도전! 20초 동안 버티세요 (다 잡지 않아도 돼요)", 2.5f);
                     StartCoroutine(RunSurvive());
                     return true;
                 case RoomSpecial.ChallengeNoHit:
-                    hud.ShowNotice(_challengeFailed ? "이미 실패한 도전이에요 — 보상 없이 진행" : "도전! 한 번도 맞지 말고 깨세요 (함정 포함)", 2.5f);
+                    hud.ShowNotice(RewardAlreadyTaken ? "도전 보상은 이미 받았어요" : _challengeFailed ? "이미 실패한 도전이에요 — 보상 없이 진행" : "도전! 한 번도 맞지 말고 깨세요 (함정 포함)", 2.5f);
                     StartCoroutine(SpawnRoom(plan, _special.NoHitEncounter));
                     return true;
                 default:
@@ -201,6 +204,14 @@ namespace HistoryHeroes.Dungeon
             if (_openFork == null || _finished) return;
             _openFork.Choice = index == 1 ? 1 : 0;
             _openFork = null;
+            // 검토 5번: 고른 문을 바로 저장 (화면 전환 중에 꺼져도 선택이 남는다)
+            RunSnapshot run = SaveSystem.Data.run;
+            if (run != null && run.valid && run.room == _room)
+            {
+                run.forkChoices = _special.Choices();
+                SaveSystem.Save();
+            }
+
             HideForks();
             StartCoroutine(GoToNextRoom());
         }
@@ -327,10 +338,12 @@ namespace HistoryHeroes.Dungeon
             int gold = SpecialRooms.ChallengeGold(GameSession.Chapter);
             Wallet.Grant(SaveSystem.Data, new Reward { Gold = gold });
             SaveSystem.MarkDirty();
+            skills.DetourOffersNext++; // 보상 카드는 갈림길 난수로
             experience.GrantLevelUp();
             HypeFx.Banner("도전 성공!", new Color(1f, 0.82f, 0.3f));
             _pendingNotice = $"도전 보상: 레벨업 1번 + 골드 {gold}"; // 방 깰 때 알림(기록 용량)보다 뒤에 보이게
             MarkRewardTaken();
+            SaveAfterRewards();
         }
 
         // ---------------------------------------------------------------- 저주받은 엘리트
@@ -352,10 +365,12 @@ namespace HistoryHeroes.Dungeon
             _cursedElite = null;
             if (_resumeRewardTaken && _room == _resumeRoom) return;
             skills.MinRareNext = 2;
+            skills.DetourOffersNext++; // 보상 카드는 갈림길 난수로
             experience.GrantLevelUp();
             HypeFx.Banner("저주를 이겼다!", CursedColor);
             hud.ShowNotice("저주 보상: 희귀 카드 보장 1번 더", 2.5f);
             MarkRewardTaken();
+            SaveAfterRewards();
         }
 
         // ---------------------------------------------------------------- 기억의 석비
@@ -387,6 +402,7 @@ namespace HistoryHeroes.Dungeon
                 }
 
                 MarkRewardTaken();
+                SaveAfterRewards();
                 if (!_finished) OnRoomCleared();
             }, colors);
         }
@@ -415,6 +431,27 @@ namespace HistoryHeroes.Dungeon
             Blessings.Apply(id, player.Stats, _blessingOwner);
             _blessings.Add(id);
             if (!player.Health.IsDead) player.Health.Revive(player.Health.Max * ratio);
+        }
+
+        // ---------------------------------------------------------------- 보상 뒤 저장 (검토 2번)
+
+        /// <summary>
+        /// 보상(레벨업 카드 · 회복 · 축복)을 다 받고 카드까지 고른 뒤 이 방 상태를 "받음"으로 다시 저장한다.
+        /// 다음 방 전에 꺼져도 받은 레벨·스킬·체력이 남고, 보상은 다시 못 받는다
+        /// </summary>
+        private void SaveAfterRewards()
+        {
+            if (_rift) return; // 균열은 체크포인트로
+            StartCoroutine(SaveWhenCardsDone());
+        }
+
+        private IEnumerator SaveWhenCardsDone()
+        {
+            yield return null; // 레벨업 창이 열릴 틈
+            float until = Time.realtimeSinceStartup + 120f;
+            while (!_finished && levelUp.IsOpen && Time.realtimeSinceStartup < until) yield return null;
+            if (_finished) yield break;
+            SaveSnapshot(_room); // rewardTaken = 이 방 (MarkRewardTaken이 정해 둠)
         }
 
         // ---------------------------------------------------------------- 받침대 모델

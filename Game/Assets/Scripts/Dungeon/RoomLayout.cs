@@ -54,6 +54,35 @@ namespace HistoryHeroes.Dungeon
         public float angle;
     }
 
+    /// <summary>구간 장치 (확장 1차 2장). 모두 예고가 있고 적에게도 똑같이 작용한다</summary>
+    public enum DeviceKind
+    {
+        /// <summary>1구간 열매 덤불: 2번 맞으면 부서지며 회복 구슬 (최대체력 5%, 방마다 2개까지)</summary>
+        BerryBush,
+        /// <summary>1구간 개울: 낮은 장애물 띠 (걸어서는 못 건너고 탄은 넘어간다), 물이 흐른다</summary>
+        Creek,
+        /// <summary>2구간 폭약 통: 3번 맞으면 1초 깜빡 → 반경 1.5 폭발 (연쇄 3개까지)</summary>
+        PowderKeg,
+        /// <summary>2구간 쇠창살: 8초마다 3초 솟아올라 높은 장애물 (1초 전 그림자 + 열린 통로 표시)</summary>
+        IronGate,
+        /// <summary>3구간 회전 톱니: 두 점 사이를 왕복하는 높은 장애물, 닿으면 밀림 + 최대체력 10%</summary>
+        SawGear,
+        /// <summary>3구간 레버: 쏘면 3초간 이 방 컨베이어 반대 · 증기 멈춤 (쿨다운 6초)</summary>
+        Lever,
+    }
+
+    [Serializable]
+    public struct DeviceSpot
+    {
+        public DeviceKind kind;
+        public Vector2 position;
+        public Vector2 size;
+        [Tooltip("회전 톱니: 왕복 끝 자리")]
+        public Vector2 to;
+        [Tooltip("개울·쇠창살 방향 (도)")]
+        public float angle;
+    }
+
     /// <summary>방 하나의 모양. 장면 빌더가 종류별 규칙으로 만든다 (v0.6-Plan [제안]: 손으로 다듬는 것은 그래픽 단계)</summary>
     [CreateAssetMenu(menuName = "History Heroes/Room Layout", fileName = "Layout_")]
     public sealed class RoomLayout : ScriptableObject
@@ -66,5 +95,7 @@ namespace HistoryHeroes.Dungeon
         public int chapter;
         public List<ObstacleDef> obstacles = new List<ObstacleDef>();
         public List<TrapSpot> traps = new List<TrapSpot>();
+        [Tooltip("구간 장치 (확장 1차 2장)")]
+        public List<DeviceSpot> devices = new List<DeviceSpot>();
     }
 }

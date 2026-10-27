@@ -77,6 +77,9 @@ namespace HistoryHeroes.Enemy
         /// <summary>쫓는 대상 (영웅). 엘리트 속성이 쓴다</summary>
         public Transform Target => player;
 
+        /// <summary>멈춰서 공격을 예고하는 중 (엘리트 "깜빡이는"이 이 시작을 센다)</summary>
+        public bool IsAiming => state == State.Telegraph;
+
         protected virtual void Awake()
         {
             visual = GetComponent<Combat.Visual3D>();

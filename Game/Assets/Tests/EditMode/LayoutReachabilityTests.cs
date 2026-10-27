@@ -43,6 +43,19 @@ namespace HistoryHeroes.Tests
                 else if (Mathf.Abs(p.x - o.position.x) < half.x + HeroRadius && Mathf.Abs(p.y - o.position.y) < half.y + HeroRadius) return true;
             }
 
+            // 구간 장치 (확장 1차 2장, 검토 7번): 개울 = 막힘, 쇠창살 = 닫힌 상태로 막힘, 레버 = 막힘.
+            // 열매 덤불·폭약 통은 부술 수 있고, 톱니는 움직이니 지나간다고 본다
+            if (layout.devices != null)
+            {
+                foreach (DeviceSpot d in layout.devices)
+                {
+                    if (d.kind != DeviceKind.Creek && d.kind != DeviceKind.IronGate && d.kind != DeviceKind.Lever) continue;
+                    Vector2 local = Quaternion.Euler(0f, 0f, -d.angle) * (p - d.position);
+                    Vector2 half = d.size * 0.5f;
+                    if (Mathf.Abs(local.x) < half.x + HeroRadius && Mathf.Abs(local.y) < half.y + HeroRadius) return true;
+                }
+            }
+
             return false;
         }
 
@@ -110,6 +123,28 @@ namespace HistoryHeroes.Tests
             }
 
             Assert.IsEmpty(failures, string.Join("\n", failures));
+        }
+
+        [Test]
+        public void Chapters1To3_HaveTheirDevices()
+        {
+            List<RoomLayout> layouts = AllLayouts();
+            bool Has(int chapter, DeviceKind kind) => layouts.Exists(l => l.chapter == chapter && l.devices != null && l.devices.Exists(d => d.kind == kind));
+            Assert.IsTrue(Has(1, DeviceKind.BerryBush), "1구간 열매 덤불");
+            Assert.IsTrue(Has(1, DeviceKind.Creek), "1구간 개울");
+            Assert.IsTrue(Has(2, DeviceKind.PowderKeg), "2구간 폭약 통");
+            Assert.IsTrue(Has(2, DeviceKind.IronGate), "2구간 쇠창살");
+            Assert.IsTrue(Has(3, DeviceKind.SawGear), "3구간 회전 톱니");
+            Assert.IsTrue(Has(3, DeviceKind.Lever), "3구간 레버");
+            foreach (RoomLayout l in layouts)
+            {
+                if (l.devices == null) continue;
+                foreach (DeviceSpot d in l.devices)
+                {
+                    if (d.kind != DeviceKind.Lever) continue;
+                    Assert.IsTrue(l.traps.Count > 0, $"{l.id}: 레버는 함정(컨베이어·증기)이 있는 방에만");
+                }
+            }
         }
 
         [Test]

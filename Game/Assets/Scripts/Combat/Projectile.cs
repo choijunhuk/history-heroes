@@ -98,9 +98,9 @@ namespace HistoryHeroes.Combat
 
             if (((1 << hit.collider.gameObject.layer) & _wallMask) != 0)
             {
-                if (hit.collider.TryGetComponent(out Dungeon.Breakable breakable))
+                if (hit.collider.TryGetComponent(out Dungeon.IShotTarget target))
                 {
-                    breakable.Hit(); // 부서지는 장애물: 튕기지 않고 피해만 (Modes 2-3)
+                    target.Hit(); // 부서지는 장애물·폭약 통·레버: 튕기지 않고 맞기만 (Modes 2-3, 확장 1차 2장)
                     Release();
                     return;
                 }

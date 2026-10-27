@@ -399,6 +399,7 @@ namespace HistoryHeroes.Dungeon
             _room = room;
             _hitsAtRoomStart = _hitsTaken;
             levelUp.Floor = room;
+            RunRandom.BeginRoom(room); // 방마다 적 난수 새로 (갈림길 · 플레이 차이가 뒤 방에 번지지 않게)
             BeginSpecialRoom(room);
             if (_rift)
             {
@@ -598,6 +599,7 @@ namespace HistoryHeroes.Dungeon
                 }
 
                 MarkRewardTaken();
+                SaveAfterRewards();
                 if (!_finished) OnRoomCleared();
             });
         }
@@ -613,10 +615,13 @@ namespace HistoryHeroes.Dungeon
             }
 
             _layoutObjects.Clear();
+            _deviceRoom?.Clear();
+            _deviceRoom = null;
             if (layout == null || layoutRoot == null) return;
 
             foreach (ObstacleDef o in layout.obstacles) _layoutObjects.Add(Obstacle(o));
-            StageLook.Scatter(layoutRoot, _room * 7919 + GameSession.Chapter * 104729 + layout.obstacles.Count, _layoutObjects); // 방마다 바닥 장식 (맵이 단조롭다)
+            SpawnDevices(layout); // 구간 장치 (확장 1차 2장) — 받침대 자리(장애물 0번)는 그대로 첫째
+            StageLook.Scatter(layoutRoot, _room * 7919 + GameSession.Chapter * 104729 + layout.obstacles.Count, _layoutObjects, DeviceAvoidRects(layout)); // 방마다 바닥 장식 (맵이 단조롭다), 장치는 피해서
 
             TrapKind trap = _chapter != null ? _chapter.trap : TrapKind.None;
             if (trap == TrapKind.None || layout.traps.Count == 0) return;
@@ -635,6 +640,7 @@ namespace HistoryHeroes.Dungeon
                 zone.SetArea(sr);
                 zone.Setup(TrapZone.EffectFor(trap, i), spot.position, spot.size, spot.angle, damage, i * 0.9f);
                 _layoutObjects.Add(go);
+                _deviceRoom?.Zones.Add(zone); // 레버가 컨베이어·증기를 바꾼다
             }
         }
 

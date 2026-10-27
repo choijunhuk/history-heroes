@@ -40,3 +40,4 @@ MonoBehaviour:
   - position: {x: 3.1, y: -2.8}
     size: {x: 1.2, y: 1.2}
     angle: 0
+  devices: []

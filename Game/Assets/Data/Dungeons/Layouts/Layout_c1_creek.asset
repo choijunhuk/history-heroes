@@ -16,43 +16,54 @@ MonoBehaviour:
   kind: 5
   use: 0
   chapter: 1
-  obstacles:
-  - kind: 1
-    circle: 0
-    position: {x: -3.65, y: 0}
-    size: {x: 0.7, y: 1}
-    hits: 0
-  - kind: 1
-    circle: 0
-    position: {x: -1.4, y: 0}
-    size: {x: 1.8, y: 1}
-    hits: 0
-  - kind: 1
-    circle: 0
-    position: {x: 1.4, y: 0}
-    size: {x: 1.8, y: 1}
-    hits: 0
-  - kind: 1
-    circle: 0
-    position: {x: 3.65, y: 0}
-    size: {x: 0.7, y: 1}
-    hits: 0
-  - kind: 1
-    circle: 0
-    position: {x: -3.05, y: 3.4}
-    size: {x: 1.9, y: 1}
-    hits: 0
-  - kind: 1
-    circle: 0
-    position: {x: 0, y: 3.4}
-    size: {x: 2.2, y: 1}
-    hits: 0
-  - kind: 1
-    circle: 0
-    position: {x: 3.05, y: 3.4}
-    size: {x: 1.9, y: 1}
-    hits: 0
+  obstacles: []
   traps:
   - position: {x: -2.6, y: 5}
     size: {x: 1.4, y: 1.2}
+    angle: 0
+  devices:
+  - kind: 1
+    position: {x: -3.65, y: 0}
+    size: {x: 0.7, y: 1}
+    to: {x: 0, y: 0}
+    angle: 0
+  - kind: 1
+    position: {x: -1.4, y: 0}
+    size: {x: 1.8, y: 1}
+    to: {x: 0, y: 0}
+    angle: 0
+  - kind: 1
+    position: {x: 1.4, y: 0}
+    size: {x: 1.8, y: 1}
+    to: {x: 0, y: 0}
+    angle: 0
+  - kind: 1
+    position: {x: 3.65, y: 0}
+    size: {x: 0.7, y: 1}
+    to: {x: 0, y: 0}
+    angle: 0
+  - kind: 1
+    position: {x: -3.05, y: 3.4}
+    size: {x: 1.9, y: 1}
+    to: {x: 0, y: 0}
+    angle: 0
+  - kind: 1
+    position: {x: 0, y: 3.4}
+    size: {x: 2.2, y: 1}
+    to: {x: 0, y: 0}
+    angle: 0
+  - kind: 1
+    position: {x: 3.05, y: 3.4}
+    size: {x: 1.9, y: 1}
+    to: {x: 0, y: 0}
+    angle: 0
+  - kind: 0
+    position: {x: -3, y: 1.7}
+    size: {x: 0.85, y: 0.85}
+    to: {x: 0, y: 0}
+    angle: 0
+  - kind: 0
+    position: {x: 2.9, y: -2.8}
+    size: {x: 0.85, y: 0.85}
+    to: {x: 0, y: 0}
     angle: 0

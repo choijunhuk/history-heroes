@@ -39,3 +39,9 @@ MonoBehaviour:
   - position: {x: -1.4, y: -0.1}
     size: {x: 4, y: 1}
     angle: 180
+  devices:
+  - kind: 5
+    position: {x: 3.2, y: -3.6}
+    size: {x: 0.7, y: 0.7}
+    to: {x: 0, y: 0}
+    angle: 0

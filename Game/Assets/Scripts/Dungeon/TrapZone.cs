@@ -48,6 +48,12 @@ namespace HistoryHeroes.Dungeon
 
         public Effect Kind => _effect;
 
+        /// <summary>3구간 레버 (확장 1차 2장): 이때까지 컨베이어는 반대로, 증기는 멈춘다</summary>
+        private float _disruptUntil;
+        public bool Disrupted => Time.time < _disruptUntil;
+
+        public void Disrupt(float seconds) => _disruptUntil = Mathf.Max(_disruptUntil, Time.time + seconds);
+
         public void SetArea(SpriteRenderer sr) => area = sr;
 
         /// <summary>함정 종류 + 자리 번호 → 실제 효과 (3구간: 컨베이어·증기, 4구간: 낙석·덩굴 번갈아)</summary>
@@ -72,6 +78,7 @@ namespace HistoryHeroes.Dungeon
             _clock = 0f;
             _phaseOffset = phaseOffset;
             _rockPending = false;
+            _disruptUntil = 0f;
             _rootCooldown.Clear();
             transform.position = center;
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
@@ -111,7 +118,15 @@ namespace HistoryHeroes.Dungeon
                 case Effect.Thorns: TickThorns(); break;
                 case Effect.FireVent: TickCycle(t, period: 3f, telegraph: 0.8f, active: 1f, new Color(1f, 0.35f, 0.15f, 0.85f), Effect.FireVent); break;
                 case Effect.Conveyor: TickConveyor(dt); break;
-                case Effect.Steam: TickCycle(t, period: 4f, telegraph: 1f, active: 0.35f, new Color(0.95f, 0.95f, 1f, 0.8f), Effect.Steam); break;
+                case Effect.Steam:
+                    if (Disrupted)
+                    {
+                        if (area != null) area.color = new Color(0.35f, 0.5f, 0.75f, 0.45f); // 레버: 증기 멈춤 (파랗게 식는다)
+                        break;
+                    }
+
+                    TickCycle(t, period: 4f, telegraph: 1f, active: 0.35f, new Color(0.95f, 0.95f, 1f, 0.8f), Effect.Steam);
+                    break;
                 case Effect.Rockfall: TickRockfall(t); break;
                 case Effect.Vines: TickVines(); break;
                 case Effect.Oblivion: TickCycle(t, period: 6f, telegraph: 1.2f, active: 3f, new Color(0.05f, 0.02f, 0.08f, 0.95f), Effect.Oblivion); break;
@@ -184,10 +199,11 @@ namespace HistoryHeroes.Dungeon
 
         private void TickConveyor(float dt)
         {
-            Vector2 dir = transform.right;
+            bool reversed = Disrupted; // 레버: 반대로 돈다
+            Vector2 dir = reversed ? -(Vector2)transform.right : (Vector2)transform.right;
             if (area != null)
             {
-                Color c = BaseColor(Effect.Conveyor);
+                Color c = reversed ? new Color(0.85f, 0.55f, 0.25f, 0.7f) : BaseColor(Effect.Conveyor);
                 c.a = 0.55f + 0.15f * Mathf.Sin(Time.time * 8f); // 움직이는 띠
                 area.color = c;
             }

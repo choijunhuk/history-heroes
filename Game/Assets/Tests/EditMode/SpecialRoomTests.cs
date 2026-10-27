@@ -146,6 +146,41 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void RoomEnemyStream_DependsOnlyOnSeedAndRoom()
+        {
+            // 코드 검토 1번: 앞 방에서 적 난수를 얼마나 썼든 (도전 방 · 플레이 차이) 5번 방의 적 난수는 같다
+            RunRandom.Begin(77);
+            RunRandom.BeginRoom(4);
+            for (int i = 0; i < 3; i++) RunRandom.Enemies.Next();
+            RunRandom.BeginRoom(5);
+            int a = RunRandom.Enemies.Next();
+
+            RunRandom.Begin(77);
+            RunRandom.BeginRoom(4);
+            for (int i = 0; i < 40; i++) RunRandom.Enemies.Next();
+            RunRandom.BeginRoom(5);
+            Assert.AreEqual(a, RunRandom.Enemies.Next());
+
+            RunRandom.BeginRoom(6);
+            Assert.AreNotEqual(a, RunRandom.Enemies.Next(), "방마다 다르다");
+        }
+
+        [Test]
+        public void CardDetour_LeavesCardStreamAlone()
+        {
+            RunRandom.Begin(31);
+            int expected = RunRandom.Cards.Next();
+
+            RunRandom.Begin(31);
+            using (RunRandom.CardDetour())
+            {
+                for (int i = 0; i < 20; i++) RunRandom.CardRange(0, 100); // 특수 방 보상 카드
+            }
+
+            Assert.AreEqual(expected, RunRandom.Cards.Next(), "보상 카드를 뽑아도 카드 난수는 그대로");
+        }
+
+        [Test]
         public void Blessings_ApplyGoodAndBad()
         {
             var owner = new object();

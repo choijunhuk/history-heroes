@@ -53,8 +53,22 @@ namespace HistoryHeroes.Skills
         /// <summary>다음 카드 묶음에 희귀 이상을 이만큼 보장 (확장 1차 3-4장 저주받은 엘리트). 전설 확률은 그대로 — 일반 카드만 희귀로 바꾼다</summary>
         public int MinRareNext { get; set; }
 
+        /// <summary>앞으로 이만큼의 카드 묶음은 갈림길 난수로 뽑는다 (특수 방 보상, RunRandom.CardDetour)</summary>
+        public int DetourOffersNext { get; set; }
+
         /// <summary>레벨업 카드 만들기 (GameDesign 6-4). 조합 조건을 채웠으면 1장은 조합 카드로 확정.</summary>
         public List<SkillCard> CreateOffer(int floor)
+        {
+            if (DetourOffersNext > 0)
+            {
+                DetourOffersNext--;
+                using (Common.RunRandom.CardDetour()) return CreateOfferInner(floor);
+            }
+
+            return CreateOfferInner(floor);
+        }
+
+        private List<SkillCard> CreateOfferInner(int floor)
         {
             var offer = new List<SkillCard>(cardsPerLevel);
 

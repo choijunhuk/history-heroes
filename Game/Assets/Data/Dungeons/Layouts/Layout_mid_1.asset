@@ -18,3 +18,4 @@ MonoBehaviour:
   chapter: 1
   obstacles: []
   traps: []
+  devices: []

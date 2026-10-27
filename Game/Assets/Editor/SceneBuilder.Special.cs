@@ -126,9 +126,49 @@ namespace HistoryHeroes.EditorTools
             if (b.size.z > 0.01f) go.transform.localScale *= height / b.size.z;
         }
 
+        /// <summary>구간 장치 모델 · 물 재질 (확장 1차 2장)</summary>
+        private static void WireDevices(DungeonRun run)
+        {
+            using (var props = new Props(run))
+            {
+                props.Ref("deviceArt.berry", Art3DStage.Prefab("Berry_Bush")).Ref("deviceArt.keg", Art3DStage.Prefab("Powder_Keg"))
+                    .Ref("deviceArt.gate", Art3DStage.Prefab("Iron_Gate")).Ref("deviceArt.saw", Art3DStage.Prefab("Saw_Gear"))
+                    .Ref("deviceArt.lever", Art3DStage.Prefab("Lever"))
+                    .Ref("deviceArt.water", UnlitTransparent("Water", new Color(0.2f, 0.48f, 0.72f, 0.88f)))
+                    .Ref("deviceArt.waterFlow", UnlitTransparent("WaterFlow", new Color(0.78f, 0.92f, 1f, 0.5f)));
+            }
+        }
+
+        /// <summary>반투명 단색 재질 (URP Unlit, 섞기) — 개울 물</summary>
+        private static Material UnlitTransparent(string name, Color color)
+        {
+            string path = $"{Art3DAssets.Root}/Materials/M_{name}.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+                AssetDatabase.CreateAsset(mat, path);
+            }
+
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 0f);
+            mat.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            mat.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            mat.SetFloat("_SrcBlendAlpha", (float)BlendMode.One);
+            mat.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+            mat.SetFloat("_ZWrite", 0f);
+            mat.SetOverrideTag("RenderType", "Transparent");
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)RenderQueue.Transparent;
+            mat.SetColor("_BaseColor", color);
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
         /// <summary>DungeonRun 특수 방 아이콘 · 모델 · 갈림길 문</summary>
         private static void WireSpecialRooms(DungeonRun run, ForkGate[] gates)
         {
+            WireDevices(run);
             using (var props = new Props(run))
             {
                 props.Refs("forkGates", gates)

@@ -58,3 +58,4 @@ MonoBehaviour:
     size: {x: 0.6, y: 0.6}
     hits: 0
   traps: []
+  devices: []

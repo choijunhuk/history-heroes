@@ -93,11 +93,35 @@ namespace HistoryHeroes.EditorTools
 
         private static List<TrapSpot> Spots(params TrapSpot[] spots) => new List<TrapSpot>(spots);
 
-        private static RoomLayout Room(string id, LayoutKind kind, RoomUse use, int chapter, List<ObstacleDef> obstacles, List<TrapSpot> traps)
+        // ---------------------------------------------------------------- 구간 장치 (확장 1차 2장)
+
+        private static List<DeviceSpot> Devices(params DeviceSpot[] spots) => new List<DeviceSpot>(spots);
+
+        private static DeviceSpot Berry(float x, float y) => new DeviceSpot { kind = DeviceKind.BerryBush, position = new Vector2(x, y), size = new Vector2(0.85f, 0.85f) };
+        private static DeviceSpot Keg(float x, float y) => new DeviceSpot { kind = DeviceKind.PowderKeg, position = new Vector2(x, y), size = new Vector2(0.8f, 0.8f) };
+        private static DeviceSpot Lever(float x, float y) => new DeviceSpot { kind = DeviceKind.Lever, position = new Vector2(x, y), size = new Vector2(0.7f, 0.7f) };
+        private static DeviceSpot Gate(float x, float y, float length, float angle = 0f) => new DeviceSpot { kind = DeviceKind.IronGate, position = new Vector2(x, y), size = new Vector2(length, 0.5f), angle = angle };
+        private static DeviceSpot Saw(float x1, float y1, float x2, float y2) => new DeviceSpot { kind = DeviceKind.SawGear, position = new Vector2(x1, y1), to = new Vector2(x2, y2), size = new Vector2(0.95f, 0.95f) };
+
+        /// <summary>낮은 장애물(구덩이 띠)을 개울로 바꾼다 — 판정은 같고 물이 흐른다</summary>
+        private static List<DeviceSpot> Creeks(List<ObstacleDef> lows, params DeviceSpot[] more)
+        {
+            var list = new List<DeviceSpot>();
+            foreach (ObstacleDef o in lows)
+            {
+                if (o.kind == ObstacleKind.Low) list.Add(new DeviceSpot { kind = DeviceKind.Creek, position = o.position, size = o.size });
+            }
+
+            list.AddRange(more);
+            return list;
+        }
+
+        private static RoomLayout Room(string id, LayoutKind kind, RoomUse use, int chapter, List<ObstacleDef> obstacles, List<TrapSpot> traps, List<DeviceSpot> devices = null)
         {
             RoomLayout l = Layout(id, kind, obstacles, traps ?? new List<TrapSpot>());
             l.use = use;
             l.chapter = chapter;
+            l.devices = devices ?? new List<DeviceSpot>();
             UnityEditor.EditorUtility.SetDirty(l);
             return l;
         }
@@ -116,24 +140,33 @@ namespace HistoryHeroes.EditorTools
 
             // ----- 구간 전용 방 (구간마다 6개, 약 40%에 그 구간 함정 1~2칸) -----
             // 1 균열의 초원: 개울(다리 방) · 상자 덤불 · 가시덤불 함정
-            list.Add(Room("c1_creek", LayoutKind.Split, RoomUse.Normal, 1, Bridges(), Spots(Spot(-2.6f, 5f, 1.4f, 1.2f))));
+            list.Add(Room("c1_creek", LayoutKind.Split, RoomUse.Normal, 1, new List<ObstacleDef>(), Spots(Spot(-2.6f, 5f, 1.4f, 1.2f)),
+                Creeks(Bridges(), Berry(-3f, 1.7f), Berry(2.9f, -2.8f))));
             list.Add(Room("c1_crates", LayoutKind.Pillars, RoomUse.Normal, 1, Cross(true), none));
             list.Add(Room("c1_zig", LayoutKind.Breakable, RoomUse.Normal, 1, Zigzag(true), none));
             list.Add(Room("c1_ring", LayoutKind.Hazard, RoomUse.Normal, 1, Ring(false), Spots(Spot(-3f, -2.8f, 1.4f, 1.2f), Spot(3f, -2.8f, 1.4f, 1.2f))));
-            list.Add(Room("c1_grove", LayoutKind.Pillars, RoomUse.Normal, 1, Grove(2f), none));
-            list.Add(Room("c1_halls", LayoutKind.Corridor, RoomUse.Normal, 1, Halls(), none));
+            list.Add(Room("c1_grove", LayoutKind.Pillars, RoomUse.Normal, 1, Grove(2f), none, Devices(Berry(0f, -3.1f), Berry(3.2f, 2.7f))));
+            list.Add(Room("c1_halls", LayoutKind.Corridor, RoomUse.Normal, 1, Halls(), none, Devices(Berry(0f, 4.4f), Berry(-3.2f, -3.5f), Berry(3.2f, -3.5f))));
+            list.Add(Room("c1_brook", LayoutKind.Split, RoomUse.Normal, 1, new List<ObstacleDef> { High(-2.8f, 4.4f, 0.9f, 0.9f, true), High(2.8f, -2.2f, 0.9f, 0.9f, true) }, none,
+                Devices(new DeviceSpot { kind = DeviceKind.Creek, position = new Vector2(-1.15f, 1.2f), size = new Vector2(5.7f, 0.9f) }, Berry(2.9f, 3.4f), Berry(-2.9f, -2.4f))));
 
             // 2 잊힌 성채: 성문 앞(십자 광장) · 해자(다리 방) · 기둥 회랑 · 화염 분사구
-            list.Add(Room("c2_gate", LayoutKind.Pillars, RoomUse.Normal, 2, Cross(false), Spots(Spot(0f, 4.2f, 1.2f, 1.2f))));
+            list.Add(Room("c2_gate", LayoutKind.Pillars, RoomUse.Normal, 2, Cross(false), Spots(Spot(0f, 4.2f, 1.2f, 1.2f)), Devices(Keg(-1.5f, 1.2f), Keg(1.5f, 1.2f))));
             list.Add(Room("c2_moat", LayoutKind.Split, RoomUse.Normal, 2, Bridges(), none));
             list.Add(Room("c2_colonnade", LayoutKind.Pillars, RoomUse.Normal, 2, Grove(2.4f), none));
             list.Add(Room("c2_ring", LayoutKind.Hazard, RoomUse.Normal, 2, Ring(true), Spots(Spot(-3.1f, 1.4f, 1.1f, 1.6f), Spot(3.1f, 1.4f, 1.1f, 1.6f))));
             list.Add(Room("c2_zig", LayoutKind.Corridor, RoomUse.Normal, 2, Zigzag(false), none));
-            list.Add(Room("c2_storage", LayoutKind.Breakable, RoomUse.Normal, 2, Cross(true), none));
+            list.Add(Room("c2_storage", LayoutKind.Breakable, RoomUse.Normal, 2, Cross(true), none, Devices(Keg(-1.6f, 4.65f), Keg(1.6f, -1.35f), Keg(0f, 2.4f))));
+            list.Add(Room("c2_portcullis", LayoutKind.Hazard, RoomUse.Normal, 2,
+                new List<ObstacleDef> { High(-2.7f, -1.8f, 0.9f, 0.9f, true), High(2.7f, -1.8f, 0.9f, 0.9f, true), Crate(-1.3f, 3.9f, 3), Crate(1.3f, 3.9f, 3) }, none,
+                Devices(Gate(0f, 1.4f, 4.6f), Keg(0f, 3.9f))));
 
             // 3 녹슨 공방: 조립 라인(지그재그 + 컨베이어) · 복도 · 증기
-            list.Add(Room("c3_line", LayoutKind.Hazard, RoomUse.Normal, 3, Zigzag(false), Spots(Spot(1.4f, 2.5f, 4f, 1f, 0f), Spot(-1.4f, -0.1f, 4f, 1f, 180f))));
-            list.Add(Room("c3_halls", LayoutKind.Corridor, RoomUse.Normal, 3, Halls(), Spots(Spot(0f, 1.6f, 1.4f, 3f, 90f))));
+            list.Add(Room("c3_line", LayoutKind.Hazard, RoomUse.Normal, 3, Zigzag(false), Spots(Spot(1.4f, 2.5f, 4f, 1f, 0f), Spot(-1.4f, -0.1f, 4f, 1f, 180f)), Devices(Lever(3.2f, -3.6f))));
+            list.Add(Room("c3_halls", LayoutKind.Corridor, RoomUse.Normal, 3, Halls(), Spots(Spot(0f, 1.6f, 1.4f, 3f, 90f), Spot(0f, -2.4f, 1.4f, 1.2f)), Devices(Lever(-3.2f, -3.6f))));
+            list.Add(Room("c3_saws", LayoutKind.Hazard, RoomUse.Normal, 3,
+                new List<ObstacleDef> { High(-3.05f, 1.2f, 1.2f, 1.2f), High(3.05f, 1.2f, 1.2f, 1.2f) }, none,
+                Devices(Saw(-2.5f, 3.9f, 2.5f, 3.9f), Saw(1.9f, -1.6f, -1.9f, -1.6f))));
             list.Add(Room("c3_cross", LayoutKind.Pillars, RoomUse.Normal, 3, Cross(false), none));
             list.Add(Room("c3_crates", LayoutKind.Breakable, RoomUse.Normal, 3, Zigzag(true), none));
             list.Add(Room("c3_ring", LayoutKind.Split, RoomUse.Normal, 3, Ring(true), none));

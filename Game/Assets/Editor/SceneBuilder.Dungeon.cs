@@ -162,6 +162,7 @@ namespace HistoryHeroes.EditorTools
             l.kind = kind;
             l.obstacles = obstacles;
             l.traps = traps;
+            l.devices = new List<DeviceSpot>(); // 장치는 Room(..., devices)가 채운다 (다시 만들 때 옛 장치가 남지 않게)
             EditorUtility.SetDirty(l);
             return l;
         }

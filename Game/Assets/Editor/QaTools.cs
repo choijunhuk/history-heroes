@@ -546,6 +546,25 @@ namespace HistoryHeroes.EditorTools
             return ready ? "ready" : "wait";
         }
 
+        /// <summary>
+        /// 확장 1차 장치·방 점검: 지금 방에 레이아웃 하나를 바로 깐다 (적은 그대로, 판정·장치·함정 새로).
+        /// id = 레이아웃 id (예: "c2_portcullis"). Play 중에만
+        /// </summary>
+        public static string ShowLayout(string id)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var run = Object.FindAnyObjectByType<DungeonRun>();
+            if (run == null) return "던전 아님";
+            string path = $"Assets/Data/Dungeons/Layouts/Layout_{id}.asset";
+            var layout = UnityEditor.AssetDatabase.LoadAssetAtPath<RoomLayout>(path);
+            if (layout == null) return "레이아웃 없음: " + path;
+            typeof(DungeonRun).GetMethod("ApplyLayout", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(run, new object[] { layout });
+            int devices = layout.devices != null ? layout.devices.Count : 0;
+            return $"{id}: 장애물 {layout.obstacles.Count} · 함정 {layout.traps.Count} · 장치 {devices}";
+        }
+
         public static string State()
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
