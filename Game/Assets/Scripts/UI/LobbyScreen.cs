@@ -43,6 +43,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text codexButtonLabel;
         [SerializeField] private Button heroButton;
         [SerializeField] private TMP_Text heroButtonLabel;
+        [Tooltip("영웅 버튼 안의 3D 초상 (지금 영웅만 보인다, Art3D-Plan 7번)")]
+        [SerializeField] private HeroPortraits heroButtonPortraits;
         [SerializeField] private HeroRoster roster;
 
         [Header("패널")]
@@ -429,6 +431,7 @@ namespace HistoryHeroes.UI
             codexButtonLabel.text = $"조합 도감  {found}/{codex.RecipeCount}";
             HeroData hero = HeroUnlock.Selected(data, roster);
             heroButtonLabel.text = hero != null ? $"영웅  {hero.displayName} ({hero.ClassLabel})" : "영웅";
+            if (heroButtonPortraits != null && hero != null) heroButtonPortraits.ShowOnly(roster.heroes.IndexOf(hero));
             RenderWallet();
         }
 

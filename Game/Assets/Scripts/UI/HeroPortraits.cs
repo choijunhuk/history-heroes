@@ -23,8 +23,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private float startYaw = 25f;
         [Tooltip("고른 영웅을 다시 그리는 빠르기 (초당)")]
         [SerializeField] private float liveFps = 15f;
-
-        private static readonly Vector3 StageOrigin = new Vector3(0f, -5000f, 0f);
+        [Tooltip("무대 자리 (초상 묶음이 여럿이면 서로 겹치지 않게 다르게)")]
+        [SerializeField] private Vector3 stageOrigin = new Vector3(0f, -5000f, 0f);
         private const float SlotGap = 30f;
 
         private readonly List<Slot> _slots = new List<Slot>();
@@ -74,6 +74,17 @@ namespace HistoryHeroes.UI
         /// <summary>지금 고른(포커스) 영웅: 이 초상만 계속 움직인다</summary>
         public void SetFocus(int index) => _focus = index;
 
+        /// <summary>한 영웅 초상만 보인다 (로비 "영웅" 버튼: 지금 영웅)</summary>
+        public void ShowOnly(int index)
+        {
+            for (int i = 0; i < images.Length; i++)
+            {
+                if (images[i] != null) images[i].gameObject.SetActive(i == index);
+            }
+
+            SetFocus(index);
+        }
+
         /// <summary>잠긴 영웅은 초상을 어둡게 (그림이 아직 없으면 그대로 투명)</summary>
         public void SetLocked(int index, bool locked)
         {
@@ -100,7 +111,7 @@ namespace HistoryHeroes.UI
         private void Build()
         {
             _stage = new GameObject("[HeroPortraits]").transform;
-            _stage.position = StageOrigin;
+            _stage.position = stageOrigin;
             var sun = new GameObject("Light").AddComponent<Light>();
             sun.transform.SetParent(_stage, false);
             sun.type = LightType.Directional;
@@ -114,7 +125,7 @@ namespace HistoryHeroes.UI
                 HeroData hero = roster.heroes[i];
                 if (hero == null || hero.model3D == null || images[i] == null) continue;
 
-                Vector3 at = StageOrigin + new Vector3(i * SlotGap, 0f, 0f);
+                Vector3 at = stageOrigin + new Vector3(i * SlotGap, 0f, 0f);
                 Transform model = Instantiate(hero.model3D, at, Quaternion.Euler(0f, startYaw, 0f), _stage).transform;
                 float raw = hero.model3D.TryGetComponent(out Combat.Model3DInfo info) && info.height > 0.01f ? info.height : 1.8f;
                 model.localScale = Vector3.one * (modelHeight / raw);

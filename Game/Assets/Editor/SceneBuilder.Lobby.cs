@@ -82,6 +82,23 @@ namespace HistoryHeroes.EditorTools
             Button codex = Btn("Codex", main, "조합 도감", new Vector2(212f, -485f), new Vector2(396f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text codexLabel);
             Half(codexLabel);
             Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -645f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
+            // 영웅 버튼 왼쪽에 지금 영웅의 3D 초상 (Art3D-Plan 7번). 영웅마다 한 장, 지금 영웅만 보인다
+            heroLabel.rectTransform.offsetMin = new Vector2(120f, 0f);
+            var lobbyPortraits = new RawImage[roster != null ? roster.heroes.Count : 0];
+            for (int i = 0; i < lobbyPortraits.Length; i++)
+            {
+                RectTransform face = Rect($"HeroFace{i + 1}", heroButton.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(100f, 115f));
+                lobbyPortraits[i] = face.gameObject.AddComponent<RawImage>();
+                lobbyPortraits[i].color = new Color(1f, 1f, 1f, 0f);
+                lobbyPortraits[i].raycastTarget = false; // 누르면 버튼이 받는다
+            }
+
+            HeroPortraits heroFaces = heroButton.gameObject.AddComponent<HeroPortraits>();
+            using (var props = new Props(heroFaces))
+            {
+                props.Ref("roster", roster).Refs("images", lobbyPortraits).Int("textureSize", 200).Float("liveFps", 12f)
+                    .Vector3("stageOrigin", new Vector3(0f, -6000f, 0f)); // 영웅 화면 초상 무대(-5000)와 겹치지 않게
+            }
             Button settingsButton = Btn("Settings", main, "설정", new Vector2(430f, 820f), new Vector2(180f, 80f), ButtonGray, out TMP_Text settingsLabel);
             settingsLabel.fontSize = 30;
             Button shopButton = Btn("Shop", main, "상점", new Vector2(-430f, 820f), new Vector2(180f, 80f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text shopLabel);
@@ -131,7 +148,7 @@ namespace HistoryHeroes.EditorTools
                     .Ref("codexButton", codex).Ref("codexButtonLabel", codexLabel)
                     .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)
                     .Ref("walletLabel", wallet).Ref("noticeLabel", notice)
-                    .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("roster", roster).Ref("heroPanel", heroPanel)
+                    .Ref("heroButton", heroButton).Ref("heroButtonLabel", heroLabel).Ref("heroButtonPortraits", heroFaces).Ref("roster", roster).Ref("heroPanel", heroPanel)
                     .Ref("settingsButton", settingsButton).Ref("settings", settingsPanel).Ref("metaTable", meta)
                     .Ref("shopButton", shopButton).Ref("shop", shopPanel)
                     .Ref("missionButton", missionButton).Ref("missionLabel", missionLabel).Ref("missions", missionPanel)
