@@ -29,9 +29,10 @@ namespace HistoryHeroes.EditorTools
             foreach (string tex in new[] { "T_Ground_Grass", "T_Floor_Stone", "T_Wall_Stone", "T_Crate", "T_Rock" })
             {
                 var importer = AssetImporter.GetAtPath($"{Art3DAssets.Textures}/{tex}.png") as TextureImporter;
-                if (importer == null || (importer.wrapMode == TextureWrapMode.Repeat && importer.maxTextureSize == 512)) continue;
+                int size = tex == "T_Floor_Stone" ? 1024 : 512; // 새 돌바닥은 한 장이 넓어서 크게 (판석이 흐려지지 않게)
+                if (importer == null || (importer.wrapMode == TextureWrapMode.Repeat && importer.maxTextureSize == size)) continue;
                 importer.wrapMode = TextureWrapMode.Repeat;
-                importer.maxTextureSize = 512;
+                importer.maxTextureSize = size;
                 importer.SaveAndReimport();
             }
 
@@ -44,7 +45,7 @@ namespace HistoryHeroes.EditorTools
                 return m;
             }
 
-            const float stone = 3f; // 돌바닥 무늬 한 장 = 3 유닛
+            const float stone = 6f; // 돌바닥 무늬 한 장 = 6 유닛 (Tools/floor_tex.py: 크기가 다른 판석 1024px, 반복이 덜 보이게 — 재평가 4번)
             float wallLong = ArenaHalfHeight * 2f + 2f, wallWide = ArenaHalfWidth * 2f + 2f, survivalLong = SurvivalHalf * 2f + 2f;
             return new Stage
             {
