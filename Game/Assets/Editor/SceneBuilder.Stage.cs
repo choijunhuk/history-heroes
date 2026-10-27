@@ -148,11 +148,15 @@ namespace HistoryHeroes.EditorTools
             block.GetComponent<SpriteRenderer>().enabled = false;
         }
 
-        /// <summary>벽 스프라이트 → 3D 돌벽 (세로 벽 · 가로 벽은 무늬 반복이 다르다)</summary>
+        /// <summary>앞(화면 아래) 벽 높이: 카메라 쪽 벽이 높으면 그 너머(벽 앞에 선 영웅·예고)를 가린다 (3D 화면 점검 2번)</summary>
+        private const float NearWallHeight = 0.4f;
+
+        /// <summary>벽 스프라이트 → 3D 돌벽 (세로 벽 · 가로 벽은 무늬 반복이 다르다). 이름이 "Wall Bottom"이면 낮게</summary>
         private static void DressWall(GameObject block, Material side, Material end)
         {
             Vector3 s = block.transform.localScale;
-            Stage3D.Add(block.transform, Stage3D.Shape.Box, WallHeight, s.y > s.x ? side : end, castShadows: true);
+            float height = block.name == "Wall Bottom" ? NearWallHeight : WallHeight;
+            Stage3D.Add(block.transform, Stage3D.Shape.Box, height, s.y > s.x ? side : end, castShadows: true);
             block.GetComponent<SpriteRenderer>().enabled = false;
         }
 
@@ -194,7 +198,8 @@ namespace HistoryHeroes.EditorTools
                 seg.position = new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0f);
                 seg.rotation = Quaternion.Euler(0f, 0f, a * Mathf.Rad2Deg);
                 seg.localScale = new Vector3(0.45f, length, 1f);
-                Stage3D.Add(seg, Stage3D.Shape.Box, 0.9f, stage.Rim, castShadows: true);
+                float rimHeight = Mathf.Sin(a) < -0.25f ? NearWallHeight : 0.9f; // 카메라 쪽(아래) 반은 낮게 — 영웅·예고를 가리지 않게
+                Stage3D.Add(seg, Stage3D.Shape.Box, rimHeight, stage.Rim, castShadows: true);
             }
         }
     }

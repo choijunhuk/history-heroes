@@ -41,7 +41,7 @@ namespace HistoryHeroes.Skills
             template.SetActive(false);
             template.transform.SetParent(root, false);
             var sr = template.AddComponent<SpriteRenderer>();
-            sr.sprite = PlaceholderSprites.Circle;
+            sr.sprite = PlaceholderSprites.RimCircle; // 장판도 테두리가 보이게 (3D 화면 점검 2번)
             sr.color = color;
             sr.sortingOrder = sortingOrder;
             DamageZone zone = template.AddComponent<DamageZone>();

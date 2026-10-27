@@ -13,9 +13,10 @@ namespace HistoryHeroes.Enemy
         private static readonly List<SpriteRenderer> _pool = new List<SpriteRenderer>();
         private static Transform _root;
 
-        public static readonly Color Danger = new Color(1f, 0.25f, 0.2f, 0.45f);
-        public static readonly Color Summon = new Color(0.7f, 0.4f, 1f, 0.5f);
-        public static readonly Color Warning = new Color(1f, 0.85f, 0.3f, 0.4f);
+        // 테두리 원(RimCircle)이라 안쪽은 이 알파의 55% — 테두리가 진하게 보이게 조금 올렸다 (3D 화면 점검 2번)
+        public static readonly Color Danger = new Color(1f, 0.25f, 0.2f, 0.6f);
+        public static readonly Color Summon = new Color(0.7f, 0.4f, 1f, 0.6f);
+        public static readonly Color Warning = new Color(1f, 0.85f, 0.3f, 0.55f);
 
         private static SpriteRenderer Get(Sprite sprite, int order)
         {
@@ -52,7 +53,7 @@ namespace HistoryHeroes.Enemy
 
         public static SpriteRenderer Circle(Vector2 center, float radius, Color color, int order = -2)
         {
-            SpriteRenderer sr = Get(PlaceholderSprites.Circle, order);
+            SpriteRenderer sr = Get(PlaceholderSprites.RimCircle, order);
             sr.transform.position = center;
             sr.transform.localScale = Vector3.one * radius * 2f;
             sr.color = color;
@@ -77,7 +78,7 @@ namespace HistoryHeroes.Enemy
 
         public static SpriteRenderer Box(Vector2 center, Vector2 size, float angle, Color color, int order = -3)
         {
-            SpriteRenderer sr = Get(PlaceholderSprites.Square, order);
+            SpriteRenderer sr = Get(PlaceholderSprites.RimSquare, order);
             sr.transform.position = center;
             sr.transform.rotation = Quaternion.Euler(0f, 0f, angle);
             sr.transform.localScale = new Vector3(size.x, size.y, 1f);
@@ -96,7 +97,7 @@ namespace HistoryHeroes.Enemy
             }
         }
 
-        public static bool IsCircle(SpriteRenderer sr) => sr.sprite == PlaceholderSprites.Circle;
+        public static bool IsCircle(SpriteRenderer sr) => sr.sprite == PlaceholderSprites.RimCircle || sr.sprite == PlaceholderSprites.Circle;
         public static bool IsFan(SpriteRenderer sr) => sr.sprite != null && sr.sprite.texture != null && sr.sprite.texture.name.StartsWith("Fan");
 
         public static void Hide(SpriteRenderer sr)

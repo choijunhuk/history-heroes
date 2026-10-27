@@ -31,12 +31,12 @@ namespace HistoryHeroes.EditorTools
         {
             var p = new Prefabs
             {
-                PlayerArrow = ProjectilePrefab("Arrow_Player", d.Khan.color, new Vector2(0.55f, 0.12f), 0.15f, 3f),
-                EnemyArrow = ProjectilePrefab("Arrow_Enemy", new Color(0.95f, 0.2f, 0.55f), new Vector2(0.45f, 0.16f), 0.15f, 4f),
+                PlayerArrow = ProjectilePrefab("Arrow_Player", d.Khan.color, new Vector2(0.55f, 0.12f), 0.15f, 3f, fx: Fx.Arrow),
+                EnemyArrow = ProjectilePrefab("Arrow_Enemy", new Color(0.95f, 0.2f, 0.55f), new Vector2(0.45f, 0.16f), 0.15f, 4f, fx: Fx.EnemyArrow),
                 Gem = GemPrefab(),
                 // 영웅별 기본 공격 (Heroes.md): 나폴레옹 총알, 테슬라 전기 구체, 관우 검기 (벽 튕김 패시브)
-                Bullet = ProjectilePrefab("Bullet_Napoleon", new Color(1f, 0.85f, 0.4f), new Vector2(0.32f, 0.14f), 0.12f, 2.5f),
-                Orb = ProjectilePrefab("Orb_Tesla", new Color(0.55f, 0.9f, 1f), new Vector2(0.34f, 0.34f), 0.17f, 3f, _circle),
+                Bullet = ProjectilePrefab("Bullet_Napoleon", new Color(1f, 0.85f, 0.4f), new Vector2(0.32f, 0.14f), 0.12f, 2.5f, fx: Fx.Bullet),
+                Orb = ProjectilePrefab("Orb_Tesla", new Color(0.55f, 0.9f, 1f), new Vector2(0.34f, 0.34f), 0.17f, 3f, _circle, Fx.Orb),
                 SwordWave = ProjectilePrefab("SwordWave_Guan", new Color(0.85f, 1f, 0.9f, 0.85f), new Vector2(0.2f, 0.8f), 0.3f, 1.2f),
             };
 
@@ -87,7 +87,7 @@ namespace HistoryHeroes.EditorTools
             p.ArrowRain = Behaviour<ArrowRainBehaviour>("Skill_ArrowRain", null);
 
             // v0.3 공용 액티브·조합 (Skills.md 2장·4-4)
-            p.IceShardProjectile = ProjectilePrefab("Shard_Ice", new Color(0.65f, 0.9f, 1f), new Vector2(0.4f, 0.12f), 0.13f, 2f);
+            p.IceShardProjectile = ProjectilePrefab("Shard_Ice", new Color(0.65f, 0.9f, 1f), new Vector2(0.4f, 0.12f), 0.13f, 2f, fx: Fx.Shard);
             p.IceShard = Behaviour<IceShardBehaviour>("Skill_IceShard", props => props.Ref("shardPrefab", p.IceShardProjectile));
             p.BlizzardShard = Behaviour<IceShardBehaviour>("Skill_BlizzardShard", props => props.Ref("shardPrefab", p.IceShardProjectile)
                 .Bool("chill", true).Float("slow", 0.4f).Float("fanDegrees", 60f));
@@ -121,7 +121,7 @@ namespace HistoryHeroes.EditorTools
             return p;
         }
 
-        private static Projectile ProjectilePrefab(string name, Color color, Vector2 size, float radius, float lifetime, Sprite sprite = null)
+        private static Projectile ProjectilePrefab(string name, Color color, Vector2 size, float radius, float lifetime, Sprite sprite = null, Fx fx = Fx.None)
         {
             var go = new GameObject(name);
             go.transform.localScale = new Vector3(size.x, size.y, 1f);
@@ -131,6 +131,7 @@ namespace HistoryHeroes.EditorTools
             sr.sortingOrder = 5;
             var projectile = go.AddComponent<Projectile>();
             using (var props = new Props(projectile)) props.Float("radius", radius).Float("lifetime", lifetime);
+            DressProjectile(go, size, fx); // 3D 모형 (Art3D-Plan 6번)
             return AssetUtil.SavePrefab<Projectile>(go, $"{PrefabDir}/{name}.prefab");
         }
 
@@ -143,6 +144,7 @@ namespace HistoryHeroes.EditorTools
             sr.color = new Color(0.35f, 1f, 0.75f);
             sr.sortingOrder = 1;
             go.AddComponent<ExperienceGem>();
+            DressGem(go); // 3D 보석 (Art3D-Plan 6번)
             return AssetUtil.SavePrefab<ExperienceGem>(go, $"{PrefabDir}/ExpGem.prefab");
         }
 

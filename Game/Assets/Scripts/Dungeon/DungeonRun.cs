@@ -630,10 +630,10 @@ namespace HistoryHeroes.Dungeon
             go.transform.localScale = new Vector3(o.size.x, o.size.y, 1f);
             go.layer = o.kind == ObstacleKind.Low ? 0 : LayerMask.NameToLayer("Wall");
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = o.circle ? PlaceholderSprites.Circle : PlaceholderSprites.Square;
+            sr.sprite = o.kind == ObstacleKind.Low && !o.circle ? PlaceholderSprites.Pit : o.circle ? PlaceholderSprites.Circle : PlaceholderSprites.Square; // 구덩이는 밝은 테가 있는 구멍
             sr.sortingOrder = -6;
             sr.color = o.kind == ObstacleKind.High ? new Color(0.42f, 0.38f, 0.33f)
-                : o.kind == ObstacleKind.Low ? new Color(0.12f, 0.14f, 0.2f, 0.95f)
+                : o.kind == ObstacleKind.Low ? new Color(0.34f, 0.36f, 0.45f, 1f) // 구덩이 무늬(Pit)가 가운데를 어둡게 한다
                 : new Color(0.62f, 0.45f, 0.25f);
             if (o.circle) go.AddComponent<CircleCollider2D>().radius = 0.5f;
             else go.AddComponent<BoxCollider2D>();
