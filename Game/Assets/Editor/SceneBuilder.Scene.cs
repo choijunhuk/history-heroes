@@ -358,7 +358,7 @@ namespace HistoryHeroes.EditorTools
 
         // 카드 3장 + 간격 = 1032 (기준 너비 1080 안에 들어감)
         private const float CardWidth = 336f;
-        private const float CardHeight = 500f;
+        private const float CardHeight = 560f;
 
         /// <summary>캔버스 + 이벤트 시스템 (전투·로비 공용). 기준 1080×1920, Expand</summary>
         private static Transform CreateCanvas()
@@ -524,12 +524,25 @@ namespace HistoryHeroes.EditorTools
             var screen = holder.gameObject.AddComponent<LevelUpScreen>();
 
             RectTransform panel = Rect("Panel", holder, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
-            Img(panel, new Color(0f, 0f, 0f, 0.8f), null).raycastTarget = true; // 뒤쪽 터치 막기
+            Img(panel, new Color(0.02f, 0.03f, 0.07f, 0.82f), null).raycastTarget = true; // 뒤쪽 터치 막기
+
+            if (_kit != null)
+            {
+                // 제목 뒤에서 천천히 도는 금빛 빛살 + 붉은 리본 (그래픽 평가 3번)
+                RectTransform rays = Rect("Rays", panel, Center, Center, Center, new Vector2(0f, 500f), new Vector2(900f, 900f));
+                Img(rays, new Color(1f, 0.8f, 0.35f, 0.22f), _kit.Rays);
+                rays.gameObject.AddComponent<UiSpin>();
+                RectTransform ribbon = Rect("Ribbon", panel, Center, Center, Center, new Vector2(0f, 492f), new Vector2(760f, 150f));
+                Image ribbonImage = Img(ribbon, new Color(0.86f, 0.24f, 0.22f), _kit.Ribbon);
+                ribbonImage.type = Image.Type.Sliced;
+                ribbon.gameObject.AddComponent<UiPop>();
+            }
 
             TMP_Text title = Label("Title", panel, "레벨 업!", 84, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 500f), new Vector2(900f, 110f));
-            TMP_Text subtitle = Label("Subtitle", panel, "카드 1장을 고르세요", 34, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.75f));
-            Place(subtitle.rectTransform, Center, Center, new Vector2(0f, 420f), new Vector2(900f, 50f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 506f), new Vector2(900f, 110f));
+            title.gameObject.AddComponent<UiPop>();
+            TMP_Text subtitle = Label("Subtitle", panel, "카드 1장을 고르세요", 34, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.85f));
+            Place(subtitle.rectTransform, Center, Center, new Vector2(0f, 394f), new Vector2(900f, 50f));
 
             var cards = new SkillCardView[3];
             const float step = CardWidth + 12f;
@@ -555,32 +568,112 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        /// <summary>
+        /// 레벨업 카드 (그래픽 평가 3번: "선택창이 html 같다"): 등급 색 테두리 · 큰 스킬 아이콘 · 종류 탭 · NEW 딱지 · 희귀 이상 뒤 빛 · 차례로 튀어나오기.
+        /// 구조: 카드(누르기·튀어나오기) → 뒤 빛 / 바탕 / 테두리 / 탭 / 아이콘 / 글자
+        /// </summary>
         private static SkillCardView BuildCard(Transform parent, int index, Vector2 position)
         {
             RectTransform card = Rect($"Card {index + 1}", parent, Center, Center, Center, position, new Vector2(CardWidth, CardHeight));
-            Image background = Img(card, SkillCardView.Common, null);
+            card.gameObject.AddComponent<CanvasGroup>();
+            var pop = card.gameObject.AddComponent<UiPop>();
+
+            Image glow = null, frame = null, iconSlot = null, icon = null;
+            GameObject newBadge = null;
+            if (_kit != null)
+            {
+                RectTransform glowRect = Rect("Glow", card, Center, Center, Center, Vector2.zero, new Vector2(CardWidth + 200f, CardHeight + 200f));
+                glow = Img(glowRect, new Color(1f, 1f, 1f, 0.5f), _kit.Glow);
+            }
+
+            RectTransform body = Rect("Body", card, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            Stretch(body);
+            Image background = Img(body, SkillCardView.CardBase, _kit != null ? _kit.Panel : null);
+            if (_kit != null)
+            {
+                background.type = Image.Type.Sliced;
+                background.pixelsPerUnitMultiplier = 1.2f;
+            }
+
             background.raycastTarget = true;
             var button = card.gameObject.AddComponent<Button>();
             button.targetGraphic = background;
 
-            // 맨 위 띠: 종류(액티브/패시브/조합)를 색으로 구분
-            RectTransform band = Rect("KindBand", card, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 56f));
-            Image bandImage = Img(band, SkillCardView.ActiveBand, null);
-            TMP_Text kind = Label("Kind", band, "", 31, TextAlignmentOptions.Center);
+            if (_kit != null)
+            {
+                RectTransform frameRect = Rect("Frame", card, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+                Stretch(frameRect);
+                frameRect.offsetMin = new Vector2(-6f, -6f);
+                frameRect.offsetMax = new Vector2(6f, 6f);
+                frame = Img(frameRect, SkillCardView.Common, _kit.Frame);
+                frame.type = Image.Type.Sliced;
+                frame.pixelsPerUnitMultiplier = 1.1f;
+            }
+
+            // 맨 위 탭: 종류(액티브/패시브/조합)를 색으로 구분
+            RectTransform band = Rect("KindBand", card, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -4f), new Vector2(CardWidth - 90f, 54f));
+            Image bandImage = Img(band, SkillCardView.ActiveBand, _kit != null ? _kit.Badge : null);
+            if (_kit != null) bandImage.type = Image.Type.Sliced;
+            TMP_Text kind = Label("Kind", band, "", 28, TextAlignmentOptions.Center);
             Stretch(kind.rectTransform);
+            if (_titleFont != null)
+            {
+                kind.font = _titleFont;
+                if (_buttonMat != null) kind.fontSharedMaterial = _buttonMat;
+            }
 
-            TMP_Text nameLabel = TopLabel("Name", card, 42, 68f, 58f);
+            // 큰 스킬 아이콘 (오목한 칸 안)
+            if (_kit != null)
+            {
+                RectTransform slotRect = Rect("IconSlot", card, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -112f), new Vector2(128f, 128f));
+                iconSlot = Img(slotRect, SkillCardView.Common, _kit.Slot);
+                iconSlot.type = Image.Type.Sliced;
+                RectTransform iconRect = Rect("Icon", slotRect, Center, Center, Center, new Vector2(0f, -2f), new Vector2(92f, 92f));
+                icon = Img(iconRect, Color.white, null);
+                icon.preserveAspect = true;
+                var iconShadow = iconRect.gameObject.AddComponent<Shadow>();
+                iconShadow.effectColor = new Color(0f, 0f, 0f, 0.55f);
+                iconShadow.effectDistance = new Vector2(0f, -4f);
+
+                RectTransform badge = Rect("NewBadge", card, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-46f, -62f), new Vector2(92f, 44f));
+                Image badgeImage = Img(badge, new Color(1f, 0.25f, 0.3f), _kit.Badge);
+                badgeImage.type = Image.Type.Sliced;
+                badge.localRotation = Quaternion.Euler(0f, 0f, -12f);
+                TMP_Text badgeLabel = Label("Text", badge, "NEW", 26, TextAlignmentOptions.Center);
+                Stretch(badgeLabel.rectTransform);
+                if (_titleFont != null)
+                {
+                    badgeLabel.font = _titleFont;
+                    if (_buttonMat != null) badgeLabel.fontSharedMaterial = _buttonMat;
+                }
+
+                badgeLabel.margin = new Vector4(0f, 0f, 0f, 4f);
+                newBadge = badge.gameObject;
+            }
+
+            TMP_Text nameLabel = TopLabel("Name", card, 42, 182f, 56f);
             nameLabel.enableAutoSizing = true;
-            nameLabel.fontSizeMin = 30f;
+            nameLabel.fontSizeMin = 28f;
             nameLabel.fontSizeMax = 42f;
-            TMP_Text level = TopLabel("Level", card, 31, 128f, 42f);
-            level.color = new Color(1f, 0.95f, 0.7f);
+            if (_titleFont != null)
+            {
+                nameLabel.font = _titleFont;
+                if (_buttonMat != null) nameLabel.fontSharedMaterial = _buttonMat;
+            }
 
-            // 설명: 어두운 판 위에 크게. 길면 조금 줄어든다
+            TMP_Text level = TopLabel("Level", card, 30, 236f, 40f);
+            level.color = new Color(1f, 0.88f, 0.45f);
+
+            // 설명: 어두운 둥근 판 위에 크게. 길면 조금 줄어든다
             RectTransform box = Rect("DescriptionBox", card, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
-            box.offsetMin = new Vector2(12f, 58f);
-            box.offsetMax = new Vector2(-12f, -178f);
-            Img(box, new Color(0f, 0f, 0f, 0.32f), null);
+            box.offsetMin = new Vector2(16f, 58f);
+            box.offsetMax = new Vector2(-16f, -282f);
+            Image boxImage = Img(box, new Color(0.03f, 0.05f, 0.1f, 0.55f), _kit != null ? _kit.Row : null);
+            if (_kit != null)
+            {
+                boxImage.type = Image.Type.Sliced;
+                boxImage.pixelsPerUnitMultiplier = 1.4f;
+            }
 
             TMP_Text description = Label("Description", box, "", 32, TextAlignmentOptions.Center);
             description.enableAutoSizing = true;
@@ -593,8 +686,13 @@ namespace HistoryHeroes.EditorTools
             dr.offsetMax = new Vector2(-12f, -10f);
 
             // 힌트 줄 (조합 진행·막히는 조합·★3 경고). 있으면 설명 칸이 위로 줄어든다 (SkillCardView.SetHint)
-            RectTransform hintBox = Rect("HintBox", card, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(CardWidth - 24f, 100f));
-            Img(hintBox, new Color(0.05f, 0.06f, 0.09f, 0.78f), null);
+            RectTransform hintBox = Rect("HintBox", card, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(CardWidth - 28f, 100f));
+            Image hintImage = Img(hintBox, new Color(0.02f, 0.03f, 0.06f, 0.82f), _kit != null ? _kit.Row : null);
+            if (_kit != null)
+            {
+                hintImage.type = Image.Type.Sliced;
+                hintImage.pixelsPerUnitMultiplier = 1.4f;
+            }
             TMP_Text material = Label("Material", card, "", 25, TextAlignmentOptions.Center, new Color(1f, 0.9f, 0.3f));
             Place(material.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(CardWidth - 36f, 96f));
             material.enableAutoSizing = true;
@@ -606,8 +704,12 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(view))
             {
                 props.Ref("button", button).Ref("background", background).Ref("kindBand", bandImage).Ref("kindLabel", kind)
-                    .Ref("nameLabel", nameLabel).Ref("levelLabel", level).Ref("descriptionLabel", description).Ref("materialLabel", material).Ref("descriptionBox", box).Ref("hintBox", hintBox.gameObject);
+                    .Ref("nameLabel", nameLabel).Ref("levelLabel", level).Ref("descriptionLabel", description).Ref("materialLabel", material).Ref("descriptionBox", box).Ref("hintBox", hintBox.gameObject)
+                    .Ref("frame", frame).Ref("glow", glow).Ref("iconSlot", iconSlot).Ref("icon", icon).Ref("newBadge", newBadge).Ref("pop", pop).Int("order", index)
+                    .Ref("attackIcon", Icon("atk_up")).Ref("hpIcon", Icon("hp_up")).Ref("speedIcon", Icon("aspd_up")).Ref("healIcon", Icon("heal"));
             }
+
+            card.SetAsLastSibling();
 
             return view;
         }
@@ -672,21 +774,48 @@ namespace HistoryHeroes.EditorTools
             rt.offsetMax = Vector2.zero;
         }
 
+        /// <summary>
+        /// 그림 칸. 그림을 안 주면 (UI 부품이 있을 때) 모양을 골라 준다 (그래픽 평가 3번):
+        /// 전체 화면 불투명 바탕 → 그라데이션 + 무늬 + 가장자리 어둡게 / 큰 칸 → 둥근 테두리 칸 / 얇은 띠·눈금 → 그대로 납작하게
+        /// </summary>
         private static Image Img(RectTransform rt, Color color, Sprite sprite)
         {
             var image = rt.gameObject.AddComponent<Image>();
             image.color = color;
             image.sprite = sprite;
             image.raycastTarget = false;
+            if (sprite != null || _kit == null || color.a < 0.95f) return image;
+
+            bool fullScreen = rt.anchorMin == Vector2.zero && rt.anchorMax == Vector2.one && rt.sizeDelta == Vector2.zero;
+            Vector2 size = rt.sizeDelta;
+            if (fullScreen) ScreenBackdrop(image);
+            else if (rt.anchorMin == rt.anchorMax && size.x >= 60f && size.y >= 48f)
+            {
+                image.sprite = _kit.Row;
+                image.type = Image.Type.Sliced;
+                image.pixelsPerUnitMultiplier = BorderScale(size.y, 90f);
+                image.color = LiftRow(color);
+            }
+
             return image;
         }
 
         private static void Fill(RectTransform background, Color backColor, Color fillColor, out Image fill)
         {
-            Img(background, backColor, _square);
+            Image back = Img(background, backColor, _kit != null ? _kit.BarBg : _square);
             RectTransform fillRect = Rect("Fill", background, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             Stretch(fillRect);
-            fill = Img(fillRect, fillColor, _square);
+            fill = Img(fillRect, fillColor, _kit != null ? _kit.BarFill : _square);
+            if (_kit != null)
+            {
+                // 막대 틀: 어두운 홈 (색은 그림에 있다) · 채움은 틀 안쪽으로 조금 들어간다
+                back.type = Image.Type.Sliced;
+                back.color = Color.white;
+                back.pixelsPerUnitMultiplier = BorderScale(background.sizeDelta.y, 48f);
+                fillRect.offsetMin = new Vector2(3f, 3f);
+                fillRect.offsetMax = new Vector2(-3f, -3f);
+            }
+
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
             fill.fillOrigin = (int)Image.OriginHorizontal.Left;
@@ -698,11 +827,24 @@ namespace HistoryHeroes.EditorTools
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             var label = go.AddComponent<TextMeshProUGUI>();
-            label.font = _font;
+            // 큰 글자(제목)는 굵은 제목 글꼴, 나머지는 나눔고딕. 둘 다 어두운 테두리 + 그림자 (그래픽 평가 3번)
+            bool title = size >= 54f && _titleFont != null;
+            label.font = title ? _titleFont : _font;
+            Material preset = title ? _titleMat : _bodyMat;
+            if (preset != null) label.fontSharedMaterial = preset;
             label.text = text;
             label.fontSize = size;
             label.alignment = align;
-            label.color = color ?? Color.white;
+            Color c = color ?? Color.white;
+            label.color = c;
+            // 금색 제목은 위가 밝고 아래가 진한 그라데이션
+            if (title && c.r > 0.9f && c.g > 0.7f && c.g < 0.92f && c.b < 0.55f)
+            {
+                label.color = Color.white;
+                label.enableVertexGradient = true;
+                label.colorGradient = new VertexGradient(new Color(1f, 0.96f, 0.66f), new Color(1f, 0.96f, 0.66f), new Color(1f, 0.66f, 0.16f), new Color(1f, 0.66f, 0.16f));
+            }
+
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
             return label;
@@ -724,12 +866,38 @@ namespace HistoryHeroes.EditorTools
         private static Button Btn(string name, Transform parent, string text, Vector2 position, Vector2 size, Color color, out TMP_Text label)
         {
             RectTransform rt = Rect(name, parent, Center, Center, Center, position, size);
-            Image image = Img(rt, color, null);
+            Image image;
+            if (_kit != null)
+            {
+                // 두툼한 게임 버튼: 선명한 색 · 아래 두께 · 광택 · 밑 그림자 · 누르면 눌림 (그래픽 평가 3번)
+                image = Img(rt, Vivid(color), _kit.Button);
+                image.type = Image.Type.Sliced;
+                image.pixelsPerUnitMultiplier = BorderScale(size.y, 120f);
+                var shadow = rt.gameObject.AddComponent<Shadow>();
+                shadow.effectColor = new Color(0f, 0f, 0f, 0.4f);
+                shadow.effectDistance = new Vector2(0f, -7f);
+                rt.gameObject.AddComponent<ButtonJuice>();
+            }
+            else image = Img(rt, color, null);
+
             image.raycastTarget = true;
             var button = rt.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
+            // 눌림 색: 살짝 어둡게, 못 누르면 회색빛
+            ColorBlock colors = button.colors;
+            colors.pressedColor = new Color(0.85f, 0.85f, 0.85f);
+            colors.disabledColor = new Color(0.55f, 0.55f, 0.6f, 0.9f);
+            button.colors = colors;
+
             label = Label("Label", rt, text, 34, TextAlignmentOptions.Center);
+            if (_titleFont != null)
+            {
+                label.font = _titleFont;
+                if (_buttonMat != null) label.fontSharedMaterial = _buttonMat;
+            }
+
             Stretch(label.rectTransform);
+            label.margin = new Vector4(8f, 0f, 8f, _kit != null ? 9f / BorderScale(size.y, 120f) : 0f); // 아래 두께만큼 글자를 올린다
             return button;
         }
     }

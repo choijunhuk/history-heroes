@@ -1,0 +1,546 @@
+fileFormatVersion: 2
+guid: e5eb4a73e32e21f488527aee63563d45
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1007990655151992599
+    second: icon_ice_shard_0
+  - first:
+      213: -8460048878785983276
+    second: icon_ice_shard_1
+  - first:
+      213: -6783098227826871899
+    second: icon_ice_shard_2
+  - first:
+      213: 7881918198405745814
+    second: icon_ice_shard_3
+  - first:
+      213: -4260396162483139065
+    second: icon_ice_shard_4
+  - first:
+      213: -3309781627086174336
+    second: icon_ice_shard_5
+  - first:
+      213: 2607036981851792278
+    second: icon_ice_shard_6
+  - first:
+      213: 1452654485909412276
+    second: icon_ice_shard_7
+  - first:
+      213: 3863389042845965143
+    second: icon_ice_shard_8
+  - first:
+      213: -220417280437960415
+    second: icon_ice_shard_9
+  - first:
+      213: 6350469678865479033
+    second: icon_ice_shard_10
+  - first:
+      213: -7632115752650484095
+    second: icon_ice_shard_11
+  - first:
+      213: 4346212965308201474
+    second: icon_ice_shard_12
+  - first:
+      213: -1346069239411765475
+    second: icon_ice_shard_13
+  - first:
+      213: -1950694499003466816
+    second: icon_ice_shard_14
+  - first:
+      213: 8365842531686138818
+    second: icon_ice_shard_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: icon_ice_shard_0
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 208
+        width: 39
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 71f6f39092a1dfd00800000000000000
+      internalID: 1007990655151992599
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_1
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 158
+        width: 59
+        height: 74
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4dc05853e5ed79a80800000000000000
+      internalID: -8460048878785983276
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_2
+      rect:
+        serializedVersion: 2
+        x: 70
+        y: 217
+        width: 32
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a13cc5a9189dd1a0800000000000000
+      internalID: -6783098227826871899
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_3
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 161
+        width: 44
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69c49ac57d2326d60800000000000000
+      internalID: 7881918198405745814
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_4
+      rect:
+        serializedVersion: 2
+        x: 116
+        y: 202
+        width: 34
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 70e41c4434800e4c0800000000000000
+      internalID: -4260396162483139065
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_5
+      rect:
+        serializedVersion: 2
+        x: 153
+        y: 180
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0870a69652b4112d0800000000000000
+      internalID: -3309781627086174336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_6
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 156
+        width: 43
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6932593825e0e2420800000000000000
+      internalID: 2607036981851792278
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_7
+      rect:
+        serializedVersion: 2
+        x: 28
+        y: 178
+        width: 33
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b91206fe8dd82410800000000000000
+      internalID: 1452654485909412276
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_8
+      rect:
+        serializedVersion: 2
+        x: 59
+        y: 152
+        width: 35
+        height: 39
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75b58f78dd38d9530800000000000000
+      internalID: 3863389042845965143
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_9
+      rect:
+        serializedVersion: 2
+        x: 87
+        y: 20
+        width: 149
+        height: 171
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1214329b6abe0fcf0800000000000000
+      internalID: -220417280437960415
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_10
+      rect:
+        serializedVersion: 2
+        x: 180
+        y: 143
+        width: 30
+        height: 61
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9757aa5d686612850800000000000000
+      internalID: 6350469678865479033
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_11
+      rect:
+        serializedVersion: 2
+        x: 23
+        y: 115
+        width: 23
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 186da9ed827451690800000000000000
+      internalID: -7632115752650484095
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_12
+      rect:
+        serializedVersion: 2
+        x: 37
+        y: 104
+        width: 51
+        height: 52
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 20a746b2aa9d05c30800000000000000
+      internalID: 4346212965308201474
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_13
+      rect:
+        serializedVersion: 2
+        x: 39
+        y: 57
+        width: 44
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1f08c5982dc15de0800000000000000
+      internalID: -1346069239411765475
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_14
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 74
+        width: 41
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0cbf69930bdbde4e0800000000000000
+      internalID: -1950694499003466816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: icon_ice_shard_15
+      rect:
+        serializedVersion: 2
+        x: 62
+        y: 35
+        width: 48
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c3c10c5571791470800000000000000
+      internalID: 8365842531686138818
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      icon_ice_shard_0: 1007990655151992599
+      icon_ice_shard_1: -8460048878785983276
+      icon_ice_shard_10: 6350469678865479033
+      icon_ice_shard_11: -7632115752650484095
+      icon_ice_shard_12: 4346212965308201474
+      icon_ice_shard_13: -1346069239411765475
+      icon_ice_shard_14: -1950694499003466816
+      icon_ice_shard_15: 8365842531686138818
+      icon_ice_shard_2: -6783098227826871899
+      icon_ice_shard_3: 7881918198405745814
+      icon_ice_shard_4: -4260396162483139065
+      icon_ice_shard_5: -3309781627086174336
+      icon_ice_shard_6: 2607036981851792278
+      icon_ice_shard_7: 1452654485909412276
+      icon_ice_shard_8: 3863389042845965143
+      icon_ice_shard_9: -220417280437960415
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

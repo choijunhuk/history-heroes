@@ -44,6 +44,7 @@ namespace HistoryHeroes.EditorTools
             SetupLayers();
             CreateSprites();
             SetupFont();
+            SetupUiKit(); // 그래픽 평가 3번: 게임다운 버튼·창·아이콘·제목 글꼴
             CopyLegalTexts(); // v1.0 약관·개인정보·크레딧 (Docs → Resources/Legal)
             CreateSoundBank(); // v1.0 소리 표 (Assets/Audio → Resources/Audio/SoundBank)
 
@@ -83,6 +84,7 @@ namespace HistoryHeroes.EditorTools
             _circle = AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtDir}/Circle.png");
             _square = AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtDir}/Square.png");
             _font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
+            LoadUiKit();
         }
 
         // ---------- 레이어 ----------

@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "\uBC29\uC5B4\uB825"
   description: "\uBC1B\uB294 \uD53C\uD574 -6%\n(\uB808\uBCA8\uB9C8\uB2E4 -4%)"
   warriorDescription: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b93b64f135961e045a18e76b0b6f2b68, type: 3}
   rarity: 0
   tags: 1026
   role: 3

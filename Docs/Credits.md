@@ -14,7 +14,14 @@
 
 | 이름 | 쓰는 곳 | 라이선스 | 출처 |
 |---|---|---|---|
-| 나눔고딕 (NanumGothic Bold · ExtraBold) | 게임 안 모든 글자 | SIL Open Font License 1.1 (`Game/Assets/Fonts/OFL.txt`) | 네이버 나눔글꼴 — https://hangeul.naver.com/font |
+| 나눔고딕 (NanumGothic Bold · ExtraBold) | 게임 안 본문 글자 | SIL Open Font License 1.1 (`Game/Assets/Fonts/OFL.txt`) | 네이버 나눔글꼴 — https://hangeul.naver.com/font |
+| 검은고딕 (Black Han Sans) | 제목 · 버튼 · 카드 이름 | SIL Open Font License 1.1 (`Game/Assets/Fonts/OFL-BlackHanSans.txt`) | Zess Type — https://github.com/zesstype/Black-Han-Sans |
+
+## 아이콘
+
+- 스킬 · 메뉴 · 재화 아이콘 85개 (`Game/Assets/Art/UI/Icons`): **game-icons.net**, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). 흰색으로 칠하고 크기만 맞췄다.
+- 만든 이: Lorc, Delapouite, Sbed, Guard13007, Skoll, Zeromancer, Heavenly Dog, DarkZaitzev, Caro Asercion, AussieSim, Badges. 아이콘마다 만든 이와 주소: `Game/Assets/Art/UI/Icons/CREDITS.txt`
+- 버튼 · 창 · 테두리 · 리본 · 막대 같은 UI 부품 그림: 이 게임을 만들면서 직접 코드로 그림 (`Tools/ui_kit.py`).
 
 ## 그림
 

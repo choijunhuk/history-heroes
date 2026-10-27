@@ -18,7 +18,7 @@ MonoBehaviour:
     \uB3D9\uC548 \uC801\uC744 \uB04C\uC5B4\uBAA8\uC74C\n\uB808\uBCA8\uB9C8\uB2E4
     \uC9C0\uC18D +0.5\uCD08"
   warriorDescription: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 3f4f155bc19514f40b74a73b843be7e3, type: 3}
   rarity: 1
   tags: 256
   role: 2

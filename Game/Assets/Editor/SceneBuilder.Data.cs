@@ -535,6 +535,7 @@ namespace HistoryHeroes.EditorTools
             s.recordable = true;
             s.heroOnlyId = string.Empty;
             s.description = description;
+            s.icon = Icon(id); // 그래픽 평가 3번: 카드·HUD 아이콘 (Assets/Art/UI/Icons)
         }
 
         private static FusionRecipe Recipe(string id, FusionType type, ActiveSkillData a, int levelA, SkillData b, int levelB, ActiveSkillData result)

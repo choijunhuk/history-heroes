@@ -27,25 +27,65 @@ namespace HistoryHeroes.UI
         [Tooltip("힌트가 있으면 설명 칸을 위로 줄여 겹치지 않게 한다")]
         [SerializeField] private RectTransform descriptionBox;
 
+        [Header("그래픽 평가 3번: 아이콘 · 등급 테두리 · 뒤 빛 · 튀어나오기")]
+        [SerializeField] private Image frame;
+        [SerializeField] private Image glow;
+        [SerializeField] private Image iconSlot;
+        [SerializeField] private Image icon;
+        [SerializeField] private GameObject newBadge;
+        [SerializeField] private UiPop pop;
+        [Tooltip("카드 순서 (튀어나오는 시간을 조금씩 늦춘다)")]
+        [SerializeField] private int order;
+        [Header("아이콘이 없는 카드 (균열 강화 · 기본 회복)")]
+        [SerializeField] private Sprite attackIcon;
+        [SerializeField] private Sprite hpIcon;
+        [SerializeField] private Sprite speedIcon;
+        [SerializeField] private Sprite healIcon;
+
         private const float BoxBottomPlain = 58f;
         private const float BoxBottomWithHint = 112f;
 
-        public static readonly Color Common = new Color(0.42f, 0.45f, 0.5f);
-        public static readonly Color Rare = new Color(0.2f, 0.45f, 0.9f);
-        public static readonly Color Legendary = new Color(0.9f, 0.68f, 0.12f);
+        // 등급 색 = 테두리·아이콘 칸·뒤 빛 (카드 바탕은 어두운 남색으로 같다)
+        public static readonly Color Common = new Color(0.66f, 0.72f, 0.82f);
+        public static readonly Color Rare = new Color(0.32f, 0.62f, 1f);
+        public static readonly Color Legendary = new Color(1f, 0.78f, 0.24f);
+        public static readonly Color CardBase = new Color(0.2f, 0.25f, 0.4f);
 
-        public static readonly Color ActiveBand = new Color(0.93f, 0.42f, 0.16f);
-        public static readonly Color PassiveBand = new Color(0.16f, 0.66f, 0.42f);
-        public static readonly Color FusionBand = new Color(0.45f, 0.24f, 0.7f);
-        public static readonly Color BasicBand = new Color(0.25f, 0.27f, 0.3f);
+        public static readonly Color ActiveBand = new Color(1f, 0.5f, 0.18f);
+        public static readonly Color PassiveBand = new Color(0.22f, 0.78f, 0.45f);
+        public static readonly Color FusionBand = new Color(0.62f, 0.34f, 0.95f);
+        public static readonly Color BasicBand = new Color(0.45f, 0.5f, 0.6f);
 
         private bool _rainbow;
+        private float _glowAlpha;
         private Action _onClick;
 
         private void Awake()
         {
             button.onClick.AddListener(() => _onClick?.Invoke());
         }
+
+        /// <summary>등급에 맞춰 테두리·아이콘 칸·뒤 빛 색을 정한다 (뒤 빛은 희귀부터)</summary>
+        private void Paint(Color rarity, float glowAlpha, Sprite iconSprite)
+        {
+            if (background != null) background.color = CardBase;
+            if (frame != null) frame.color = rarity;
+            if (iconSlot != null) iconSlot.color = Color.Lerp(rarity, CardBase, 0.35f);
+            _glowAlpha = glowAlpha;
+            if (glow != null)
+            {
+                glow.gameObject.SetActive(glowAlpha > 0f);
+                glow.color = new Color(rarity.r, rarity.g, rarity.b, glowAlpha);
+            }
+
+            if (icon != null)
+            {
+                icon.sprite = iconSprite;
+                icon.enabled = iconSprite != null;
+            }
+        }
+
+        private static float GlowFor(Rarity rarity) => rarity == Rarity.Legendary ? 0.75f : rarity == Rarity.Rare ? 0.45f : 0f;
 
         /// <param name="legendaryWarning">던전 ★3(전설 없이 클리어) 도전 중이면 전설 카드에 경고 (Modes 3-2)</param>
         public void Show(SkillCard card, SkillManager skills, Action onClick, bool legendaryWarning = false)
@@ -64,6 +104,7 @@ namespace HistoryHeroes.UI
                     levelLabel.text = "NEW";
                     descriptionLabel.text = $"{r.materialA.displayName} + {r.materialB.displayName}\n\n{r.result.description}";
                     hint = skills.BlockedWarning(r);
+                    Paint(FusionBand, 0.8f, r.result.icon);
                     break;
 
                 case CardType.RiftBoost:
@@ -72,7 +113,7 @@ namespace HistoryHeroes.UI
                     nameLabel.text = card.BoostStat == Stats.StatType.Attack ? "공격력" : card.BoostStat == Stats.StatType.MaxHp ? "최대체력" : "공격 속도";
                     levelLabel.text = $"+{card.BoostValue * 100f:0}%";
                     descriptionLabel.text = "스킬을 다 키웠다!\n이번 판 동안 계속 쌓인다";
-                    background.color = Common;
+                    Paint(Common, 0f, card.BoostStat == Stats.StatType.Attack ? attackIcon : card.BoostStat == Stats.StatType.MaxHp ? hpIcon : speedIcon);
                     break;
 
                 case CardType.Fallback:
@@ -81,7 +122,7 @@ namespace HistoryHeroes.UI
                     nameLabel.text = "체력 회복";
                     levelLabel.text = string.Empty;
                     descriptionLabel.text = "최대체력의 20%를 회복한다.";
-                    background.color = Common;
+                    Paint(Common, 0f, healIcon);
                     break;
 
                 default:
@@ -92,7 +133,7 @@ namespace HistoryHeroes.UI
                     nameLabel.text = s.displayName;
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";
                     descriptionLabel.text = s.DescriptionFor(skills.HeroClass);
-                    background.color = RarityColor(s.rarity);
+                    Paint(RarityColor(s.rarity), GlowFor(s.rarity), s.icon);
                     hint = skills.CardHint(card);
                     if (legendaryWarning && s.rarity == Rarity.Legendary)
                     {
@@ -104,6 +145,18 @@ namespace HistoryHeroes.UI
             }
 
             SetHint(hint);
+            if (newBadge != null)
+            {
+                // 새 스킬은 모서리 NEW 딱지로 보여 주고, 레벨 줄은 비운다 (같은 글이 두 번 보이지 않게)
+                bool isNew = levelLabel.text == "NEW";
+                newBadge.SetActive(isNew);
+                if (isNew) levelLabel.text = string.Empty;
+            }
+            if (pop != null)
+            {
+                pop.Delay = order * 0.07f; // 한 장씩 차례로
+                pop.Play();
+            }
         }
 
         private void SetHint(string hint)
@@ -127,9 +180,19 @@ namespace HistoryHeroes.UI
 
         private void Update()
         {
-            if (!_rainbow) return;
             // 게임이 멈춘 동안에도 돌아야 하므로 unscaledTime
-            background.color = Color.HSVToRGB(Mathf.Repeat(Time.unscaledTime * 0.25f, 1f), 0.55f, 0.85f);
+            float now = Time.unscaledTime;
+            if (glow != null && _glowAlpha > 0f)
+            {
+                Color g = glow.color;
+                g.a = _glowAlpha * (0.75f + 0.25f * Mathf.Sin(now * 3f + order)); // 숨 쉬는 뒤 빛
+                glow.color = g;
+            }
+
+            if (!_rainbow) return;
+            Color rainbow = Color.HSVToRGB(Mathf.Repeat(now * 0.25f, 1f), 0.6f, 1f); // 조합 카드는 무지개 테두리
+            if (frame != null) frame.color = rainbow;
+            if (glow != null) glow.color = new Color(rainbow.r, rainbow.g, rainbow.b, glow.color.a);
         }
     }
 }

@@ -18,7 +18,7 @@ MonoBehaviour:
     \uADFC\uCC98 \uC801 \uBC88\uAC1C 50%)\n\uB808\uBCA8\uB9C8\uB2E4 \uC9C0\uC18D
     +1\uCD08"
   warriorDescription: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: cbd8fd6617c033a4ea850c738ce7ad8a, type: 3}
   rarity: 1
   tags: 32
   role: 2

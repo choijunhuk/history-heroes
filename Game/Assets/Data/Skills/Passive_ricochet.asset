@@ -18,7 +18,7 @@ MonoBehaviour:
     +1\uBC88)"
   warriorDescription: "\uBCA0\uAE30\uB9C8\uB2E4 \uAC80\uAE30 1\uBC1C\n(\uACF5\uACA9\uB825
     40%, \uBCBD\uC5D0 \uD295\uAE40)"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 8394e104044db834ab9f777ba772ebf5, type: 3}
   rarity: 1
   tags: 4
   role: 1
