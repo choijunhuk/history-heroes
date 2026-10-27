@@ -199,6 +199,8 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "Napoleon", body = "Male_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = new Color(0.9f, 0.92f, 1f), hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_SimpleParted", "Eyebrows" }, attack = "Pistol_Shoot", props = new[] { "Napoleon_Bicorne", "Napoleon_Pistol" } },
             // 테슬라: 가르마 머리 + 콧수염 + 어두운 옷(양복 느낌), 오른손 코일로 주문 쏘기 (전기)
             new Look { name = "Tesla", body = "Male_Peasant", bodyTex = "T_Peasant_BaseColor", tint = new Color(0.36f, 0.37f, 0.42f), hair = new[] { "Hair_SimpleParted", "Eyebrows" }, hairColor = new Color(0.07f, 0.06f, 0.055f), props = new[] { "Tesla_Mustache", "Tesla_Coil" } },
+            // 이순신: 짙은 남색 옷 + 수염 + 조선 장군 투구 · 두정갑 가슴판 · 오른손 총통으로 권총 쏘기 (확장: 새 영웅)
+            new Look { name = "YiSunsin", body = "Male_Peasant", bodyTex = "T_Peasant_2_BaseColor", tint = new Color(0.42f, 0.48f, 0.82f), hair = new[] { "Hair_Buzzed", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.05f, 0.045f, 0.045f), attack = "Pistol_Shoot", props = new[] { "YiSunsin_Helmet", "YiSunsin_Armor", "YiSunsin_Chongtong" } },
         };
 
         public sealed class EnemyLook

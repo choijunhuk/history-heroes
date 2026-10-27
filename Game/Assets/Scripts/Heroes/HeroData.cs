@@ -81,6 +81,16 @@ namespace HistoryHeroes.Heroes
         [Tooltip("튕길 때마다 피해가 줄어드는 비율")]
         public float chainFalloff = 0.3f;
 
+        [Header("이순신 철갑 (확장: 새 영웅)")]
+        [Tooltip("멈춰 있는 동안 받는 피해 감소 (0.25 = -25%). 0이면 없음")]
+        public float stopGuard = 0f;
+        [Tooltip("막은 피해 중 쌓아 두는 비율 → 다음 기본 공격에 더한다")]
+        public float stopGuardStore = 0.5f;
+        [Tooltip("쌓아 둘 수 있는 상한 (공격력 배수, 2 = 200%)")]
+        public float stopGuardCap = 2f;
+        [Tooltip("움직이면 쌓인 것이 이 시간에 걸쳐 사라진다 (초)")]
+        public float stopGuardDecay = 2f;
+
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
         public float star3FirstShotBonus = -1f;
@@ -100,6 +110,10 @@ namespace HistoryHeroes.Heroes
         public int star3ExtraBounces;
         [Tooltip("★5 튕길 때 피해가 줄지 않음 (테슬라)")]
         public bool star5NoFalloff;
+        [Tooltip("★3 멈춤 피해 감소 (이순신 30%)")]
+        public float star3StopGuard = -1f;
+        [Tooltip("★5 쌓기 상한 (이순신 공격력 300%)")]
+        public float star5StopGuardCap = -1f;
 
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]

@@ -84,3 +84,5 @@ boot | boots | lorc | https://game-icons.net/1x1/lorc/boots.html
 clock | alarm-clock | delapouite | https://game-icons.net/1x1/delapouite/alarm-clock.html
 door | exit-door | delapouite | https://game-icons.net/1x1/delapouite/exit-door.html
 Icons from game-icons.net, CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+yi_turtle | turtle-shell | lorc | https://game-icons.net/1x1/lorc/turtle-shell.html
+yi_hakikjin | galleon | lorc | https://game-icons.net/1x1/lorc/galleon.html

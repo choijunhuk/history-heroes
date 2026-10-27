@@ -330,14 +330,17 @@ namespace HistoryHeroes.EditorTools
             detailBody.fontSizeMin = 17f;
             detailBody.fontSizeMax = 26f;
 
-            // 영웅 고르기 칸 4개 (가로 줄): 작은 초상 + 이름 · 레벨
-            var buttons = new Button[4];
-            var backgrounds = new Image[4];
-            var labels = new TMP_Text[4];
-            var portraits = new RawImage[4];
-            for (int i = 0; i < 4; i++)
+            // 영웅 고르기 칸 (가로 줄, 영웅 수만큼): 작은 초상 + 이름 · 레벨. 5명이면 칸을 조금 좁게 (확장: 새 영웅)
+            int heroCount = Mathf.Max(4, roster != null ? roster.heroes.Count : 4);
+            float step = Mathf.Min(250f, 1010f / heroCount);
+            float tileWidth = step - 18f;
+            var buttons = new Button[heroCount];
+            var backgrounds = new Image[heroCount];
+            var labels = new TMP_Text[heroCount];
+            var portraits = new RawImage[heroCount];
+            for (int i = 0; i < heroCount; i++)
             {
-                buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(-375f + i * 250f, -220f), new Vector2(232f, 255f), RowColor, out TMP_Text label);
+                buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(-step * (heroCount - 1) * 0.5f + i * step, -220f), new Vector2(tileWidth, 255f), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
                 RectTransform lr = label.rectTransform;
                 lr.anchorMin = new Vector2(0f, 0f);
@@ -353,7 +356,7 @@ namespace HistoryHeroes.EditorTools
                 labels[i] = label;
 
                 // 3D 초상 (Art3D-Plan 7번): 끌면 돈다. 누르면 칸 버튼이 받는다
-                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(150f, 168f));
+                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(Mathf.Min(150f, tileWidth - 30f), 168f));
                 portraits[i] = portrait.gameObject.AddComponent<RawImage>();
                 portraits[i].color = new Color(1f, 1f, 1f, 0f); // 그림이 생기기 전에는 투명
                 portraits[i].raycastTarget = true;

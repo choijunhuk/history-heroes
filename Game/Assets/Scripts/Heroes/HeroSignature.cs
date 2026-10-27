@@ -16,10 +16,15 @@ namespace HistoryHeroes.Heroes
         public readonly int CannonEvery;
         public readonly int ChainBounces;
         public readonly float ChainFalloff;
+        /// <summary>이순신 철갑: 멈춰 있는 동안 받는 피해 감소 · 쌓기 상한(공격력 배수)</summary>
+        public readonly float StopGuard;
+        public readonly float StopGuardCap;
 
         private HeroSignature(float firstShotBonus, bool firstShotPierce, float damageReduction, float lowHpAttackBonus,
-            float cannonRadius, int cannonEvery, int chainBounces, float chainFalloff)
+            float cannonRadius, int cannonEvery, int chainBounces, float chainFalloff, float stopGuard = 0f, float stopGuardCap = 0f)
         {
+            StopGuard = stopGuard;
+            StopGuardCap = stopGuardCap;
             FirstShotBonus = firstShotBonus;
             FirstShotPierce = firstShotPierce;
             DamageReduction = damageReduction;
@@ -46,7 +51,9 @@ namespace HistoryHeroes.Heroes
             int bounces = hero.chainBounces + (s3 && hero.chainBounces > 0 ? Mathf.Max(0, hero.star3ExtraBounces) : 0);
             float falloff = s5 && hero.star5NoFalloff ? 0f : hero.chainFalloff;
 
-            return new HeroSignature(firstShot, s5 && hero.star5FirstShotPierce, reduction, lowHp, radius, every, bounces, falloff);
+            float guard = s3 && hero.star3StopGuard >= 0f ? hero.star3StopGuard : hero.stopGuard;
+            float guardCap = s5 && hero.star5StopGuardCap > 0f ? hero.star5StopGuardCap : hero.stopGuardCap;
+            return new HeroSignature(firstShot, s5 && hero.star5FirstShotPierce, reduction, lowHp, radius, every, bounces, falloff, guard, guardCap);
         }
 
         /// <summary>별 강화 설명 ("★3 첫 발 피해 +75% · ★5 첫 발 +100%, 관통")</summary>
@@ -58,10 +65,12 @@ namespace HistoryHeroes.Heroes
             if (hero.star3DamageReduction >= 0f) s3 = $"받는 피해 -{hero.star3DamageReduction * 100f:0}%";
             if (hero.star3CannonRadiusScale > 0f) s3 = $"포탄 범위 +{(hero.star3CannonRadiusScale - 1f) * 100f:0}%";
             if (hero.star3ExtraBounces > 0) s3 = $"튕김 +{hero.star3ExtraBounces}";
+            if (hero.star3StopGuard >= 0f) s3 = $"멈춤 받는 피해 -{hero.star3StopGuard * 100f:0}%";
             if (hero.star5FirstShotBonus >= 0f) s5 = $"첫 발 피해 +{hero.star5FirstShotBonus * 100f:0}%" + (hero.star5FirstShotPierce ? ", 첫 발 관통" : string.Empty);
             if (hero.star5LowHpAttackBonus >= 0f) s5 = $"체력 50% 아래 공격력 +{hero.star5LowHpAttackBonus * 100f:0}%";
             if (hero.star5CannonEvery > 0) s5 = $"{hero.star5CannonEvery}발마다 포탄";
             if (hero.star5NoFalloff) s5 = "튕겨도 피해가 줄지 않음";
+            if (hero.star5StopGuardCap > 0f) s5 = $"쌓기 상한 공격력 {hero.star5StopGuardCap * 100f:0}%";
             return $"★3 {s3 ?? "—"} · ★5 {s5 ?? "—"}";
         }
     }

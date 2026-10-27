@@ -24,6 +24,7 @@ namespace HistoryHeroes.EditorTools
             ["Guan_Glaive"] = "hand_r", ["Guan_Hat"] = "Head",
             ["Napoleon_Bicorne"] = "Head", ["Napoleon_Pistol"] = "hand_r",
             ["Tesla_Mustache"] = "Head", ["Tesla_Coil"] = "hand_r",
+            ["YiSunsin_Helmet"] = "Head", ["YiSunsin_Armor"] = "spine_03", ["YiSunsin_Chongtong"] = "hand_r", // 이순신 (블렌더 choij-23)
             ["Enemy_TowerShield"] = "hand_l", // 방패병의 큰 나무 방패 (앞을 막는다)
             // 그래픽 재평가 6번 "적을 실루엣으로 구분": 무리 적마다 머리 · 등 · 손 장식 (블렌더 notes_enemies.txt)
             ["Enemy_HornHelm"] = "Head", ["Enemy_Hood"] = "Head", ["Enemy_ShortBow"] = "hand_l", ["Enemy_BombPack"] = "spine_03",

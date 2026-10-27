@@ -130,6 +130,7 @@ namespace HistoryHeroes.Player
 
             Stop.Moved += () => _firstShotPending = true;
             Stop.Stopped += () => _momentumUntil = Time.time + MomentumSeconds;
+            Health.Damaged += OnDamagedIronclad; // 이순신 철갑
             Health.PreventDeath = TryUndying;
             _awake = true;
         }
@@ -228,6 +229,7 @@ namespace HistoryHeroes.Player
 
             UpdateLowHpBonus();
             UpdateMomentum();
+            UpdateIronclad(dt);
             if (Stop.IsStopped) TryBasicAttack();
         }
 
@@ -304,6 +306,51 @@ namespace HistoryHeroes.Player
             else Stats.RemoveAllFrom(_lowHpModifier);
         }
 
+        // ---------------------------------------------------------------- 이순신 철갑
+
+        private readonly object _ironOwner = new object();
+        private bool _ironOn;
+        private float _ironStore;
+        private float _ironDecay;
+
+        /// <summary>쌓인 철갑 피해 (다음 기본 공격에 더한다, 화면 표시용)</summary>
+        public float IroncladStore => _ironStore;
+
+        /// <summary>멈춰 있으면 받는 피해 -25%, 움직이면 쌓인 것이 2초에 걸쳐 사라진다</summary>
+        private void UpdateIronclad(float dt)
+        {
+            if (_sig.StopGuard <= 0f) return;
+            bool stopped = Stop.IsStopped;
+            if (stopped != _ironOn)
+            {
+                _ironOn = stopped;
+                Stats.RemoveAllFrom(_ironOwner);
+                if (stopped) Stats.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, _sig.StopGuard, ModifierSource.Hero, _ironOwner));
+                else _ironDecay = _ironStore / Mathf.Max(0.1f, hero.stopGuardDecay);
+            }
+
+            if (!stopped && _ironStore > 0f) _ironStore = Mathf.Max(0f, _ironStore - _ironDecay * dt);
+        }
+
+        /// <summary>막은 피해(받은 피해 × 감소/(1−감소))의 절반을 쌓는다 (상한 공격력 200%)</summary>
+        private void OnDamagedIronclad(DamageInfo info, float dealt)
+        {
+            if (!_ironOn || _sig.StopGuard <= 0f || dealt <= 0f) return;
+            float blocked = dealt * _sig.StopGuard / Mathf.Max(0.05f, 1f - _sig.StopGuard);
+            float cap = Stats.Get(StatType.Attack) * _sig.StopGuardCap;
+            _ironStore = Mathf.Min(cap, _ironStore + blocked * hero.stopGuardStore);
+        }
+
+        /// <summary>쌓인 것을 이번 한 발에 싣고 비운다 ("맞으며 버티다 크게 한 방")</summary>
+        private float TakeIroncladStore()
+        {
+            if (_ironStore <= 0f) return 0f;
+            float store = _ironStore;
+            _ironStore = 0f;
+            AttackFx.Burst(transform.position, 0.9f, new Color(1f, 0.6f, 0.2f, 0.8f), 0.12f);
+            return store;
+        }
+
         private void TryBasicAttack()
         {
             if (_attackCooldown > 0f) return;
@@ -366,6 +413,7 @@ namespace HistoryHeroes.Player
             {
                 Vector2 direction = Quaternion.Euler(0f, 0f, start + spreadDegrees * i) * aim;
                 DamageInfo damage = DamageCalculator.Roll(Stats, perProjectile, DamageKind.BasicAttack);
+                if (i == 0) damage.Amount += TakeIroncladStore(); // 이순신 철갑: 첫 발에 쌓인 피해
                 Projectile p = _projectiles.Get(origin, Quaternion.identity);
                 int pierce = Attack.Get(AttackModifierKind.Pierce) + (_sig.FirstShotPierce && _firstShotThisShot ? 1 : 0); // 칭기즈 칸 ★5: 첫 발 관통
                 p.Launch(direction, hero.projectileSpeed, damage, enemyMask, wallMask,

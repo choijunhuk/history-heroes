@@ -19,8 +19,8 @@ namespace HistoryHeroes.EditorTools
             public EnemyBase MidBison, MidTorch, MidGolem, MidHunter, MidExecutor;
             public EnemyBase WraithLord, SteelColossus, ShadowTwins, OblivionKing;
             public EnemyBase RiftWarden;
-            public Projectile Bullet, Orb, SwordWave;
-            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower;
+            public Projectile Bullet, Orb, SwordWave, Cannonball;
+            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin;
             public Projectile IceShardProjectile;
             public ActiveSkillBehaviour IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillBehaviour FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -37,6 +37,7 @@ namespace HistoryHeroes.EditorTools
                 // 영웅별 기본 공격 (Heroes.md): 나폴레옹 총알, 테슬라 전기 구체, 관우 검기 (벽 튕김 패시브)
                 Bullet = ProjectilePrefab("Bullet_Napoleon", new Color(1f, 0.85f, 0.4f), new Vector2(0.32f, 0.14f), 0.12f, 2.5f, fx: Fx.Bullet),
                 Orb = ProjectilePrefab("Orb_Tesla", new Color(0.55f, 0.9f, 1f), new Vector2(0.34f, 0.34f), 0.17f, 3f, _circle, Fx.Orb),
+                Cannonball = ProjectilePrefab("Cannonball_Yi", new Color(0.3f, 0.3f, 0.33f), new Vector2(0.4f, 0.4f), 0.2f, 3f, _circle, Fx.Cannonball), // 이순신 총통 포탄
                 SwordWave = ProjectilePrefab("SwordWave_Guan", new Color(0.85f, 1f, 0.9f, 0.85f), new Vector2(0.2f, 0.8f), 0.3f, 1.2f, fx: Fx.Wave),
             };
 
@@ -116,6 +117,9 @@ namespace HistoryHeroes.EditorTools
             p.NapoCannon = Behaviour<CannonBarrageBehaviour>("Skill_NapoCannon", null);
             p.NapoAusterlitz = Behaviour<CannonBarrageBehaviour>("Skill_NapoAusterlitz", props => props.Bool("leaveField", true));
             p.TeslaCoil = Behaviour<TeslaCoilBehaviour>("Skill_TeslaCoil", null);
+            GameObject turtle = Art3DStage.Prefab("Fx_TurtleShip");
+            p.YiTurtle = Behaviour<TurtleShipBehaviour>("Skill_YiTurtle", props => props.Ref("shipModel", turtle));
+            p.YiHakIkJin = Behaviour<TurtleShipBehaviour>("Skill_YiHakIkJin", props => props.Ref("shipModel", turtle).Int("ships", 3).Bool("fireTrail", true));
             p.TeslaTower = Behaviour<TeslaCoilBehaviour>("Skill_TeslaTower", props => props.Int("screenTargets", 5).Float("zapInterval", 1f)
                 .Vector2("coilSize", new Vector2(0.9f, 2.2f)).Color("coilColor", new Color(0.6f, 0.5f, 1f)));
             return p;

@@ -22,6 +22,7 @@ namespace HistoryHeroes.EditorTools
             Orb,
             Shard,
             Wave,
+            Cannonball,
         }
 
         /// <summary>투사체가 뜨는 높이 (가슴께)</summary>
@@ -109,6 +110,18 @@ namespace HistoryHeroes.EditorTools
                 case Fx.Orb:
                     FxPart(root, Stage3D.Shape.Rock, FxMat("Orb", new Color(0.5f, 0.88f, 1f), 2.2f), Vector3.zero, Quaternion.identity, Vector3.one * 0.34f);
                     break;
+                case Fx.Cannonball:
+                {
+                    // 이순신 총통 포탄: 블렌더 철 공 (없으면 어두운 쇠공)
+                    GameObject ball = Art3DStage.Prefab("Fx_Cannonball");
+                    if (ball != null)
+                    {
+                        var model = (GameObject)Object.Instantiate(ball, root, false);
+                        model.transform.localScale = Vector3.one * 0.42f;
+                    }
+                    else FxPart(root, Stage3D.Shape.Rock, FxMat("Cannonball", new Color(0.25f, 0.25f, 0.28f), 0.2f, 0.7f), Vector3.zero, Quaternion.identity, Vector3.one * 0.36f);
+                    break;
+                }
                 case Fx.Wave:
                     // 관우 검기: 날아가는 쪽에 가로로 선 빛나는 날 (얇은 상자 + 끝이 가는 두 조각)
                     Material wave = FxMat("Wave", new Color(0.8f, 1f, 0.9f), 1.6f);
@@ -138,6 +151,7 @@ namespace HistoryHeroes.EditorTools
                 case Fx.EnemyArrow: AddTrail(root.gameObject, new Color(1f, 0.3f, 0.6f), 0.16f, 0.16f); break;
                 case Fx.Bullet: AddTrail(root.gameObject, new Color(1f, 0.8f, 0.35f), 0.14f, 0.1f); break;
                 case Fx.Orb: AddTrail(root.gameObject, new Color(0.45f, 0.85f, 1f), 0.3f, 0.2f); break;
+                case Fx.Cannonball: AddTrail(root.gameObject, new Color(1f, 0.6f, 0.25f), 0.26f, 0.18f); break;
                 case Fx.Wave: AddTrail(root.gameObject, new Color(0.6f, 1f, 0.8f), 0.5f, 0.12f); break;
                 case Fx.Shard: AddTrail(root.gameObject, new Color(0.6f, 0.9f, 1f), 0.18f, 0.15f); break;
             }

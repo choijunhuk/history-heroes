@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -110,6 +110,21 @@ namespace HistoryHeroes.EditorTools
             d.Tesla.unlockAfterBossChapter = 3;
             d.Tesla.star3ExtraBounces = 1;  // Stats 6-1은 "튕김 +2"(1 → 2 기준). 지금 테슬라는 처음부터 2번이라 ★3에 1번 더
             d.Tesla.star5NoFalloff = true;
+
+            // ----- 이순신 (확장 결정 12: 새 영웅 첫째, 수호 포수 — 방어 반격형) -----
+            d.YiSunsin = Hero("yisunsin", "이순신", HeroClass.Gunner, BasicAttackKind.Projectile, 1250f, 115f, 0.75f, 4.8f, 5.5f, new Color(0.35f, 0.45f, 0.85f));
+            d.YiSunsin.playStyle = "멈춰 서서 맞으며 버티다, 쌓인 힘을 포탄 한 방에";
+            d.YiSunsin.signatureName = "철갑";
+            d.YiSunsin.signatureDescription = "멈춰 있는 동안 받는 피해 -25%. 막은 피해의 절반을 쌓아 다음 기본 공격에 더함 (상한 공격력 200%). 움직이면 2초에 걸쳐 사라짐";
+            d.YiSunsin.projectileSpeed = 11f; // 느리고 무거운 총통 포탄
+            d.YiSunsin.knockback = 0.2f;
+            d.YiSunsin.stopGuard = 0.25f;
+            d.YiSunsin.stopGuardStore = 0.5f;
+            d.YiSunsin.stopGuardCap = 2f;
+            d.YiSunsin.stopGuardDecay = 2f;
+            d.YiSunsin.unlockAfterBossChapter = 4;
+            d.YiSunsin.star3StopGuard = 0.3f;
+            d.YiSunsin.star5StopGuardCap = 3f;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -331,6 +346,12 @@ namespace HistoryHeroes.EditorTools
             d.Pool.Add(d.GuanSpin);
             d.Pool.Add(d.NapoCannon);
             d.Pool.Add(d.TeslaCoil);
+            d.YiTurtle = Active("yi_turtle", "거북선 돌격", Rarity.Rare, SkillTag.Fire, 5, 3,
+                "8초마다 거북선이 가까운 적 쪽으로 돌진\n(지나간 적 150% + 밀어냄)\n레벨마다 피해 +30%",
+                cooldown: 8f, damage: 1.5f, damagePerLevel: 0.45f, count: 1, countPerLevel: 0);
+            d.YiTurtle.heroOnlyId = "yisunsin";
+            d.Pool.Add(d.YiTurtle);
+            d.YiSunsin.exclusiveActive = d.YiTurtle;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -351,7 +372,12 @@ namespace HistoryHeroes.EditorTools
             d.TeslaTower = Active("tesla_tower", "워든클리프 탑", Rarity.Rare, SkillTag.Lightning, 3, 4,
                 "12초마다 탑 8초\n1초마다 화면 안 적 5명에게 번개 60%\nLv2 +25%, Lv3 +50%",
                 cooldown: 12f, damage: 0.6f, damagePerLevel: 0.15f, count: 1, countPerLevel: 0, radius: 3f, duration: 8f, saveCostFirst: 18);
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower }) UnityEditor.EditorUtility.SetDirty(s);
+            d.YiHakIkJin = Active("yi_hakikjin", "학익진", Rarity.Rare, SkillTag.Fire, 1, 12,
+                "거북선 3척이 학의 날개(V자)로 돌격\n(각 180%, 밀어냄)\n지나간 자리에 불길 2초",
+                cooldown: 8f, damage: 1.8f, damagePerLevel: 0f, count: 3, countPerLevel: 0, saveCostFirst: 12);
+            d.YiHakIkJin.saveCostPerLevel = 0;
+            d.YiHakIkJin.heroOnlyId = "yisunsin";
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -362,9 +388,10 @@ namespace HistoryHeroes.EditorTools
             AddHeroRecipe(d, "guan_five", FusionType.Evolution, d.GuanSpin, 5, d.DefUp, 1, d.GuanFive, "guan");
             AddHeroRecipe(d, "napo_austerlitz", FusionType.Merge, d.NapoCannon, 3, d.FlameField, 3, d.NapoAusterlitz, "napoleon");
             AddHeroRecipe(d, "tesla_tower", FusionType.Merge, d.TeslaCoil, 3, d.Lightning, 3, d.TeslaTower, "tesla");
+            AddHeroRecipe(d, "yi_hakikjin", FusionType.Evolution, d.YiTurtle, 5, (PassiveSkillData)d.Pool.Find(s => s.id == "hp_up"), 1, d.YiHakIkJin, "yisunsin");
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -373,7 +400,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -560,6 +587,9 @@ namespace HistoryHeroes.EditorTools
             d.Guan.projectilePrefab = p.SwordWave;
             d.Napoleon.projectilePrefab = p.Bullet;
             d.Tesla.projectilePrefab = p.Orb;
+            d.YiSunsin.projectilePrefab = p.Cannonball;
+            d.YiTurtle.behaviourPrefab = p.YiTurtle;
+            d.YiHakIkJin.behaviourPrefab = p.YiHakIkJin;
             d.KhanVolley.behaviourPrefab = p.KhanVolley;
             d.KhanStorm.behaviourPrefab = p.KhanStorm;
             d.GuanSpin.behaviourPrefab = p.GuanSpin;
