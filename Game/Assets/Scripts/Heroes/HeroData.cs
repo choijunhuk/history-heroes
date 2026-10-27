@@ -172,6 +172,8 @@ namespace HistoryHeroes.Heroes
         [Header("해금 (Heroes.md 2장)")]
         [Tooltip("이 구간 보스를 처음 깨면 무료 해금. 0이면 처음부터")]
         public int unlockAfterBossChapter = 0;
+        [Tooltip("보석으로만 연다 (구간 보스 해금 없음, 다빈치·제갈량). 켜면 unlockAfterBossChapter는 안 본다")]
+        public bool gemsOnly;
         [Tooltip("바로 해금하는 보석 값")]
         public int unlockGems = 1500;
 

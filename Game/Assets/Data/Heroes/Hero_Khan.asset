@@ -84,6 +84,7 @@ MonoBehaviour:
   star5WindSlow: -1
   exclusiveActive: {fileID: 11400000, guid: b74edf6d9a1c89047b621fbec9c88907, type: 2}
   unlockAfterBossChapter: 0
+  gemsOnly: 0
   unlockGems: 1500
   color: {r: 0.95, g: 0.75, b: 0.2, a: 1}
   model3D: {fileID: 6913236723767224575, guid: b207ac2f3b5a56c409d26927f5c46411, type: 3}

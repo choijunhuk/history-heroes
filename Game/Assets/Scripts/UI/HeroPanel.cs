@@ -149,7 +149,7 @@ namespace HistoryHeroes.UI
                 Records.HeroProgress progress = d.Hero(h.id);
                 string growth = unlocked ? $"  <size=80%><color=#9FD8FF>Lv {progress.level}</color> <color=#FFD966>{new string('★', progress.stars)}{new string('☆', 5 - progress.stars)}</color></size>" : string.Empty;
                 mark = growth + mark;
-                string lockText = unlocked ? string.Empty : $"\n<color=#FFB347>잠김 · {HeroUnlock.Condition(h)} (또는 보석 {Wallet.Format(h.unlockGems)})</color>";
+                string lockText = unlocked ? string.Empty : $"\n<color=#FFB347>잠김 · {HeroUnlock.LockText(h)}</color>";
                 if (detailBody != null)
                 {
                     // 칸에는 이름과 레벨만 (자세한 것은 위 큰 카드)
@@ -172,7 +172,7 @@ namespace HistoryHeroes.UI
                 Records.HeroProgress fp = d.Hero(focus.id);
                 string state = !focusUnlocked ? "<color=#FFB347>잠김</color>" : focus == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"<color=#9FD8FF>Lv {fp.level}</color> <color=#FFD966>{new string('★', fp.stars)}{new string('☆', 5 - fp.stars)}</color>";
                 if (detailName != null) detailName.text = $"{focus.displayName}  <size=55%>{focus.ClassLabel} · {state}</size>";
-                string lockText = focusUnlocked ? string.Empty : $"\n<color=#FFB347>{HeroUnlock.Condition(focus)} (또는 보석 {Wallet.Format(focus.unlockGems)})</color>";
+                string lockText = focusUnlocked ? string.Empty : $"\n<color=#FFB347>{HeroUnlock.LockText(focus)}</color>";
                 detailBody.text =
                     $"<color=#FFD966><b>{focus.signatureName}</b></color>  {focus.signatureDescription}\n" +
                     $"<size=80%><color=#A9B4C2>{Heroes.HeroSignature.StarText(focus)}</color></size>\n" +

@@ -26,7 +26,7 @@ namespace HistoryHeroes.Skills
         [SerializeField] private float windDamagePerSecond = 0.4f;
 
         private readonly List<EnemyBase> _inside = new List<EnemyBase>();
-        private readonly HashSet<EnemyBase> _confused = new HashSet<EnemyBase>();
+        private readonly Dictionary<EnemyBase, int> _confused = new Dictionary<EnemyBase, int>(); // 적 → 헤매게 한 삶 (풀에서 다시 나오면 새 적)
 
         protected override bool Activate()
         {
@@ -98,7 +98,8 @@ namespace HistoryHeroes.Skills
                 CombatQuery.EnemiesWithin(center, radius, _inside);
                 foreach (EnemyBase e in _inside)
                 {
-                    if (!_confused.Add(e)) continue;
+                    if (_confused.TryGetValue(e, out int life) && life == e.Health.Life) continue;
+                    _confused[e] = e.Health.Life;
                     e.Status.ApplySlow(0.7f, confuseSeconds);
                     if (e.CanBeKnockedBack && e.TryGetComponent(out Rigidbody2D rb)) rb.MovePosition(rb.position + Random.insideUnitCircle * 0.6f);
                     FxBursts.Puff((Vector3)(Vector2)e.transform.position + Vector3.back * 1.1f, new Color(1f, 0.95f, 0.6f), 0.6f);
@@ -112,12 +113,8 @@ namespace HistoryHeroes.Skills
                         winds[i].transform.position = (Vector3)(center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius * 0.45f);
                     }
 
-                    foreach (EnemyBase e in _inside)
-                    {
-                        if (!e.CanBeKnockedBack || !e.TryGetComponent(out Rigidbody2D rb)) continue;
-                        Vector2 to = center - rb.position;
-                        if (to.sqrMagnitude > 0.09f) rb.MovePosition(rb.position + to.normalized * pullSpeed * Time.deltaTime);
-                    }
+                    // 회오리와 같은 끌기 (보스도 30% 빠르기로 끌린다, 코드 검토 6번)
+                    foreach (EnemyBase e in _inside) e.Status.Pull(center, pullSpeed, 0.15f);
 
                     if (t >= nextTick)
                     {

@@ -103,6 +103,7 @@ namespace HistoryHeroes.Player
             if (!_awake) return;
 
             // Awake 뒤에 바뀌면 능력치를 다시 만든다 (개발·테스트용)
+            ClearSignatureState();
             Stats.RemoveAllFrom(_heroModifiers);
             Stats.RemoveAllFrom(_lowHpModifier);
             _lowHpActive = false;
@@ -177,6 +178,30 @@ namespace HistoryHeroes.Player
         private void OnDestroy()
         {
             Stats.Changed -= OnStatsChanged;
+            if (_sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone();
+        }
+
+        /// <summary>
+        /// 새 영웅 대표 효과의 남은 상태를 비운다 (영웅 바꾸기 · 코드 검토 9번): 철갑 방어 보정과 쌓인 피해, 모으던 화살과 신궁 표식,
+        /// 부품과 비행 기계, 동남풍 느림 구역
+        /// </summary>
+        private void ClearSignatureState()
+        {
+            Stats.RemoveAllFrom(_ironOwner);
+            _ironOn = false;
+            _ironStore = 0f;
+            _charge = 0f;
+            _chargeStage = 0;
+            _marks.Clear();
+            _parts = 0;
+            _partTimer = 0f;
+            foreach (FlyingMachine m in _machines)
+            {
+                if (m != null) Destroy(m.gameObject);
+            }
+
+            _machines.Clear();
+            Enemy.EnemyProjectiles.ClearSlowZone();
         }
 
         /// <summary>별(각성)까지 반영한 대표 효과 값. 판 밖 성장(Meta)의 별을 쓴다</summary>
@@ -217,7 +242,12 @@ namespace HistoryHeroes.Player
         private void Update()
         {
             // 카드 화면 등으로 멈춘 동안에는 쏘지도, 쿨다운이 돌지도 않는다
-            if (Health.IsDead || GamePause.IsPaused) return;
+            if (Health.IsDead || GamePause.IsPaused)
+            {
+                if (Health.IsDead && _sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone(); // 동남풍은 살아 있을 때만
+                return;
+            }
+
             float dt = Time.deltaTime;
             Stop.Tick(ReadInput(), dt);
 
@@ -341,11 +371,16 @@ namespace HistoryHeroes.Player
             if (!stopped && _ironStore > 0f) _ironStore = Mathf.Max(0f, _ironStore - _ironDecay * dt);
         }
 
-        /// <summary>막은 피해(받은 피해 × 감소/(1−감소))의 절반을 쌓는다 (상한 공격력 200%)</summary>
+        /// <summary>
+        /// 철갑이 막은 피해의 절반을 쌓는다 (상한 공격력 200%). 막은 피해 = 감소 전 피해 × (철갑 포함 감소 − 철갑 뺀 감소):
+        /// 다른 피해 감소·감소 상한 60%·받는 피해 증가까지 같이 계산하고, 보호막이 받아 낸 피해도 철갑이 줄인 몫은 쌓는다 (코드 검토 8번)
+        /// </summary>
         private void OnDamagedIronclad(DamageInfo info, float dealt)
         {
-            if (!_ironOn || _sig.StopGuard <= 0f || dealt <= 0f) return;
-            float blocked = dealt * _sig.StopGuard / Mathf.Max(0.05f, 1f - _sig.StopGuard);
+            if (!_ironOn || _sig.StopGuard <= 0f) return;
+            float share = Stats.Get(StatType.DamageReduction) - Stats.GetWithout(StatType.DamageReduction, _ironOwner);
+            float blocked = Health.LastBeforeReduction * share;
+            if (blocked <= 0f) return;
             float cap = Stats.Get(StatType.Attack) * _sig.StopGuardCap;
             _ironStore = Mathf.Min(cap, _ironStore + blocked * hero.stopGuardStore);
         }
@@ -396,10 +431,13 @@ namespace HistoryHeroes.Player
             Audio.AudioManager.Play("card", 0.7f, 0.05f);
         }
 
+        /// <summary>비행 기계 탄의 출처 ID. 거울 분신 기절은 영웅이 직접 쏜 기본 공격만 (도우미는 고를 수 없으니 빼 준다)</summary>
+        public const string HelperSourceId = "davinci_machine";
+
         /// <summary>도우미 탄 (기본 공격 종류: 기본 공격 비중으로 센다)</summary>
         public void LaunchHelperShot(Vector2 origin, Vector2 direction, float coefficient)
         {
-            DamageInfo damage = DamageCalculator.Roll(Stats, coefficient, DamageKind.BasicAttack, source: "davinci_machine");
+            DamageInfo damage = DamageCalculator.Roll(Stats, coefficient, DamageKind.BasicAttack, source: HelperSourceId);
             Projectile p = _projectiles.Get(origin, Quaternion.identity);
             p.Launch(direction, hero.projectileSpeed, damage, enemyMask, wallMask, 0, 0, _projectiles.Release, null);
         }
@@ -408,7 +446,8 @@ namespace HistoryHeroes.Player
 
         private float _charge;
         private int _chargeStage;
-        private readonly Dictionary<Health, float> _marks = new Dictionary<Health, float>();
+        private readonly Dictionary<Health, (float until, int life)> _marks = new Dictionary<Health, (float, int)>();
+        private readonly List<Health> _expiredMarks = new List<Health>();
 
         /// <summary>지금 모은 단계 (0 = 아직, 1·2·3)</summary>
         public int ChargeStage => _chargeStage;
@@ -416,7 +455,16 @@ namespace HistoryHeroes.Player
         /// <summary>신궁: 이 적의 다음 3단 화살 피해 +100% (seconds 동안)</summary>
         public void MarkForCharge(Health target, float seconds)
         {
-            if (target != null) _marks[target] = Time.time + seconds;
+            if (target == null) return;
+            // 끝난 표식 · 이미 죽었거나 풀에서 다시 나온 적의 표식은 치운다 (코드 검토 4번)
+            _expiredMarks.Clear();
+            foreach (KeyValuePair<Health, (float until, int life)> kv in _marks)
+            {
+                if (kv.Key == null || Time.time > kv.Value.until || kv.Key.Life != kv.Value.life || kv.Key.IsDead) _expiredMarks.Add(kv.Key);
+            }
+
+            foreach (Health h in _expiredMarks) _marks.Remove(h);
+            _marks[target] = (Time.time + seconds, target.Life);
         }
 
         private int StageOf(float charge)
@@ -474,9 +522,10 @@ namespace HistoryHeroes.Player
                 DamageInfo damage = DamageCalculator.Roll(Stats, perProjectile, DamageKind.BasicAttack, forceCrit: stage >= 3);
                 Projectile p = _projectiles.Get(origin, Quaternion.identity);
                 int pierce = Attack.Get(AttackModifierKind.Pierce) + (stage >= 2 ? 1 : 0);
+                // 신궁 추가 피해는 이 화살이 그 적에게 준 피해와 같게 (멀티샷 · 관통 감소까지, 코드 검토 3번)
                 p.Launch(direction, hero.projectileSpeed * (stage >= 3 ? 1.3f : 1f), damage, enemyMask, wallMask,
                     pierce, Attack.Get(AttackModifierKind.Ricochet), _projectiles.Release, OnBasicAttackHit,
-                    onHitTarget: stage >= 3 ? OnFullArrowHit : (System.Action<Health, Vector2>)null);
+                    onHitTarget: stage >= 3 ? (h, point) => OnFullArrowHit(h, point, p.Damage) : (System.Action<Health, Vector2>)null);
             }
 
             if (stage >= 3)
@@ -490,12 +539,12 @@ namespace HistoryHeroes.Player
         }
 
         /// <summary>신궁 표식이 있는 적: 3단 화살 피해 +100% (한 번 쓰면 사라진다)</summary>
-        private void OnFullArrowHit(Health target, Vector2 point)
+        private void OnFullArrowHit(Health target, Vector2 point, DamageInfo arrow)
         {
-            if (target == null || !_marks.TryGetValue(target, out float until)) return;
+            if (target == null || !_marks.TryGetValue(target, out (float until, int life) mark)) return;
             _marks.Remove(target);
-            if (Time.time > until || target.IsDead) return;
-            target.TryTakeDamage(DamageCalculator.Roll(Stats, _sig.ChargeFull, DamageKind.BasicAttack, forceCrit: true));
+            if (Time.time > mark.until || target.IsDead || target.Life != mark.life) return;
+            target.TryTakeDamage(arrow); // +100% = 같은 화살 한 번 더
             AttackFx.Burst(point, 0.9f, new Color(1f, 0.5f, 0.25f, 0.9f), 0.2f);
         }
 
@@ -555,8 +604,7 @@ namespace HistoryHeroes.Player
             Vector2 origin = transform.position;
             Vector2 aim = ((Vector2)target.transform.position - origin).normalized;
             PlayAttack(aim);
-            float spread = hero.fanShots > 1 ? hero.fanSpread : spreadDegrees;
-            float start = -spread * (count - 1) * 0.5f;
+            ShotSpread(hero.fanShots, hero.fanSpread, spreadDegrees, count, out float start, out float spread);
             bool needsTarget = hero.knockback > 0f || _sig.ChainBounces > 0;
 
             for (int i = 0; i < count; i++)
@@ -570,6 +618,17 @@ namespace HistoryHeroes.Player
                     pierce, Attack.Get(AttackModifierKind.Ricochet),
                     _projectiles.Release, OnBasicAttackHit, onHitTarget: needsTarget ? OnProjectileHitTarget : null);
             }
+        }
+
+        /// <summary>
+        /// 여러 발의 각도: 보통은 한 발 간격 normalSpread. 부채 영웅(제갈량)은 부채 넓이(fanSpread × (fanShots−1))를 그대로 두고
+        /// 멀티샷으로 늘어난 발을 그 안에 촘촘히 넣는다 → 가운데 적을 놓치지 않는다 (코드 검토 2번: 4발이 ±27°·±9°로 벌어져 정면이 비던 것)
+        /// </summary>
+        public static void ShotSpread(int fanShots, float fanSpread, float normalSpread, int count, out float start, out float step)
+        {
+            step = normalSpread;
+            if (fanShots > 1 && count > 1) step = fanSpread * (fanShots - 1) / (count - 1);
+            start = -step * (count - 1) * 0.5f;
         }
 
         /// <summary>나폴레옹 밀어내기, 테슬라 튕김</summary>

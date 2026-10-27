@@ -40,6 +40,7 @@ namespace HistoryHeroes.Enemy
         private void OnAnyDamaged(Health h, DamageInfo info, float dealt)
         {
             if (!Running || _cloneData == null || info.Kind != DamageKind.BasicAttack || h.Team != Team.Enemy) return;
+            if (info.SourceId == Player.PlayerController.HelperSourceId) return; // 다빈치 비행 기계는 영웅이 고른 탄이 아니다
             if (!h.TryGetComponent(out EnemyBase e) || e == boss || e.Data != _cloneData) return;
             if (Time.time < _readyAt || hero == null || !hero.TryGetComponent(out Player.PlayerController player)) return;
             _readyAt = Time.time + Cooldown;

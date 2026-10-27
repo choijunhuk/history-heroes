@@ -154,8 +154,8 @@ namespace HistoryHeroes.EditorTools
             d.Davinci.machineDamage = 0.35f;
             d.Davinci.machineFireRate = 1f;
             d.Davinci.helperModel = Art3DStage.Prefab("Fx_FlyingMachine");
-            d.Davinci.unlockAfterBossChapter = 0;
-            d.Davinci.unlockGems = 2000; // 보석으로만 (구간 해금 영웅은 5명으로 충분)
+            d.Davinci.gemsOnly = true; // 보석으로만 (구간 해금 영웅은 6명으로 충분)
+            d.Davinci.unlockGems = 2000;
             d.Davinci.star3MachineDamage = 0.5f;
             d.Davinci.star5MaxMachines = 3;
 
@@ -171,7 +171,7 @@ namespace HistoryHeroes.EditorTools
             d.Zhuge.fanCoefficient = 0.45f;
             d.Zhuge.windRadius = 3f;
             d.Zhuge.windSlow = 0.4f;
-            d.Zhuge.unlockAfterBossChapter = 0;
+            d.Zhuge.gemsOnly = true;
             d.Zhuge.unlockGems = 2000;
             d.Zhuge.star3WindRadius = 4f;
             d.Zhuge.star5WindSlow = 0.55f;

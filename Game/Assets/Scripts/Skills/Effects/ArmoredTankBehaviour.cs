@@ -69,7 +69,12 @@ namespace HistoryHeroes.Skills
                 t += Time.deltaTime;
                 float a = phase + t * orbitSpeed;
                 Vector2 center = player.transform.position;
-                Vector2 pos = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * orbitRadius;
+                Vector2 dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                // 벽 너머로 나가지 않게: 벽까지 0.4 남기고 멈춘다 (코드 검토 7번: 벽 밖에서 쏜 탄이 버려지던 것)
+                float reach = orbitRadius;
+                RaycastHit2D wall = Physics2D.Raycast(center, dir, orbitRadius + 0.4f, player.WallMask);
+                if (wall.collider != null) reach = Mathf.Max(0.3f, wall.distance - 0.4f);
+                Vector2 pos = center + dir * reach;
                 float lift = spiral ? -liftHeight - 0.15f * Mathf.Sin(t * 4f) : 0f; // 위 = -Z
                 tank.position = new Vector3(pos.x, pos.y, lift);
                 tank.rotation = Quaternion.Euler(0f, 0f, t * (spiral ? 540f : 90f)); // 빙글 (전차는 천천히, 비행기는 빠르게)
@@ -80,8 +85,8 @@ namespace HistoryHeroes.Skills
                     for (int i = 0; i < barrels; i++)
                     {
                         float ang = i * Mathf.PI * 2f / barrels + t;
-                        var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
-                        player.LaunchSkillProjectile(pos, dir, shotSpeed, RollDamage(coefficient), owner: this);
+                        var shot = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
+                        player.LaunchSkillProjectile(pos, shot, shotSpeed, RollDamage(coefficient), owner: this);
                     }
 
                     Audio.AudioManager.Play("shoot", 0.25f, 0.1f);
@@ -91,12 +96,7 @@ namespace HistoryHeroes.Skills
                 {
                     // 회오리: 둘레 적을 가운데로 끌고 0.5초마다 피해
                     CombatQuery.EnemiesWithin(pos, pullRadius, _near);
-                    foreach (EnemyBase e in _near)
-                    {
-                        if (!e.CanBeKnockedBack || !e.TryGetComponent(out Rigidbody2D rb)) continue;
-                        Vector2 to = pos - rb.position;
-                        if (to.sqrMagnitude > 0.04f) rb.MovePosition(rb.position + to.normalized * pullSpeed * Time.deltaTime);
-                    }
+                    foreach (EnemyBase e in _near) e.Status.Pull(pos, pullSpeed, 0.15f); // 회오리와 같은 끌기 (보스 30%, 코드 검토 6번)
 
                     if (t >= nextTick)
                     {

@@ -1,4 +1,9 @@
+using HistoryHeroes.Combat;
+using HistoryHeroes.Economy;
 using HistoryHeroes.Heroes;
+using HistoryHeroes.Player;
+using HistoryHeroes.Records;
+using HistoryHeroes.Stats;
 using HistoryHeroes.Skills;
 using NUnit.Framework;
 using UnityEngine;
@@ -86,6 +91,100 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual("yisunsin", recipe.heroOnlyId, "이순신만");
             Assert.IsNotNull(((ActiveSkillData)recipe.result).behaviourPrefab, "학익진 동작");
             CollectionAssert.IsEmpty(db.FindProblems(), "스킬 데이터 문제 없음");
+        }
+
+
+        // ---------------------------------------------------------------- 새 영웅 코드 검토 (2026-10-28)
+
+        [Test]
+        public void GemsOnlyHeroes_StayLockedUntilBought()
+        {
+            var roster = UnityEditor.AssetDatabase.LoadAssetAtPath<HeroRoster>("Assets/Data/Heroes/HeroRoster.asset");
+            foreach (string id in new[] { "davinci", "zhuge" })
+            {
+                HeroData h = roster.Find(id);
+                Assert.AreEqual(id, h.id);
+                Assert.IsTrue(h.gemsOnly, id + " 보석으로만");
+                var save = new SaveData();
+                Assert.IsFalse(HeroUnlock.IsUnlocked(save, h), id + " 새 계정에서 잠김");
+                save.unlockedChapter = 9;
+                Assert.IsFalse(HeroUnlock.IsUnlocked(save, h), id + " 구간을 다 깨도 잠김");
+                Wallet.AddFreeGems(save, 1999);
+                Assert.IsFalse(HeroUnlock.TryBuy(save, h), "보석이 모자라면 못 산다");
+                Wallet.AddFreeGems(save, 1);
+                Assert.IsTrue(HeroUnlock.TryBuy(save, h));
+                Assert.AreEqual(0, Wallet.Gems(save), "정확히 2,000 빠진다");
+                Assert.IsTrue(HeroUnlock.IsUnlocked(save, h));
+                StringAssert.Contains("보석 2,000개로 열려요", HeroUnlock.LockText(h));
+            }
+
+            Assert.IsTrue(HeroUnlock.IsUnlocked(new SaveData(), roster.Default), "칭기즈 칸은 처음부터");
+            StringAssert.Contains("(또는 보석", HeroUnlock.LockText(roster.Find("guan")));
+        }
+
+        [Test]
+        public void ShotSpread_FanWithMultishotKeepsCenterCovered()
+        {
+            // 제갈량 기본: 3갈래 ±18°
+            PlayerController.ShotSpread(3, 18f, 10f, 3, out float start, out float step);
+            Assert.AreEqual(-18f, start, 1e-4f);
+            Assert.AreEqual(18f, step, 1e-4f);
+
+            // 멀티샷 1~3: 부채 넓이는 그대로 (±18°), 거리 4.5 단일 적(반경 0.45 + 탄 0.2)에 적어도 한 발은 맞는다
+            for (int extra = 1; extra <= 3; extra++)
+            {
+                int count = 3 + extra;
+                PlayerController.ShotSpread(3, 18f, 10f, count, out start, out step);
+                Assert.AreEqual(-18f, start, 1e-4f, "부채 끝은 그대로");
+                Assert.AreEqual(18f, start + step * (count - 1), 1e-4f);
+                float nearest = 180f;
+                for (int i = 0; i < count; i++) nearest = Mathf.Min(nearest, Mathf.Abs(start + step * i));
+                Assert.Less(4.5f * Mathf.Sin(nearest * Mathf.Deg2Rad), 0.65f, $"멀티샷 {extra}: 가운데 적을 놓치지 않는다");
+            }
+
+            // 보통 영웅은 그대로 (한 발 간격 normalSpread)
+            PlayerController.ShotSpread(1, 20f, 10f, 3, out start, out step);
+            Assert.AreEqual(10f, step, 1e-4f);
+            Assert.AreEqual(-10f, start, 1e-4f);
+        }
+
+        [Test]
+        public void Ironclad_BlockedShareRespectsOtherReductionAndCap()
+        {
+            var iron = new object();
+            var other = new object();
+            var stats = new StatSheet();
+            stats.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, 0.22f, ModifierSource.Equipment, other));
+            stats.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, 0.25f, ModifierSource.Hero, iron));
+            Assert.AreEqual(0.47f, stats.Get(StatType.DamageReduction), 1e-5f);
+            Assert.AreEqual(0.22f, stats.GetWithout(StatType.DamageReduction, iron), 1e-5f);
+
+            // 상한 60%: 다른 감소 50% + 철갑 25% → 철갑 몫은 10%뿐
+            stats.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, 0.28f, ModifierSource.Equipment, other));
+            Assert.AreEqual(0.6f, stats.Get(StatType.DamageReduction), 1e-5f);
+            Assert.AreEqual(0.5f, stats.GetWithout(StatType.DamageReduction, iron), 1e-5f);
+        }
+
+        [Test]
+        public void Health_LifeCountsSpawnsAndRemembersRawDamage()
+        {
+            var go = new GameObject("H");
+            try
+            {
+                var h = go.AddComponent<Health>();
+                h.Init(Team.Enemy, 100f);
+                int first = h.Life;
+                h.DamageScale = 0.5f;
+                Assert.IsTrue(h.TryTakeDamage(new DamageInfo { Amount = 40f, AttackerTeam = Team.Player }, out float dealt));
+                Assert.AreEqual(20f, dealt, 1e-4f);
+                Assert.AreEqual(20f, h.LastBeforeReduction, 1e-4f, "감소 전 값 = 피해 × DamageScale");
+                h.Init(Team.Enemy, 100f);
+                Assert.AreEqual(first + 1, h.Life, "풀에서 다시 나오면 새 삶");
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
         }
     }
 }

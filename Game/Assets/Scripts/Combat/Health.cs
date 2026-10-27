@@ -48,7 +48,14 @@ namespace HistoryHeroes.Combat
             Max = maxHp;
             Current = maxHp;
             DamageScale = 1f;
+            Life++;
         }
+
+        /// <summary>몇 번째 삶인가 (Init마다 +1). 풀에서 다시 나온 적을 앞의 적과 헷갈리지 않게 (신궁 표식 · 팔진도)</summary>
+        public int Life { get; private set; }
+
+        /// <summary>방금 받은 피해의 감소 전 값 (받는 피해 증가 · DamageScale까지, 피해 감소 · 보호막 전). Damaged 처리 안에서 읽는다 (이순신 철갑)</summary>
+        public float LastBeforeReduction { get; private set; }
 
         /// <summary>받는 피해 배수 (기믹 보스 수정 기둥 보호막: 0.25 = -75%). 다시 Init하면 1</summary>
         public float DamageScale { get; set; } = 1f;
@@ -86,7 +93,8 @@ namespace HistoryHeroes.Combat
                 taken = _stats.Get(StatType.DamageTaken); // 피해 감소는 0 밑으로 안 내려가서, "받는 피해 +%"는 따로 곱한다
             }
 
-            float incoming = info.Amount * (1f - reduction) * (1f + taken) * DamageScale;
+            LastBeforeReduction = info.Amount * (1f + taken) * DamageScale;
+            float incoming = LastBeforeReduction * (1f - reduction);
             if (Shield > 0f)
             {
                 float absorbed = Mathf.Min(Shield, incoming);
