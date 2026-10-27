@@ -14,105 +14,25 @@ namespace HistoryHeroes.EditorTools
     {
         private static void BuildLobbyScene(Scene scene, SkillDatabase database, BossData[] bosses, Heroes.HeroRoster roster, HistoryHeroes.Meta.MetaTable meta)
         {
-            var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
-            cameraObject.transform.position = new Vector3(0f, 0f, -10f);
-            var camera = cameraObject.AddComponent<Camera>();
-            camera.orthographic = true;
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.07f, 0.08f, 0.11f);
-            // 영웅 화면의 3D 초상(HeroPortraits)이 받을 주변광
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.5f, 0.52f, 0.58f);
-            RenderSettings.skybox = null;
+            // 원근 3D 카메라 (가운데 구간 섬 무대) — 그래픽 평가 3번
+            Camera camera = LobbyCamera();
 
             Transform root = CreateCanvas();
             RectTransform safe = Rect("Safe", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             safe.gameObject.AddComponent<SafeAreaFitter>();
 
-            // ----- 메인 -----
+            // ----- 메인 (두 큰 모드: 던전 · 서바이벌, 개발자 결정 2026-10-27) -----
             RectTransform main = Rect("Main", safe, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             var lobby = main.gameObject.AddComponent<LobbyScreen>();
-
-            RectTransform topBar = Rect("TopBar", main, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(-40f, 70f));
-            Img(topBar, new Color(0f, 0f, 0f, 0.35f), null);
-            TMP_Text wallet = Label("Wallet", topBar, "골드 0   보석 0   하트 5/5   Lv 1", 28, TextAlignmentOptions.Center);
-            Stretch(wallet.rectTransform);
-            TMP_Text notice = Label("Notice", main, "", 28, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.4f));
-            Place(notice.rectTransform, Center, Center, new Vector2(0f, 530f), new Vector2(1000f, 80f));
-            notice.gameObject.SetActive(false);
-
-            TMP_Text title = Label("Title", main, "역사 영웅", 96, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(900f, 130f));
-            TMP_Text sub = Label("Subtitle", main, "History Heroes  ·  v" + UnityEditor.PlayerSettings.bundleVersion.Substring(0, 3), 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(sub.rectTransform, Center, Center, new Vector2(0f, 615f), new Vector2(900f, 50f));
-
-            Button prev = Btn("PrevChapter", main, "<", new Vector2(-420f, 400f), new Vector2(120f, 120f), ButtonGray, out TMP_Text prevLabel);
-            prevLabel.fontSize = 56;
-            Button next = Btn("NextChapter", main, ">", new Vector2(420f, 400f), new Vector2(120f, 120f), ButtonGray, out TMP_Text nextLabel);
-            nextLabel.fontSize = 56;
-            TMP_Text chapter = Label("Chapter", main, "1구간 · 균열의 초원", 50, TextAlignmentOptions.Center);
-            Place(chapter.rectTransform, Center, Center, new Vector2(0f, 400f), new Vector2(680f, 110f));
-            TMP_Text chapterInfo = Label("ChapterInfo", main, "", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.75f));
-            Place(chapterInfo.rectTransform, Center, Center, new Vector2(0f, 262f), new Vector2(940f, 150f));
-            chapterInfo.lineSpacing = 10f;
-
-            Button dungeon = Btn("Dungeon", main, "던전 시작", new Vector2(0f, 60f), new Vector2(820f, 200f), ButtonGreen, out TMP_Text dungeonLabel);
-            dungeonLabel.fontSize = 64;
-            // 반쪽 버튼 두 줄 (v0.6): 보스 | 서바이벌, 균열 | 일일 도전, 그 아래 보관함 | 도감
-            void Half(TMP_Text label)
-            {
-                label.fontSize = 38;
-                label.enableAutoSizing = true;
-                label.fontSizeMin = 22f;
-                label.fontSizeMax = 38f;
-                label.rectTransform.offsetMin = new Vector2(12f, 0f);
-                label.rectTransform.offsetMax = new Vector2(-12f, 0f);
-            }
-
-            Button boss = Btn("Boss", main, "보스 도전", new Vector2(-212f, -150f), new Vector2(396f, 150f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text bossLabel);
-            Half(bossLabel);
-            Button survival = Btn("Survival", main, "서바이벌", new Vector2(212f, -150f), new Vector2(396f, 150f), new Color(0.6f, 0.38f, 0.14f), out TMP_Text survivalLabel);
-            Half(survivalLabel);
-            Button rift = Btn("Rift", main, "무한의 균열", new Vector2(-212f, -320f), new Vector2(396f, 150f), new Color(0.3f, 0.2f, 0.55f), out TMP_Text riftLabel);
-            Half(riftLabel);
-            Button daily = Btn("Daily", main, "일일 도전", new Vector2(212f, -320f), new Vector2(396f, 150f), new Color(0.15f, 0.42f, 0.45f), out TMP_Text dailyLabel);
-            Half(dailyLabel);
-            Button archive = Btn("Archive", main, "기록 보관함", new Vector2(-212f, -485f), new Vector2(396f, 130f), ButtonBlue, out TMP_Text archiveLabel);
-            Half(archiveLabel);
-            Button codex = Btn("Codex", main, "조합 도감", new Vector2(212f, -485f), new Vector2(396f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text codexLabel);
-            Half(codexLabel);
-            Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -645f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
-            // 영웅 버튼 왼쪽에 지금 영웅의 3D 초상 (Art3D-Plan 7번). 영웅마다 한 장, 지금 영웅만 보인다
-            heroLabel.rectTransform.offsetMin = new Vector2(140f, 0f);
-            var lobbyPortraits = new RawImage[roster != null ? roster.heroes.Count : 0];
-            for (int i = 0; i < lobbyPortraits.Length; i++)
-            {
-                // 버튼 아래에 붙여 위로 조금 튀어나오게 (작으면 영웅 특징이 안 보인다 — 화면 점검 2차)
-                RectTransform face = Rect($"HeroFace{i + 1}", heroButton.transform, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(10f, 2f), new Vector2(128f, 152f));
-                lobbyPortraits[i] = face.gameObject.AddComponent<RawImage>();
-                lobbyPortraits[i].color = new Color(1f, 1f, 1f, 0f);
-                lobbyPortraits[i].raycastTarget = false; // 누르면 버튼이 받는다
-            }
-
-            HeroPortraits heroFaces = heroButton.gameObject.AddComponent<HeroPortraits>();
-            using (var props = new Props(heroFaces))
-            {
-                props.Ref("roster", roster).Refs("images", lobbyPortraits).Int("textureSize", 200).Float("liveFps", 12f)
-                    .Vector3("stageOrigin", new Vector3(0f, -6000f, 0f)); // 영웅 화면 초상 무대(-5000)와 겹치지 않게
-            }
-            Button settingsButton = Btn("Settings", main, "설정", new Vector2(430f, 820f), new Vector2(180f, 80f), ButtonGray, out TMP_Text settingsLabel);
-            settingsLabel.fontSize = 30;
-            Button shopButton = Btn("Shop", main, "상점", new Vector2(-430f, 820f), new Vector2(180f, 80f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text shopLabel);
-            shopLabel.fontSize = 30;
-            Button missionButton = Btn("Missions", main, "미션", new Vector2(-430f, 725f), new Vector2(180f, 80f), new Color(0.2f, 0.42f, 0.3f), out TMP_Text missionLabel);
-            missionLabel.fontSize = 30;
-            // v1.0: 신규 7일 미션 (왼쪽, 미션 아래) · 순찰 (오른쪽, 설정 아래)
-            Button newcomerButton = Btn("Newcomer", main, "7일 미션", new Vector2(-430f, 630f), new Vector2(180f, 80f), new Color(0.45f, 0.3f, 0.12f), out TMP_Text newcomerLabel);
-            newcomerLabel.fontSize = 28;
-            Button patrolButton = Btn("Patrol", main, "순찰", new Vector2(430f, 715f), new Vector2(180f, 100f), new Color(0.25f, 0.35f, 0.2f), out TMP_Text patrolLabel);
-            patrolLabel.fontSize = 28;
-            TMP_Text note = Label("Note", main, "3D 그래픽 작업 중이에요 (로비·일부 효과는 아직 임시)", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
-            Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
+            LobbyMainUi m = BuildLobbyMain(main, camera);
+            Button prev = m.Prev, next = m.Next, dungeon = m.Dungeon, boss = m.Boss, survival = m.Survival, rift = m.Rift, daily = m.Daily;
+            Button archive = m.Archive, codex = m.Codex, heroButton = m.Hero, settingsButton = m.Settings, shopButton = m.Shop;
+            Button missionButton = m.Missions, newcomerButton = m.Newcomer, patrolButton = m.Patrol;
+            TMP_Text chapter = m.Chapter, chapterInfo = m.ChapterInfo, bossLabel = m.BossLabel, survivalLabel = m.SurvivalLabel;
+            TMP_Text riftLabel = m.RiftLabel, dailyLabel = m.DailyLabel, archiveLabel = m.ArchiveLabel, codexLabel = m.CodexLabel;
+            TMP_Text heroLabel = m.HeroName, missionLabel = m.MissionLabel, newcomerLabel = m.NewcomerLabel, patrolLabel = m.PatrolLabel;
+            TMP_Text wallet = m.Wallet, notice = m.Notice;
+            HeroPortraits heroFaces = null; // 로비 가운데 무대가 영웅을 보여준다
 
             // ----- 패널 (위에 덮는 순서: 보스 시작 전 → 보관함 → 도감 → 다시 고르기) -----
             BossIntroPanel bossIntro = BuildBossIntroPanel(safe, database);
@@ -156,7 +76,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("choice", choicePanel)
                     .Ref("riftButton", rift).Ref("riftButtonLabel", riftLabel).Ref("dailyButton", daily).Ref("dailyButtonLabel", dailyLabel).Ref("modeInfo", modeInfo)
                     .Ref("newcomerButton", newcomerButton).Ref("newcomerLabel", newcomerLabel).Ref("newcomerPanel", newcomerPanel)
-                    .Ref("patrolButton", patrolButton).Ref("patrolLabel", patrolLabel).Ref("opening", opening);
+                    .Ref("patrolButton", patrolButton).Ref("patrolLabel", patrolLabel).Ref("opening", opening)
+                    .Ref("goldLabel", m.Gold).Ref("gemLabel", m.Gem).Ref("heartLabel", m.Heart).Ref("levelLabel", m.Level).Ref("diorama", m.Diorama);
             }
 
             AddUiSounds(root);

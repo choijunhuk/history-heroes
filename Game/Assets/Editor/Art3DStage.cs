@@ -53,8 +53,9 @@ namespace HistoryHeroes.EditorTools
                 }
             }
 
+            int smoothed = SmoothProps();
             AssetDatabase.SaveAssets();
-            return $"복사 {copied} · 프리팹 {made.Count}: {string.Join(", ", made)}";
+            return $"복사 {copied} · 프리팹 {made.Count} · 소품 부드럽게 {smoothed}: {string.Join(", ", made)}";
         }
 
         /// <summary>바뀐 FBX만 복사 (블렌더 창이 다시 내보내면 덮어쓴다)</summary>
@@ -80,13 +81,50 @@ namespace HistoryHeroes.EditorTools
         private static void ImportSettings(string path)
         {
             if (!(AssetImporter.GetAtPath(path) is ModelImporter importer)) return;
-            if (importer.animationType == ModelImporterAnimationType.None && !importer.importAnimation && !importer.isReadable) return;
+            bool smooth = importer.importNormals == ModelImporterNormals.Calculate && Mathf.Approximately(importer.normalSmoothingAngle, SmoothAngle);
+            if (importer.animationType == ModelImporterAnimationType.None && !importer.importAnimation && !importer.isReadable && smooth) return;
             importer.animationType = ModelImporterAnimationType.None;
             importer.importAnimation = false;
             importer.importBlendShapes = false;
             importer.isReadable = false;
             importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription; // 재질 이름(역할)을 읽으려고
+            SetSmooth(importer, SmoothAngle);
             importer.SaveAndReimport();
+        }
+
+        /// <summary>
+        /// 각진 면을 부드럽게 (개발자: "너무 각지다 애들이"): 면 사이 각이 이보다 작으면 이어서 둥글게 비춘다.
+        /// 상자 모서리(90°)는 그대로 날카롭고, 통·나무·덤불·수정의 잔 면은 둥글게 보인다
+        /// </summary>
+        private const float SmoothAngle = 55f;
+
+        public static void SetSmooth(ModelImporter importer, float angle)
+        {
+            importer.importNormals = ModelImporterNormals.Calculate;
+            importer.normalCalculationMode = ModelImporterNormalCalculationMode.AngleWeighted;
+            importer.normalSmoothingAngle = angle;
+            importer.importTangents = ModelImporterTangents.CalculateMikk;
+        }
+
+        /// <summary>영웅 소품(모자·무기)·펫 FBX도 같은 방식으로 부드럽게 (무늬 없는 단색이라 이음매 걱정 없음)</summary>
+        public static int SmoothProps()
+        {
+            int changed = 0;
+            foreach (string folder in new[] { Art3DProps.Folder, Art3DAssets.Root + "/Pets" })
+            {
+                if (!Directory.Exists(folder)) continue;
+                foreach (string file in Directory.GetFiles(folder, "*.fbx"))
+                {
+                    if (!(AssetImporter.GetAtPath(file.Replace('\\', '/')) is ModelImporter importer)) continue;
+                    float angle = folder.EndsWith("Pets") ? 70f : 60f;
+                    if (importer.importNormals == ModelImporterNormals.Calculate && Mathf.Approximately(importer.normalSmoothingAngle, angle)) continue;
+                    SetSmooth(importer, angle);
+                    importer.SaveAndReimport();
+                    changed++;
+                }
+            }
+
+            return changed;
         }
 
         private static GameObject MakePrefab(string fbxPath)

@@ -184,7 +184,7 @@ namespace HistoryHeroes.EditorTools
             var go = new GameObject("Fire");
             go.transform.SetParent(parent, true);
             go.transform.position = worldPosition;
-            go.transform.rotation = Quaternion.LookRotation(Vector3.back); // 입자는 +Z로 나간다 → 게임의 위(-Z)
+            go.transform.rotation = Quaternion.LookRotation(parent.TransformDirection(Vector3.back)); // 입자는 +Z로 나간다 → 게임의 위(-Z, 로비 무대에서는 Unity의 위)
             var ps = go.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 

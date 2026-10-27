@@ -29,6 +29,8 @@ namespace HistoryHeroes.UI
 
         private readonly List<Slot> _slots = new List<Slot>();
         private Transform _stage;
+        private Light[] _lights = new Light[0];
+        private static readonly System.Collections.Generic.List<Light> _sceneLights = new System.Collections.Generic.List<Light>();
         private int _focus = -1;
         private float _nextLive;
 
@@ -104,10 +106,27 @@ namespace HistoryHeroes.UI
             }
         }
 
-        private static void Draw(Slot s)
+        /// <summary>
+        /// 초상 한 장 그리기. 초상 빛은 그릴 때만 켜고, 장면의 다른 해(로비 무대 등)는 그동안 끈다
+        /// → 로비 무대가 초상 빛을 받지 않고, 초상도 무대 해를 받지 않는다 (해는 위치와 상관없이 모든 것을 비춘다)
+        /// </summary>
+        private void Draw(Slot s)
         {
             if (s.Camera == null) return;
+            _sceneLights.Clear();
+            foreach (Light l in FindObjectsByType<Light>(FindObjectsSortMode.None))
+            {
+                if (l.enabled && l.type == LightType.Directional && System.Array.IndexOf(_lights, l) < 0)
+                {
+                    _sceneLights.Add(l);
+                    l.enabled = false;
+                }
+            }
+
+            foreach (Light l in _lights) l.enabled = true;
             s.Camera.Render();
+            foreach (Light l in _lights) l.enabled = false;
+            foreach (Light l in _sceneLights) l.enabled = true;
         }
 
         private void Build()
@@ -127,6 +146,9 @@ namespace HistoryHeroes.UI
             rim.intensity = 0.9f;
             rim.color = new Color(0.65f, 0.8f, 1f);
             rim.transform.rotation = Quaternion.Euler(20f, 200f, 0f);
+            _lights = new[] { sun, rim };
+            sun.enabled = false; // 그릴 때만 켠다 (Draw)
+            rim.enabled = false;
 
             int count = Mathf.Min(images.Length, roster != null ? roster.heroes.Count : 0);
             for (int i = 0; i < count; i++)
@@ -171,7 +193,7 @@ namespace HistoryHeroes.UI
             }
         }
 
-        private static void Rotate(Slot slot, float deltaX)
+        private void Rotate(Slot slot, float deltaX)
         {
             if (slot.Model == null) return;
             slot.Yaw -= deltaX * 0.5f;

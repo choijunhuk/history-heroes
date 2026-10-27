@@ -23,6 +23,13 @@ namespace HistoryHeroes.UI
 
         [Header("위쪽 바")]
         [SerializeField] private TMP_Text walletLabel;
+        [Header("그래픽 평가 3번: 위쪽 재화 칸 (있으면 walletLabel 대신 따로)")]
+        [SerializeField] private TMP_Text goldLabel;
+        [SerializeField] private TMP_Text gemLabel;
+        [SerializeField] private TMP_Text heartLabel;
+        [SerializeField] private TMP_Text levelLabel;
+        [Tooltip("가운데 무대: 구간 섬 + 지금 영웅")]
+        [SerializeField] private LobbyDiorama diorama;
         [SerializeField] private TMP_Text noticeLabel;
 
         [Header("구간")]
@@ -358,9 +365,18 @@ namespace HistoryHeroes.UI
         {
             _nextWallet = Time.unscaledTime + 0.5f;
             RenderPatrol(SaveSystem.Data);
-            if (walletLabel == null) return;
             SaveData d = SaveSystem.Data;
             int next = Hearts.SecondsToNext(d, Clock.UnixSeconds);
+            if (goldLabel != null)
+            {
+                // 칸마다 아이콘 + 숫자 (하트는 다음 충전까지 시간을 작게)
+                goldLabel.text = Wallet.Format(d.gold);
+                if (gemLabel != null) gemLabel.text = Wallet.Format(Wallet.Gems(d));
+                if (heartLabel != null) heartLabel.text = d.hearts >= Hearts.Max ? $"{d.hearts}/{Hearts.Max}" : $"{d.hearts}/{Hearts.Max} <size=70%>{Hearts.FormatTime(next)}</size>";
+                if (levelLabel != null) levelLabel.text = $"{d.accountLevel}";
+            }
+
+            if (walletLabel == null) return;
             string heart = d.hearts >= Hearts.Max ? $"하트 {d.hearts}/{Hearts.Max}" : $"하트 {d.hearts}/{Hearts.Max} ({Hearts.FormatTime(next)})";
             string level = d.accountLevel >= AccountLevel.MaxLevel ? $"Lv {d.accountLevel}" : $"Lv {d.accountLevel} ({d.accountExp}/{AccountLevel.ExpToNext(d.accountLevel)})";
             walletLabel.text = $"골드 {Wallet.Format(d.gold)}   보석 {Wallet.Format(Wallet.Gems(d))}   {heart}   {level}";
@@ -430,8 +446,9 @@ namespace HistoryHeroes.UI
             int found = data.discoveredRecipes.Count;
             codexButtonLabel.text = $"조합 도감  {found}/{codex.RecipeCount}";
             HeroData hero = HeroUnlock.Selected(data, roster);
-            heroButtonLabel.text = hero != null ? $"영웅  {hero.displayName} ({hero.ClassLabel})" : "영웅";
+            heroButtonLabel.text = hero != null ? $"{hero.displayName} · {hero.ClassLabel}" : "영웅"; // 가운데 무대 영웅 이름표
             if (heroButtonPortraits != null && hero != null) heroButtonPortraits.ShowOnly(roster.heroes.IndexOf(hero));
+            if (diorama != null) diorama.Show(_chapter, hero); // 고른 구간의 섬 + 지금 영웅
             RenderWallet();
         }
 

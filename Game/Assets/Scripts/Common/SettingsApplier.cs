@@ -27,7 +27,11 @@ namespace HistoryHeroes.Common
         {
             level = Mathf.Clamp(level, 0, 2);
             Camera cam = Camera.main;
-            if (cam != null && cam.TryGetComponent(out UniversalAdditionalCameraData data)) data.renderShadows = level > 0;
+            if (cam != null && cam.TryGetComponent(out UniversalAdditionalCameraData data))
+            {
+                data.renderShadows = level > 0;
+                data.renderPostProcessing = level > 0; // 로비 무대도 (전투는 StageLook이 같은 값을 건다)
+            }
             StageLook.SetPost(level > 0); // 낮음: 화면 후처리(색 보정·빛 번짐) 끔
 #if !UNITY_EDITOR
             if (GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset urp)
