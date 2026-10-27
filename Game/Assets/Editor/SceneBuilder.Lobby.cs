@@ -20,6 +20,10 @@ namespace HistoryHeroes.EditorTools
             camera.orthographic = true;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.07f, 0.08f, 0.11f);
+            // 영웅 화면의 3D 초상(HeroPortraits)이 받을 주변광
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.5f, 0.52f, 0.58f);
+            RenderSettings.skybox = null;
 
             Transform root = CreateCanvas();
             RectTransform safe = Rect("Safe", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
@@ -89,7 +93,7 @@ namespace HistoryHeroes.EditorTools
             newcomerLabel.fontSize = 28;
             Button patrolButton = Btn("Patrol", main, "순찰", new Vector2(430f, 715f), new Vector2(180f, 100f), new Color(0.25f, 0.35f, 0.2f), out TMP_Text patrolLabel);
             patrolLabel.fontSize = 28;
-            TMP_Text note = Label("Note", main, "그래픽은 아직 임시 도형이에요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
+            TMP_Text note = Label("Note", main, "3D 그래픽 작업 중이에요 (로비·일부 효과는 아직 임시)", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.4f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 40f));
 
             // ----- 패널 (위에 덮는 순서: 보스 시작 전 → 보관함 → 도감 → 다시 고르기) -----
@@ -359,6 +363,7 @@ namespace HistoryHeroes.EditorTools
             var buttons = new Button[4];
             var backgrounds = new Image[4];
             var labels = new TMP_Text[4];
+            var portraits = new RawImage[4];
             for (int i = 0; i < 4; i++)
             {
                 buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(0f, 560f - i * 265f), new Vector2(980f, 245f), RowColor, out TMP_Text label);
@@ -366,9 +371,17 @@ namespace HistoryHeroes.EditorTools
                 label.fontSize = 32;
                 label.alignment = TextAlignmentOptions.MidlineLeft;
                 label.rectTransform.offsetMin = new Vector2(30f, 8f);
-                label.rectTransform.offsetMax = new Vector2(-30f, -8f);
+                label.rectTransform.offsetMax = new Vector2(-230f, -8f); // 오른쪽은 3D 초상 자리
                 labels[i] = label;
+
+                // 3D 초상 (Art3D-Plan 7번): 끌면 돈다. 누르면 줄 버튼이 받는다
+                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-12f, 0f), new Vector2(205f, 236f));
+                portraits[i] = portrait.gameObject.AddComponent<RawImage>();
+                portraits[i].color = new Color(1f, 1f, 1f, 0f); // 그림이 생기기 전에는 투명
+                portraits[i].raycastTarget = true;
             }
+
+            using (var props = new Props(panel.gameObject.AddComponent<HeroPortraits>())) props.Ref("roster", roster).Refs("images", portraits);
 
             Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -450f), new Vector2(440f, 110f), ButtonGreen, out TMP_Text selectLabel);
             Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -450f), new Vector2(440f, 110f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
