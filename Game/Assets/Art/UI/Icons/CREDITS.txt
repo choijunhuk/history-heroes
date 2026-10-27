@@ -88,3 +88,7 @@ yi_turtle | turtle-shell | lorc | https://game-icons.net/1x1/lorc/turtle-shell.h
 yi_hakikjin | galleon | lorc | https://game-icons.net/1x1/lorc/galleon.html
 ysg_pyeonjeon | striking-arrows | lorc | https://game-icons.net/1x1/lorc/striking-arrows.html
 ysg_shingung | high-shot | lorc | https://game-icons.net/1x1/lorc/high-shot.html
+dav_tank | gears | lorc | https://game-icons.net/1x1/lorc/gears.html
+dav_spiral | wing-cloak | lorc | https://game-icons.net/1x1/lorc/wing-cloak.html
+zhuge_gate | stone-tower | lorc | https://game-icons.net/1x1/lorc/stone-tower.html
+zhuge_sevenstar | tornado | lorc | https://game-icons.net/1x1/lorc/tornado.html

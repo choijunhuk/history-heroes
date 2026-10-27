@@ -35,6 +35,9 @@ namespace HistoryHeroes.Combat
         /// <summary>날아가는 방향·빠르기·피해 (마렝고가 막고 되돌리는 데, 벤치가 피하는 데 쓴다)</summary>
         public Vector2 Direction => _direction;
         public float Speed => _speed;
+
+        /// <summary>빠르기 배수 (제갈량 동남풍: 둘레 적 탄 0.6). 쏠 때 1로</summary>
+        public float SlowFactor { get; set; } = 1f;
         public DamageInfo Damage => _damage;
         /// <summary>쏜 쪽 (적 투사체: 쏜 적. 없으면 null)</summary>
         public Component Owner { get; set; }
@@ -46,6 +49,7 @@ namespace HistoryHeroes.Combat
             _onHitTarget = onHitTarget;
             _direction = direction.normalized;
             _speed = speed;
+            SlowFactor = 1f;
             _damage = damage;
             _hitMask = hitMask;
             _wallMask = wallMask;
@@ -76,7 +80,7 @@ namespace HistoryHeroes.Combat
                 return;
             }
 
-            float distance = _speed * dt;
+            float distance = _speed * SlowFactor * dt;
             Vector2 position = transform.position;
             var filter = new ContactFilter2D { useLayerMask = true, layerMask = _hitMask | _wallMask, useTriggers = true };
             int count = Physics2D.CircleCast(position, radius, _direction, filter, _hits, distance);

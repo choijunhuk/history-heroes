@@ -10,6 +10,7 @@ namespace HistoryHeroes.Heroes
         Warrior, // 전사 (근접)
         Gunner,  // 총잡이
         Mage,    // 법사
+        Summoner, // 소환사 (다빈치, 확장: 새 영웅)
     }
 
     public enum BasicAttackKind
@@ -101,6 +102,33 @@ namespace HistoryHeroes.Heroes
         [Tooltip("3단 피해 배수")]
         public float chargeFullMultiplier = 2.5f;
 
+        [Header("제갈량 (확장: 새 영웅)")]
+        [Tooltip("기본 공격 갈래 수 (깃털 부채 바람 3갈래). 1이면 보통")]
+        public int fanShots = 1;
+        public float fanSpread = 20f;
+        [Tooltip("갈래 하나 피해 배수")]
+        public float fanCoefficient = 1f;
+        [Tooltip("동남풍: 멈춰 있는 동안 이 반경 안 적 탄이 느려진다 (0이면 없음)")]
+        public float windRadius = 0f;
+        [Tooltip("동남풍: 느려지는 비율 (0.4 = 40% 느리게)")]
+        public float windSlow = 0.4f;
+
+        [Header("다빈치 작업대 (확장: 새 영웅)")]
+        [Tooltip("멈춰 있으면 부품을 만들고, 부품이 모이면 비행 기계를 조립한다")]
+        public bool workbench;
+        [Tooltip("부품 하나에 멈춘 시간 (초)")]
+        public float partEvery = 1f;
+        public int partsPerMachine = 3;
+        public int maxMachines = 2;
+        [Tooltip("비행 기계가 떠 있는 시간 (초)")]
+        public float machineLife = 20f;
+        [Tooltip("비행 기계 한 발 (공격력 배수). 영웅이 멈춰 있을 때만 쏜다")]
+        public float machineDamage = 0.35f;
+        [Tooltip("비행 기계가 초당 쏘는 횟수")]
+        public float machineFireRate = 1f;
+        [Tooltip("비행 기계 모델 (블렌더 Fx_FlyingMachine)")]
+        public GameObject helperModel;
+
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
         public float star3FirstShotBonus = -1f;
@@ -128,6 +156,14 @@ namespace HistoryHeroes.Heroes
         public float star3ChargeFull = -1f;
         [Tooltip("★5 3단까지 시간 (이성계 1.2초)")]
         public float star5ChargeFullTime = -1f;
+        [Tooltip("★3 비행 기계 한 발 (다빈치 50%)")]
+        public float star3MachineDamage = -1f;
+        [Tooltip("★5 비행 기계 최대 수 (다빈치 3)")]
+        public int star5MaxMachines = -1;
+        [Tooltip("★3 동남풍 반경 (제갈량 4)")]
+        public float star3WindRadius = -1f;
+        [Tooltip("★5 동남풍 느려짐 (제갈량 55%)")]
+        public float star5WindSlow = -1f;
 
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]
@@ -156,6 +192,7 @@ namespace HistoryHeroes.Heroes
                     case HeroClass.Warrior: return "전사";
                     case HeroClass.Gunner: return "총잡이";
                     case HeroClass.Mage: return "법사";
+                    case HeroClass.Summoner: return "소환사";
                     default: return "궁수";
                 }
             }

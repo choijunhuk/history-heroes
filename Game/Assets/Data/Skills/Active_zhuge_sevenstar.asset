@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_zhuge_sevenstar
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: zhuge_sevenstar
+  displayName: "\uCE60\uC131\uB2E8\uC758 \uBC14\uB78C"
+  description: "\uD314\uC9C4\uB3C4 \uC548\uC5D0 \uD68C\uC624\uB9AC 3\uAC1C (5\uCD08)\n\uC801\uC744
+    \uAC00\uC6B4\uB370\uB85C \uBAA8\uC73C\uACE0 \uCD08\uB2F9 40%\nLv2 +25%, Lv3 +50%"
+  warriorDescription: 
+  icon: {fileID: 21300000, guid: 7c69afd9bb818494582388c1bc63d8b8, type: 3}
+  rarity: 1
+  tags: 256
+  role: 0
+  maxLevel: 3
+  saveCostFirstLevel: 18
+  saveCostPerLevel: 4
+  recordable: 1
+  heroOnlyId: zhuge
+  cooldown: 10
+  damageFirstLevel: 1
+  damagePerLevel: 0.25
+  countFirstLevel: 8
+  countPerLevel: 0
+  radius: 2.6
+  radiusPerLevel: 0
+  duration: 5
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 194884185896295805, guid: 924901c04801b244b8a7aa0d4e43404d, type: 3}

@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -139,6 +139,42 @@ namespace HistoryHeroes.EditorTools
             d.YiSeonggye.unlockAfterBossChapter = 5;
             d.YiSeonggye.star3ChargeFull = 3f;
             d.YiSeonggye.star5ChargeFullTime = 1.2f;
+
+            // ----- 레오나르도 다빈치 (확장 결정 12: 새 영웅, 소환사 · 발명가) -----
+            d.Davinci = Hero("davinci", "레오나르도 다빈치", HeroClass.Summoner, BasicAttackKind.Projectile, 900f, 70f, 1.0f, 5f, 5f, new Color(0.85f, 0.65f, 0.35f));
+            d.Davinci.playStyle = "멈춰서 비행 기계를 조립하고, 같이 쏘는 공방";
+            d.Davinci.signatureName = "작업대";
+            d.Davinci.signatureDescription = "멈춰 있는 1초마다 부품 1개, 3개면 비행 기계 조립 (최대 2대, 20초). 비행 기계는 영웅이 멈춰 있을 때만 같은 적을 쏜다 (공격력 35%)";
+            d.Davinci.projectileSpeed = 15f;
+            d.Davinci.workbench = true;
+            d.Davinci.partEvery = 1f;
+            d.Davinci.partsPerMachine = 3;
+            d.Davinci.maxMachines = 2;
+            d.Davinci.machineLife = 20f;
+            d.Davinci.machineDamage = 0.35f;
+            d.Davinci.machineFireRate = 1f;
+            d.Davinci.helperModel = Art3DStage.Prefab("Fx_FlyingMachine");
+            d.Davinci.unlockAfterBossChapter = 0;
+            d.Davinci.unlockGems = 2000; // 보석으로만 (구간 해금 영웅은 5명으로 충분)
+            d.Davinci.star3MachineDamage = 0.5f;
+            d.Davinci.star5MaxMachines = 3;
+
+            // ----- 제갈량 (확장 결정 12: 새 영웅, 책사 — 조종형 법사). 📜 팔진도·동남풍은 『삼국지연의』 전승 (각색) -----
+            d.Zhuge = Hero("zhuge", "제갈량", HeroClass.Mage, BasicAttackKind.Projectile, 900f, 85f, 1.0f, 5f, 4.5f, new Color(0.55f, 0.75f, 0.95f));
+            d.Zhuge.playStyle = "멈춰 서서 바람으로 적 탄을 늦추고, 진법으로 판을 짜는 조종";
+            d.Zhuge.signatureName = "동남풍";
+            d.Zhuge.signatureDescription = "멈춰 있는 동안 내 둘레 반경 3 안의 적 탄이 40% 느려진다. 기본 공격 = 깃털 부채 바람 3갈래 (각 45%, 살짝 밀어냄)";
+            d.Zhuge.projectileSpeed = 12f;
+            d.Zhuge.knockback = 0.15f;
+            d.Zhuge.fanShots = 3;
+            d.Zhuge.fanSpread = 18f;
+            d.Zhuge.fanCoefficient = 0.45f;
+            d.Zhuge.windRadius = 3f;
+            d.Zhuge.windSlow = 0.4f;
+            d.Zhuge.unlockAfterBossChapter = 0;
+            d.Zhuge.unlockGems = 2000;
+            d.Zhuge.star3WindRadius = 4f;
+            d.Zhuge.star5WindSlow = 0.55f;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -372,6 +408,20 @@ namespace HistoryHeroes.EditorTools
             d.YsgPyeonjeon.heroOnlyId = "yiseonggye";
             d.Pool.Add(d.YsgPyeonjeon);
             d.YiSeonggye.exclusiveActive = d.YsgPyeonjeon;
+            d.DavTank = Active("dav_tank", "장갑 전차", Rarity.Rare, SkillTag.Projectile, 5, 3,
+                "9초마다 원뿔 전차가 6초 동안\n둘레를 돌며 사방 8갈래로 쏜다 (각 30%)\n레벨마다 지속 +1초",
+                cooldown: 9f, damage: 0.3f, damagePerLevel: 0f, count: 8, countPerLevel: 0, duration: 6f);
+            d.DavTank.durationPerLevel = 1f;
+            d.DavTank.heroOnlyId = "davinci";
+            d.Pool.Add(d.DavTank);
+            d.Davinci.exclusiveActive = d.DavTank;
+            d.ZhugeGate = Active("zhuge_gate", "팔진도", Rarity.Rare, SkillTag.Wind | SkillTag.Defense, 5, 3,
+                "10초마다 돌기둥 8개로 진을 4초\n적 탄을 막고, 안에 든 적은 1초 헤맴\n레벨마다 지속 +0.5초",
+                cooldown: 10f, damage: 0f, damagePerLevel: 0f, count: 8, countPerLevel: 0, radius: 2.6f, duration: 4f);
+            d.ZhugeGate.durationPerLevel = 0.5f;
+            d.ZhugeGate.heroOnlyId = "zhuge";
+            d.Pool.Add(d.ZhugeGate);
+            d.Zhuge.exclusiveActive = d.ZhugeGate;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -402,7 +452,15 @@ namespace HistoryHeroes.EditorTools
                 cooldown: 5f, damage: 0.6f, damagePerLevel: 0f, count: 7, countPerLevel: 0, saveCostFirst: 12);
             d.YsgShingung.saveCostPerLevel = 0;
             d.YsgShingung.heroOnlyId = "yiseonggye";
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung }) UnityEditor.EditorUtility.SetDirty(s);
+            d.DavSpiral = Active("dav_spiral", "나선 비행기", Rarity.Rare, SkillTag.Projectile | SkillTag.Wind, 3, 4,
+                "전차가 떠올라 회오리를 끌고 8초\n사방 8갈래 (각 35%) + 둘레 적을 끌어 초당 50%\nLv2 +25%, Lv3 +50%",
+                cooldown: 9f, damage: 0.35f, damagePerLevel: 0.09f, count: 8, countPerLevel: 0, duration: 8f, saveCostFirst: 18);
+            d.DavSpiral.heroOnlyId = "davinci";
+            d.ZhugeSevenStar = Active("zhuge_sevenstar", "칠성단의 바람", Rarity.Rare, SkillTag.Wind, 3, 4,
+                "팔진도 안에 회오리 3개 (5초)\n적을 가운데로 모으고 초당 40%\nLv2 +25%, Lv3 +50%",
+                cooldown: 10f, damage: 1f, damagePerLevel: 0.25f, count: 8, countPerLevel: 0, radius: 2.6f, duration: 5f, saveCostFirst: 18);
+            d.ZhugeSevenStar.heroOnlyId = "zhuge";
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -414,10 +472,12 @@ namespace HistoryHeroes.EditorTools
             AddHeroRecipe(d, "napo_austerlitz", FusionType.Merge, d.NapoCannon, 3, d.FlameField, 3, d.NapoAusterlitz, "napoleon");
             AddHeroRecipe(d, "tesla_tower", FusionType.Merge, d.TeslaCoil, 3, d.Lightning, 3, d.TeslaTower, "tesla");
             AddHeroRecipe(d, "yi_hakikjin", FusionType.Evolution, d.YiTurtle, 5, (PassiveSkillData)d.Pool.Find(s => s.id == "hp_up"), 1, d.YiHakIkJin, "yisunsin");
+            AddHeroRecipe(d, "zhuge_sevenstar", FusionType.Merge, d.ZhugeGate, 3, d.Whirlwind, 3, d.ZhugeSevenStar, "zhuge");
+            AddHeroRecipe(d, "dav_spiral", FusionType.Merge, d.DavTank, 3, d.Whirlwind, 3, d.DavSpiral, "davinci");
             AddHeroRecipe(d, "ysg_shingung", FusionType.Evolution, d.YsgPyeonjeon, 5, (PassiveSkillData)d.Pool.Find(s => s.id == "crit_dmg"), 1, d.YsgShingung, "yiseonggye");
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -426,7 +486,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -619,6 +679,12 @@ namespace HistoryHeroes.EditorTools
             d.YiSeonggye.projectilePrefab = p.BigArrow;
             d.YsgPyeonjeon.behaviourPrefab = p.YsgPyeonjeon;
             d.YsgShingung.behaviourPrefab = p.YsgShingung;
+            d.Davinci.projectilePrefab = p.Bolt;
+            d.DavTank.behaviourPrefab = p.DavTank;
+            d.DavSpiral.behaviourPrefab = p.DavSpiral;
+            d.Zhuge.projectilePrefab = p.Gust;
+            d.ZhugeGate.behaviourPrefab = p.ZhugeGate;
+            d.ZhugeSevenStar.behaviourPrefab = p.ZhugeSevenStar;
             d.KhanVolley.behaviourPrefab = p.KhanVolley;
             d.KhanStorm.behaviourPrefab = p.KhanStorm;
             d.GuanSpin.behaviourPrefab = p.GuanSpin;

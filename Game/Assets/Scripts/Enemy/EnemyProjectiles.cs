@@ -27,6 +27,7 @@ namespace HistoryHeroes.Enemy
         {
             _instance = this;
             SpeedScale = 1f;
+            _slowRadius = 0f;
             _pool = new ComponentPool<Projectile>(prefab, transform, prewarm: 32);
         }
 
@@ -66,6 +67,34 @@ namespace HistoryHeroes.Enemy
             }
 
             return false;
+        }
+
+        // ---------------------------------------------------------------- 제갈량 동남풍 (확장: 새 영웅)
+
+        private static Vector2 _slowCenter;
+        private static float _slowRadius;
+        private static float _slowFactor = 1f;
+
+        /// <summary>이번 프레임: center 반경 radius 안의 적 탄은 factor 빠르기 (영웅이 멈춰 있는 동안 매 프레임 부른다)</summary>
+        public static void SetSlowZone(Vector2 center, float radius, float factor)
+        {
+            _slowCenter = center;
+            _slowRadius = radius;
+            _slowFactor = factor;
+        }
+
+        public static void ClearSlowZone() => _slowRadius = 0f;
+
+        private void LateUpdate()
+        {
+            float sqr = _slowRadius * _slowRadius;
+            for (int i = 0; i < _active.Count; i++)
+            {
+                Projectile p = _active[i];
+                if (p == null) continue;
+                bool inside = _slowRadius > 0f && ((Vector2)p.transform.position - _slowCenter).sqrMagnitude <= sqr;
+                p.SlowFactor = inside ? _slowFactor : 1f;
+            }
         }
 
         private void OnReleased(Projectile p)

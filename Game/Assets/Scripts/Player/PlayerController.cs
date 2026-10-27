@@ -232,6 +232,13 @@ namespace HistoryHeroes.Player
             UpdateMomentum();
             UpdateIronclad(dt);
             UpdateCharge(dt);
+            UpdateWorkbench(dt);
+            // 제갈량 동남풍: 멈춰 있는 동안 둘레 적 탄이 느려진다
+            if (_sig.WindRadius > 0f)
+            {
+                if (Stop.IsStopped) Enemy.EnemyProjectiles.SetSlowZone(transform.position, _sig.WindRadius, 1f - _sig.WindSlow);
+                else Enemy.EnemyProjectiles.ClearSlowZone();
+            }
             if (Stop.IsStopped) TryBasicAttack();
         }
 
@@ -351,6 +358,50 @@ namespace HistoryHeroes.Player
             _ironStore = 0f;
             AttackFx.Burst(transform.position, 0.9f, new Color(1f, 0.6f, 0.2f, 0.8f), 0.12f);
             return store;
+        }
+
+        // ---------------------------------------------------------------- 다빈치 작업대
+
+        private float _partTimer;
+        private int _parts;
+        private readonly List<FlyingMachine> _machines = new List<FlyingMachine>();
+
+        /// <summary>지금 모은 부품 수 · 떠 있는 비행 기계 수 (화면·QA)</summary>
+        public int WorkbenchParts => _parts;
+        public int MachineCount => _machines.Count;
+
+        /// <summary>도우미(비행 기계)가 쓸 표적: 영웅이 노리는 것과 같은 적</summary>
+        public Health HelperTarget(float range) => _targets.Find(transform.position, range);
+
+        private void UpdateWorkbench(float dt)
+        {
+            if (!hero.workbench) return;
+            _machines.RemoveAll(m => m == null);
+            if (!Stop.IsStopped)
+            {
+                _partTimer = 0f; // 부품은 남고, 만들던 것만 처음부터
+                return;
+            }
+
+            _partTimer += dt;
+            if (_partTimer < hero.partEvery) return;
+            _partTimer -= hero.partEvery;
+            if (_machines.Count >= _sig.MaxMachines && _parts >= hero.partsPerMachine - 1) return; // 가득: 마지막 부품은 기다린다
+            _parts++;
+            AttackFx.Burst(transform.position + Vector3.right * 0.4f, 0.35f, new Color(0.95f, 0.8f, 0.45f, 0.8f), 0.08f);
+            if (_parts < hero.partsPerMachine || _machines.Count >= _sig.MaxMachines) return;
+            _parts -= hero.partsPerMachine;
+            var machine = FlyingMachine.Create(this, hero.helperModel, _machines.Count, hero.machineLife, _sig.MachineDamage, hero.machineFireRate);
+            _machines.Add(machine);
+            Audio.AudioManager.Play("card", 0.7f, 0.05f);
+        }
+
+        /// <summary>도우미 탄 (기본 공격 종류: 기본 공격 비중으로 센다)</summary>
+        public void LaunchHelperShot(Vector2 origin, Vector2 direction, float coefficient)
+        {
+            DamageInfo damage = DamageCalculator.Roll(Stats, coefficient, DamageKind.BasicAttack, source: "davinci_machine");
+            Projectile p = _projectiles.Get(origin, Quaternion.identity);
+            p.Launch(direction, hero.projectileSpeed, damage, enemyMask, wallMask, 0, 0, _projectiles.Release, null);
         }
 
         // ---------------------------------------------------------------- 이성계 백발백중
@@ -496,20 +547,21 @@ namespace HistoryHeroes.Player
         {
             Audio.AudioManager.Play("shoot", 0.35f, 0.1f);
             int extra = Attack.Get(AttackModifierKind.ExtraProjectiles);
-            int count = 1 + extra;
-            float perProjectile = NextShotCoefficient(extra);
+            int count = Mathf.Max(1, hero.fanShots) + extra; // 제갈량 깃털 부채: 3갈래
+            float perProjectile = NextShotCoefficient(extra) * (hero.fanShots > 1 ? hero.fanCoefficient : 1f);
             _lastShotCoefficient = perProjectile;
             _bulletsFired += count;
 
             Vector2 origin = transform.position;
             Vector2 aim = ((Vector2)target.transform.position - origin).normalized;
             PlayAttack(aim);
-            float start = -spreadDegrees * (count - 1) * 0.5f;
+            float spread = hero.fanShots > 1 ? hero.fanSpread : spreadDegrees;
+            float start = -spread * (count - 1) * 0.5f;
             bool needsTarget = hero.knockback > 0f || _sig.ChainBounces > 0;
 
             for (int i = 0; i < count; i++)
             {
-                Vector2 direction = Quaternion.Euler(0f, 0f, start + spreadDegrees * i) * aim;
+                Vector2 direction = Quaternion.Euler(0f, 0f, start + spread * i) * aim;
                 DamageInfo damage = DamageCalculator.Roll(Stats, perProjectile, DamageKind.BasicAttack);
                 if (i == 0) damage.Amount += TakeIroncladStore(); // 이순신 철갑: 첫 발에 쌓인 피해
                 Projectile p = _projectiles.Get(origin, Quaternion.identity);

@@ -203,6 +203,10 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "YiSunsin", body = "Male_Peasant", bodyTex = "T_Peasant_2_BaseColor", tint = new Color(0.62f, 0.7f, 1f), hair = new[] { "Hair_Buzzed", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.05f, 0.045f, 0.045f), attack = "Pistol_Shoot", props = new[] { "YiSunsin_Helmet", "YiSunsin_Armor", "YiSunsin_Chongtong" } },
             // 이성계: 붉은 갈색 옷 + 수염 + 고려 말 투구 · 왼손 각궁 (활 동작이 생기기 전에는 주문 쏘기)
             new Look { name = "YiSeonggye", body = "Male_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(1f, 0.72f, 0.62f), hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_Buzzed", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.06f, 0.05f, 0.045f), props = new[] { "Yi_Helmet", "Yi_Bow" } },
+            // 다빈치: 갈색 옷 + 긴 머리·수염(회색) + 붉은 베레모 · 왼손 설계도 · 오른손 석궁 (권총 쏘기)
+            new Look { name = "Davinci", body = "Male_Peasant", bodyTex = "T_Peasant_BaseColor", tint = new Color(0.95f, 0.82f, 0.68f), hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.62f, 0.6f, 0.57f), attack = "Pistol_Shoot", props = new[] { "Davinci_Beret", "Davinci_Scroll", "Davinci_Crossbow" } },
+            // 제갈량: 흰·남색 도포 + 긴 머리·수염 + 윤건 · 오른손 깃털 부채 (주문 쏘기)
+            new Look { name = "Zhuge", body = "Male_Peasant", bodyTex = "T_Peasant_2_BaseColor", tint = new Color(0.9f, 0.95f, 1.1f), hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.05f, 0.045f, 0.045f), props = new[] { "Zhuge_Fan", "Zhuge_Hat" } },
         };
 
         public sealed class EnemyLook

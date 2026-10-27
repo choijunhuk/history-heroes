@@ -52,6 +52,19 @@ MonoBehaviour:
   chargeTimes: {x: 0.4, y: 0.9, z: 1.5}
   chargeMidMultiplier: 1.4
   chargeFullMultiplier: 2.5
+  fanShots: 1
+  fanSpread: 20
+  fanCoefficient: 1
+  windRadius: 0
+  windSlow: 0.4
+  workbench: 0
+  partEvery: 1
+  partsPerMachine: 3
+  maxMachines: 2
+  machineLife: 20
+  machineDamage: 0.35
+  machineFireRate: 1
+  helperModel: {fileID: 0}
   star3FirstShotBonus: -1
   star5FirstShotBonus: -1
   star5FirstShotPierce: 0
@@ -65,6 +78,10 @@ MonoBehaviour:
   star5StopGuardCap: -1
   star3ChargeFull: -1
   star5ChargeFullTime: -1
+  star3MachineDamage: -1
+  star5MaxMachines: -1
+  star3WindRadius: -1
+  star5WindSlow: -1
   exclusiveActive: {fileID: 11400000, guid: 4a27ffbd0b3686f4bb0d6d41fad541d0, type: 2}
   unlockAfterBossChapter: 1
   unlockGems: 1500

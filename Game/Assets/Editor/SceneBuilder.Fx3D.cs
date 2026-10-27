@@ -24,6 +24,7 @@ namespace HistoryHeroes.EditorTools
             Wave,
             Cannonball,
             BigArrow,
+            Gust,
         }
 
         /// <summary>투사체가 뜨는 높이 (가슴께)</summary>
@@ -141,6 +142,15 @@ namespace HistoryHeroes.EditorTools
                     else FxPart(root, Stage3D.Shape.Rock, FxMat("Cannonball", new Color(0.25f, 0.25f, 0.28f), 0.2f, 0.7f), Vector3.zero, Quaternion.identity, Vector3.one * 0.36f);
                     break;
                 }
+                case Fx.Gust:
+                {
+                    // 제갈량 부채 바람: 옅은 하늘색 초승달 (세로 판 + 끝이 뒤로 휜 두 조각)
+                    Material gust = FxMat("Gust", new Color(0.8f, 0.95f, 1f), 1.1f);
+                    FxPart(root, Stage3D.Shape.Box, gust, Vector3.zero, Quaternion.identity, new Vector3(0.08f, 0.5f, 0.05f));
+                    FxPart(root, Stage3D.Shape.Box, gust, new Vector3(-0.08f, 0.3f, 0f), Quaternion.Euler(0f, 0f, -35f), new Vector3(0.06f, 0.2f, 0.04f));
+                    FxPart(root, Stage3D.Shape.Box, gust, new Vector3(-0.08f, -0.3f, 0f), Quaternion.Euler(0f, 0f, 35f), new Vector3(0.06f, 0.2f, 0.04f));
+                    break;
+                }
                 case Fx.Wave:
                     // 관우 검기: 날아가는 쪽에 가로로 선 빛나는 날 (얇은 상자 + 끝이 가는 두 조각)
                     Material wave = FxMat("Wave", new Color(0.8f, 1f, 0.9f), 1.6f);
@@ -172,6 +182,7 @@ namespace HistoryHeroes.EditorTools
                 case Fx.Orb: AddTrail(root.gameObject, new Color(0.45f, 0.85f, 1f), 0.3f, 0.2f); break;
                 case Fx.Cannonball: AddTrail(root.gameObject, new Color(1f, 0.6f, 0.25f), 0.26f, 0.18f); break;
                 case Fx.BigArrow: AddTrail(root.gameObject, new Color(1f, 0.9f, 0.6f), 0.18f, 0.16f); break;
+                case Fx.Gust: AddTrail(root.gameObject, new Color(0.85f, 0.97f, 1f), 0.35f, 0.18f); break;
                 case Fx.Wave: AddTrail(root.gameObject, new Color(0.6f, 1f, 0.8f), 0.5f, 0.12f); break;
                 case Fx.Shard: AddTrail(root.gameObject, new Color(0.6f, 0.9f, 1f), 0.18f, 0.15f); break;
             }
