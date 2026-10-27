@@ -83,11 +83,12 @@ namespace HistoryHeroes.EditorTools
             Half(codexLabel);
             Button heroButton = Btn("Hero", main, "영웅", new Vector2(0f, -645f), new Vector2(820f, 120f), new Color(0.45f, 0.35f, 0.2f), out TMP_Text heroLabel);
             // 영웅 버튼 왼쪽에 지금 영웅의 3D 초상 (Art3D-Plan 7번). 영웅마다 한 장, 지금 영웅만 보인다
-            heroLabel.rectTransform.offsetMin = new Vector2(120f, 0f);
+            heroLabel.rectTransform.offsetMin = new Vector2(140f, 0f);
             var lobbyPortraits = new RawImage[roster != null ? roster.heroes.Count : 0];
             for (int i = 0; i < lobbyPortraits.Length; i++)
             {
-                RectTransform face = Rect($"HeroFace{i + 1}", heroButton.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(100f, 115f));
+                // 버튼 아래에 붙여 위로 조금 튀어나오게 (작으면 영웅 특징이 안 보인다 — 화면 점검 2차)
+                RectTransform face = Rect($"HeroFace{i + 1}", heroButton.transform, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(10f, 2f), new Vector2(128f, 152f));
                 lobbyPortraits[i] = face.gameObject.AddComponent<RawImage>();
                 lobbyPortraits[i].color = new Color(1f, 1f, 1f, 0f);
                 lobbyPortraits[i].raycastTarget = false; // 누르면 버튼이 받는다
@@ -396,6 +397,11 @@ namespace HistoryHeroes.EditorTools
                 portraits[i] = portrait.gameObject.AddComponent<RawImage>();
                 portraits[i].color = new Color(1f, 1f, 1f, 0f); // 그림이 생기기 전에는 투명
                 portraits[i].raycastTarget = true;
+                // 잠긴 영웅: 초상 아래에 "잠김" (어두운 옷과 헷갈리지 않게 — 화면 점검 2차)
+                TMP_Text lockLabel = Label("Lock", portrait, "잠김", 30, TextAlignmentOptions.Bottom, new Color(1f, 0.85f, 0.35f));
+                Stretch(lockLabel.rectTransform);
+                lockLabel.raycastTarget = false;
+                lockLabel.gameObject.SetActive(false);
             }
 
             using (var props = new Props(panel.gameObject.AddComponent<HeroPortraits>())) props.Ref("roster", roster).Refs("images", portraits);

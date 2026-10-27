@@ -232,7 +232,7 @@ namespace HistoryHeroes.EditorTools
         };
 
         /// <summary>그림자 쌍둥이의 맞지 않는 쪽: 보스와 같은 옷을 비치게 (2D 때 흐린 원 → 3D 유령)</summary>
-        public static readonly Look TwinGhost = Soldier("B_TwinsGhost", "Male_Ranger", "T_Ranger_BaseColor", new Color(0.62f, 0.56f, 0.95f), "Sword_Regular_A", false, ghost: 0.5f);
+        public static readonly Look TwinGhost = Soldier("B_TwinsGhost", "Male_Ranger", "T_Ranger_BaseColor", new Color(0.62f, 0.56f, 0.95f), "Sword_Regular_A", false, ghost: 0.38f);
 
         public const float TwinHeight = 1.72f;
 
@@ -250,7 +250,7 @@ namespace HistoryHeroes.EditorTools
             new EnemyLook { ids = new[] { "archer" }, height = 1.49f, look = Puglin("E_Archer", 2, new Color(0.9f, 0.8f, 1f), "Spell_Simple_Shoot", false, light: true) },
             new EnemyLook { ids = new[] { "bomber" }, height = 1.49f, look = Puglin("E_Bomber", 3, new Color(1f, 0.88f, 0.7f), "OverhandThrow", false, light: true) },
             new EnemyLook { ids = new[] { "minion" }, height = 1.32f, look = Puglin("E_Minion", 3, new Color(0.7f, 0.66f, 0.8f), "Zombie_Scratch", false, light: true) },
-            new EnemyLook { ids = new[] { "shield" }, height = 1.78f, look = Soldier("E_Shield", "Male_Peasant", "T_Peasant_BaseColor", new Color(0.75f, 0.8f, 0.9f), "Shield_Dash", false, props: new[] { "Enemy_TowerShield" }) },
+            new EnemyLook { ids = new[] { "shield" }, height = 1.78f, look = Soldier("E_Shield", "Male_Peasant", "T_Peasant_BaseColor", new Color(0.75f, 0.8f, 0.9f), "Melee_Hook", false, props: new[] { "Enemy_TowerShield" }) }, // 방패를 앞에 세우고 밀어붙인다 (Shield_Dash는 방패가 눕는다 — 화면 점검 2차)
             new EnemyLook { ids = new[] { "splitter", "splitter_small" }, height = 1.55f, look = Imp("E_Splitter", 1, new Color(0.75f, 1f, 0.78f), "Punch_Jab", false, light: true) },
             new EnemyLook { ids = new[] { "summoner" }, height = 1.61f, look = Imp("E_Summoner", 2, new Color(0.9f, 0.78f, 1f), "Spell_Simple_Shoot", false, glow: true, light: true) },
             // 중간 보스 (bossScale로 더 커진다)

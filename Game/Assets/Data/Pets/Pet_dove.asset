@@ -21,7 +21,7 @@ MonoBehaviour:
   sourceChapter: 0
   color: {r: 0.96, g: 0.97, b: 1, a: 1}
   model3D: {fileID: 7722157412936798561, guid: 31ebcf06b592211489ebc14682b3b065, type: 3}
-  modelHeight: 0.45
+  modelHeight: 0.62
   trigger: "\uB3CC\uC544\uB2E4\uB2C8\uAE30"
   effect: "\uBA40\uB9AC \uB5A8\uC5B4\uC9C4 \uACBD\uD5D8\uCE58 \uBCF4\uC11D\uC744
     \uD558\uB098\uC529 \uBB3C\uC5B4 \uC628\uB2E4 (\uACBD\uD5D8\uCE58 \uC591\uC740

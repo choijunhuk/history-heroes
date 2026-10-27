@@ -2,7 +2,7 @@
 
 > 결정: [그래픽 방향 비교 2026-10-27](../Reviews/2026-10-27-graphics-direction.md) — **3D, 무료 에셋으로 시작** (개발자).
 > 그림체: [Art 5장](../Design/Art.md#5-그림체-가이드-3d-2026-10-27)
-> 검토: [Codex 3D 검토](../Reviews/2026-10-27-art3d-review.md) (10건 반영) · [코드 리뷰](../Reviews/2026-10-27-art3d-code-review.md) (5건) · [화면 점검](../Reviews/2026-10-27-art3d-visual-qa.md) (6건) · [코드 리뷰 2차](../Reviews/2026-10-27-art3d-code-review-2.md) (4건)
+> 검토: [Codex 3D 검토](../Reviews/2026-10-27-art3d-review.md) (10건 반영) · [코드 리뷰](../Reviews/2026-10-27-art3d-code-review.md) (5건) · [화면 점검](../Reviews/2026-10-27-art3d-visual-qa.md) (6건) · [코드 리뷰 2차](../Reviews/2026-10-27-art3d-code-review-2.md) (4건) · [화면 점검 2차](../Reviews/2026-10-27-art3d-visual-qa-2.md) (5건)
 
 ## 원칙
 - **판정은 2D 그대로** (Rigidbody2D · Collider2D · XY 평면). 3D는 **보이는 것만** — 게임 규칙·테스트·밸런스는 안 바뀐다.

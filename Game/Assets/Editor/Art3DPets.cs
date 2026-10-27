@@ -19,10 +19,11 @@ namespace HistoryHeroes.EditorTools
         /// <summary>펫 id → (FBX 이름, 게임 속 키, 오르내림, 더 띄우는 높이 — 새는 영웅 어깨께로 날게, 월드 유닛)</summary>
         private static readonly Dictionary<string, (string file, float height, float bob, float lift)> Table = new Dictionary<string, (string, float, float, float)>
         {
-            ["hawk"] = ("Pet_Hawk", 0.55f, 0.08f, 0.75f),
-            ["red_hare"] = ("Pet_RedHare", 1.2f, 0.025f, 0f),
-            ["marengo"] = ("Pet_Marengo", 1.12f, 0.025f, 0f),
-            ["dove"] = ("Pet_Dove", 0.45f, 0.07f, 0.7f),
+            // 화면 점검 2차: 전투 크기에서 매·말로 읽히게 키웠다
+            ["hawk"] = ("Pet_Hawk", 0.78f, 0.08f, 0.75f),
+            ["red_hare"] = ("Pet_RedHare", 1.5f, 0.025f, 0f),
+            ["marengo"] = ("Pet_Marengo", 1.4f, 0.025f, 0f),
+            ["dove"] = ("Pet_Dove", 0.62f, 0.07f, 0.7f),
         };
 
         public static string BuildAll()

@@ -115,6 +115,9 @@ namespace HistoryHeroes.EditorTools
                 {
                     using (var v = new Props(twin.gameObject.AddComponent<HistoryHeroes.Combat.Visual3D>()))
                         v.Ref("modelPrefab", ghost).Float("height", Art3DCharacters.TwinHeight).Float("runSpeed", 4f).Refs("hideRenderers", new Object[] { twin });
+                    // 유령만 발밑에 차가운 하늘색 원 (맞는 쪽과 한눈에 구분 — 화면 점검 2차)
+                    SpriteRenderer mark = ChildSprite(twin.gameObject, "GhostMark", _circle, new Color(0.55f, 0.85f, 1f, 0.3f), 1.25f, -2);
+                    mark.enabled = true;
                 }
             });
             p.OblivionKing = EnemyPrefab<OblivionKingBoss>("Boss_OblivionKing", b.King, _circle, line, false, (go, props) =>

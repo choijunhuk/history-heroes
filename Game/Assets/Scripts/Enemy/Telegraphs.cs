@@ -14,7 +14,7 @@ namespace HistoryHeroes.Enemy
         private static Transform _root;
 
         // 테두리 원(RimCircle)이라 안쪽은 이 알파의 55% — 테두리가 진하게 보이게 조금 올렸다 (3D 화면 점검 2번)
-        public static readonly Color Danger = new Color(1f, 0.25f, 0.2f, 0.6f);
+        public static readonly Color Danger = new Color(1f, 0.25f, 0.2f, 0.7f); // 화면 점검 2차: 보스·벽에 가려도 테두리가 보이게
         public static readonly Color Summon = new Color(0.7f, 0.4f, 1f, 0.6f);
         public static readonly Color Warning = new Color(1f, 0.85f, 0.3f, 0.55f);
 

@@ -90,6 +90,8 @@ namespace HistoryHeroes.UI
         {
             if (index < 0 || index >= images.Length || images[index] == null || images[index].texture == null) return;
             images[index].color = locked ? new Color(0.32f, 0.32f, 0.38f, 1f) : Color.white;
+            Transform badge = images[index].transform.Find("Lock"); // "잠김" 글 (어두운 옷이 아니라 잠긴 것으로 보이게)
+            if (badge != null) badge.gameObject.SetActive(locked);
         }
 
         private void Update()
@@ -118,6 +120,13 @@ namespace HistoryHeroes.UI
             sun.intensity = 1.2f;
             sun.color = new Color(1f, 0.96f, 0.9f);
             sun.transform.rotation = Quaternion.Euler(35f, 30f, 0f);
+            // 뒤에서 비추는 차가운 테두리 빛: 어두운 옷(테슬라)도 배경과 갈린다 (화면 점검 2차)
+            var rim = new GameObject("Rim").AddComponent<Light>();
+            rim.transform.SetParent(_stage, false);
+            rim.type = LightType.Directional;
+            rim.intensity = 0.9f;
+            rim.color = new Color(0.65f, 0.8f, 1f);
+            rim.transform.rotation = Quaternion.Euler(20f, 200f, 0f);
 
             int count = Mathf.Min(images.Length, roster != null ? roster.heroes.Count : 0);
             for (int i = 0; i < count; i++)
