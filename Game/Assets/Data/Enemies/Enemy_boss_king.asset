@@ -23,4 +23,4 @@ MonoBehaviour:
   color: {r: 0.55, g: 0.3, b: 0.75, a: 1}
   scale: 1
   model3D: {fileID: 3452866089024864973, guid: 36397b33dec3f174ba4381a58caa8204, type: 3}
-  modelHeight: 1.5
+  modelHeight: 1.72

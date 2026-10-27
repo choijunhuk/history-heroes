@@ -55,7 +55,7 @@ namespace HistoryHeroes.EditorTools
             d.Khan.moveSpeed = 5f;
             d.Khan.range = 6f;
             d.Khan.model3D = Art3DCharacters.HeroModel("khan");
-            d.Khan.modelHeight = 1.5f;
+            d.Khan.modelHeight = HeroModelHeight;
             d.Khan.firstShotDelay = 0f;
             d.Khan.firstShotBonus = 0.5f;
             d.Khan.projectileSpeed = 14f;
@@ -430,6 +430,9 @@ namespace HistoryHeroes.EditorTools
             UnityEditor.EditorUtility.SetDirty(skill);
         }
 
+        /// <summary>영웅 3D 모델 키 (비스듬한 카메라에서 무리 속에서도 보이게 — Codex 화면 점검 1번)</summary>
+        private const float HeroModelHeight = 1.75f;
+
         private static HeroData Hero(string id, string name, HeroClass heroClass, BasicAttackKind attack, float hp, float atk, float aspd,
             float move, float range, Color color)
         {
@@ -446,7 +449,7 @@ namespace HistoryHeroes.EditorTools
             h.critRate = 0.05f;
             h.critDamage = 1.5f;
             h.model3D = Art3DCharacters.HeroModel(id); // 3D 모델 (없으면 임시 도형)
-            h.modelHeight = 1.5f;
+            h.modelHeight = HeroModelHeight;
             h.firstShotDelay = 0.2f;
             h.firstShotBonus = 0f;
             h.damageReduction = 0f;

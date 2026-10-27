@@ -436,7 +436,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Visual3D
   modelPrefab: {fileID: 7693931026244644887, guid: 8c17226d39d80004e8fdd58c1bbc9998, type: 3}
-  height: 1.4
+  height: 1.61
   runSpeed: 3.5200002
   hideRenderers:
   - {fileID: 887612511152852385}

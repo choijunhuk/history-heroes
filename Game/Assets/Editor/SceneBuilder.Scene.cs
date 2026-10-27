@@ -58,6 +58,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(numbers)) props.Ref("font", _font);
 
             BuildLighting(_stage);
+            BuildOutside(_stage);
 
             // ----- 모드별 묶음: 장면이 열릴 때 BattleBootstrap이 한쪽만 켠다 -----
             var dungeonRoot = new GameObject("DungeonMode").transform;
@@ -108,6 +109,9 @@ namespace HistoryHeroes.EditorTools
             }
 
             using (var props = new Props(playerObject.AddComponent<StopIndicator>())) props.Ref("player", player).Ref("fill", stopFill);
+
+            // 영웅 표시: 발밑에 늘 보이는 하늘색 원 (무리 속에서도 영웅을 바로 찾게 — Codex 화면 점검 1번)
+            Visual(playerObject.transform, "HeroRing", _circle, new Color(0.35f, 0.85f, 1f, 0.38f), Vector2.one * 1.25f, -2);
 
             // 3D 모델 (Art3D-Plan 4번): 임시 도형 몸·방향 표시는 숨기고, 멈춤 고리는 땅에 남긴다
             var playerVisual = playerObject.AddComponent<Visual3D>();

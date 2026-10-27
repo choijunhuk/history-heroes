@@ -176,14 +176,14 @@ namespace HistoryHeroes.EditorTools
             /// <summary>상징 소품 (Art3DProps, 블렌더로 만든 고정 메시)</summary>
             public string[] props = new string[0];
 
-            /// <summary>괴물 모델 (Imp · Puglin): 머리를 붙이지 않고 몸 재질만 바꾼다</summary>
-            public bool Monster => body == "Imp" || body == "Puglin";
+            /// <summary>괴물 모델 (Imp · Puglin, 가벼운 _LOD 포함): 머리를 붙이지 않고 몸 재질만 바꾼다</summary>
+            public bool Monster => body.StartsWith("Imp") || body.StartsWith("Puglin");
         }
 
         public static readonly Look[] Heroes =
         {
             // 칭기즈 칸: 몽골 털모자 + 수염 + 왼손 활 (두건은 뺀다. 활 동작이 생기기 전에는 주문 쏘기)
-            new Look { name = "Khan", body = "Male_Ranger", bodyTex = "T_Ranger_3_BaseColor", hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_Buzzed", "Hair_Beard", "Eyebrows" }, props = new[] { "Khan_Hat", "Khan_Bow" } },
+            new Look { name = "Khan", body = "Male_Ranger", bodyTex = "T_Ranger_3_BaseColor", hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_Buzzed", "Hair_Beard", "Eyebrows" }, props = new[] { "Khan_Hat", "Khan_Bow", "Khan_Quiver" } },
             // 관우: 녹색 두건 + 긴 머리 + 긴 수염, 오른손 청룡언월도로 휘두르기
             new Look { name = "Guan", body = "Male_Peasant", bodyTex = "T_Peasant_2_BaseColor", hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.04f, 0.035f, 0.035f), attack = "Sword_Regular_A", props = new[] { "Guan_Hat", "Guan_Glaive" } },
             // 나폴레옹: 이각모 + 짙은 파랑 군복 (초록 옷 무늬를 파랗게 바꾼 사본 T_Ranger_Navy), 오른손 권총 쏘기
@@ -199,15 +199,17 @@ namespace HistoryHeroes.EditorTools
             public Look look;
         }
 
-        private static Look Imp(string name, int tex, Color tint, string attack, bool shadows, bool glow = false) => new Look
+        /// <param name="light">가벼운 모델 (블렌더로 줄인 Imp_LOD, 삼각형 2.4천 / 원본 1.5만) — 무리로 나오는 적</param>
+        private static Look Imp(string name, int tex, Color tint, string attack, bool shadows, bool glow = false, bool light = false) => new Look
         {
-            name = name, body = "Imp", bodyTex = $"T_Imp_BaseColor_{tex}", normalTex = "T_Imp_Normal", emissive = glow ? "T_Imp_Emissive" : null,
+            name = name, body = light ? "Imp_LOD" : "Imp", bodyTex = $"T_Imp_BaseColor_{tex}", normalTex = "T_Imp_Normal", emissive = glow ? "T_Imp_Emissive" : null,
             tint = tint, head = false, attack = attack, shadows = shadows,
         };
 
-        private static Look Puglin(string name, int tex, Color tint, string attack, bool shadows) => new Look
+        /// <param name="light">가벼운 모델 (Puglin_LOD, 삼각형 1.5천 / 원본 7.5천) — 서바이벌 무리</param>
+        private static Look Puglin(string name, int tex, Color tint, string attack, bool shadows, bool light = false) => new Look
         {
-            name = name, body = "Puglin", bodyTex = $"T_Puglin_BaseColor_{tex}", normalTex = "T_Puglin_Normal",
+            name = name, body = light ? "Puglin_LOD" : "Puglin", bodyTex = $"T_Puglin_BaseColor_{tex}", normalTex = "T_Puglin_Normal",
             tint = tint, head = false, attack = attack, shadows = shadows,
         };
 
@@ -220,29 +222,30 @@ namespace HistoryHeroes.EditorTools
 
         /// <summary>
         /// 적 모델 (데이터 id → 모델). 서바이벌 무리(돌진병·궁병·투척병·졸개)는 가장 가벼운 Puglin(꼭짓점 4.5천),
-        /// 사람 모양은 옷 + 머리, 마법 쓰는 쪽은 Imp. 2D 때 배운 색을 옅게 곱한다. 그림자는 중간 보스·보스만 (250마리 성능 — Codex 3D 리뷰 4번)
+        /// 사람 모양은 옷 + 머리, 마법 쓰는 쪽은 Imp. 2D 때 배운 색을 옅게 곱한다. 그림자는 중간 보스·보스만 (250마리 성능 — Codex 3D 리뷰 4번).
+        /// 일반 적은 블렌더로 줄인 가벼운 모델(_LOD, Art3D-Plan 8번), 중간 보스·보스는 원본. 키는 화면 점검(작다) 뒤 1.15배
         /// </summary>
         public static readonly EnemyLook[] Enemies =
         {
-            new EnemyLook { ids = new[] { "charger" }, height = 1.3f, look = Puglin("E_Charger", 1, new Color(1f, 0.8f, 0.78f), "Melee_Hook", false) },
-            new EnemyLook { ids = new[] { "archer" }, height = 1.3f, look = Puglin("E_Archer", 2, new Color(0.9f, 0.8f, 1f), "Spell_Simple_Shoot", false) },
-            new EnemyLook { ids = new[] { "bomber" }, height = 1.3f, look = Puglin("E_Bomber", 3, new Color(1f, 0.88f, 0.7f), "OverhandThrow", false) },
-            new EnemyLook { ids = new[] { "minion" }, height = 1.15f, look = Puglin("E_Minion", 3, new Color(0.7f, 0.66f, 0.8f), "Zombie_Scratch", false) },
-            new EnemyLook { ids = new[] { "shield" }, height = 1.55f, look = Soldier("E_Shield", "Male_Peasant", "T_Peasant_BaseColor", new Color(0.75f, 0.8f, 0.9f), "Shield_Dash", false) },
-            new EnemyLook { ids = new[] { "splitter", "splitter_small" }, height = 1.35f, look = Imp("E_Splitter", 1, new Color(0.75f, 1f, 0.78f), "Punch_Jab", false) },
-            new EnemyLook { ids = new[] { "summoner" }, height = 1.4f, look = Imp("E_Summoner", 2, new Color(0.9f, 0.78f, 1f), "Spell_Simple_Shoot", false, glow: true) },
+            new EnemyLook { ids = new[] { "charger" }, height = 1.49f, look = Puglin("E_Charger", 1, new Color(1f, 0.8f, 0.78f), "Melee_Hook", false, light: true) },
+            new EnemyLook { ids = new[] { "archer" }, height = 1.49f, look = Puglin("E_Archer", 2, new Color(0.9f, 0.8f, 1f), "Spell_Simple_Shoot", false, light: true) },
+            new EnemyLook { ids = new[] { "bomber" }, height = 1.49f, look = Puglin("E_Bomber", 3, new Color(1f, 0.88f, 0.7f), "OverhandThrow", false, light: true) },
+            new EnemyLook { ids = new[] { "minion" }, height = 1.32f, look = Puglin("E_Minion", 3, new Color(0.7f, 0.66f, 0.8f), "Zombie_Scratch", false, light: true) },
+            new EnemyLook { ids = new[] { "shield" }, height = 1.78f, look = Soldier("E_Shield", "Male_Peasant", "T_Peasant_BaseColor", new Color(0.75f, 0.8f, 0.9f), "Shield_Dash", false) },
+            new EnemyLook { ids = new[] { "splitter", "splitter_small" }, height = 1.55f, look = Imp("E_Splitter", 1, new Color(0.75f, 1f, 0.78f), "Punch_Jab", false, light: true) },
+            new EnemyLook { ids = new[] { "summoner" }, height = 1.61f, look = Imp("E_Summoner", 2, new Color(0.9f, 0.78f, 1f), "Spell_Simple_Shoot", false, glow: true, light: true) },
             // 중간 보스 (bossScale로 더 커진다)
-            new EnemyLook { ids = new[] { "mid_bison" }, height = 1.4f, look = Puglin("M_Bison", 1, new Color(0.85f, 0.72f, 0.6f), "Shield_Dash", true) },
-            new EnemyLook { ids = new[] { "mid_torch" }, height = 1.5f, look = Soldier("M_Torch", "Male_Ranger", "T_Ranger_3_BaseColor", new Color(1f, 0.7f, 0.5f), "Sword_Attack", true) },
-            new EnemyLook { ids = new[] { "mid_golem" }, height = 1.4f, look = Puglin("M_Golem", 2, new Color(0.7f, 0.72f, 0.78f), "Punch_Cross", true) },
-            new EnemyLook { ids = new[] { "mid_hunter", "hunter_clone" }, height = 1.5f, look = Soldier("M_Hunter", "Male_Ranger", "T_Ranger_BaseColor", new Color(0.42f, 0.38f, 0.55f), "Sword_Dash", true) },
-            new EnemyLook { ids = new[] { "mid_executor" }, height = 1.55f, look = Soldier("M_Executor", "Male_Peasant", "T_Peasant_2_BaseColor", new Color(0.7f, 0.45f, 0.75f), "Sword_Regular_B", true) },
+            new EnemyLook { ids = new[] { "mid_bison" }, height = 1.61f, look = Puglin("M_Bison", 1, new Color(0.85f, 0.72f, 0.6f), "Shield_Dash", true) },
+            new EnemyLook { ids = new[] { "mid_torch" }, height = 1.72f, look = Soldier("M_Torch", "Male_Ranger", "T_Ranger_3_BaseColor", new Color(1f, 0.7f, 0.5f), "Sword_Attack", true) },
+            new EnemyLook { ids = new[] { "mid_golem" }, height = 1.61f, look = Puglin("M_Golem", 2, new Color(0.7f, 0.72f, 0.78f), "Punch_Cross", true) },
+            new EnemyLook { ids = new[] { "mid_hunter", "hunter_clone" }, height = 1.72f, look = Soldier("M_Hunter", "Male_Ranger", "T_Ranger_BaseColor", new Color(0.42f, 0.38f, 0.55f), "Sword_Dash", true) },
+            new EnemyLook { ids = new[] { "mid_executor" }, height = 1.78f, look = Soldier("M_Executor", "Male_Peasant", "T_Peasant_2_BaseColor", new Color(0.7f, 0.45f, 0.75f), "Sword_Regular_B", true) },
             // 보스
-            new EnemyLook { ids = new[] { "boss_wraith" }, height = 1.45f, look = Imp("B_Wraith", 3, new Color(0.8f, 0.78f, 1f), "Spell_Simple_Shoot", true, glow: true) },
-            new EnemyLook { ids = new[] { "boss_colossus" }, height = 1.45f, look = Puglin("B_Colossus", 2, new Color(0.75f, 0.78f, 0.85f), "Punch_Cross", true) },
-            new EnemyLook { ids = new[] { "boss_twins" }, height = 1.5f, look = Soldier("B_Twins", "Male_Ranger", "T_Ranger_BaseColor", new Color(0.35f, 0.32f, 0.48f), "Sword_Regular_A", true) },
-            new EnemyLook { ids = new[] { "boss_king" }, height = 1.5f, look = Imp("B_King", 2, new Color(0.8f, 0.6f, 1f), "Spell_Simple_Shoot", true, glow: true) },
-            new EnemyLook { ids = new[] { "rift_warden" }, height = 1.5f, look = Imp("B_Warden", 1, new Color(0.7f, 0.8f, 1f), "Melee_Hook", true) },
+            new EnemyLook { ids = new[] { "boss_wraith" }, height = 1.67f, look = Imp("B_Wraith", 3, new Color(0.8f, 0.78f, 1f), "Spell_Simple_Shoot", true, glow: true) },
+            new EnemyLook { ids = new[] { "boss_colossus" }, height = 1.67f, look = Puglin("B_Colossus", 2, new Color(0.75f, 0.78f, 0.85f), "Punch_Cross", true) },
+            new EnemyLook { ids = new[] { "boss_twins" }, height = 1.72f, look = Soldier("B_Twins", "Male_Ranger", "T_Ranger_BaseColor", new Color(0.35f, 0.32f, 0.48f), "Sword_Regular_A", true) },
+            new EnemyLook { ids = new[] { "boss_king" }, height = 1.72f, look = Imp("B_King", 2, new Color(0.8f, 0.6f, 1f), "Spell_Simple_Shoot", true, glow: true) },
+            new EnemyLook { ids = new[] { "rift_warden" }, height = 1.72f, look = Imp("B_Warden", 1, new Color(0.7f, 0.8f, 1f), "Melee_Hook", true) },
         };
 
         /// <summary>영웅 모델 (id = HeroData.id). 아직 안 만들었으면 null (임시 도형 그대로)</summary>

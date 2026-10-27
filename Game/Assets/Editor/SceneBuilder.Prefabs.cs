@@ -166,6 +166,13 @@ namespace HistoryHeroes.EditorTools
             // 3D 모델 (Art3D-Plan 4·5번): 임시 도형 몸은 숨긴 채 상태 이상 색만 읽는다. 모델이 아직 없으면 도형 그대로
             if (data.model3D != null)
             {
+                // 그림자를 끈 적은 발밑에 옅은 그림자 원 (땅에 붙어 보이게, 2D 그림이라 250마리도 싸다 — Codex 화면 점검 6번)
+                if (data.model3D.TryGetComponent(out Model3DInfo info) && !info.castShadows)
+                {
+                    SpriteRenderer blob = ChildSprite(go, "Blob", _circle, new Color(0f, 0f, 0f, 0.32f), 0.95f, -3);
+                    blob.enabled = true;
+                }
+
                 using (var v = new Props(go.AddComponent<Visual3D>()))
                 {
                     v.Ref("modelPrefab", data.model3D).Float("height", data.modelHeight).Float("runSpeed", Mathf.Max(1.5f, data.moveSpeed * 1.6f))

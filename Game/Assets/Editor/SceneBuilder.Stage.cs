@@ -18,7 +18,7 @@ namespace HistoryHeroes.EditorTools
         private sealed class Stage
         {
             public Material RoomFloor, BossFloor, Grass, Stone, Crate, Rock;
-            public Material WallSide, WallEnd, LongSide, LongEnd, Rim, BossOuter;
+            public Material WallSide, WallEnd, LongSide, LongEnd, Rim, BossOuter, Outside;
             public Stage3D Component;
         }
 
@@ -50,7 +50,7 @@ namespace HistoryHeroes.EditorTools
             {
                 RoomFloor = M("RoomFloor", "T_Floor_Stone", new Vector2(ArenaHalfWidth * 2f / stone, ArenaHalfHeight * 2f / stone)),
                 BossFloor = M("BossFloor", "T_Floor_Stone", new Vector2(BossArenaRadius * 2f / stone, BossArenaRadius * 2f / stone), new Color(0.82f, 0.84f, 0.95f)),
-                Grass = M("Grass", "T_Ground_Grass", new Vector2(survivalLong / 6f, survivalLong / 6f)),
+                Grass = M("Grass", "T_Ground_Grass", new Vector2(survivalLong / 9f, survivalLong / 9f)), // 무늬 한 장 9 유닛 (반복이 덜 보이게)
                 Stone = M("Stone", "T_Wall_Stone", Vector2.one),
                 Crate = M("Crate", "T_Crate", Vector2.one),
                 Rock = M("Rock", "T_Rock", Vector2.one),
@@ -60,6 +60,7 @@ namespace HistoryHeroes.EditorTools
                 LongEnd = M("LongEnd", "T_Wall_Stone", new Vector2(survivalLong / 1.5f, 1f)),
                 Rim = M("Rim", "T_Wall_Stone", new Vector2(1f, 1f), new Color(0.85f, 0.85f, 0.95f)),
                 BossOuter = M("BossOuter", "T_Floor_Stone", new Vector2(ArenaHalfWidth * 2f / stone, ArenaHalfHeight * 2f / stone), new Color(0.32f, 0.32f, 0.38f)),
+                Outside = M("Outside", "T_Rock", new Vector2(OutsideSize / 4f, OutsideSize / 4f), new Color(0.3f, 0.29f, 0.28f)),
             };
         }
 
@@ -126,6 +127,16 @@ namespace HistoryHeroes.EditorTools
             if (created) AssetDatabase.CreateAsset(mesh, path);
             else EditorUtility.SetDirty(mesh);
             return mesh;
+        }
+
+        private const float OutsideSize = 70f;
+
+        /// <summary>벽 바깥 땅 (어두운 흙바위): 방이 검은 빈칸에 떠 있지 않고 땅에 박혀 보이게. 서바이벌 풀밭은 이 위(z +0.02)에 깔린다</summary>
+        private static void BuildOutside(Stage stage)
+        {
+            var outside = new GameObject("Outside");
+            outside.transform.localScale = new Vector3(OutsideSize, OutsideSize, 1f);
+            Stage3D.Add(outside.transform, Stage3D.Shape.Floor, 0f, stage.Outside, castShadows: false).transform.localPosition = new Vector3(0f, 0f, 0.06f);
         }
 
         private static Mesh Builtin(Stage3D.Shape shape) => Resources.GetBuiltinResource<Mesh>(Stage3D.BuiltinName(shape));

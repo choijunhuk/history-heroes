@@ -20,7 +20,7 @@ namespace HistoryHeroes.EditorTools
         /// <summary>소품 이름 → 붙일 뼈 (블렌더 notes.txt)</summary>
         public static readonly Dictionary<string, string> Bones = new Dictionary<string, string>
         {
-            ["Khan_Hat"] = "Head", ["Khan_Bow"] = "hand_l",
+            ["Khan_Hat"] = "Head", ["Khan_Bow"] = "hand_l", ["Khan_Quiver"] = "spine_03", // 등에 멘 화살통 (기마 궁수로 보이게 — Codex 화면 점검 5번)
             ["Guan_Glaive"] = "hand_r", ["Guan_Hat"] = "Head",
             ["Napoleon_Bicorne"] = "Head", ["Napoleon_Pistol"] = "hand_r",
             ["Tesla_Mustache"] = "Head", ["Tesla_Coil"] = "hand_r",
@@ -68,6 +68,14 @@ namespace HistoryHeroes.EditorTools
             mat.SetColor("_BaseColor", r.color);
             mat.SetFloat("_Metallic", r.metal ? 0.85f : 0f);
             mat.SetFloat("_Smoothness", r.metal ? 0.6f : 0.15f);
+            if (role == "Copper")
+            {
+                // 테슬라 코일만 구리를 쓴다 → 푸른 전기 빛 (멀리서도 테슬라로 보이게 — Codex 화면 점검 5번)
+                mat.SetColor("_EmissionColor", new Color(0.35f, 0.75f, 1f) * 1.6f);
+                mat.EnableKeyword("_EMISSION");
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+            }
+
             mat.enableInstancing = true;
             EditorUtility.SetDirty(mat);
             return mat;
