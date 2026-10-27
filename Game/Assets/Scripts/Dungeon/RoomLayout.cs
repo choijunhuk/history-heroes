@@ -16,6 +16,15 @@ namespace HistoryHeroes.Dungeon
         Special,   // 엘리트·보상·중간 보스
     }
 
+    /// <summary>어디에 쓰는 방인가 (확장 1차 1-3장): 일반 · 엘리트 원형 투기장 · 보상 받침대 · 중간 보스</summary>
+    public enum RoomUse
+    {
+        Normal,
+        Elite,
+        Reward,
+        MidBoss,
+    }
+
     /// <summary>장애물 (Modes 2-3): 높은 = 이동·투사체 막음, 낮은 = 이동만 막음, 부서지는 = 막음 + 맞으면 부서짐</summary>
     public enum ObstacleKind
     {
@@ -51,6 +60,10 @@ namespace HistoryHeroes.Dungeon
     {
         public string id;
         public LayoutKind kind;
+        [Tooltip("어디에 쓰는 방 (확장 1차 1-3장)")]
+        public RoomUse use = RoomUse.Normal;
+        [Tooltip("0 = 모든 구간, 1~5 = 그 구간 전용 (확장 1차 1-2장)")]
+        public int chapter;
         public List<ObstacleDef> obstacles = new List<ObstacleDef>();
         public List<TrapSpot> traps = new List<TrapSpot>();
     }

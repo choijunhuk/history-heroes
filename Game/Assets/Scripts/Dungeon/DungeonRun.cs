@@ -332,14 +332,17 @@ namespace HistoryHeroes.Dungeon
                 RoomPlan plan = Modes.RiftRules.PlanFor(f);
                 ChapterData chapter = dungeon.Chapter(Modes.RiftRules.ChapterFor(f));
                 RoomLayout layout = dungeon.specialLayout;
+                int chapterNumber = chapter != null ? chapter.chapter : 0;
                 if (plan.kind == RoomKind.Normal && dungeon.layouts.Count > 0)
                 {
-                    var options = dungeon.layouts.FindAll(l => l != null && l.kind != _lastRiftLayout);
-                    layout = options.Count > 0 ? options[rooms.Next(options.Count)] : dungeon.layouts[0];
+                    // 일반 용도 방만 (엘리트 투기장·보상 받침대는 그 층 종류일 때), 그 층 구간 전용 방도 섞는다
+                    List<RoomLayout> options = Encounter.NormalOptions(dungeon.layouts, chapterNumber, null, _lastRiftLayout);
+                    layout = options.Count > 0 ? Encounter.PickNormal(options, chapterNumber, rooms) : dungeon.specialLayout;
                     _lastRiftLayout = layout.kind;
                 }
                 else
                 {
+                    layout = Encounter.PickSpecial(plan.kind, dungeon.layouts, dungeon.specialLayout, chapterNumber, rooms);
                     _lastRiftLayout = null;
                 }
 
@@ -376,7 +379,7 @@ namespace HistoryHeroes.Dungeon
             }
 
             System.Random rooms = RunRandom.Rooms;
-            _layouts = Encounter.PickLayouts(_plans, dungeon.layouts, dungeon.specialLayout, rooms);
+            _layouts = Encounter.PickLayouts(_plans, dungeon.layouts, dungeon.specialLayout, rooms, _chapter != null ? _chapter.chapter : 0); // 구간 전용 방 · 전용 모양 (확장 1차 1장)
             if (GameSession.Tutorial)
             {
                 for (int i = 0; i < _layouts.Count; i++) _layouts[i] = dungeon.specialLayout; // 튜토리얼은 장애물·함정 없는 방

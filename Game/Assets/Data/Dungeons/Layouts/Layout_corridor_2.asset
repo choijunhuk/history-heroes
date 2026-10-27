@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Dungeon.RoomLayout
   id: corridor_2
   kind: 2
+  use: 0
+  chapter: 0
   obstacles:
   - kind: 0
     circle: 0

@@ -151,6 +151,7 @@ namespace HistoryHeroes.EditorTools
             list.Add(Layout("split_3", LayoutKind.Split, new List<ObstacleDef> { Low(-2.4f, 2.2f, 3.2f, 1.4f), Low(2.4f, 2.2f, 3.2f, 1.4f) }, none));     // 가운데 통로
             list.Add(Layout("split_4", LayoutKind.Split, new List<ObstacleDef> { Low(-3.2f, 1.4f, 1.6f, 1.4f), Low(0f, 1.4f, 2.4f, 1.4f), Low(3.2f, 1.4f, 1.6f, 1.4f) }, none)); // 통로 2곳
 
+            list.AddRange(CreateExpansionLayouts()); // 확장 1차 1장: 새 모양 · 구간 전용 방 · 전용 모양
             return list;
         }
 
