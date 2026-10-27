@@ -544,7 +544,7 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>영웅 3D 모델 키 (비스듬한 카메라에서 무리 속에서도 보이게 — Codex 화면 점검 1번)</summary>
-        private const float HeroModelHeight = 1.75f;
+        private const float HeroModelHeight = 2.1f; // 새 영웅 화면 점검 1번: 1.75 → 2.1 (+20%, 적 무리 속에서 먼저 보이게. 판정은 그대로)
 
         private static HeroData Hero(string id, string name, HeroClass heroClass, BasicAttackKind attack, float hp, float atk, float aspd,
             float move, float range, Color color)

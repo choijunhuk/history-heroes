@@ -10,7 +10,7 @@ namespace HistoryHeroes.Player
     /// </summary>
     public sealed class FlyingMachine : MonoBehaviour
     {
-        private const float Height = 1.6f;
+        private const float Height = 2.8f; // 화면 점검 5번: 영웅(키 2.1) 머리 위로 떠서 몸과 겹치지 않게
         private const float FlapSpeed = 14f;
         private const float FlapAngle = 28f;
 
@@ -23,6 +23,7 @@ namespace HistoryHeroes.Player
         private Transform _wingR, _wingL;
         private Quaternion _wingRBase, _wingLBase;
         private Transform _body;
+        private Transform _shadow;
 
         public static FlyingMachine Create(PlayerController owner, GameObject model, int slot, float life, float damage, float fireRate)
         {
@@ -59,6 +60,15 @@ namespace HistoryHeroes.Player
                 body.localScale = Vector3.one * 0.5f;
             }
 
+            // 바닥 그림자: 떠 있는 높이가 읽히게 (화면 점검 5번)
+            var shadow = new GameObject("Shadow");
+            shadow.transform.SetParent(go.transform, false);
+            var ssr = shadow.AddComponent<SpriteRenderer>();
+            ssr.sprite = PlaceholderSprites.Circle;
+            ssr.color = new Color(0f, 0f, 0f, 0.3f);
+            ssr.sortingOrder = -3;
+            shadow.transform.localScale = new Vector3(0.8f, 0.55f, 1f);
+            m._shadow = shadow.transform;
             FxBursts.Puff(go.transform.position + Vector3.back * Height, new Color(0.95f, 0.85f, 0.6f), 1.2f);
             return m;
         }
@@ -79,6 +89,7 @@ namespace HistoryHeroes.Player
             Vector2 goal = (Vector2)_owner.transform.position + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle) * 0.6f) * 1.3f;
             Vector2 pos = Vector2.Lerp(transform.position, goal, 1f - Mathf.Exp(-6f * Time.deltaTime));
             transform.position = new Vector3(pos.x, pos.y, -Height - 0.15f * Mathf.Sin(t * 3f + _slot));
+            if (_shadow != null) _shadow.position = new Vector3(pos.x, pos.y, -0.01f);
 
             // 날개 퍼덕 (오른쪽 +, 왼쪽 −)
             float flap = Mathf.Sin(t * FlapSpeed) * FlapAngle;

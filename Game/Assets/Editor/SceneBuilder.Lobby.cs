@@ -301,21 +301,25 @@ namespace HistoryHeroes.EditorTools
             Place(title.rectTransform, Center, Center, new Vector2(0f, 850f), new Vector2(900f, 100f));
 
             // 그래픽 재평가 3번: 고른 영웅을 크게 (무대 빛 + 받침 고리 + 큰 초상), 그 아래 이름·역할·고유 능력 카드
+            // 영웅이 6명 넘으면 고르기 칸을 두 줄로 (새 영웅 화면 점검 6번: "칸이 너무 작고 빽빽하다") → 위쪽을 조금 올린다
+            int heroCount = Mathf.Max(4, roster != null ? roster.heroes.Count : 4);
+            bool twoRows = heroCount > 5;
+            float lift = twoRows ? 60f : 0f;
             RawImage big = null;
             if (_kit != null)
             {
-                RectTransform stage = Rect("StageGlow", panel, Center, Center, Center, new Vector2(0f, 470f), new Vector2(820f, 820f));
+                RectTransform stage = Rect("StageGlow", panel, Center, Center, Center, new Vector2(0f, 470f + lift), new Vector2(820f, 820f));
                 Img(stage, new Color(1f, 0.8f, 0.4f, 0.28f), _kit.Glow);
-                RectTransform pedestal = Rect("Pedestal", panel, Center, Center, Center, new Vector2(0f, 205f), new Vector2(460f, 130f));
+                RectTransform pedestal = Rect("Pedestal", panel, Center, Center, Center, new Vector2(0f, 205f + lift), new Vector2(460f, 130f));
                 Img(pedestal, new Color(1f, 0.85f, 0.45f, 0.75f), _kit.Ring);
             }
 
-            RectTransform bigRect = Rect("BigPortrait", panel, Center, Center, Center, new Vector2(0f, 480f), new Vector2(540f, 620f));
+            RectTransform bigRect = Rect("BigPortrait", panel, Center, Center, Center, new Vector2(0f, 480f + lift), new Vector2(540f, 620f));
             big = bigRect.gameObject.AddComponent<RawImage>();
             big.color = new Color(1f, 1f, 1f, 0f);
             big.raycastTarget = false;
 
-            RectTransform card = Rect("DetailCard", panel, Center, Center, Center, new Vector2(0f, 45f), new Vector2(1000f, 250f));
+            RectTransform card = Rect("DetailCard", panel, Center, Center, Center, new Vector2(0f, 45f + lift), new Vector2(1000f, 250f));
             Image cardImage = Img(card, new Color(0.12f, 0.16f, 0.28f, 0.96f), _kit != null ? _kit.Panel : null);
             if (_kit != null) cardImage.type = Image.Type.Sliced;
             TMP_Text detailName = Label("Name", card, "", 54, TextAlignmentOptions.Center, Color.white);
@@ -330,17 +334,23 @@ namespace HistoryHeroes.EditorTools
             detailBody.fontSizeMin = 17f;
             detailBody.fontSizeMax = 26f;
 
-            // 영웅 고르기 칸 (가로 줄, 영웅 수만큼): 작은 초상 + 이름 · 레벨. 5명이면 칸을 조금 좁게 (확장: 새 영웅)
-            int heroCount = Mathf.Max(4, roster != null ? roster.heroes.Count : 4);
-            float step = Mathf.Min(250f, 1010f / heroCount);
+            // 영웅 고르기 칸 (영웅 수만큼): 작은 초상 + 이름 · 레벨. 5명까지 한 줄, 6명부터 한 줄 4칸씩 두 줄
+            int perRow = twoRows ? 4 : heroCount;
+            float step = Mathf.Min(250f, 1010f / perRow);
             float tileWidth = step - 18f;
+            float tileHeight = twoRows ? 205f : 255f;
+            float rowGap = tileHeight + 14f;
+            float firstRowY = twoRows ? -135f : -220f;
+            float below = twoRows ? -75f : 0f; // 아래 단추들을 내리는 만큼
             var buttons = new Button[heroCount];
             var backgrounds = new Image[heroCount];
             var labels = new TMP_Text[heroCount];
             var portraits = new RawImage[heroCount];
             for (int i = 0; i < heroCount; i++)
             {
-                buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(-step * (heroCount - 1) * 0.5f + i * step, -220f), new Vector2(tileWidth, 255f), RowColor, out TMP_Text label);
+                int row = i / perRow, col = i % perRow;
+                int inRow = Mathf.Min(perRow, heroCount - row * perRow);
+                buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(-step * (inRow - 1) * 0.5f + col * step, firstRowY - row * rowGap), new Vector2(tileWidth, tileHeight), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
                 RectTransform lr = label.rectTransform;
                 lr.anchorMin = new Vector2(0f, 0f);
@@ -356,32 +366,35 @@ namespace HistoryHeroes.EditorTools
                 labels[i] = label;
 
                 // 3D 초상 (Art3D-Plan 7번): 끌면 돈다. 누르면 칸 버튼이 받는다
-                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(Mathf.Min(150f, tileWidth - 30f), 168f));
+                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(Mathf.Min(150f, tileWidth - 30f), twoRows ? 140f : 168f));
                 portraits[i] = portrait.gameObject.AddComponent<RawImage>();
                 portraits[i].color = new Color(1f, 1f, 1f, 0f); // 그림이 생기기 전에는 투명
                 portraits[i].raycastTarget = true;
                 // 잠긴 영웅: 초상 아래에 "잠김" (어두운 옷과 헷갈리지 않게 — 화면 점검 2차)
-                TMP_Text lockLabel = Label("Lock", portrait, "잠김", 30, TextAlignmentOptions.Top, new Color(1f, 0.85f, 0.35f));
+                // 어두운 받침 띠 위에 (금빛 고른 칸 위에서도 읽히게, 새 영웅 화면 점검)
+                RectTransform lockBack = Rect("LockBack", portrait, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(0f, 38f));
+                Img(lockBack, new Color(0f, 0f, 0f, 0.62f), null).raycastTarget = false;
+                TMP_Text lockLabel = Label("Lock", lockBack, "잠김", 28, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
                 Stretch(lockLabel.rectTransform);
                 lockLabel.raycastTarget = false;
-                lockLabel.gameObject.SetActive(false);
+                lockBack.gameObject.SetActive(false); // 받침 띠째로 켜고 끈다 (HeroPortraits.SetLocked)
             }
 
             using (var props = new Props(panel.gameObject.AddComponent<HeroPortraits>())) props.Ref("roster", roster).Refs("images", portraits).Int("textureSize", 480);
 
-            Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -450f), new Vector2(440f, 110f), ButtonGreen, out TMP_Text selectLabel);
-            Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -450f), new Vector2(440f, 110f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
+            Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -450f + below), new Vector2(440f, 110f), ButtonGreen, out TMP_Text selectLabel);
+            Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -450f + below), new Vector2(440f, 110f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
             unlockLabel.fontSize = 28;
-            Button level = Btn("HeroLevelUp", panel, "레벨업", new Vector2(-250f, -575f), new Vector2(440f, 110f), new Color(0.2f, 0.42f, 0.5f), out TMP_Text levelLabel);
+            Button level = Btn("HeroLevelUp", panel, "레벨업", new Vector2(-250f, -575f + below), new Vector2(440f, 110f), new Color(0.2f, 0.42f, 0.5f), out TMP_Text levelLabel);
             levelLabel.fontSize = 28;
-            Button awaken = Btn("HeroAwaken", panel, "각성", new Vector2(250f, -575f), new Vector2(440f, 110f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text awakenLabel);
+            Button awaken = Btn("HeroAwaken", panel, "각성", new Vector2(250f, -575f + below), new Vector2(440f, 110f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text awakenLabel);
             awakenLabel.fontSize = 28;
             // 아래 줄: 수련 | 룬 | 펫 | 뒤로 (v0.5 펫)
-            Button trainingButton = Btn("Training", panel, "수련 (모든 영웅)", new Vector2(-378f, -700f), new Vector2(240f, 110f), ButtonBlue, out TMP_Text trainingLabel);
+            Button trainingButton = Btn("Training", panel, "수련 (모든 영웅)", new Vector2(-378f, -700f + below), new Vector2(240f, 110f), ButtonBlue, out TMP_Text trainingLabel);
             trainingLabel.fontSize = 24;
-            Button runeButton = Btn("HeroRunes", panel, "룬", new Vector2(-126f, -700f), new Vector2(240f, 110f), new Color(0.32f, 0.25f, 0.45f), out TMP_Text runeLabel);
+            Button runeButton = Btn("HeroRunes", panel, "룬", new Vector2(-126f, -700f + below), new Vector2(240f, 110f), new Color(0.32f, 0.25f, 0.45f), out TMP_Text runeLabel);
             runeLabel.fontSize = 24;
-            Button petButton = Btn("HeroPet", panel, "펫", new Vector2(126f, -700f), new Vector2(240f, 110f), new Color(0.25f, 0.42f, 0.3f), out TMP_Text petLabel);
+            Button petButton = Btn("HeroPet", panel, "펫", new Vector2(126f, -700f + below), new Vector2(240f, 110f), new Color(0.25f, 0.42f, 0.3f), out TMP_Text petLabel);
             petLabel.fontSize = 24;
             foreach (TMP_Text t in new[] { trainingLabel, runeLabel, petLabel })
             {
@@ -392,10 +405,10 @@ namespace HistoryHeroes.EditorTools
                 t.rectTransform.offsetMax = new Vector2(-8f, 0f);
             }
             TMP_Text heroMessage = Label("HeroMessage", panel, "", 26, TextAlignmentOptions.Center);
-            Place(heroMessage.rectTransform, Center, Center, new Vector2(0f, -800f), new Vector2(900f, 50f));
-            Button equip = Btn("HeroEquipment", panel, "장비", new Vector2(250f, -450f), new Vector2(440f, 110f), ButtonBlue, out TMP_Text equipLabel);
+            Place(heroMessage.rectTransform, Center, Center, new Vector2(0f, -800f + below), new Vector2(900f, 50f));
+            Button equip = Btn("HeroEquipment", panel, "장비", new Vector2(250f, -450f + below), new Vector2(440f, 110f), ButtonBlue, out TMP_Text equipLabel);
             equipLabel.fontSize = 28;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(378f, -700f), new Vector2(240f, 110f), ButtonGray, out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(378f, -700f + below), new Vector2(240f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {

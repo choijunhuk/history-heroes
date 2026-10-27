@@ -90,4 +90,4 @@ MonoBehaviour:
   unlockGems: 2000
   color: {r: 0.85, g: 0.65, b: 0.35, a: 1}
   model3D: {fileID: 4934902443901953710, guid: 07e6669c189e0864a9cba0d37a82a958, type: 3}
-  modelHeight: 1.75
+  modelHeight: 2.1

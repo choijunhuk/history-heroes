@@ -141,7 +141,27 @@ namespace HistoryHeroes.EditorTools
             art.shield = Art3DStage.Prefab("Fx_Shield");
             art.trail = FxGlowMaterial("Trail", new Color(1.8f, 1.8f, 1.8f), plain: true);
             art.glow = FxGlowMaterial("Particle", new Color(2f, 2f, 2f));
+            art.heroOutline = HeroOutlineMaterial();
             EditorUtility.SetDirty(art);
+        }
+
+        /// <summary>영웅 외곽선 재질: 옅은 금빛, 두께 0.045 (새 영웅 화면 점검 1번)</summary>
+        private static Material HeroOutlineMaterial()
+        {
+            string path = $"{Art3DAssets.Root}/Materials/M_HeroOutline.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(Shader.Find("HistoryHeroes/HeroOutline"));
+                AssetDatabase.CreateAsset(mat, path);
+            }
+
+            mat.shader = Shader.Find("HistoryHeroes/HeroOutline");
+            mat.SetColor("_Color", new Color(1f, 0.92f, 0.62f));
+            mat.SetFloat("_Width", 0.045f);
+            mat.enableInstancing = true;
+            EditorUtility.SetDirty(mat);
+            return mat;
         }
 
         /// <summary>장면에 하나: 맞음 불꽃 · 연기 · 퍼지는 고리 입자 장치 (FxBursts가 Emit만 한다)</summary>

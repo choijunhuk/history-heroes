@@ -15,7 +15,40 @@ namespace HistoryHeroes.Common
         public static Sprite Circle => _circle != null ? _circle : _circle = Make(circle: true);
         public static Sprite Square => _square != null ? _square : _square = Make(circle: false);
 
-        private static Sprite _rimCircle, _rimSquare, _pit;
+        private static Sprite _rimCircle, _rimSquare, _pit, _chevron;
+
+        /// <summary>오른쪽(+X)을 가리키는 꺾쇠 "›" (컨베이어 흐름 화살표). 1유닛, 가장자리 부드럽게</summary>
+        public static Sprite Chevron => _chevron != null ? _chevron : _chevron = MakeChevron();
+
+        private static Sprite MakeChevron()
+        {
+            const int size = 128;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, name = "Chevron" };
+            var pixels = new Color32[size * size];
+            // 꺾쇠 중심선: (0.22, 0.92) → (0.72, 0.5) → (0.22, 0.08), 두께 0.13
+            Vector2 a = new Vector2(0.22f, 0.92f), tip = new Vector2(0.72f, 0.5f), b = new Vector2(0.22f, 0.08f);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    var p = new Vector2((x + 0.5f) / size, (y + 0.5f) / size);
+                    float d = Mathf.Min(SegmentDistance(p, a, tip), SegmentDistance(p, tip, b));
+                    float alpha = Mathf.Clamp01((0.13f - d) * size * 0.5f);
+                    pixels[y * size + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        }
+
+        private static float SegmentDistance(Vector2 p, Vector2 a, Vector2 b)
+        {
+            Vector2 ab = b - a;
+            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
+            return Vector2.Distance(p, a + ab * t);
+        }
 
         /// <summary>
         /// 테두리가 진한 원 (예고 · 장판, 3D 화면 점검 2번): 안은 옅게(55%), 가장자리 띠는 꽉 차게 → 비스듬한 카메라와 돌바닥 위에서도 경계가 보인다

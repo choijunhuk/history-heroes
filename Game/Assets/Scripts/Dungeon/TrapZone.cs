@@ -42,6 +42,7 @@ namespace HistoryHeroes.Dungeon
         private float _rootUntil;
         private float _nextTick;
         private SpriteRenderer _marker;
+        private ConveyorArrows _arrows;
         private Vector2 _rockAt;
         private bool _rockPending;
         private static int _mask = -1;
@@ -91,6 +92,17 @@ namespace HistoryHeroes.Dungeon
             {
                 area.transform.localScale = new Vector3(size.x, size.y, 1f);
                 area.color = BaseColor(effect);
+            }
+
+            // 컨베이어: 미는 쪽으로 흐르는 꺾쇠 화살표 (화면 점검 5번의 남은 것). 다른 함정으로 다시 쓰이면 숨긴다
+            if (effect == Effect.Conveyor)
+            {
+                if (_arrows == null) _arrows = ConveyorArrows.Create(transform, area != null ? area.sortingOrder + 1 : 0);
+                _arrows.Setup(size);
+            }
+            else if (_arrows != null)
+            {
+                _arrows.gameObject.SetActive(false);
             }
 
             if (_mask < 0) _mask = LayerMask.GetMask("Player", "Enemy");
@@ -212,6 +224,8 @@ namespace HistoryHeroes.Dungeon
                 c.a = 0.55f + 0.15f * Mathf.Sin(Time.time * 8f); // 움직이는 띠
                 area.color = c;
             }
+
+            if (_arrows != null) _arrows.Tick(reversed, ConveyorSpeed, dt);
 
             int n = Overlap(transform.position, _size, _angle);
             for (int i = 0; i < n; i++)

@@ -53,6 +53,13 @@ namespace HistoryHeroes.Skills
             }
 
             ParticleSystem swirl = spiral ? SkillArt.Embers(tank, new Color(0.8f, 0.9f, 1f, 0.8f), 30f, 1.2f, 0.35f) : null;
+            // 나선 비행기: 바닥에 끌어당기는 범위 (청록 테두리, 빙글) + 떠 있는 그림자 (화면 점검 5번 "떠서 끌어당기는 모습")
+            SpriteRenderer pullRing = null, shadow = null;
+            if (spiral)
+            {
+                pullRing = FloorSprite("PullRange", PlaceholderSprites.RimCircle, new Color(0.55f, 0.95f, 1f, 0.45f), pullRadius * 2f);
+                shadow = FloorSprite("Shadow", PlaceholderSprites.Circle, new Color(0f, 0f, 0f, 0.3f), 1.1f);
+            }
             float duration = data.DurationAt(level) > 0f ? data.DurationAt(level) : 6f;
             float coefficient = data.DamageAt(level);
             float t = 0f, nextVolley = 0.2f, nextTick = 0f;
@@ -77,6 +84,14 @@ namespace HistoryHeroes.Skills
                 Vector2 pos = center + dir * reach;
                 float lift = spiral ? -liftHeight - 0.15f * Mathf.Sin(t * 4f) : 0f; // 위 = -Z
                 tank.position = new Vector3(pos.x, pos.y, lift);
+                if (pullRing != null)
+                {
+                    pullRing.transform.position = new Vector3(pos.x, pos.y, -0.02f);
+                    pullRing.transform.rotation = Quaternion.Euler(0f, 0f, -t * 120f);
+                    pullRing.transform.localScale = Vector3.one * pullRadius * 2f * (0.94f + 0.06f * Mathf.Sin(t * 6f));
+                }
+
+                if (shadow != null) shadow.transform.position = new Vector3(pos.x, pos.y, -0.01f);
                 tank.rotation = Quaternion.Euler(0f, 0f, t * (spiral ? 540f : 90f)); // 빙글 (전차는 천천히, 비행기는 빠르게)
 
                 if (t >= nextVolley)
@@ -109,9 +124,23 @@ namespace HistoryHeroes.Skills
             }
 
             if (swirl != null) swirl.Stop();
+            if (pullRing != null) Destroy(pullRing.gameObject);
+            if (shadow != null) Destroy(shadow.gameObject);
             FxBursts.Puff(tank.position + Vector3.back * 0.4f, new Color(0.8f, 0.8f, 0.8f), 1.2f);
             Destroy(tank.gameObject);
             _running = false;
+        }
+
+        private SpriteRenderer FloorSprite(string name, Sprite sprite, Color color, float size)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(EffectRoot, false);
+            go.transform.localScale = Vector3.one * size;
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.color = color;
+            sr.sortingOrder = -3;
+            return sr;
         }
 
         protected override void OnDestroy()

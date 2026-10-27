@@ -19,6 +19,8 @@ namespace HistoryHeroes.Skills
         public Material trail;
         [Tooltip("장판·불씨 입자 (더하기 섞기, 둥근 빛)")]
         public Material glow;
+        [Tooltip("영웅 외곽선 (HistoryHeroes/HeroOutline, 새 영웅 화면 점검 1번)")]
+        public Material heroOutline;
 
         private static SkillArt _cached;
         private static bool _loaded;

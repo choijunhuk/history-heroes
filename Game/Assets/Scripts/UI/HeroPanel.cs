@@ -180,7 +180,7 @@ namespace HistoryHeroes.UI
                 if (bigPortrait != null && _portraits != null)
                 {
                     bigPortrait.texture = _portraits.TextureOf(_focus);
-                    bigPortrait.color = bigPortrait.texture == null ? new Color(1f, 1f, 1f, 0f) : focusUnlocked ? Color.white : new Color(0.35f, 0.35f, 0.42f, 1f);
+                    bigPortrait.color = bigPortrait.texture == null ? new Color(1f, 1f, 1f, 0f) : focusUnlocked ? Color.white : new Color(0.66f, 0.66f, 0.74f, 1f); // 잠긴 영웅도 얼굴·옷이 보이게 (새 영웅 화면 점검 1번: "흰옷과 얼굴이 어둡다")
                 }
             }
 

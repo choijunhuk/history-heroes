@@ -125,6 +125,7 @@ namespace HistoryHeroes.Player
             Stats.Changed += OnStatsChanged;
 
             _targets = new TargetSelector(enemyMask, wallMask);
+            HeroSignatureHud.Create(this); // 머리 위 대표 효과 표시 (새 영웅 화면 점검 2번)
             CreateProjectilePool();
             if (bodyRenderer != null) bodyRenderer.color = hero.color;
             ShowHeroModel();
@@ -160,7 +161,9 @@ namespace HistoryHeroes.Player
         /// <summary>영웅 모델로 바꾼다. 모델이 없는 영웅이면 이전 모델을 내려놓고 임시 도형을 다시 보인다 (Codex 3D 코드 리뷰 2번)</summary>
         private void ShowHeroModel()
         {
-            if (Visual != null && hero != null) Visual.SetModel(hero.model3D, hero.modelHeight);
+            if (Visual == null || hero == null) return;
+            Visual.SetModel(hero.model3D, hero.modelHeight);
+            Visual.SetOutline(Skills.SkillArt.Get != null ? Skills.SkillArt.Get.heroOutline : null); // 밝은 외곽선: 적 무리 속에서도 영웅이 먼저 보이게
         }
 
         private void PlayAttack(Vector2 aim)
@@ -355,6 +358,12 @@ namespace HistoryHeroes.Player
         /// <summary>쌓인 철갑 피해 (다음 기본 공격에 더한다, 화면 표시용)</summary>
         public float IroncladStore => _ironStore;
 
+        /// <summary>쌓을 수 있는 철갑 피해 상한 (철갑이 없는 영웅은 0)</summary>
+        public float IroncladCap => _sig.StopGuard > 0f ? Stats.Get(StatType.Attack) * _sig.StopGuardCap : 0f;
+
+        /// <summary>제갈량 동남풍 반경 (없으면 0)</summary>
+        public float WindRadius => _sig.WindRadius;
+
         /// <summary>멈춰 있으면 받는 피해 -25%, 움직이면 쌓인 것이 2초에 걸쳐 사라진다</summary>
         private void UpdateIronclad(float dt)
         {
@@ -404,6 +413,8 @@ namespace HistoryHeroes.Player
         /// <summary>지금 모은 부품 수 · 떠 있는 비행 기계 수 (화면·QA)</summary>
         public int WorkbenchParts => _parts;
         public int MachineCount => _machines.Count;
+        public int PartsPerMachine => hero.partsPerMachine;
+        public int MaxMachines => _sig.MaxMachines;
 
         /// <summary>도우미(비행 기계)가 쓸 표적: 영웅이 노리는 것과 같은 적</summary>
         public Health HelperTarget(float range) => _targets.Find(transform.position, range);

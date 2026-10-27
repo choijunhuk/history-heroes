@@ -49,6 +49,8 @@ namespace HistoryHeroes.Combat
 
         private Transform _model;
         private GameObject _modelSource;
+        private Material _outline;
+        private const string OutlineShader = "HistoryHeroes/HeroOutline";
         private Animator _animator;
         private Slot[] _slots = new Slot[0];
         private MaterialPropertyBlock _block;
@@ -142,7 +144,43 @@ namespace HistoryHeroes.Combat
             Rescale();
             _animator = _model.GetComponent<Animator>();
             CollectSlots();
+            ApplyOutline();
             ResetAnimator();
+        }
+
+        /// <summary>
+        /// 영웅 외곽선 (새 영웅 화면 점검 1번: "영웅부터 찾기 쉽게"). 모델 조각마다 외곽선 재질을 하나 더 붙인다.
+        /// 머리카락 카드(구멍 뚫린 재질)는 테가 지저분해서 뺀다. 모델이 바뀌면 Take에서 다시 붙인다. null이면 뗀다
+        /// </summary>
+        public void SetOutline(Material outline)
+        {
+            _outline = outline;
+            ApplyOutline();
+        }
+
+        private void ApplyOutline()
+        {
+            if (_model != null) Outline(_model, _outline);
+        }
+
+        /// <summary>root 밑 모델 조각마다 외곽선 재질을 붙인다 (이미 있으면 바꾸고, outline이 null이면 뗀다). 거북선 같은 스킬 모델에도 쓴다</summary>
+        public static void Outline(Transform root, Material outline)
+        {
+            if (root == null) return;
+            foreach (Renderer r in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!(r is SkinnedMeshRenderer) && !(r is MeshRenderer)) continue;
+                var mats = new List<Material>(r.sharedMaterials);
+                bool cutout = false;
+                for (int i = mats.Count - 1; i >= 0; i--)
+                {
+                    if (mats[i] != null && mats[i].shader != null && mats[i].shader.name == OutlineShader) mats.RemoveAt(i);
+                    else if (mats[i] != null && mats[i].IsKeywordEnabled("_ALPHATEST_ON")) cutout = true;
+                }
+
+                if (outline != null && !cutout) mats.Add(outline);
+                r.sharedMaterials = mats.ToArray();
+            }
         }
 
         private void Rescale()

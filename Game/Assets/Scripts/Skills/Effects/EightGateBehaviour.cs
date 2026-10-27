@@ -42,12 +42,19 @@ namespace HistoryHeroes.Skills
             root.SetParent(EffectRoot, false);
             root.position = center;
             var stoneList = new List<Transform>();
+            var corners = new Vector2[stones];
             for (int i = 0; i < stones; i++)
             {
                 float a = i * Mathf.PI * 2f / stones;
+                var dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                // 벽 너머에 서지 않게: 벽 0.35 앞에서 멈춘다 (벽 가까이에서 쓰면 진이 벽 쪽으로 납작해진다)
+                float reach = radius;
+                RaycastHit2D wall = Physics2D.Raycast(center, dir, radius + 0.35f, player.WallMask);
+                if (wall.collider != null) reach = Mathf.Max(0.5f, wall.distance - 0.35f);
+                corners[i] = center + dir * reach;
                 var s = new GameObject($"Stone{i}").transform;
                 s.SetParent(root, false);
-                s.position = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+                s.position = corners[i];
                 if (stoneModel != null) SkillArt.Attach(stoneModel, s, 1f);
                 else
                 {
@@ -58,6 +65,16 @@ namespace HistoryHeroes.Skills
                 }
 
                 stoneList.Add(s);
+            }
+
+            // 바닥 팔각 문양 (돌기둥을 잇는 금빛 선 + 안쪽 옅은 선): 장애물이 아니라 "진"으로 읽히게 (화면 점검 4번)
+            LineRenderer outer = Polygon(root, "Octagon", center, corners, 1f, new Color(1f, 0.85f, 0.4f, 0.75f), 0.09f);
+            LineRenderer inner = Polygon(root, "OctagonInner", center, corners, 0.55f, new Color(1f, 0.9f, 0.6f, 0.4f), 0.05f);
+            // 칠성단의 바람: 가운데로 휘어 들어가는 바람 띠 3줄 (돈다)
+            var arms = new List<LineRenderer>();
+            if (whirlwinds)
+            {
+                for (int i = 0; i < 3; i++) arms.Add(Line(root, $"WindArm{i}", 14, new Color(0.85f, 0.98f, 1f, 0.6f), 0.12f));
             }
 
             var winds = new List<ParticleSystem>();
@@ -91,7 +108,8 @@ namespace HistoryHeroes.Skills
                     Transform s = stoneList[i];
                     Vector3 p = s.position;
                     s.position = new Vector3(p.x, p.y, Mathf.Lerp(1.2f, 0f, rise));
-                    while (EnemyProjectiles.TryBlock(p, blockRadius)) FxBursts.Puff(p + Vector3.back * 0.8f, new Color(0.9f, 0.85f, 0.6f), 0.5f);
+                    // 막으면 돌기둥 위에서 금빛으로 번쩍 (화면 점검 4번)
+                    while (EnemyProjectiles.TryBlock(p, blockRadius)) FxBursts.Puff(p + Vector3.back * 1f, new Color(1.4f, 1.2f, 0.6f), 0.9f);
                 }
 
                 // 진 안의 적: 1초 헤맴 (적마다 한 번)
@@ -104,6 +122,11 @@ namespace HistoryHeroes.Skills
                     if (e.CanBeKnockedBack && e.TryGetComponent(out Rigidbody2D rb)) rb.MovePosition(rb.position + Random.insideUnitCircle * 0.6f);
                     FxBursts.Puff((Vector3)(Vector2)e.transform.position + Vector3.back * 1.1f, new Color(1f, 0.95f, 0.6f), 0.6f);
                 }
+
+                float fade = Mathf.Clamp01(t / 0.3f) * Mathf.Clamp01((duration - t) / 0.4f);
+                SetAlpha(outer, 0.75f * fade);
+                SetAlpha(inner, 0.4f * fade);
+                for (int i = 0; i < arms.Count; i++) Spiral(arms[i], center, radius * 0.95f, t * 2.4f + i * Mathf.PI * 2f / 3f, 0.6f * fade);
 
                 if (whirlwinds)
                 {
@@ -129,6 +152,68 @@ namespace HistoryHeroes.Skills
 
             foreach (Transform s in stoneList) FxBursts.Puff(s.position + Vector3.back * 0.4f, new Color(0.7f, 0.68f, 0.62f), 0.8f);
             Destroy(root.gameObject);
+        }
+
+        private static LineRenderer Line(Transform parent, string name, int points, Color color, float width)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = true;
+            lr.positionCount = points;
+            lr.startWidth = width;
+            lr.endWidth = width;
+            lr.startColor = color;
+            lr.endColor = color;
+            lr.numCapVertices = 2;
+            lr.alignment = LineAlignment.TransformZ; // 바닥에 눕는다
+            go.transform.rotation = Quaternion.identity;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            lr.sortingOrder = -3;
+            if (SkillArt.Get != null && SkillArt.Get.trail != null) lr.sharedMaterial = SkillArt.Get.trail;
+            return lr;
+        }
+
+        /// <summary>돌기둥 자리를 잇는 다각형 (scale = 가운데에서 몇 배 거리)</summary>
+        private static LineRenderer Polygon(Transform root, string name, Vector2 center, Vector2[] corners, float scale, Color color, float width)
+        {
+            LineRenderer lr = Line(root, name, corners.Length, color, width);
+            lr.loop = true;
+            for (int i = 0; i < corners.Length; i++)
+            {
+                Vector2 p = center + (corners[i] - center) * scale;
+                lr.SetPosition(i, new Vector3(p.x, p.y, -0.03f));
+            }
+
+            return lr;
+        }
+
+        /// <summary>바깥(r)에서 가운데로 반 바퀴 휘어 들어가는 바람 띠. 가운데 쪽이 옅다</summary>
+        private static void Spiral(LineRenderer lr, Vector2 center, float r, float angle, float alpha)
+        {
+            int n = lr.positionCount;
+            for (int i = 0; i < n; i++)
+            {
+                float k = i / (float)(n - 1);
+                float a = angle + k * Mathf.PI * 1.1f;
+                float rr = Mathf.Lerp(r, 0.25f, k);
+                lr.SetPosition(i, new Vector3(center.x + Mathf.Cos(a) * rr, center.y + Mathf.Sin(a) * rr, -0.04f));
+            }
+
+            Color s = lr.startColor, e = lr.endColor;
+            s.a = alpha;
+            e.a = alpha * 0.2f;
+            lr.startColor = s;
+            lr.endColor = e;
+        }
+
+        private static void SetAlpha(LineRenderer lr, float alpha)
+        {
+            Color c = lr.startColor;
+            c.a = alpha;
+            lr.startColor = c;
+            lr.endColor = c;
         }
     }
 }
