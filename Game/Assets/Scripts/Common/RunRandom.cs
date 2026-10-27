@@ -4,7 +4,7 @@ using UnityEngine;
 namespace HistoryHeroes.Common
 {
     /// <summary>
-    /// 판 시드 하나에서 갈라진 난수 3갈래 (Modes 2-4): ① 방 고르기 ② 적 생성 ③ 레벨업 카드.
+    /// 판 시드 하나에서 갈라진 난수 4갈래 (Modes 2-4): ① 방 고르기 ② 적 생성 ③ 레벨업 카드 ④ 갈림길·특수 방 (확장 1차 3장).
     /// 서로 영향을 주지 않아서, 플레이어가 다른 카드를 골라도 방 구성은 그대로다 → 일일 도전 "모두 같은 판".
     /// 판이 시작될 때 Begin(시드). 시작하지 않았으면 시계로 아무 시드나 쓴다.
     /// </summary>
@@ -13,6 +13,7 @@ namespace HistoryHeroes.Common
         private static StreamRandom _rooms;
         private static StreamRandom _enemies;
         private static StreamRandom _cards;
+        private static StreamRandom _forks;
 
         public static int Seed { get; private set; }
         public static bool Started => _rooms != null;
@@ -23,13 +24,14 @@ namespace HistoryHeroes.Common
             _rooms = new StreamRandom(Mix(seed, 0x51ED));
             _enemies = new StreamRandom(Mix(seed, 0x2B79));
             _cards = new StreamRandom(Mix(seed, 0x6A09));
+            _forks = new StreamRandom(Mix(seed, 0x3C6E));
         }
 
-        /// <summary>판 이어하기: 3갈래의 지금 상태 (방 · 적 · 카드 순서)</summary>
+        /// <summary>판 이어하기: 4갈래의 지금 상태 (방 · 적 · 카드 · 갈림길 순서)</summary>
         public static System.Collections.Generic.List<string> Capture()
         {
             Ensure();
-            return new System.Collections.Generic.List<string> { _rooms.State.ToString(), _enemies.State.ToString(), _cards.State.ToString() };
+            return new System.Collections.Generic.List<string> { _rooms.State.ToString(), _enemies.State.ToString(), _cards.State.ToString(), _forks.State.ToString() };
         }
 
         /// <summary>판 이어하기: 저장해 둔 상태로 되돌린다 → 껐다 켜도 같은 카드·같은 적</summary>
@@ -41,6 +43,7 @@ namespace HistoryHeroes.Common
             _rooms.State = a;
             _enemies.State = b;
             _cards.State = c;
+            if (states.Count > 3 && ulong.TryParse(states[3], out ulong d)) _forks.State = d; // 옛 저장(3갈래)은 시드에서 새로
             return true;
         }
 
@@ -72,6 +75,16 @@ namespace HistoryHeroes.Common
             {
                 Ensure();
                 return _enemies;
+            }
+        }
+
+        /// <summary>갈림길 · 특수 방 (확장 1차 3장): 판 시작 때 양쪽을 미리 정한다. 어느 문을 골라도 방·적·카드 난수는 그대로</summary>
+        public static System.Random Forks
+        {
+            get
+            {
+                Ensure();
+                return _forks;
             }
         }
 

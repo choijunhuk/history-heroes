@@ -20,7 +20,7 @@ namespace HistoryHeroes.Dungeon
     /// v0.6: 방 15개 (보상 방 6·11, 중간 보스 15). 판 시드(RunRandom.Rooms)로 방마다 레이아웃과 적 편성을 판 시작에 정한다
     /// → 같은 시드 = 같은 판 (일일 도전). 소환사·분열체의 졸개는 EnemyBase.ChildSpawner로 받아서 방 전멸 판정에 넣는다.
     /// </summary>
-    public sealed class DungeonRun : MonoBehaviour
+    public sealed partial class DungeonRun : MonoBehaviour
     {
         [SerializeField] private DungeonData dungeon;
         [SerializeField] private SkillDatabase database;
@@ -134,6 +134,7 @@ namespace HistoryHeroes.Dungeon
             ShowHitCounter();
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
             door.Entered += () => StartCoroutine(GoToNextRoom());
+            WireSpecials(); // 갈림길 문 · 도전 방 피격 (확장 1차 3장)
             if (fade != null) fade.alpha = 0f;
             int first = _rift ? ResumeRift() : 1;
             RunSnapshot resume = GameSession.ConsumeResume();
@@ -181,6 +182,7 @@ namespace HistoryHeroes.Dungeon
             s.boosts = skills.RiftBoostCounts();
             s.fusions.AddRange(_fusions);
             s.rng = RunRandom.Capture();
+            CaptureSpecial(s, room);
             SaveSystem.Data.run = s;
             SaveSystem.Save();
         }
@@ -216,6 +218,8 @@ namespace HistoryHeroes.Dungeon
             _fusions.AddRange(s.fusions);
             levelUp.RestoreRerolls(s.rerollsLeft);
             RunRandom.Restore(s.rng);
+            RestoreSpecial(s, room); // 갈림길 선택 · 축복 (최대체력이 바뀌므로 체력은 아래에서 다시)
+            player.Health.Revive(player.Health.Max * Mathf.Clamp(s.hpRatio, 0.05f, 1f));
             hud.ShowNotice(_rift ? $"균열 {room}층부터 이어서" : $"방 {room}부터 이어서", 2.5f);
             return room;
         }
@@ -300,7 +304,7 @@ namespace HistoryHeroes.Dungeon
                             break;
                         default:
                             Mod(Stats.StatType.MoveSpeed, Stats.ModifierKind.Percent, 0.2f);
-                            Mod(Stats.StatType.DamageReduction, Stats.ModifierKind.Flat, -0.2f);
+                            Mod(Stats.StatType.DamageTaken, Stats.ModifierKind.Flat, 0.2f); // 받는 피해 +20% (피해 감소 -0.2는 0에서 잘려 안 먹었다)
                             break;
                     }
                 }
@@ -387,6 +391,7 @@ namespace HistoryHeroes.Dungeon
 
             _encounters = new List<List<SpawnEntry>>(_plans.Count);
             for (int i = 0; i < _plans.Count; i++) _encounters.Add(Encounter.Build(_chapter, _plans[i], i + 1, rooms));
+            PlanSpecials(); // 갈림길·도전·석비·저주 (따로 떼어 둔 갈림길 난수, 15방 던전만)
         }
 
         private void EnterRoom(int room)
@@ -394,6 +399,7 @@ namespace HistoryHeroes.Dungeon
             _room = room;
             _hitsAtRoomStart = _hitsTaken;
             levelUp.Floor = room;
+            BeginSpecialRoom(room);
             if (_rift)
             {
                 EnsureRiftFloor(room + 9); // 진행 바에 보일 층까지
@@ -408,6 +414,7 @@ namespace HistoryHeroes.Dungeon
 
             RoomPlan plan = _plans[room - 1];
             string tag = plan.kind == RoomKind.Elite ? "  엘리트" : plan.kind == RoomKind.Reward ? "  보상" : plan.kind == RoomKind.MidBoss ? "  중간 보스" : plan.kind == RoomKind.Boss ? "  보스" : string.Empty;
+            tag = SpecialTag() ?? tag;
             if (_rift)
             {
                 hud.RoomText = $"무한의 균열 {room}층{tag}";
@@ -415,7 +422,8 @@ namespace HistoryHeroes.Dungeon
             else
             {
                 string chapter = _daily ? "일일 도전 " : GameSession.Chapter > 1 ? $"{GameSession.Chapter}구간 " : string.Empty;
-                hud.RoomText = $"{chapter}방 {room}/{RoomCount}{tag}";
+                _roomTitle = $"{chapter}방 {room}/{RoomCount}{tag}";
+                hud.RoomText = _roomTitle;
             }
 
             door.SetOpen(false);
@@ -425,6 +433,7 @@ namespace HistoryHeroes.Dungeon
             int count = _rift ? 10 : _plans.Count;
             for (int i = first; i < first + count && i < _plans.Count; i++) kinds.Add(_plans[i].kind);
             hud.SetRoomProgress(room - first, kinds);
+            MarkSpecialCells(first);
             ApplyLayout(_layouts[room - 1]);
 
             if (plan.kind == RoomKind.Reward && _resumeRewardTaken && room == _resumeRoom)
@@ -432,8 +441,10 @@ namespace HistoryHeroes.Dungeon
                 _alive = 0; // 이미 받은 보상 방 → 바로 다음 방으로
                 OnRoomCleared();
             }
+            else if (plan.kind == RoomKind.Reward && CurrentSpecial == RoomSpecial.Stele) OpenStele();
             else if (plan.kind == RoomKind.Reward) OpenRewardRoom();
             else if (plan.kind == RoomKind.Boss) StartCoroutine(SpawnRiftBoss(room));
+            else if (StartChallenge(plan)) { } // 도전 방 (갈림길 오른쪽)
             else StartCoroutine(SpawnRoom(plan, _encounters[room - 1]));
             RoomEntered?.Invoke(room);
         }
@@ -560,8 +571,8 @@ namespace HistoryHeroes.Dungeon
         private void OpenRewardRoom()
         {
             _alive = 0;
-            int chapter = Mathf.Max(1, GameSession.Chapter);
-            int gold = 50 + 25 * chapter;
+            PlacePedestalModel(specialArt.chestModel, 1.15f); // 받침대 자리에 금 상자
+            int gold = SpecialRooms.RewardGold(GameSession.Chapter);
             if (rewardRoom == null)
             {
                 OnRoomCleared();
@@ -671,18 +682,20 @@ namespace HistoryHeroes.Dungeon
         private void GiveAffixes(EnemyBase enemy, EnemyBase prefab)
         {
             int chapter = _chapter != null ? _chapter.chapter : 1;
-            System.Random random = RunRandom.Enemies;
-            int count = EliteAffixes.CountFor(chapter, _rift ? _room : 0, random) + _extraAffixes;
-            EliteAffix affixes = EliteAffixes.Roll(random, Mathf.Min(count, 2));
+            bool cursed = TryCursedAffixes(enemy, out EliteAffix affixes); // 저주받은 엘리트: 미리 뽑아 둔 2개 (확장 1차 3-4장)
+            if (!cursed)
+            {
+                System.Random random = RunRandom.Enemies;
+                int count = EliteAffixes.CountFor(chapter, _rift ? _room : 0, random);
+                affixes = EliteAffixes.Roll(random, Mathf.Min(count, 2));
+            }
+
             if (affixes == EliteAffix.None) return;
             if (!enemy.TryGetComponent(out EliteAffixes holder)) holder = enemy.gameObject.AddComponent<EliteAffixes>();
             if (EliteAffixes.MinionPrefab == null) EliteAffixes.MinionPrefab = MinionFor(_chapter);
             holder.Apply(affixes, prefab);
-            hud.ShowNotice($"{EliteAffixes.Names(affixes)} {enemy.Data.displayName}!", 2f);
+            hud.ShowNotice(cursed ? $"저주받은 {EliteAffixes.Names(affixes)} {enemy.Data.displayName}!" : $"{EliteAffixes.Names(affixes)} {enemy.Data.displayName}!", 2f);
         }
-
-        /// <summary>저주받은 엘리트 방이면 속성 +1 (확장 1차 3-4장)</summary>
-        private int _extraAffixes;
 
         /// <summary>부르는 속성이 낼 졸개: 그 구간의 졸개, 없으면 돌진병, 없으면 첫 적</summary>
         private static EnemyBase MinionFor(ChapterData chapter)
@@ -723,14 +736,16 @@ namespace HistoryHeroes.Dungeon
         private void OnEnemyKilled(EnemyBase enemy)
         {
             if (enemy.IsElite) experience.GrantLevelUp();
+            OnCursedKilled(enemy);
             _alive--;
-            if (_alive <= 0 && !_finished) OnRoomCleared();
+            if (_alive <= 0 && !_finished && !_holdClear) OnRoomCleared(); // "20초 버티기"는 시간이 끝낸다
         }
 
         private void OnRoomCleared()
         {
             _roomsCleared = Mathf.Max(_roomsCleared, _room);
             experience.AttractAll();
+            if (!_rift) ResolveChallengeOnClear();
             if (_hitsTaken == _hitsAtRoomStart) Missions.MissionEvents.Raise(Missions.MissionEvents.NoHitRoom); // 피격 없이 방 클리어
             if (_rift)
             {
@@ -752,7 +767,9 @@ namespace HistoryHeroes.Dungeon
                 player.Health.Invulnerable = true;
                 StartCoroutine(FinishAfter(1.5f));
             }
-            else door.SetOpen(true);
+            else if (!TryOpenFork()) door.SetOpen(true); // 3·9번 방 뒤는 문 2개 (확장 1차 3-2장)
+            if (_pendingNotice != null) hud.ShowNotice(_pendingNotice, 2.5f);
+            _pendingNotice = null;
         }
 
         /// <summary>판이 시작된 주가 끝났나 (진행 중에 월요일 05:00을 넘겼다)</summary>

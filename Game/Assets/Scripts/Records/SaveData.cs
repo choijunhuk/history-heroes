@@ -375,6 +375,12 @@ namespace HistoryHeroes.Records
         public int offersMade;
         public bool choseLegendary;
         public int rerollsLeft = -1;
+        /// <summary>확장 1차 3장: 갈림길에서 고른 문 (갈림길마다 -1 = 아직, 0 = 왼쪽(평범), 1 = 오른쪽(특별))</summary>
+        public List<int> forkChoices = new List<int>();
+        /// <summary>기억의 석비에서 고른 축복 id (판 안 효과, 없으면 빈 글)</summary>
+        public List<string> blessings = new List<string>();
+        /// <summary>이 방(room)의 "맞지 않고 깨기"를 이미 실패했나 (껐다 켜서 다시 도전하지 못하게, 검토 9장 2번)</summary>
+        public bool challengeFailed;
         /// <summary>이 방의 보상(보상 방·균열 엘리트 층)을 이미 받았나 (껐다 켜서 다시 받기 방지)</summary>
         public bool rewardTaken;
         /// <summary>판을 시작할 때 하트를 썼나 (보스 첫 패배 하트 돌려주기)</summary>

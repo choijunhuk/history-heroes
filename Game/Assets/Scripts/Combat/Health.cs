@@ -74,14 +74,15 @@ namespace HistoryHeroes.Combat
             if (team == Team.Enemy && EnemyIncoming != null) info = EnemyIncoming(this, info);
             if (Invulnerable || Time.time < _invulnerableUntil) return false;
 
-            float reduction = 0f;
+            float reduction = 0f, taken = 0f;
             if (_stats != null)
             {
                 if (UnityEngine.Random.value < _stats.Get(StatType.Dodge)) return false;
                 reduction = _stats.Get(StatType.DamageReduction);
+                taken = _stats.Get(StatType.DamageTaken); // 피해 감소는 0 밑으로 안 내려가서, "받는 피해 +%"는 따로 곱한다
             }
 
-            float incoming = info.Amount * (1f - reduction);
+            float incoming = info.Amount * (1f - reduction) * (1f + taken);
             if (Shield > 0f)
             {
                 float absorbed = Mathf.Min(Shield, incoming);

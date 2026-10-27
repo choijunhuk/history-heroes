@@ -55,9 +55,16 @@ namespace HistoryHeroes.EditorTools
                 return "처치 | " + State();
             }
 
-            var door = Object.FindAnyObjectByType<Door>();
-            if (door != null && door.IsOpen)
+            // 확장 1차 갈림길: 카드 번호로 문을 고른다 (0 왼쪽 평범 · 1 오른쪽 특별)
+            if (run.ForkOpen)
             {
+                run.DevChooseFork(Mathf.Clamp(cardIndex, 0, 1));
+                return "갈림길 | " + State();
+            }
+
+            foreach (Door door in Object.FindObjectsByType<Door>(FindObjectsSortMode.None))
+            {
+                if (!door.IsOpen) continue;
                 Object.FindAnyObjectByType<PlayerController>().Teleport(door.transform.position);
                 return "문 | " + State();
             }
@@ -555,7 +562,7 @@ namespace HistoryHeroes.EditorTools
 
             return $"방 {run.Room}/{run.RoomCount} Lv{exp.Level.Level} 처치{exp.Kills} 적{EnemyBase.Alive.Count} " +
                    $"HP{Mathf.CeilToInt(player.Health.Current)}/{Mathf.CeilToInt(player.Health.Max)} " +
-                   $"멈춤={GamePause.IsPaused} 끝={run.IsFinished} [{string.Join(",", owned)}]";
+                   $"멈춤={GamePause.IsPaused} 끝={run.IsFinished} 특수={run.CurrentSpecial} 갈림길={run.ForkOpen} [{string.Join(",", owned)}]";
         }
     }
 }

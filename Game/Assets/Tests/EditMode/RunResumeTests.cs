@@ -94,7 +94,7 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(7, back.run.room);
             Assert.AreEqual("guan", back.run.heroId);
             Assert.AreEqual(1, back.run.skills.Count);
-            Assert.AreEqual(3, back.run.rng.Count);
+            Assert.AreEqual(4, back.run.rng.Count); // 방·적·카드·갈림길 (확장 1차 3장)
             CollectionAssert.AreEqual(save.run.rng, back.run.rng, "64비트 상태가 문자열로 그대로");
             Assert.IsTrue(back.run.choseLegendary);
         }

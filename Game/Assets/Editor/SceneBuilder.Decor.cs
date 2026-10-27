@@ -41,8 +41,11 @@ namespace HistoryHeroes.EditorTools
 
             // 가운데 큰 글 (격파! · 진화! · 전설!)
             TMPro.TMP_Text banner = Label("Banner", rt, "", 150, TMPro.TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(banner.rectTransform, Center, Center, new Vector2(0f, 260f), new Vector2(1000f, 220f));
+            Place(banner.rectTransform, Center, Center, new Vector2(0f, 260f), new Vector2(980f, 220f));
             banner.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            banner.enableAutoSizing = true; // 긴 글("도전 성공!", "서두름의 축복")도 화면 안에
+            banner.fontSizeMin = 70f;
+            banner.fontSizeMax = 150f;
             var bannerPop = banner.gameObject.AddComponent<UI.UiPop>();
 
             using (var props = new Props(hype)) props.Ref("comboLabel", combo).Ref("comboPop", comboPop).Ref("bannerLabel", banner).Ref("bannerPop", bannerPop).Ref("flash", flash);

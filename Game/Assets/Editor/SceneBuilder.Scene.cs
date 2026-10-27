@@ -82,6 +82,7 @@ namespace HistoryHeroes.EditorTools
             var door = doorObject.AddComponent<Door>();
             using (var props = new Props(door)) props.Ref("sprite", doorObject.GetComponent<SpriteRenderer>());
             DressDoor(dungeonRoot, doorObject, door); // 그래픽 평가 4번: 돌 아치 문
+            ForkGate[] forkGates = BuildForkGates(dungeonRoot); // 확장 1차 3-2장 갈림길 문 2개
             WireStageDecor(BuildDecoGroups(arena)); // 구간별 벽 장식 · 바닥 장식
 
             var playerStart = new GameObject("PlayerStart").transform;
@@ -180,6 +181,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("bossHud", ui.BossHud).Ref("rewardRoom", ui.RewardRoom).Ref("layoutRoot", layoutRoot)
                     .Refs("riftBosses", AllBosses(d.RiftWarden)); // 균열 10층마다 (1~5구간 순서)
             }
+
+            WireSpecialRooms(run, forkGates);
 
             // ----- 보스맵: 원형 경기장 + 보스 (Modes 2-9) -----
             BuildBossArena(bossRoot);

@@ -69,8 +69,11 @@ namespace HistoryHeroes.EditorTools
                 string name = Path.GetFileNameWithoutExtension(path);
                 Vector4 border = kit && KitBorders.TryGetValue(name, out Vector4 b) ? b : Vector4.zero;
                 TextureWrapMode wrap = name == "ui_pattern" ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                var settings = new TextureImporterSettings();
+                importer.ReadTextureSettings(settings);
+                bool fullRect = !kit || settings.spriteMeshType == SpriteMeshType.FullRect; // 9칸 자르기를 월드 그림(SpriteRenderer)에서도 쓰려면 사각 메시
                 bool ok = importer.textureType == TextureImporterType.Sprite && importer.spriteBorder == border && importer.wrapMode == wrap
-                          && !importer.mipmapEnabled && importer.textureCompression == TextureImporterCompression.Uncompressed && importer.alphaIsTransparency;
+                          && !importer.mipmapEnabled && importer.textureCompression == TextureImporterCompression.Uncompressed && importer.alphaIsTransparency && fullRect;
                 if (ok) continue;
                 importer.textureType = TextureImporterType.Sprite;
                 importer.spriteImportMode = SpriteImportMode.Single;
@@ -81,6 +84,13 @@ namespace HistoryHeroes.EditorTools
                 importer.filterMode = FilterMode.Bilinear;
                 importer.wrapMode = wrap;
                 importer.textureCompression = TextureImporterCompression.Uncompressed; // 그라데이션이 계단지지 않게 (작은 그림들이라 용량 부담 적음)
+                if (kit)
+                {
+                    importer.ReadTextureSettings(settings);
+                    settings.spriteMeshType = SpriteMeshType.FullRect;
+                    importer.SetTextureSettings(settings);
+                }
+
                 importer.SaveAndReimport();
             }
         }

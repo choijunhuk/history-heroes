@@ -195,6 +195,7 @@ namespace HistoryHeroes.EditorTools
 
             var buttons = new Button[3];
             var labels = new TMP_Text[3];
+            var iconImages = new Image[3];
             Color[] colors = { new Color(0.3f, 0.8f, 0.45f), new Color(0.35f, 0.55f, 1f), new Color(1f, 0.75f, 0.2f) };
             string[] icons = { "heal", "cards", "chest" };
             for (int i = 0; i < 3; i++)
@@ -210,7 +211,8 @@ namespace HistoryHeroes.EditorTools
                     Image slotImage = Img(slot, Color.Lerp(colors[i], Color.black, 0.35f), _kit != null ? _kit.Slot : null);
                     if (_kit != null) slotImage.type = Image.Type.Sliced;
                     RectTransform iconRect = Rect("Icon", slot, Center, Center, Center, Vector2.zero, new Vector2(104f, 104f));
-                    Img(iconRect, Color.white, icon).preserveAspect = true;
+                    iconImages[i] = Img(iconRect, Color.white, icon);
+                    iconImages[i].preserveAspect = true;
                 }
 
                 var pop = buttons[i].gameObject.AddComponent<UiPop>();
@@ -219,7 +221,7 @@ namespace HistoryHeroes.EditorTools
 
             using (var props = new Props(screen))
             {
-                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Refs("buttons", buttons).Refs("labels", labels);
+                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Refs("buttons", buttons).Refs("labels", labels).Refs("icons", iconImages);
             }
 
             return screen;

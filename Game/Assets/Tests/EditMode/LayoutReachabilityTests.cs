@@ -96,6 +96,15 @@ namespace HistoryHeroes.Tests
 
                 (int dxCell, int dyCell) = ToCell(DoorFront);
                 if (!seen[dxCell, dyCell]) failures.Add($"{layout.id}: 문까지 못 감");
+                // 확장 1차 3-2장 갈림길 문 2개 (SceneBuilder.ForkX = 2.4): 일반 방(3·9번 자리)에서 양쪽 문 앞까지
+                if (layout.use == RoomUse.Normal)
+                {
+                    foreach (float fx in new[] { -2.4f, 2.4f })
+                    {
+                        (int fxCell, int fyCell) = ToCell(new Vector2(fx, DoorFront.y));
+                        if (!seen[fxCell, fyCell]) failures.Add($"{layout.id}: 갈림길 문({fx})까지 못 감");
+                    }
+                }
                 // 장애물 사이 아주 작은 틈(한두 칸)은 적 생성 자리가 될 수 없으니 3% 안쪽은 봐준다
                 if (reached < freeCount * 0.97f) failures.Add($"{layout.id}: 갈 수 없는 빈자리 {freeCount - reached}칸");
             }

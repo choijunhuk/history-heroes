@@ -94,6 +94,20 @@ namespace HistoryHeroes.UI
             }
         }
 
+        /// <summary>
+        /// 칸 하나를 다른 아이콘·색으로 (확장 1차 3장: 갈림길 = 두 갈래 표시 → 고른 뒤 도전·저주, 지나온 석비).
+        /// SetRoomProgress 다음에 부른다. index = 보이는 칸 번호 (0부터)
+        /// </summary>
+        public void MarkRoom(int index, Sprite icon, Color color)
+        {
+            if (index < 0 || index >= _cells.Count || !_cells[index].gameObject.activeSelf) return;
+            Image cell = _cells[index];
+            cell.color = color;
+            Transform mark = cell.transform.GetChild(0);
+            mark.gameObject.SetActive(icon != null);
+            if (icon != null && mark.TryGetComponent(out Image image)) image.sprite = icon;
+        }
+
         public void HideRoomProgress()
         {
             if (roomBar != null) roomBar.gameObject.SetActive(false);

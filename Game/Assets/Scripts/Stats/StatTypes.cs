@@ -19,6 +19,7 @@ namespace HistoryHeroes.Stats
         ExpGain,           // 판 안 스킬(배움)만 줄 수 있다. 판 밖 출처는 0 (Stats.md 4-1)
         GoldGain,
         HpRegenFlat,       // 초당 고정 회복량 (수련 회복력, Stats 5장 "초당 +1")
+        DamageTaken,       // 받는 피해 증가 (0.15 = +15%). 피해 감소(0~60%)와 따로 곱한다 — 대가·변형 규칙용 (확장 1차 3-5장)
     }
 
     /// <summary>
@@ -43,6 +44,7 @@ namespace HistoryHeroes.Stats
         Training,   // 수련
         Awakening,  // 영웅 각성
         HeroLevel,  // 영웅 레벨 (v0.4)
+        Blessing,   // 기억의 석비 축복과 대가 (확장 1차 3-5장, 판 안)
     }
 
     /// <summary>

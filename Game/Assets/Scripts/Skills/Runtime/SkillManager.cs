@@ -50,6 +50,9 @@ namespace HistoryHeroes.Skills
         [SerializeField, Range(0f, 1f)] private float firstOfferExclusiveChance = 0.5f;
         private int _offersMade;
 
+        /// <summary>다음 카드 묶음에 희귀 이상을 이만큼 보장 (확장 1차 3-4장 저주받은 엘리트). 전설 확률은 그대로 — 일반 카드만 희귀로 바꾼다</summary>
+        public int MinRareNext { get; set; }
+
         /// <summary>레벨업 카드 만들기 (GameDesign 6-4). 조합 조건을 채웠으면 1장은 조합 카드로 확정.</summary>
         public List<SkillCard> CreateOffer(int floor)
         {
@@ -78,8 +81,26 @@ namespace HistoryHeroes.Skills
 
             offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable, WeightModifier, Loadout));
             if (_offersMade++ == 0) BoostExclusive(offer, candidates);
+            if (MinRareNext > 0) GuaranteeRare(offer, candidates, MinRareNext);
+            MinRareNext = 0;
             ApplyRiftBoosts(offer);
             return offer;
+        }
+
+        /// <summary>희귀 이상이 count장이 될 때까지 일반 카드를 희귀 카드로 바꾼다 (카드 난수)</summary>
+        private static void GuaranteeRare(List<SkillCard> offer, List<SkillCard> candidates, int count)
+        {
+            int have = offer.FindAll(c => c.Type == CardType.Fusion || (c.Skill != null && c.Skill.rarity != Rarity.Common)).Count;
+            List<SkillCard> rares = candidates.FindAll(c => c.Skill != null && c.Skill.rarity == Rarity.Rare && !offer.Exists(o => o.Skill == c.Skill));
+            for (int i = offer.Count - 1; i >= 0 && have < count && rares.Count > 0; i--)
+            {
+                SkillCard card = offer[i];
+                if (card.Type == CardType.Fusion || card.Skill == null || card.Skill.rarity != Rarity.Common) continue;
+                int k = Common.RunRandom.CardRange(0, rares.Count);
+                offer[i] = rares[k];
+                rares.RemoveAt(k);
+                have++;
+            }
         }
 
         /// <summary>첫 카드 묶음에 전용 액티브가 없으면 확률적으로 마지막 일반 카드와 바꾼다</summary>
