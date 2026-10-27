@@ -345,6 +345,8 @@ namespace HistoryHeroes.EditorTools
             mat.SetColor("_BaseColor", baseColor);
             mat.SetFloat("_Surface", transparent ? 1f : 0f);
             mat.SetFloat("_Blend", 0f);
+            // "반사광 지키기"가 켜져 있으면 URP 재질 검사가 다시 미리 곱하기(One + _ALPHAPREMULTIPLY_ON)로 바꿔 유령이 흐려진다 → 끈다
+            mat.SetFloat("_BlendModePreserveSpecular", 0f);
             mat.SetFloat("_SrcBlend", transparent ? (float)UnityEngine.Rendering.BlendMode.SrcAlpha : (float)UnityEngine.Rendering.BlendMode.One);
             mat.SetFloat("_DstBlend", transparent ? (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha : (float)UnityEngine.Rendering.BlendMode.Zero);
             mat.SetFloat("_SrcBlendAlpha", transparent ? (float)UnityEngine.Rendering.BlendMode.One : (float)UnityEngine.Rendering.BlendMode.One);

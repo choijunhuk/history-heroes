@@ -53,7 +53,7 @@ namespace HistoryHeroes.Common
         public static void Dress(SpriteRenderer sprite, Kind kind, bool circle)
         {
             if (_instance == null || sprite == null) return;
-            Material mat = kind == Kind.Crate ? _instance.crate : kind == Kind.Rock ? _instance.rock : _instance.stone;
+            Material mat = StageLook.Resolve(kind == Kind.Crate ? _instance.crate : kind == Kind.Rock ? _instance.rock : _instance.stone); // 구간 색을 입힌 사본
             Vector3 s = sprite.transform.lossyScale;
             float size = Mathf.Max(s.x, s.y);
             float height = kind == Kind.Crate ? Mathf.Min(1.1f, size) : kind == Kind.Rock ? size * 0.55f : circle ? 1.8f : 1.5f;

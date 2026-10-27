@@ -64,8 +64,8 @@ namespace HistoryHeroes.EditorTools
             };
         }
 
-        /// <summary>해(그림자) · 주변광 · 게임 중 장애물용 Stage3D (재질·기본 메시)</summary>
-        private static void BuildLighting(Stage stage)
+        /// <summary>해(그림자) · 주변광 · 게임 중 장애물용 Stage3D (재질·기본 메시) · 화면 후처리 · 구간별 빛·색 (StageLook)</summary>
+        private static void BuildLighting(Stage stage, Camera camera)
         {
             var sunObject = new GameObject("Sun");
             var sun = sunObject.AddComponent<Light>();
@@ -87,6 +87,105 @@ namespace HistoryHeroes.EditorTools
                 props.Ref("stone", stage.Stone).Ref("crate", stage.Crate).Ref("rock", stage.Rock)
                     .Ref("cube", Builtin(Stage3D.Shape.Box)).Ref("cylinder", Builtin(Stage3D.Shape.Pillar))
                     .Ref("sphere", Builtin(Stage3D.Shape.Rock)).Ref("quad", Builtin(Stage3D.Shape.Floor));
+            }
+
+            // 화면 후처리 (그래픽 평가 1번): 톤 매핑 · 약한 빛 번짐(1 넘는 밝은 색만) · 색 보정 · 가장자리 어둡게
+            var volume = new GameObject("PostFx").AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 1f;
+            volume.sharedProfile = BattleVolumeProfile();
+
+            var look = new GameObject("StageLook").AddComponent<StageLook>();
+            using (var props = new Props(look))
+            {
+                props.Ref("sun", sun).Ref("volume", volume).Ref("viewCamera", camera)
+                    .Refs("floorMaterials", new[] { stage.RoomFloor, stage.BossFloor, stage.BossOuter })
+                    .Refs("wallMaterials", new[] { stage.WallSide, stage.WallEnd, stage.Rim, stage.Stone });
+                Looks(props.Property("looks"));
+            }
+        }
+
+        private const string BattleVolumePath = "Assets/Settings/BattleVolume.asset";
+
+        /// <summary>전투 후처리 묶음 (에셋). 색 보정 값은 구간마다 StageLook이 게임 중 사본에 덮어쓴다</summary>
+        private static VolumeProfile BattleVolumeProfile()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(BattleVolumePath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                AssetDatabase.CreateAsset(profile, BattleVolumePath);
+            }
+
+            T Get<T>() where T : VolumeComponent
+            {
+                if (profile.TryGet(out T component)) return component;
+                component = profile.Add<T>(true);
+                component.name = typeof(T).Name;
+                AssetDatabase.AddObjectToAsset(component, profile);
+                return component;
+            }
+
+            var tone = Get<UnityEngine.Rendering.Universal.Tonemapping>();
+            tone.mode.Override(UnityEngine.Rendering.Universal.TonemappingMode.Neutral);
+
+            var bloom = Get<UnityEngine.Rendering.Universal.Bloom>();
+            bloom.threshold.Override(0.95f);
+            bloom.intensity.Override(0.45f);
+            bloom.scatter.Override(0.6f);
+            bloom.highQualityFiltering.Override(false);
+            bloom.downscale.Override(UnityEngine.Rendering.Universal.BloomDownscaleMode.Quarter); // 폰: 1/4 크기에서 번진다
+
+            var color = Get<UnityEngine.Rendering.Universal.ColorAdjustments>();
+            color.postExposure.Override(0.1f);
+            color.contrast.Override(10f);
+            color.saturation.Override(12f);
+            color.colorFilter.Override(Color.white);
+
+            var vignette = Get<UnityEngine.Rendering.Universal.Vignette>();
+            vignette.intensity.Override(0.2f);
+            vignette.smoothness.Override(0.45f);
+            vignette.color.Override(Color.black);
+
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+            return profile;
+        }
+
+        /// <summary>
+        /// 구간별 빛·색 (Content 3장 구간 이름): 1 균열의 초원 (따뜻한 햇빛) · 2 잊힌 성채 (차가운 돌) · 3 녹슨 공방 (녹·구리) ·
+        /// 4 그림자 협곡 (보랏빛 저녁) · 5 망각의 왕좌 (어두운 보라 + 금빛) · 서바이벌 풀밭 (밝은 낮).
+        /// 바닥은 전보다 한 단계 밝게 → 어두운 옷의 캐릭터가 묻히지 않게 (그래픽 평가 "조명·색")
+        /// </summary>
+        private static void Looks(SerializedProperty list)
+        {
+            var looks = new[]
+            {
+                // key, 바닥, 벽, 해, 해 밝기, 주변광, 화면 색, 노출, 대비, 채도, 배경
+                ("ch1", new Color(1.12f, 1.06f, 0.92f), new Color(1.02f, 0.98f, 0.9f), new Color(1f, 0.94f, 0.8f), 1.4f, new Color(0.56f, 0.58f, 0.6f), new Color(1f, 0.98f, 0.93f), 0.12f, 12f, 16f, new Color(0.1f, 0.09f, 0.07f)),
+                ("ch2", new Color(0.98f, 1.02f, 1.1f), new Color(0.88f, 0.93f, 1.04f), new Color(0.94f, 0.97f, 1f), 1.3f, new Color(0.5f, 0.54f, 0.64f), new Color(0.95f, 0.98f, 1.04f), 0.1f, 12f, 10f, new Color(0.06f, 0.07f, 0.1f)),
+                ("ch3", new Color(1.12f, 0.95f, 0.78f), new Color(1f, 0.82f, 0.66f), new Color(1f, 0.86f, 0.66f), 1.35f, new Color(0.56f, 0.48f, 0.42f), new Color(1.04f, 0.97f, 0.9f), 0.1f, 14f, 12f, new Color(0.1f, 0.07f, 0.05f)),
+                ("ch4", new Color(0.95f, 0.9f, 1.08f), new Color(0.78f, 0.72f, 0.92f), new Color(0.9f, 0.84f, 1f), 1.25f, new Color(0.48f, 0.45f, 0.62f), new Color(0.97f, 0.95f, 1.05f), 0.12f, 14f, 10f, new Color(0.07f, 0.05f, 0.1f)),
+                ("ch5", new Color(0.92f, 0.86f, 1f), new Color(0.66f, 0.6f, 0.76f), new Color(1f, 0.9f, 0.74f), 1.3f, new Color(0.44f, 0.4f, 0.52f), new Color(1f, 0.96f, 1.02f), 0.14f, 16f, 10f, new Color(0.06f, 0.04f, 0.08f)),
+                ("survival", Color.white, Color.white, new Color(1f, 0.97f, 0.88f), 1.35f, new Color(0.56f, 0.6f, 0.6f), new Color(1f, 1f, 0.97f), 0.08f, 10f, 14f, new Color(0.1f, 0.12f, 0.08f)),
+            };
+
+            list.arraySize = looks.Length;
+            for (int i = 0; i < looks.Length; i++)
+            {
+                var l = looks[i];
+                SerializedProperty e = list.GetArrayElementAtIndex(i);
+                e.FindPropertyRelative("key").stringValue = l.Item1;
+                e.FindPropertyRelative("floor").colorValue = l.Item2;
+                e.FindPropertyRelative("wall").colorValue = l.Item3;
+                e.FindPropertyRelative("sun").colorValue = l.Item4;
+                e.FindPropertyRelative("sunIntensity").floatValue = l.Item5;
+                e.FindPropertyRelative("ambient").colorValue = l.Item6;
+                e.FindPropertyRelative("filter").colorValue = l.Item7;
+                e.FindPropertyRelative("exposure").floatValue = l.Item8;
+                e.FindPropertyRelative("contrast").floatValue = l.Item9;
+                e.FindPropertyRelative("saturation").floatValue = l.Item10;
+                e.FindPropertyRelative("background").colorValue = l.Item11;
             }
         }
 

@@ -33,6 +33,8 @@ namespace HistoryHeroes.EditorTools
         public Props Vector2(string name, Vector2 value) { Find(name).vector2Value = value; return this; }
         public Props Vector3(string name, Vector3 value) { Find(name).vector3Value = value; return this; }
         public Props Mask(string name, int layerMask) { Find(name).intValue = layerMask; return this; }
+        /// <summary>구조체 배열처럼 직접 채워야 하는 칸</summary>
+        public SerializedProperty Property(string name) => Find(name);
 
         public Props Refs<T>(string name, IList<T> values) where T : Object
         {

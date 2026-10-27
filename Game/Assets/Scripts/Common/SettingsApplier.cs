@@ -28,9 +28,11 @@ namespace HistoryHeroes.Common
             level = Mathf.Clamp(level, 0, 2);
             Camera cam = Camera.main;
             if (cam != null && cam.TryGetComponent(out UniversalAdditionalCameraData data)) data.renderShadows = level > 0;
+            StageLook.SetPost(level > 0); // 낮음: 화면 후처리(색 보정·빛 번짐) 끔
 #if !UNITY_EDITOR
             if (GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset urp)
             {
+                urp.supportsHDR = level > 0; // 빛 번짐은 밝은 색(1 넘는 값)이 필요하다. 낮음은 후처리가 없으니 끈다
                 urp.renderScale = RenderScale(level);
                 urp.msaaSampleCount = level >= 2 ? 2 : 1;
                 urp.shadowDistance = level >= 2 ? 40f : 28f;

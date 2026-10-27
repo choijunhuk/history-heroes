@@ -395,6 +395,7 @@ namespace HistoryHeroes.Dungeon
             {
                 EnsureRiftFloor(room + 9); // 진행 바에 보일 층까지
                 _chapter = dungeon.Chapter(Modes.RiftRules.ChapterFor(room));
+                if (_chapter != null) StageLook.Show(StageLook.KeyFor(GameSession.Mode, _chapter.chapter)); // 층의 구간 색
                 if (room >= 5 && !_riftFloor5)
                 {
                     _riftFloor5 = true;

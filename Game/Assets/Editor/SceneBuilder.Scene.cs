@@ -48,6 +48,7 @@ namespace HistoryHeroes.EditorTools
             UniversalAdditionalCameraData cameraData = camera.GetUniversalAdditionalCameraData();
             cameraData.SetRenderer(1); // UniversalRenderer3D (0번은 로비가 쓰는 2D 렌더러)
             cameraData.renderShadows = true;
+            cameraData.renderPostProcessing = true; // 그래픽 평가 1번: 톤 매핑·색 보정·빛 번짐 (낮음 품질은 StageLook이 끈다)
             var fit = mount.AddComponent<CameraFit>();
             using (var props = new Props(fit)) props.Ref("viewCamera", camera);
             cameraObject.AddComponent<CameraShake>(); // 손맛: 화면 흔들림 (조사 A9)
@@ -57,7 +58,7 @@ namespace HistoryHeroes.EditorTools
             var numbers = new GameObject("DamageNumbers").AddComponent<DamageNumbers>();
             using (var props = new Props(numbers)) props.Ref("font", _font);
 
-            BuildLighting(_stage);
+            BuildLighting(_stage, camera);
             BuildOutside(_stage);
 
             // ----- 모드별 묶음: 장면이 열릴 때 BattleBootstrap이 한쪽만 켠다 -----
