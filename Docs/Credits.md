@@ -18,7 +18,14 @@
 
 ## 그림
 
-- 지금은 **임시 도형**만 쓴다 (게임이 직접 그린 원·사각형). 바깥 그림 에셋 없음.
+- 3D로 바꾸는 중 ([3D 전환 계획](Dev/Art3D-Plan.md)). 지금 게임 화면은 아직 임시 도형 (게임이 직접 그린 원·사각형).
+
+| 이름 | 쓰는 곳 | 라이선스 | 출처 |
+|---|---|---|---|
+| Modular Character Outfits - Fantasy (Ranger · Peasant 옷) | 영웅 · 사람 적의 몸과 옷 | CC0 | Quaternius — https://quaternius.com/packs/modularcharacteroutfitsfantasy.html |
+| Universal Base Characters (머리 · 눈 · 머리카락 · 수염) | 영웅 · 사람 적의 머리 (기본 몸에서 떼어 붙임) | CC0 | Quaternius — https://quaternius.com/packs/universalbasecharacters.html |
+| Bestiary - Dungeon Monsters Kit (Imp · Puglin) | 괴물 적 · 보스 | CC0 | Quaternius — https://quaternius.com/packs/bestiarydungeonmonsterskit.html |
+| Universal Animation Library 1 · 2 (동작 28개) | 모든 캐릭터의 동작 | CC0 | Quaternius — https://quaternius.com/packs/universalanimationlibrary.html |
 - 그래픽 방향 비교용 샘플 (게임 빌드에는 안 들어감, [비교](Reviews/2026-10-27-graphics-direction.md)): Kenney *Tiny Dungeon* (CC0, https://kenney.nl/assets/tiny-dungeon) · Quaternius *Modular Character Outfits - Fantasy* · *Bestiary - Dungeon Monsters* · *Universal Animation Library 1·2* (모두 CC0, https://quaternius.com)
 
 ## 소리 (모두 CC0 — 출처 표시 의무는 없지만 고맙게 적는다)
