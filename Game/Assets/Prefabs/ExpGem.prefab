@@ -247,3 +247,5 @@ MonoBehaviour:
   bobHeight: 0.06
   bobSpeed: 3
   yUp: 0
+  sizeReference: 0.45
+  worldOffset: {x: 0, y: 0, z: -0.32}

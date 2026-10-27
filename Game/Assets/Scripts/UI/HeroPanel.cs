@@ -136,7 +136,11 @@ namespace HistoryHeroes.UI
                 HeroData h = roster.heroes[i];
                 bool unlocked = HeroUnlock.IsUnlocked(d, h);
                 heroBackgrounds[i].color = i == _focus ? Focused : unlocked ? Normal : Locked;
-                if (_portraits != null) _portraits.SetLocked(i, !unlocked);
+                if (_portraits != null)
+                {
+                    _portraits.SetLocked(i, !unlocked);
+                    _portraits.SetFocus(_focus); // 고른 영웅 초상만 계속 움직인다
+                }
                 string mark = h == selected ? "  <color=#7CFC9A>(지금 영웅)</color>" : string.Empty;
                 Records.HeroProgress progress = d.Hero(h.id);
                 string growth = unlocked ? $"  <size=80%><color=#9FD8FF>Lv {progress.level}</color> <color=#FFD966>{new string('★', progress.stars)}{new string('☆', 5 - progress.stars)}</color></size>" : string.Empty;

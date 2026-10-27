@@ -25,13 +25,24 @@ namespace HistoryHeroes.Enemy
         private bool _twinHit;
         private bool _twinHold; // 돌진 예고 중 (예고선에서 출발해야 한다)
 
+        private Visual3D _twinVisual;
+
         protected override void OnSpawned()
         {
             if (twin == null) return;
+            twin.gameObject.SetActive(true);
             twin.transform.SetParent(null, true);
             _twinPos = Pos + new Vector2(2.5f, 0f);
             _twinHold = false;
-            twin.enabled = true;
+            // 3D 유령 (Art3D-Plan 5번): 모델이 있으면 흐린 원 대신 비치는 쌍둥이가 영웅을 본다
+            if (_twinVisual == null) _twinVisual = twin.GetComponent<Visual3D>();
+            if (_twinVisual != null) _twinVisual.LookTarget = player;
+            twin.enabled = _twinVisual == null || !_twinVisual.HasModel;
+        }
+
+        private void TwinAttack(Vector2 direction)
+        {
+            if (_twinVisual != null) _twinVisual.Attack(direction);
         }
 
         protected override void OnTick()
@@ -75,6 +86,7 @@ namespace HistoryHeroes.Enemy
                 _twinHold = false;
                 _twinDash = twinDir;
                 _twinDashUntil = bossTime + 0.7f;
+                TwinAttack(twinDir);
                 _twinHit = false;
                 yield return Dash(0.25f, 10.5f, 0.9f, 1.2f, "boss_twins_dash", 1.6f, 1.2f);
             }
@@ -84,6 +96,7 @@ namespace HistoryHeroes.Enemy
                 int knives = phase >= 3 ? 7 : 5;
                 Fan(knives, 60f, knifeSpeed, knifeDamage, "boss_twins_knife");
                 FanFrom(_twinPos, knives, 60f, knifeSpeed, knifeDamage, "boss_twins_knife");
+                TwinAttack((Vector2)player.position - _twinPos);
                 yield return Open(phase >= 2 ? 1.4f : 1.8f);
             }
 
@@ -102,7 +115,12 @@ namespace HistoryHeroes.Enemy
 
         protected override void OnDied(Health h)
         {
-            if (twin != null) twin.enabled = false;
+            if (twin != null)
+            {
+                twin.enabled = false;
+                if (_twinVisual != null) twin.gameObject.SetActive(false); // 3D 유령도 같이 사라진다
+            }
+
             base.OnDied(h);
         }
 

@@ -483,6 +483,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7486270659812942558}
   - component: {fileID: 1583091682869382110}
+  - component: {fileID: 8248267544394264670}
   m_Layer: 0
   m_Name: Twin
   m_TagString: Untagged
@@ -564,3 +565,23 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &8248267544394264670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4349472211082673037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b28267fcbf9054244bbd55ad71d89540, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Visual3D
+  modelPrefab: {fileID: 7068942174513593510, guid: bc1ea0733d414714897bb4c8a7060c46, type: 3}
+  height: 1.72
+  runSpeed: 4
+  hideRenderers:
+  - {fileID: 1583091682869382110}
+  tintSource: {fileID: 0}
+  turnSharpness: 16
+  keepOnDeath: 0

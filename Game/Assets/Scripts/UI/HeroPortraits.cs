@@ -8,7 +8,9 @@ namespace HistoryHeroes.UI
 {
     /// <summary>
     /// 영웅 화면의 3D 초상 (Art3D-Plan 7번): 영웅마다 작은 카메라가 3D 모델을 그림(RenderTexture)으로 그려 줄의 오른쪽에 보인다.
-    /// 끌면 그 영웅이 돈다. 화면이 열려 있을 때만 카메라가 돈다 (이 부품이 영웅 화면에 붙어 있어 같이 켜지고 꺼진다).
+    /// 끌면 그 영웅이 돈다. 이 부품은 영웅 화면에 붙어 있어 화면이 열려 있을 때만 그린다.
+    /// 필요할 때만 그린다 (Codex 3D 코드 리뷰 2차 2번): 열 때 네 장을 한 번씩, 그 뒤엔 고른 영웅만 초당 15번(서 있는 동작),
+    /// 끄는 영웅은 바로. 카메라는 늘 꺼 두고 손으로 Render를 부른다 → 장비·펫 화면을 위에 열어도 카메라 네 대가 계속 돌지 않는다.
     /// 무대는 로비 UI와 멀리 떨어진 곳(위가 +Y인 보통 3D)에 둔다. 카메라는 3D 렌더러(1번), 배경은 투명.
     /// </summary>
     public sealed class HeroPortraits : MonoBehaviour
@@ -19,17 +21,23 @@ namespace HistoryHeroes.UI
         [Tooltip("모델 키 (초상 안)")]
         [SerializeField] private float modelHeight = 1.8f;
         [SerializeField] private float startYaw = 25f;
+        [Tooltip("고른 영웅을 다시 그리는 빠르기 (초당)")]
+        [SerializeField] private float liveFps = 15f;
 
         private static readonly Vector3 StageOrigin = new Vector3(0f, -5000f, 0f);
         private const float SlotGap = 30f;
 
         private readonly List<Slot> _slots = new List<Slot>();
         private Transform _stage;
+        private int _focus = -1;
+        private float _nextLive;
 
         private sealed class Slot
         {
+            public int Index;
             public Camera Camera;
             public Transform Model;
+            public Animator Animator;
             public RenderTexture Texture;
             public float Yaw;
         }
@@ -37,25 +45,56 @@ namespace HistoryHeroes.UI
         private void OnEnable()
         {
             if (_stage == null) Build();
-            foreach (Slot s in _slots) s.Camera.enabled = true;
+            if (_stage != null) _stage.gameObject.SetActive(true);
+            foreach (Slot s in _slots) Draw(s); // 열 때 한 번씩
         }
 
         private void OnDisable()
         {
-            foreach (Slot s in _slots)
-            {
-                if (s.Camera != null) s.Camera.enabled = false;
-            }
+            if (_stage != null) _stage.gameObject.SetActive(false); // 모델 동작도 멈춘다
         }
 
         private void OnDestroy()
         {
             foreach (Slot s in _slots)
             {
-                if (s.Texture != null) s.Texture.Release();
+                if (s.Camera != null) s.Camera.targetTexture = null;
+                if (images.Length > s.Index && images[s.Index] != null) images[s.Index].texture = null;
+                if (s.Texture != null)
+                {
+                    s.Texture.Release();
+                    Destroy(s.Texture); // Release만으로는 객체가 남는다 (Codex 3D 코드 리뷰 2차 4번)
+                }
             }
 
+            _slots.Clear();
             if (_stage != null) Destroy(_stage.gameObject);
+        }
+
+        /// <summary>지금 고른(포커스) 영웅: 이 초상만 계속 움직인다</summary>
+        public void SetFocus(int index) => _focus = index;
+
+        /// <summary>잠긴 영웅은 초상을 어둡게 (그림이 아직 없으면 그대로 투명)</summary>
+        public void SetLocked(int index, bool locked)
+        {
+            if (index < 0 || index >= images.Length || images[index] == null || images[index].texture == null) return;
+            images[index].color = locked ? new Color(0.32f, 0.32f, 0.38f, 1f) : Color.white;
+        }
+
+        private void Update()
+        {
+            if (_focus < 0 || Time.unscaledTime < _nextLive) return;
+            _nextLive = Time.unscaledTime + 1f / Mathf.Max(1f, liveFps);
+            foreach (Slot s in _slots)
+            {
+                if (s.Index == _focus) Draw(s);
+            }
+        }
+
+        private static void Draw(Slot s)
+        {
+            if (s.Camera == null) return;
+            s.Camera.Render();
         }
 
         private void Build()
@@ -80,6 +119,12 @@ namespace HistoryHeroes.UI
                 float raw = hero.model3D.TryGetComponent(out Combat.Model3DInfo info) && info.height > 0.01f ? info.height : 1.8f;
                 model.localScale = Vector3.one * (modelHeight / raw);
                 foreach (Renderer r in model.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                var animator = model.GetComponent<Animator>();
+                if (animator != null)
+                {
+                    animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; // 손으로 그리니 "보이는지"로 끄지 않게
+                    animator.Update(0f); // 첫 장에 T자세가 찍히지 않게
+                }
 
                 var texture = new RenderTexture(textureSize, Mathf.RoundToInt(textureSize * 1.15f), 16, RenderTextureFormat.ARGB32) { name = $"Portrait_{hero.id}", antiAliasing = 2 };
                 var cameraObject = new GameObject($"Camera {hero.id}");
@@ -94,11 +139,11 @@ namespace HistoryHeroes.UI
                 cam.farClipPlane = 12f; // 옆 칸 영웅(30 유닛 떨어짐)이 안 보이게
                 cam.targetTexture = texture;
                 cam.GetUniversalAdditionalCameraData().SetRenderer(1); // 3D 렌더러 (로비 기본은 2D)
-                cam.enabled = false;
+                cam.enabled = false; // 늘 꺼 두고 Draw에서 손으로 그린다
 
                 images[i].texture = texture;
                 images[i].color = Color.white;
-                var slot = new Slot { Camera = cam, Model = model, Texture = texture, Yaw = startYaw };
+                var slot = new Slot { Index = i, Camera = cam, Model = model, Animator = animator, Texture = texture, Yaw = startYaw };
                 var drag = images[i].GetComponent<PortraitDrag>();
                 if (drag == null) drag = images[i].gameObject.AddComponent<PortraitDrag>();
                 drag.Dragged = dx => Rotate(slot, dx);
@@ -106,18 +151,12 @@ namespace HistoryHeroes.UI
             }
         }
 
-        /// <summary>잠긴 영웅은 초상을 어둡게 (그림이 아직 없으면 그대로 투명)</summary>
-        public void SetLocked(int index, bool locked)
-        {
-            if (index < 0 || index >= images.Length || images[index] == null || images[index].texture == null) return;
-            images[index].color = locked ? new Color(0.32f, 0.32f, 0.38f, 1f) : Color.white;
-        }
-
         private static void Rotate(Slot slot, float deltaX)
         {
             if (slot.Model == null) return;
             slot.Yaw -= deltaX * 0.5f;
             slot.Model.rotation = Quaternion.Euler(0f, slot.Yaw, 0f);
+            Draw(slot);
         }
     }
 }

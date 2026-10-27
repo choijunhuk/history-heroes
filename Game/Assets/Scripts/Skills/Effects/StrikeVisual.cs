@@ -21,8 +21,11 @@ namespace HistoryHeroes.Skills
         /// <summary>그림을 세운다: 스프라이트의 위(+Y)가 하늘(-Z), 보이는 면은 카메라 쪽(-Y)</summary>
         private static readonly Quaternion Standing = Quaternion.Euler(-90f, 0f, 0f);
 
-        /// <summary>땅 위 점 + 높이 → 월드 (위 = -Z)</summary>
-        private static Vector3 At(Vector2 ground, Vector2 offset, float height) => new Vector3(ground.x + offset.x, ground.y, -(offset.y + height));
+        /// <summary>그림 키의 절반 (세운 그림의 가운데가 이보다 낮으면 땅에 묻힌다)</summary>
+        private float _half;
+
+        /// <summary>땅 위 점 + 높이 → 월드 (위 = -Z). 그림 아래끝이 땅 밑으로 가지 않게 가운데를 최소 반 키만큼 띄운다 (Codex 3D 코드 리뷰 2차 3번)</summary>
+        private Vector3 At(Vector2 ground, Vector2 offset, float height) => new Vector3(ground.x + offset.x, ground.y, -(Mathf.Max(offset.y, _half) + height));
         private Transform _follow;
         private float _fallTime;
         private float _linger;
@@ -65,6 +68,7 @@ namespace HistoryHeroes.Skills
 
             transform.localScale = new Vector3(size.x, size.y, 1f);
             transform.rotation = Standing;
+            _half = size.y * 0.5f;
             _from = At(target, visualOffset, fallHeight);
             transform.position = _from;
             _renderer.color = color;

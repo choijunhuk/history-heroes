@@ -41,6 +41,7 @@ namespace HistoryHeroes.EditorTools
             AnimatorController baseController = BaseController();
             foreach (Look look in Heroes) log.Add(Compose(look, Override(look.name, baseController, look.attack), Characters));
             foreach (EnemyLook e in Enemies) log.Add(Compose(e.look, Override(e.look.name, baseController, e.look.attack), EnemyCharacters));
+            log.Add(Compose(TwinGhost, Override(TwinGhost.name, baseController, TwinGhost.attack), EnemyCharacters));
             log.Add(Art3DPets.BuildAll());
             AssetDatabase.SaveAssets();
             return string.Join("\n", log);
@@ -176,6 +177,13 @@ namespace HistoryHeroes.EditorTools
             public bool shadows = true;
             /// <summary>상징 소품 (Art3DProps, 블렌더로 만든 고정 메시)</summary>
             public string[] props = new string[0];
+            /// <summary>0보다 크면 비치는 유령 (모든 재질 알파, 그림자 없음 — 그림자 쌍둥이의 맞지 않는 쪽)</summary>
+            public float ghost;
+
+            /// <summary>재질 이름 꼬리 (유령은 따로)</summary>
+            public string MatSuffix => ghost > 0f ? "_Ghost" : "";
+
+            public float Alpha => ghost > 0f ? ghost : 1f;
 
             /// <summary>괴물 모델 (Imp · Puglin, 가벼운 _LOD 포함): 머리를 붙이지 않고 몸 재질만 바꾼다</summary>
             public bool Monster => body.StartsWith("Imp") || body.StartsWith("Puglin");
@@ -214,12 +222,22 @@ namespace HistoryHeroes.EditorTools
             tint = tint, head = false, attack = attack, shadows = shadows,
         };
 
-        private static Look Soldier(string name, string body, string tex, Color tint, string attack, bool shadows, bool hood = true) => new Look
+        private static Look Soldier(string name, string body, string tex, Color tint, string attack, bool shadows, bool hood = true, string[] props = null, float ghost = 0f) => new Look
         {
-            name = name, body = body, bodyTex = tex, tint = tint, attack = attack, shadows = shadows,
+            name = name, body = body, bodyTex = tex, tint = tint, attack = attack, shadows = shadows && ghost <= 0f,
             hide = hood ? new string[0] : new[] { "Male_Ranger_Head_Hood" },
             hair = body == "Male_Peasant" ? new[] { "Hair_Buzzed", "Eyebrows" } : new[] { "Eyebrows" },
+            props = props ?? new string[0],
+            ghost = ghost,
         };
+
+        /// <summary>그림자 쌍둥이의 맞지 않는 쪽: 보스와 같은 옷을 비치게 (2D 때 흐린 원 → 3D 유령)</summary>
+        public static readonly Look TwinGhost = Soldier("B_TwinsGhost", "Male_Ranger", "T_Ranger_BaseColor", new Color(0.62f, 0.56f, 0.95f), "Sword_Regular_A", false, ghost: 0.5f);
+
+        public const float TwinHeight = 1.72f;
+
+        /// <summary>쌍둥이 유령 모델 (없으면 null)</summary>
+        public static GameObject TwinGhostModel() => AssetDatabase.LoadAssetAtPath<GameObject>($"{EnemyCharacters}/{TwinGhost.name}3D.prefab");
 
         /// <summary>
         /// 적 모델 (데이터 id → 모델). 서바이벌 무리(돌진병·궁병·투척병·졸개)는 가장 가벼운 Puglin(꼭짓점 4.5천),
@@ -232,7 +250,7 @@ namespace HistoryHeroes.EditorTools
             new EnemyLook { ids = new[] { "archer" }, height = 1.49f, look = Puglin("E_Archer", 2, new Color(0.9f, 0.8f, 1f), "Spell_Simple_Shoot", false, light: true) },
             new EnemyLook { ids = new[] { "bomber" }, height = 1.49f, look = Puglin("E_Bomber", 3, new Color(1f, 0.88f, 0.7f), "OverhandThrow", false, light: true) },
             new EnemyLook { ids = new[] { "minion" }, height = 1.32f, look = Puglin("E_Minion", 3, new Color(0.7f, 0.66f, 0.8f), "Zombie_Scratch", false, light: true) },
-            new EnemyLook { ids = new[] { "shield" }, height = 1.78f, look = Soldier("E_Shield", "Male_Peasant", "T_Peasant_BaseColor", new Color(0.75f, 0.8f, 0.9f), "Shield_Dash", false) },
+            new EnemyLook { ids = new[] { "shield" }, height = 1.78f, look = Soldier("E_Shield", "Male_Peasant", "T_Peasant_BaseColor", new Color(0.75f, 0.8f, 0.9f), "Shield_Dash", false, props: new[] { "Enemy_TowerShield" }) },
             new EnemyLook { ids = new[] { "splitter", "splitter_small" }, height = 1.55f, look = Imp("E_Splitter", 1, new Color(0.75f, 1f, 0.78f), "Punch_Jab", false, light: true) },
             new EnemyLook { ids = new[] { "summoner" }, height = 1.61f, look = Imp("E_Summoner", 2, new Color(0.9f, 0.78f, 1f), "Spell_Simple_Shoot", false, glow: true, light: true) },
             // 중간 보스 (bossScale로 더 커진다)
@@ -276,7 +294,8 @@ namespace HistoryHeroes.EditorTools
 
         // ── 재질 · 동작 · 조립 ──
 
-        public static Material Lit(string name, string baseTex, string normalTex, Color tint, bool cutout = false, string emissive = null)
+        /// <param name="alpha">1보다 작으면 비치는 재질 (그림자 쌍둥이의 맞지 않는 쪽)</param>
+        public static Material Lit(string name, string baseTex, string normalTex, Color tint, bool cutout = false, string emissive = null, float alpha = 1f)
         {
             Directory.CreateDirectory(Materials);
             string path = $"{Materials}/M_{name}.mat";
@@ -318,6 +337,25 @@ namespace HistoryHeroes.EditorTools
                 mat.SetTexture("_EmissionMap", null);
                 mat.DisableKeyword("_EMISSION");
             }
+
+            // 비치는 재질 (URP Lit "Transparent", 알파 섞기). 아니면 불투명으로 되돌린다
+            bool transparent = alpha < 0.999f;
+            Color baseColor = mat.GetColor("_BaseColor");
+            baseColor.a = transparent ? alpha : 1f;
+            mat.SetColor("_BaseColor", baseColor);
+            mat.SetFloat("_Surface", transparent ? 1f : 0f);
+            mat.SetFloat("_Blend", 0f);
+            mat.SetFloat("_SrcBlend", transparent ? (float)UnityEngine.Rendering.BlendMode.SrcAlpha : (float)UnityEngine.Rendering.BlendMode.One);
+            mat.SetFloat("_DstBlend", transparent ? (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha : (float)UnityEngine.Rendering.BlendMode.Zero);
+            mat.SetFloat("_SrcBlendAlpha", transparent ? (float)UnityEngine.Rendering.BlendMode.One : (float)UnityEngine.Rendering.BlendMode.One);
+            mat.SetFloat("_DstBlendAlpha", transparent ? (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha : (float)UnityEngine.Rendering.BlendMode.Zero);
+            mat.SetFloat("_ZWrite", transparent ? 0f : 1f);
+            mat.SetOverrideTag("RenderType", transparent ? "Transparent" : (cutout ? "TransparentCutout" : "Opaque"));
+            if (transparent) mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            else mat.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON"); // 알파 섞기에 미리 곱하기가 남아 있으면 두 번 흐려진다
+            mat.DisableKeyword("_ALPHAMODULATE_ON");
+            mat.renderQueue = transparent ? (int)UnityEngine.Rendering.RenderQueue.Transparent : cutout ? (int)UnityEngine.Rendering.RenderQueue.AlphaTest : -1;
 
             mat.enableInstancing = true;
             EditorUtility.SetDirty(mat);
@@ -421,8 +459,8 @@ namespace HistoryHeroes.EditorTools
             var notes = new List<string>();
 
             string normal = look.normalTex ?? (look.body.Contains("Ranger") ? "T_Ranger_Normal" : "T_Peasant_Normal");
-            Material outfit = Lit(look.name + "_Outfit", look.bodyTex, normal, look.tint, emissive: look.emissive);
-            Material arms = Lit("Skin_Regular", "T_Regular_Male_Dark_BaseColor", "T_Regular_Male_Normal", Color.white);
+            Material outfit = Lit(look.name + "_Outfit", look.bodyTex, normal, look.tint, emissive: look.emissive, alpha: look.Alpha);
+            Material arms = Lit("Skin_Regular" + look.MatSuffix, "T_Regular_Male_Dark_BaseColor", "T_Regular_Male_Normal", look.ghost > 0f ? look.tint : Color.white, alpha: look.Alpha);
 
             foreach (var r in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
@@ -439,15 +477,16 @@ namespace HistoryHeroes.EditorTools
 
             if (look.head && !look.Monster)
             {
-                Material headSkin = Lit("Skin_Head", "T_Superhero_Male_Dark", "T_Superhero_Male_Normal", Color.white);
-                Material eyes = Lit("Eyes", "T_Eye_Brown", null, Color.white);
+                Color skin = look.ghost > 0f ? look.tint : Color.white;
+                Material headSkin = Lit("Skin_Head" + look.MatSuffix, "T_Superhero_Male_Dark", "T_Superhero_Male_Normal", skin, alpha: look.Alpha);
+                Material eyes = Lit("Eyes" + look.MatSuffix, "T_Eye_Brown", null, skin, alpha: look.Alpha);
                 notes.Add(Attach(go, "Superhero_Male_FullBody", "SuperHero_Male", AssetDatabase.LoadAssetAtPath<Mesh>(HeadMesh), headSkin));
                 notes.Add(Attach(go, "Superhero_Male_FullBody", "Eyes", null, eyes));
             }
 
             if (look.hair.Length > 0)
             {
-                Material hair = Lit(look.name + "_Hair", look.hairTex + "_BaseColor", look.hairTex + "_Normal", look.hairColor, cutout: true);
+                Material hair = Lit(look.name + "_Hair", look.hairTex + "_BaseColor", look.hairTex + "_Normal", look.hairColor, cutout: look.ghost <= 0f, alpha: look.Alpha);
                 foreach (string h in look.hair)
                 {
                     notes.Add(h == "Eyebrows" ? Attach(go, "Superhero_Male_FullBody", "Eyebrows", null, hair) : Attach(go, h, h, null, hair));

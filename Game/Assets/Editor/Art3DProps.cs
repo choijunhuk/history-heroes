@@ -24,6 +24,7 @@ namespace HistoryHeroes.EditorTools
             ["Guan_Glaive"] = "hand_r", ["Guan_Hat"] = "Head",
             ["Napoleon_Bicorne"] = "Head", ["Napoleon_Pistol"] = "hand_r",
             ["Tesla_Mustache"] = "Head", ["Tesla_Coil"] = "hand_r",
+            ["Enemy_TowerShield"] = "hand_l", // 방패병의 큰 나무 방패 (앞을 막는다)
         };
 
         /// <summary>역할 이름 → 색 (sRGB) · 금속 여부 (블렌더 notes.txt의 색)</summary>
@@ -134,7 +135,43 @@ namespace HistoryHeroes.EditorTools
                 parts++;
             }
 
+            if (parts > 0 && Turns.TryGetValue(propName, out Vector3 turn)) TurnAroundCenter(holder.transform, Quaternion.Euler(turn));
             return parts > 0 ? "" : $"{propName}: 메시 없음";
+        }
+
+        /// <summary>
+        /// 바인드 자세(T자세)에 맞춰 만든 소품이 서 있는 동작에서 눕는 것 → 소품 가운데를 축으로 돌려 바로 세운다 (뼈 기준 회전).
+        /// 방패: 팔을 내리면 T자세의 세로가 가로가 된다 → 90° (사진으로 고른 값)
+        /// </summary>
+        private static readonly Dictionary<string, Vector3> Turns = new Dictionary<string, Vector3>
+        {
+            ["Enemy_TowerShield"] = new Vector3(0f, 0f, 90f),
+        };
+
+        /// <summary>holder 아래 조각들의 가운데에 축을 두고 돌린다 (자리는 그대로, 방향만)</summary>
+        private static void TurnAroundCenter(Transform holder, Quaternion turn)
+        {
+            var parts = new List<Transform>();
+            Vector3 center = Vector3.zero;
+            foreach (Transform part in holder)
+            {
+                var filter = part.GetComponent<MeshFilter>();
+                Vector3 meshCenter = filter != null && filter.sharedMesh != null ? filter.sharedMesh.bounds.center : Vector3.zero;
+                center += part.localPosition + part.localRotation * Vector3.Scale(meshCenter, part.localScale);
+                parts.Add(part);
+            }
+
+            if (parts.Count == 0) return;
+            center /= parts.Count;
+            var pivot = new GameObject("Pivot").transform;
+            pivot.SetParent(holder, false);
+            pivot.localPosition = center;
+            foreach (Transform part in parts)
+            {
+                part.SetParent(pivot, true);
+            }
+
+            pivot.localRotation = turn;
         }
 
         private static Transform Find(Transform root, string name)

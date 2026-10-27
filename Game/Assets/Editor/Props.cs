@@ -31,6 +31,7 @@ namespace HistoryHeroes.EditorTools
         public Props String(string name, string value) { Find(name).stringValue = value; return this; }
         public Props Color(string name, Color value) { Find(name).colorValue = value; return this; }
         public Props Vector2(string name, Vector2 value) { Find(name).vector2Value = value; return this; }
+        public Props Vector3(string name, Vector3 value) { Find(name).vector3Value = value; return this; }
         public Props Mask(string name, int layerMask) { Find(name).intValue = layerMask; return this; }
 
         public Props Refs<T>(string name, IList<T> values) where T : Object

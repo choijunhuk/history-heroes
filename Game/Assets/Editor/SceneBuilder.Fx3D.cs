@@ -134,7 +134,8 @@ namespace HistoryHeroes.EditorTools
             model.localScale = Vector3.one / rootScale;
             model.localPosition = new Vector3(0f, 0f, -0.32f / rootScale);
             FxPart(model, GemMesh(), FxMat("Gem", new Color(0.35f, 1f, 0.75f), 1.8f), Vector3.zero, Quaternion.identity, new Vector3(0.22f, 0.22f, 0.34f));
-            model.gameObject.AddComponent<Spin3D>();
+            // 게임 중 보석 배율은 떨굴 때 0.45(Z는 1), 합치면 커진다 → 월드 크기 맞추기로 높이 0.32에 뜨고 커진 만큼만 커진다
+            using (var props = new Props(model.gameObject.AddComponent<Spin3D>())) props.Float("sizeReference", 0.45f).Vector3("worldOffset", new Vector3(0f, 0f, -0.32f));
             go.GetComponent<SpriteRenderer>().enabled = false;
         }
 

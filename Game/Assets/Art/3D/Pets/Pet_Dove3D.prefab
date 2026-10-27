@@ -49,6 +49,8 @@ MonoBehaviour:
   bobHeight: 0.07
   bobSpeed: 2.5
   yUp: 1
+  sizeReference: 0
+  worldOffset: {x: 0, y: 0, z: 0}
 --- !u!1 &3226875233358346428
 GameObject:
   m_ObjectHideFlags: 0

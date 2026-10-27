@@ -109,6 +109,13 @@ namespace HistoryHeroes.EditorTools
                 // 그림자 쪽 (맞지 않는다): 흐린 같은 모양
                 SpriteRenderer twin = ChildSprite(go, "Twin", _circle, new Color(0.22f, 0.2f, 0.32f, 0.45f), 1f, 2);
                 props.Ref("twin", twin);
+                // 3D: 보스와 같은 옷이 비치는 유령 (Art3D-Plan 5번). 모델이 없으면 흐린 원 그대로
+                GameObject ghost = Art3DCharacters.TwinGhostModel();
+                if (ghost != null)
+                {
+                    using (var v = new Props(twin.gameObject.AddComponent<HistoryHeroes.Combat.Visual3D>()))
+                        v.Ref("modelPrefab", ghost).Float("height", Art3DCharacters.TwinHeight).Float("runSpeed", 4f).Refs("hideRenderers", new Object[] { twin });
+                }
             });
             p.OblivionKing = EnemyPrefab<OblivionKingBoss>("Boss_OblivionKing", b.King, _circle, line, false, (go, props) =>
             {
