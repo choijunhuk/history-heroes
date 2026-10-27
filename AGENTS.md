@@ -4,7 +4,7 @@ Instructions for AI coding agents (Codex, Claude Code, and others) working in th
 
 ## Project
 
-**History Heroes**: an Archero-style mobile roguelike where world historical figures are the playable heroes. Unity 6.3 LTS, C#, 2D URP, portrait, Android first.
+**History Heroes**: an Archero-style mobile roguelike where world historical figures are the playable heroes. Unity 6.3 LTS, C#, URP with 3D visuals over 2D gameplay (2D physics on the XY plane, tilted camera), portrait, Android first.
 
 The developer is learning game development with this project and plans to release it on the store.
 

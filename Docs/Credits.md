@@ -19,6 +19,7 @@
 ## 그림
 
 - 지금은 **임시 도형**만 쓴다 (게임이 직접 그린 원·사각형). 바깥 그림 에셋 없음.
+- 그래픽 방향 비교용 샘플 (게임 빌드에는 안 들어감, [비교](Reviews/2026-10-27-graphics-direction.md)): Kenney *Tiny Dungeon* (CC0, https://kenney.nl/assets/tiny-dungeon) · Quaternius *Modular Character Outfits - Fantasy* · *Bestiary - Dungeon Monsters* · *Universal Animation Library 1·2* (모두 CC0, https://quaternius.com)
 
 ## 소리 (모두 CC0 — 출처 표시 의무는 없지만 고맙게 적는다)
 

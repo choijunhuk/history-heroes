@@ -70,7 +70,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 엔진 | Unity 6.3 LTS (2D URP) |
+| 엔진 | Unity 6.3 LTS (URP · 3D 그림 + 2D 판정) |
 | 언어 | C# |
 | 플랫폼 | Android (이후 iOS) |
 | 데이터 | ScriptableObject (스킬, 영웅, 확률표) |
