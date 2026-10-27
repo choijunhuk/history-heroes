@@ -12,15 +12,15 @@ namespace HistoryHeroes.Common
     {
         [SerializeField] private Transform target;
         [SerializeField] private CameraFit fit;
-        [Tooltip("맵 절반 크기 (경계)")]
-        [SerializeField] private float boundsHalfSize = 40f;
+        [Tooltip("맵 절반 크기 (경계, 가로·세로)")]
+        [SerializeField] private Vector2 boundsHalf = new Vector2(40f, 40f);
         [Tooltip("따라가는 빠르기 (클수록 딱 붙음)")]
         [SerializeField] private float sharpness = 10f;
 
-        public float BoundsHalfSize
+        public Vector2 BoundsHalf
         {
-            get => boundsHalfSize;
-            set => boundsHalfSize = value;
+            get => boundsHalf;
+            set => boundsHalf = value;
         }
 
         private bool _snapNext;
@@ -55,8 +55,8 @@ namespace HistoryHeroes.Common
         {
             Vector2 p = target.position;
             Rect view = fit != null ? fit.GroundView : new Rect(-5f, -8f, 10f, 18f);
-            return new Vector2(Clamp(p.x, -boundsHalfSize - view.xMin, boundsHalfSize - view.xMax),
-                Clamp(p.y, -boundsHalfSize - view.yMin, boundsHalfSize - view.yMax));
+            return new Vector2(Clamp(p.x, -boundsHalf.x - view.xMin, boundsHalf.x - view.xMax),
+                Clamp(p.y, -boundsHalf.y - view.yMin, boundsHalf.y - view.yMax));
         }
 
         /// <summary>보이는 범위가 맵보다 넓으면 가운데에 둔다</summary>

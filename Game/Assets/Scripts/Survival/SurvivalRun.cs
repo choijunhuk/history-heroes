@@ -19,7 +19,7 @@ namespace HistoryHeroes.Survival
     /// 기본 공격은 던전과 똑같이 **멈춰야 나간다** → "지금 멈춰서 몰아칠까, 계속 피할까".
     /// 기록은 저장하지 않는다 (8-3). 보상은 조합 발견·생존 시간 중심, 재화는 던전보다 적게 (8-4).
     /// </summary>
-    public sealed class SurvivalRun : MonoBehaviour
+    public sealed partial class SurvivalRun : MonoBehaviour
     {
         [SerializeField] private SurvivalData data;
         [SerializeField] private SkillDatabase database;
@@ -73,6 +73,9 @@ namespace HistoryHeroes.Survival
 
             hud.SetSurvivalMode();
             levelUp.Floor = 1;
+            StageLook.Show(string.IsNullOrEmpty(data.lookKey) ? "survival" : data.lookKey); // 맵마다 색 (들판 · 성곽 · 공장)
+            StartCrates(); // 짚더미 · 화로 (확장 1차 6-4장)
+            hud.ShowNotice($"{data.mapName} — 임무: {MissionText}", 3f);
         }
 
         private void Update()
@@ -82,15 +85,20 @@ namespace HistoryHeroes.Survival
             levelUp.Floor = 1 + Mathf.FloorToInt(_elapsed / 60f * data.floorPerMinute); // 전설 확률: 경과 시간 기준 (8-1)
             UpdateClock();
 
+            CrateTick();
+            PasserTick();
             if (!_bossSpawned)
             {
                 SpawnTick();
                 RecycleTick();
+                MidBossTick();
+                SwarmTick();
                 if (_nextElite < data.eliteTimes.Length && _elapsed >= data.eliteTimes[_nextElite])
                 {
                     _nextElite++;
-                    SpawnOne(_nextElite % 2 == 1 ? data.charger : data.archer, elite: true); // 돌진병·궁병 엘리트를 번갈아
-                    hud.ShowNotice("★ 엘리트 등장!");
+                    EnemyBase elite = SpawnOne(_nextElite % 2 == 1 ? data.charger : data.archer, elite: true); // 돌진병·궁병 엘리트를 번갈아
+                    if (elite != null) HookElite(elite); // 잡으면 보물 상자
+                    hud.ShowNotice("★ 엘리트 등장! 잡으면 보물 상자");
                 }
 
                 if (_elapsed >= data.duration) StartCoroutine(SpawnBoss());
@@ -203,14 +211,15 @@ namespace HistoryHeroes.Survival
             return data.charger;
         }
 
-        private void SpawnOne(EnemyBase prefab, bool elite)
+        private EnemyBase SpawnOne(EnemyBase prefab, bool elite)
         {
-            if (prefab == null) return;
+            if (prefab == null) return null;
             EnemyBase enemy = GetEnemy(prefab);
             enemy.transform.position = RingPosition();
             enemy.gameObject.SetActive(true);
             enemy.Spawn(player.transform, data.HpMultiplier(_elapsed), data.AttackMultiplier(_elapsed), elite);
             experience.Register(enemy);
+            return enemy;
         }
 
         /// <summary>
@@ -220,13 +229,13 @@ namespace HistoryHeroes.Survival
         public Vector2 RingPosition()
         {
             Vector2 center = player.transform.position;
-            float limit = data.mapHalfSize - 1f;
+            Vector2 limit = data.mapHalf - Vector2.one;
             for (int attempt = 0; attempt < 12; attempt++)
             {
                 float angle = Random.value * Mathf.PI * 2f;
                 var around = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
                 Vector2 p = center + around * SpawnDistance(around);
-                if (Mathf.Abs(p.x) <= limit && Mathf.Abs(p.y) <= limit && IsFree(p)) return p;
+                if (Mathf.Abs(p.x) <= limit.x && Mathf.Abs(p.y) <= limit.y && IsFree(p) && !InsideFence(p)) return p;
             }
 
             Vector2 inward = center.sqrMagnitude > 0.01f ? -center.normalized : Vector2.up;
@@ -235,8 +244,8 @@ namespace HistoryHeroes.Survival
                 Vector2 dir = Quaternion.Euler(0f, 0f, Random.Range(-60f, 60f)) * inward;
                 float radius = SpawnDistance(dir);
                 Vector2 q = center + dir * radius;
-                q = new Vector2(Mathf.Clamp(q.x, -limit, limit), Mathf.Clamp(q.y, -limit, limit));
-                if (IsFree(q) && (q - center).sqrMagnitude > radius * radius * 0.5f) return q;
+                q = new Vector2(Mathf.Clamp(q.x, -limit.x, limit.x), Mathf.Clamp(q.y, -limit.y, limit.y));
+                if (IsFree(q) && !InsideFence(q) && (q - center).sqrMagnitude > radius * radius * 0.5f) return q;
             }
 
             return center + inward * SpawnDistance(inward);
@@ -270,14 +279,13 @@ namespace HistoryHeroes.Survival
         private IEnumerator SpawnBoss()
         {
             _bossSpawned = true;
+            DropFence(); // 중간 보스 울타리가 남아 있으면 열고
             hud.ShowNotice("마지막 보스가 와요!", data.bossWarning);
             ClearCrowd(); // 무리가 한꺼번에 무너진다 (보석 잔치) → 보스와 1:1, "멈출까 피할까"가 다시 또렷해진다
             yield return new WaitForSeconds(data.bossWarning);
             if (_finished || data.bossPrefab == null) yield break;
 
-            Vector2 at = (Vector2)player.transform.position + Random.insideUnitCircle.normalized * 5f;
-            float limit = data.mapHalfSize - 3f;
-            at = new Vector2(Mathf.Clamp(at.x, -limit, limit), Mathf.Clamp(at.y, -limit, limit));
+            Vector2 at = ClampToMap((Vector2)player.transform.position + Random.insideUnitCircle.normalized * 5f, 3f);
             _boss = Instantiate(data.bossPrefab, at, Quaternion.identity, transform);
             _boss.Spawn(player.transform, data.bossHpMultiplier, data.bossAttackMultiplier, false);
             _boss.Killed += _ => Finish(victory: true);
@@ -313,7 +321,7 @@ namespace HistoryHeroes.Survival
             int minutes = Mathf.FloorToInt(_elapsed / 60f);
             var lines = new List<string>();
 
-            var reward = new Reward { Gold = minutes * data.goldPerMinute };
+            var reward = new Reward { Gold = minutes * data.goldPerMinute + _bagGold }; // 금화 주머니 (분당 상한 안)
             Wallet.Grant(save, reward);
             if (!reward.IsEmpty) lines.Add(reward.ToString());
             int shards = Mathf.Min(data.shardsMax, minutes / 2 * data.shardsPerTwoMinutes);
@@ -325,10 +333,17 @@ namespace HistoryHeroes.Survival
 
             lines.Add(RunText.Level(AccountLevel.AddExp(save, minutes * data.accountExpPerMinute, Clock.UnixSeconds)));
 
-            // 생존 기록 (영웅별 최고), 클리어한 영웅 (유물 "영웅 2명으로 클리어")
-            HeroBest best = save.survival.BestOf(heroId);
-            bool newBest = _elapsed > best.seconds;
-            if (newBest) best.seconds = _elapsed;
+            // 맵 진행 (확장 1차 6-5장): 최고 시간 · 별 3칸 · 첫 클리어 보석 · 별 상자
+            lines.AddRange(SurvivalProgress.Finish(save, _mapIndex, _elapsed, victory, MissionDone, skills.ChoseLegendary, out bool newBest));
+            if (MissionDone) lines.Add($"맵 임무 완료: {MissionText}");
+            float bestSeconds = save.survival.MapOf(SurvivalProgress.MapIds[Mathf.Clamp(_mapIndex, 0, SurvivalProgress.MapIds.Length - 1)]).bestSeconds;
+            // 영웅별 최고 = 맵 1 기록 (옛 저장과 같은 뜻)
+            if (_mapIndex == 0)
+            {
+                HeroBest best = save.survival.BestOf(heroId);
+                if (_elapsed > best.seconds) best.seconds = _elapsed;
+            }
+
             save.survival.longestSeconds = Mathf.Max(save.survival.longestSeconds, _elapsed);
             if (victory)
             {
@@ -348,7 +363,8 @@ namespace HistoryHeroes.Survival
                 Duration = data.duration,
                 Kills = experience.Kills,
                 Level = experience.Level.Level,
-                BestSeconds = best.seconds,
+                BestSeconds = bestSeconds,
+                MapName = data.mapName,
                 NewBest = newBest,
                 BasicAttackShare = DamageLog.BasicShare,
                 TopDamage = RunText.TopDamage(database, player.Hero),
@@ -375,6 +391,7 @@ namespace HistoryHeroes.Survival
     /// <summary>서바이벌 결과 화면 값</summary>
     public sealed class SurvivalSummary
     {
+        public string MapName;
         public bool Victory;
         public float Seconds;
         public float Duration;

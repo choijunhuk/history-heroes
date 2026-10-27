@@ -147,7 +147,7 @@ namespace HistoryHeroes.EditorTools
             // 3D 펫 (Art3D-Plan 5번): 장착한 펫 모델을 PetController가 고른다. 몸 도형은 모델이 있으면 숨긴다
             using (var props = new Props(petObject.AddComponent<Visual3D>())) props.Float("runSpeed", 6f).Refs("hideRenderers", new Object[] { petBody });
             petObject.SetActive(false);
-            using (var props = new Props(cameraFollow)) props.Ref("target", playerObject.transform).Ref("fit", fit).Float("boundsHalfSize", SurvivalHalf);
+            using (var props = new Props(cameraFollow)) props.Ref("target", playerObject.transform).Ref("fit", fit).Vector2("boundsHalf", new Vector2(SurvivalHalf, SurvivalHalf));
 
             // ----- 시스템 -----
             var systems = new GameObject("Systems");
@@ -215,8 +215,10 @@ namespace HistoryHeroes.EditorTools
             }
 
             // ----- 서바이벌: 80×80 열린 맵 + 10분 버티기 (GameDesign 8장) -----
-            Survival.SurvivalData survivalData = CreateSurvivalData(d, p);
-            Transform survivalStart = BuildSurvivalMap(survivalRoot);
+            Survival.SurvivalData[] survivalMaps = CreateSurvivalMaps(d, p); // 확장 1차 6-2장: 맵 3개
+            Survival.SurvivalData survivalData = survivalMaps[0];
+            SurvivalMaps mapRoots = BuildSurvivalMaps(survivalRoot);
+            Transform survivalStart = mapRoots.Starts[0];
             var survivalRunObject = new GameObject("SurvivalRun");
             survivalRunObject.transform.SetParent(survivalRoot, false);
             var survivalRun = survivalRunObject.AddComponent<Survival.SurvivalRun>();
@@ -227,13 +229,15 @@ namespace HistoryHeroes.EditorTools
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
             }
 
+            WireSurvivalArt(survivalRun);
             var bootstrap = systems.AddComponent<BattleBootstrap>();
             using (var props = new Props(bootstrap))
             {
                 props.Ref("dungeonRoot", dungeonRoot.gameObject).Ref("bossRoot", bossRoot.gameObject).Ref("roster", d.Roster).Ref("player", player).Ref("metaTable", d.Meta)
                     .Ref("skills", Object.FindAnyObjectByType<SkillManager>(FindObjectsInactive.Include)).Ref("database", d.Database)
                     .Ref("survivalRoot", survivalRoot.gameObject).Ref("arenaRoot", arena.gameObject).Ref("cameraFollow", cameraFollow).Ref("survival", survivalData)
-                    .Ref("pet", pet).Ref("experience", experience);
+                    .Ref("pet", pet).Ref("experience", experience)
+                    .Refs("survivalMaps", survivalMaps).Refs("survivalMapRoots", mapRoots.Roots).Refs("survivalStarts", mapRoots.Starts).Ref("survivalRun", survivalRun);
             }
 
             survivalRoot.gameObject.SetActive(false); // 던전이 기본 (BattleBootstrap이 모드대로 켠다)

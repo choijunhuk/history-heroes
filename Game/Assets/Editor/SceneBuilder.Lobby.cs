@@ -55,6 +55,7 @@ namespace HistoryHeroes.EditorTools
             ModeInfoPanel modeInfo = BuildModeInfoPanel(safe);
             NewcomerPanel newcomerPanel = BuildNewcomerPanel(safe);
             OpeningPanel opening = BuildOpeningPanel(root);
+            SurvivalMapPanel survivalMaps = BuildSurvivalMapPanel(safe); // 확장 1차 6-6장
             using (var props = new Props(heroPanel)) props.Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
@@ -64,7 +65,7 @@ namespace HistoryHeroes.EditorTools
                 props.Refs("bosses", bosses).Ref("chapterLabel", chapter).Ref("chapterInfo", chapterInfo)
                     .Ref("previousChapter", prev).Ref("nextChapter", next)
                     .Ref("dungeonButton", dungeon).Ref("bossButton", boss).Ref("bossButtonLabel", bossLabel)
-                    .Ref("survivalButton", survival).Ref("survivalButtonLabel", survivalLabel)
+                    .Ref("survivalButton", survival).Ref("survivalButtonLabel", survivalLabel).Ref("survivalMaps", survivalMaps)
                     .Ref("archiveButton", archive).Ref("archiveButtonLabel", archiveLabel)
                     .Ref("codexButton", codex).Ref("codexButtonLabel", codexLabel)
                     .Ref("bossIntro", bossIntro).Ref("archive", archivePanel).Ref("codex", codexPanel).Ref("hearts", heartPanel)

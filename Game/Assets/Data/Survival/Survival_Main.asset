@@ -12,13 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72180cf430d45c74f8b1a240d8dd9900, type: 3}
   m_Name: Survival_Main
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Survival.SurvivalData
-  duration: 600
-  mapHalfSize: 40
+  mapId: field
+  mapName: "\uADE0\uC5F4\uC758 \uB4E4\uD310"
+  mapBlurb: "\uBC14\uC704 \xB7 \uC5F0\uBABB \xB7 \uC9DA\uB354\uBBF8 (\uBD80\uC11C\uC9C0\uBA74
+    \uC90D\uB294 \uBB3C\uAC74)"
+  mapHalf: {x: 40, y: 40}
+  mission: 0
+  missionTarget: 10
+  missionDeadline: 360
+  duration: 420
   cameraArea: {x: 12.5, y: 20}
   maxAlive: 300
   charger: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
   archer: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
   bomber: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
+  minion: {fileID: 5576645427100197428, guid: 537f6b4890e94d540973403966c59fe2, type: 3}
+  shield: {fileID: 4633683407903390228, guid: 4f3f7eeb2947b434aab06a363eddb244, type: 3}
   archerFrom: 90
   bomberFrom: 180
   archerShare: 0.25
@@ -40,13 +49,32 @@ MonoBehaviour:
   attackPerMinute: 0.1
   spawnMargin: 1.5
   eliteTimes:
-  - 120
-  - 240
+  - 105
+  - 270
+  swarmTimes:
+  - 60
+  - 150
+  - 190
+  - 300
   - 360
-  - 480
+  - 390
+  swarmKinds: 010000000000000002000000030000000000000001000000
+  midBossTime: 210
+  midBoss: {fileID: 5013067583048451430, guid: 6c8dda452501ddc488f1b4f2f9540fcd, type: 3}
+  midBossName: "\uB4E4\uC18C \uB9DD\uB839"
+  midBossHp: 45
+  midBossAttack: 1.3
+  fenceRadius: 7
+  crateKeep: 7
+  crateRespawn: 90
+  braziers: 0
+  bagGold: 15
+  bagGoldPerMinute: 30
+  lookKey: survival
+  mapColor: {r: 0.35, g: 0.68, b: 0.38, a: 1}
   bossPrefab: {fileID: 2731093488286354877, guid: 678d204cfb7b39249969c09984c3b3b9, type: 3}
   bossName: "\uADE0\uC5F4\uC758 \uC218\uBB38\uC7A5 (\uC11C\uBC14\uC774\uBC8C)"
-  bossHpMultiplier: 160
+  bossHpMultiplier: 110
   bossAttackMultiplier: 1.5
   bossWarning: 3
   floorPerMinute: 1.5
@@ -58,4 +86,4 @@ MonoBehaviour:
   accountExpPerMinute: 10
   shardsPerTwoMinutes: 1
   shardsMax: 5
-  heartCost: 2
+  heartCost: 1

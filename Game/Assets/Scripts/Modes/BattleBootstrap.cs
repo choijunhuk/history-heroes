@@ -22,6 +22,11 @@ namespace HistoryHeroes.Modes
         [SerializeField] private GameObject arenaRoot;
         [SerializeField] private CameraFollow cameraFollow;
         [SerializeField] private Survival.SurvivalData survival;
+        [Header("확장 1차 6장: 서바이벌 맵 3개 (GameSession.SurvivalMap)")]
+        [SerializeField] private Survival.SurvivalData[] survivalMaps = new Survival.SurvivalData[0];
+        [SerializeField] private GameObject[] survivalMapRoots = new GameObject[0];
+        [SerializeField] private Transform[] survivalStarts = new Transform[0];
+        [SerializeField] private Survival.SurvivalRun survivalRun;
         [SerializeField] private HeroRoster roster;
         [SerializeField] private PlayerController player;
         [Tooltip("판 밖 성장 표 (v0.4). 비어 있으면 판 밖 성장 없이 싸운다")]
@@ -109,6 +114,22 @@ namespace HistoryHeroes.Modes
         private static void ResetDev() => DevMeta = null;
 #endif
 
+        /// <summary>고른 서바이벌 맵만 켜고, 그 맵의 숫자·시작 자리를 서바이벌 판에 넘긴다</summary>
+        private void PickSurvivalMap()
+        {
+            int count = survivalMaps != null ? survivalMaps.Length : 0;
+            if (count == 0) return;
+            int map = Mathf.Clamp(GameSession.SurvivalMap, 0, count - 1);
+            if (survivalMaps[map] != null) survival = survivalMaps[map];
+            for (int i = 0; survivalMapRoots != null && i < survivalMapRoots.Length; i++)
+            {
+                if (survivalMapRoots[i] != null) survivalMapRoots[i].SetActive(i == map);
+            }
+
+            Transform start = survivalStarts != null && map < survivalStarts.Length ? survivalStarts[map] : null;
+            if (survivalRun != null) survivalRun.Configure(survival, start, map);
+        }
+
         private void Awake()
         {
             SettingsApplier.Apply(SaveSystem.Data.settings);
@@ -134,13 +155,14 @@ namespace HistoryHeroes.Modes
             if (dungeonRoot != null) dungeonRoot.SetActive(!boss && !survive);
             if (bossRoot != null) bossRoot.SetActive(boss);
             if (survivalRoot != null) survivalRoot.SetActive(survive);
+            if (survive) PickSurvivalMap();
             if (arenaRoot != null) arenaRoot.SetActive(!survive);
             if (cameraFollow != null)
             {
                 cameraFollow.enabled = survive;
                 if (survive && survival != null)
                 {
-                    cameraFollow.BoundsHalfSize = survival.mapHalfSize;
+                    cameraFollow.BoundsHalf = survival.mapHalf;
                     CameraFit fit = cameraFollow.GetComponentInChildren<CameraFit>();
                     if (fit != null) fit.Area = survival.cameraArea;
                 }

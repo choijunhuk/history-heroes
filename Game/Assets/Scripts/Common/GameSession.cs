@@ -240,27 +240,35 @@ namespace HistoryHeroes.Common
             Load(BattleScene);
         }
 
-        public const int SurvivalHearts = 2;
+        /// <summary>서바이벌 하트 (확장 1차 6-1장: 2 → 1)</summary>
+        public const int SurvivalHearts = 1;
 
-        /// <summary>서바이벌 해금: 2구간 보스를 깨서 3구간이 열린 뒤 (Systems 3장). 에디터·개발 빌드는 시험용으로 늘 열림</summary>
+        /// <summary>이번 서바이벌 맵 (0 균열의 들판 · 1 무너진 성곽 도시 · 2 증기 공장)</summary>
+        public static int SurvivalMap { get; set; }
+
+        /// <summary>서바이벌 해금 (확장 1차: 1구간 보스 격파 = 맵 1). 에디터·개발 빌드는 시험용으로 늘 열림</summary>
         public static bool SurvivalUnlocked(SaveData data) => SurvivalUnlockedByProgress(data) || Debug.isDebugBuild;
 
-        public static bool SurvivalUnlockedByProgress(SaveData data) => data != null && data.unlockedChapter >= 3;
+        public static bool SurvivalUnlockedByProgress(SaveData data) => Survival.SurvivalProgress.Unlocked(data, 0);
 
-        /// <summary>서바이벌 (하트 2개, 2구간 보스 격파 뒤 — Systems 3장). 잠겨 있거나 하트가 모자라면 false</summary>
-        public static bool TryStartSurvival()
+        /// <summary>맵 하나가 열렸나 (개발 빌드는 늘)</summary>
+        public static bool SurvivalMapUnlocked(SaveData data, int map) => Survival.SurvivalProgress.Unlocked(data, map) || Debug.isDebugBuild;
+
+        /// <summary>서바이벌 (하트 1개). 맵이 잠겨 있거나 하트가 모자라면 false</summary>
+        public static bool TryStartSurvival(int map = 0)
         {
-            if (!SurvivalUnlocked(SaveSystem.Data)) return false;
+            if (!SurvivalMapUnlocked(SaveSystem.Data, map)) return false;
             if (!TrySpendHeart(SurvivalHearts)) return false;
-            StartSurvival();
+            StartSurvival(map);
             return true;
         }
 
-        public static void StartSurvival()
+        public static void StartSurvival(int map = 0)
         {
             Practice = false;
             ClearSpecialRun();
             Mode = BattleMode.Survival;
+            SurvivalMap = Mathf.Clamp(map, 0, Survival.SurvivalProgress.MapIds.Length - 1);
             BossRecordId = null;
             Load(BattleScene);
         }

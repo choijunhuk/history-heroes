@@ -44,6 +44,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text bossButtonLabel;
         [SerializeField] private Button survivalButton;
         [SerializeField] private TMP_Text survivalButtonLabel;
+        [Tooltip("확장 1차 6-6장: 서바이벌 맵 고르기")]
+        [SerializeField] private SurvivalMapPanel survivalMaps;
         [SerializeField] private Button archiveButton;
         [SerializeField] private TMP_Text archiveButtonLabel;
         [SerializeField] private Button codexButton;
@@ -391,11 +393,20 @@ namespace HistoryHeroes.UI
         {
             if (!GameSession.SurvivalUnlocked(SaveSystem.Data))
             {
-                ShowNotice("2구간 보스를 깨면 서바이벌이 열려요");
+                ShowNotice("1구간 보스를 깨면 서바이벌이 열려요");
                 return;
             }
 
-            if (!GameSession.TryStartSurvival()) hearts.Open(Render);
+            if (survivalMaps == null)
+            {
+                if (!GameSession.TryStartSurvival()) hearts.Open(Render);
+                return;
+            }
+
+            survivalMaps.Open(map =>
+            {
+                if (!GameSession.TryStartSurvival(map)) hearts.Open(Render);
+            });
         }
 
         private static int MaxChapter(SaveData data) => Mathf.Clamp(data.unlockedChapter, 1, ChapterNames.Length);
@@ -458,15 +469,15 @@ namespace HistoryHeroes.UI
             if (survivalButton == null || survivalButtonLabel == null) return;
             if (!GameSession.SurvivalUnlocked(data))
             {
-                survivalButtonLabel.text = "서바이벌\n<size=60%>2구간 보스를 깨면 열려요</size>";
+                survivalButtonLabel.text = "서바이벌\n<size=60%>1구간 보스를 깨면 열려요</size>";
                 return;
             }
 
-            HeroData hero = HeroUnlock.Selected(data, roster);
-            float best = hero != null ? data.survival.SecondsOf(hero.id) : 0f;
+            // 확장 1차: 맵 3개 · 서바이벌 별 (던전 별과 따로)
             string dev = GameSession.SurvivalUnlockedByProgress(data) ? "" : " · 개발용 해금";
-            string record = best > 0f ? $"최고 {Survival.SurvivalRun.Format(best)}" : "10분 버티기";
-            survivalButtonLabel.text = $"서바이벌\n<size=60%>{record} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
+            int stars = data.survival.TotalStars();
+            int maxStars = Survival.SurvivalProgress.MapIds.Length * 3;
+            survivalButtonLabel.text = $"서바이벌\n<size=60%>맵 {Survival.SurvivalProgress.MapIds.Length}개 · ★{stars}/{maxStars} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
         }
 
         // ---------------------------------------------------------------- v1.0 신규 7일 미션 · 순찰

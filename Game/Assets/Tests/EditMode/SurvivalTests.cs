@@ -101,11 +101,12 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void Unlock_AfterChapterTwoBoss()
+        public void Unlock_AfterChapterOneBoss()
         {
-            Assert.IsFalse(GameSession.SurvivalUnlockedByProgress(new SaveData { unlockedChapter = 2 }));
-            Assert.IsTrue(GameSession.SurvivalUnlockedByProgress(new SaveData { unlockedChapter = 3 }), "2구간 보스 격파 = 3구간 열림");
-            Assert.AreEqual(2, GameSession.SurvivalHearts, "Modes 8장: 하트 2개");
+            // 확장 1차 6-1장 (개발자 결정 2026-10-27): 2구간 → 1구간 보스, 하트 2 → 1
+            Assert.IsFalse(GameSession.SurvivalUnlockedByProgress(new SaveData { unlockedChapter = 1 }));
+            Assert.IsTrue(GameSession.SurvivalUnlockedByProgress(new SaveData { unlockedChapter = 2 }), "1구간 보스 격파 = 2구간 열림 = 서바이벌 맵 1");
+            Assert.AreEqual(1, GameSession.SurvivalHearts, "확장 1차: 하트 1개");
         }
 
         [Test]

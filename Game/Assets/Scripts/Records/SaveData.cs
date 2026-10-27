@@ -515,7 +515,12 @@ namespace HistoryHeroes.Records
     [Serializable]
     public sealed class SurvivalSave
     {
+        /// <summary>영웅별 최고 생존 시간 = 맵 1(균열의 들판) 기록 (확장 1차: 맵이 3개가 되며 옛 기록은 맵 1로)</summary>
         public List<HeroBest> best = new List<HeroBest>();
+        /// <summary>맵마다 (확장 1차 6장 + 검토 9장 5번): 최고 시간 · 별 · 첫 클리어 · 클리어 수</summary>
+        public List<SurvivalMapSave> maps = new List<SurvivalMapSave>();
+        /// <summary>받은 서바이벌 별 상자 수 (별 5개마다 1개)</summary>
+        public int starChestsTaken;
         /// <summary>서바이벌을 클리어한 영웅 (유물 "영웅 2명으로 클리어")</summary>
         public List<string> clearHeroes = new List<string>();
         public int clears;
@@ -543,6 +548,57 @@ namespace HistoryHeroes.Records
             best.Add(created);
             return created;
         }
+
+        /// <summary>맵 기록 (없으면 null — 화면 표시용)</summary>
+        public SurvivalMapSave FindMap(string id)
+        {
+            if (maps == null) return null;
+            foreach (SurvivalMapSave m in maps)
+            {
+                if (m.id == id) return m;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 맵 기록 (없으면 만든다). 맵 1을 처음 만들 때 옛 저장의 기록을 옮긴다:
+        /// 최고 시간 = 영웅 최고 중 가장 긴 것, 옛 클리어가 있으면 클리어 1번 (다음 맵이 열린다)
+        /// </summary>
+        public SurvivalMapSave MapOf(string id)
+        {
+            SurvivalMapSave found = FindMap(id);
+            if (found != null) return found;
+            if (maps == null) maps = new List<SurvivalMapSave>();
+            var created = new SurvivalMapSave { id = id };
+            if (id == "field")
+            {
+                created.bestSeconds = longestSeconds;
+                if (clears > 0) created.clears = 1;
+            }
+
+            maps.Add(created);
+            return created;
+        }
+
+        public int TotalStars()
+        {
+            int total = 0;
+            if (maps == null) return 0;
+            foreach (SurvivalMapSave m in maps) total += Survival.SurvivalProgress.StarCount(m.stars);
+            return total;
+        }
+    }
+
+    [Serializable]
+    public sealed class SurvivalMapSave
+    {
+        public string id;
+        public float bestSeconds;
+        /// <summary>별 칸 (1 클리어 · 2 맵 임무 · 4 전설 없이)</summary>
+        public int stars;
+        public bool firstClearTaken;
+        public int clears;
     }
 
     [Serializable]
