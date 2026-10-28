@@ -13,39 +13,148 @@ MonoBehaviour:
   m_Name: Art2DLibrary
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Common.Art2DLibrary
   characters:
+  - modelName: Khan3D
+    front: {fileID: 21300000, guid: d39dd335982ce8e4d982a8f4642e0fb9, type: 3}
+    back: {fileID: 21300000, guid: 1d4334a91c5031340ac2c6cea325a393, type: 3}
+    side: {fileID: 21300000, guid: 4c67afc610040e848a96d863b9295b3c, type: 3}
+    heightScale: 1.12
+    alpha: 1
   - modelName: Guan3D
     front: {fileID: 21300000, guid: 71b9ced707c563742ae6fa24e63eb897, type: 3}
     back: {fileID: 21300000, guid: d10635e14a563734798805431cee981c, type: 3}
     side: {fileID: 21300000, guid: 3949adc944266d548b1770cf97a7ad71, type: 3}
     heightScale: 1.28
+    alpha: 1
+  - modelName: Napoleon3D
+    front: {fileID: 21300000, guid: 8cecfc9f3b752ef49804fd285cf6fd72, type: 3}
+    back: {fileID: 21300000, guid: 882812801934be240ba2272b67056c00, type: 3}
+    side: {fileID: 21300000, guid: 6ba52200039c63643a13207f091512d5, type: 3}
+    heightScale: 1.1
+    alpha: 1
+  - modelName: Tesla3D
+    front: {fileID: 21300000, guid: 176db9eb0ca720b4d830497bdc3b8bd4, type: 3}
+    back: {fileID: 21300000, guid: 3f35ce2b4ff6dc747b4aa5d0191ed295, type: 3}
+    side: {fileID: 21300000, guid: 694370d4e41fec442a393716786b683f, type: 3}
+    heightScale: 1.08
+    alpha: 1
   - modelName: YiSunsin3D
     front: {fileID: 21300000, guid: a5510a5abbe1c254a935161a1abdf187, type: 3}
     back: {fileID: 21300000, guid: a35001e03027d264daefbd02f0538390, type: 3}
     side: {fileID: 21300000, guid: a0738f5fd6698df4b8ba31542e61e908, type: 3}
     heightScale: 1.1
+    alpha: 1
+  - modelName: YiSeonggye3D
+    front: {fileID: 21300000, guid: c581a8c43921ee54486ea3f1252cfeef, type: 3}
+    back: {fileID: 21300000, guid: 5e976cc05f097bf4ca0991429caad0c0, type: 3}
+    side: {fileID: 21300000, guid: 916db0c62aa423744a7574a7fbd9f279, type: 3}
+    heightScale: 1.15
+    alpha: 1
+  - modelName: Davinci3D
+    front: {fileID: 21300000, guid: 96e30159cf6a54243b0ca01c92317e63, type: 3}
+    back: {fileID: 21300000, guid: eca857c1c464cdf458d0f197b2a55739, type: 3}
+    side: {fileID: 21300000, guid: c4ff7b4fd895a1e4a91afd116cb87c5f, type: 3}
+    heightScale: 1.1
+    alpha: 1
+  - modelName: Zhuge3D
+    front: {fileID: 21300000, guid: 7d41e2462140a6c4a94babace715093c, type: 3}
+    back: {fileID: 21300000, guid: cebca674153c8e44a972983aa2713d7d, type: 3}
+    side: {fileID: 21300000, guid: abca85e7b93e0de42a8d15f14b729516, type: 3}
+    heightScale: 1.12
+    alpha: 1
   - modelName: E_Charger3D
     front: {fileID: 21300000, guid: 61c3b6dfc4e1470429cf7628ff21879a, type: 3}
     back: {fileID: 21300000, guid: c8d75f9697a9c9c4581c15bc97a53ec5, type: 3}
     side: {fileID: 21300000, guid: 6df1ccf2adf4eb54bb41f89afd5e832b, type: 3}
     heightScale: 1.08
+    alpha: 1
   - modelName: E_Archer3D
     front: {fileID: 21300000, guid: 1c9d17fd0b853fe43a599f7e19015514, type: 3}
     back: {fileID: 21300000, guid: b44fd9b16f8822141b54fc244c8c0535, type: 3}
     side: {fileID: 21300000, guid: 496442e70fb9b124385832cdb7fdcf99, type: 3}
     heightScale: 1.12
+    alpha: 1
   - modelName: E_Bomber3D
     front: {fileID: 21300000, guid: 448af5afd1f11394394eeb84fabf1ac9, type: 3}
     back: {fileID: 21300000, guid: b021415fff8ded54eb5e28d7871e5b67, type: 3}
     side: {fileID: 21300000, guid: afe9644abc560d84c9f1bd95e9cd3fcf, type: 3}
     heightScale: 1.05
+    alpha: 1
+  - modelName: E_Shield3D
+    front: {fileID: 21300000, guid: 2d68c0346e3652a47a103ece2c06cfce, type: 3}
+    back: {fileID: 21300000, guid: 87aacaa287019d64b8a75ea298aa05f1, type: 3}
+    side: {fileID: 21300000, guid: 6c7052d86631e1345bada6f0ff4c3a41, type: 3}
+    heightScale: 1.1
+    alpha: 1
+  - modelName: E_Summoner3D
+    front: {fileID: 21300000, guid: b5d2af8966ded5946bd51336c7f7fef4, type: 3}
+    back: {fileID: 21300000, guid: bc47df2b2bc83f54ba695a4d28c734bf, type: 3}
+    side: {fileID: 21300000, guid: eb0b8052160bf204ca61bfe5148414fd, type: 3}
+    heightScale: 1.15
+    alpha: 1
+  - modelName: E_Splitter3D
+    front: {fileID: 21300000, guid: 92504e37762eccf459e5b90aac99c6e0, type: 3}
+    back: {fileID: 21300000, guid: dc1d5ee5e5cf40b41b31e8284abe0ade, type: 3}
+    side: {fileID: 21300000, guid: b6fa2a3cdfc97394787a3dd16d604a78, type: 3}
+    heightScale: 1
+    alpha: 1
+  - modelName: E_Minion3D
+    front: {fileID: 21300000, guid: 0387308720013594a8bf5289ea805cb7, type: 3}
+    back: {fileID: 21300000, guid: 4efc6cc0081104441808c38f300563ac, type: 3}
+    side: {fileID: 21300000, guid: 013f4f2e30ecdce46b0a363007beb4e7, type: 3}
+    heightScale: 1
+    alpha: 1
+  - modelName: M_Bison3D
+    front: {fileID: 21300000, guid: 4ad259b2bf4998441bd4e66386567fd3, type: 3}
+    back: {fileID: 21300000, guid: 83c54ea3b3bde914da61bdc8d6ac0f80, type: 3}
+    side: {fileID: 21300000, guid: ce9f91707871c8f439d72e71e34bcc60, type: 3}
+    heightScale: 1.15
+    alpha: 1
+  - modelName: M_Torch3D
+    front: {fileID: 21300000, guid: a3a98b632f4410b4aa2e6a1f501b78b5, type: 3}
+    back: {fileID: 21300000, guid: a3a98b632f4410b4aa2e6a1f501b78b5, type: 3}
+    side: {fileID: 0}
+    heightScale: 1.2
+    alpha: 1
   - modelName: Pet_Hawk3D
     front: {fileID: 21300000, guid: b7d319046dbcaf34b8e532d60c3e96a5, type: 3}
     back: {fileID: 21300000, guid: b7d319046dbcaf34b8e532d60c3e96a5, type: 3}
     side: {fileID: 21300000, guid: 049ba945e48fdd446ac170c5b7dfef22, type: 3}
     heightScale: 1
+    alpha: 1
   floor: {fileID: 21300000, guid: a7c57be63e4108c4b9a560efb6e91614, type: 3}
   wallTop: {fileID: 21300000, guid: 1b74c0efad2dc9b41a43e53cbfaabc38, type: 3}
   wallSide: {fileID: 21300000, guid: cfe99cafe2a5eea4995463971a47eb1e, type: 3}
+  floors:
+  - {fileID: 21300000, guid: a7c57be63e4108c4b9a560efb6e91614, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  wallTops:
+  - {fileID: 21300000, guid: 1b74c0efad2dc9b41a43e53cbfaabc38, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  wallSides:
+  - {fileID: 21300000, guid: cfe99cafe2a5eea4995463971a47eb1e, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  bossFloor: {fileID: 0}
+  bossRing: {fileID: 0}
+  grounds:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  fireVent: {fileID: 0}
+  conveyor: {fileID: 0}
+  steam: {fileID: 0}
+  rockfall: {fileID: 0}
+  vines: {fileID: 0}
+  oblivion: {fileID: 0}
+  rockCluster: {fileID: 0}
   doorClosed: {fileID: 21300000, guid: dd6332ff3ea860c418ddfab60cd783a8, type: 3}
   doorOpen: {fileID: 21300000, guid: d52d8854f7796fd4fa3e0eded27ce2c1, type: 3}
   pillar: {fileID: 21300000, guid: 1a72b00ccc76c974d9856b8a8f91cd83, type: 3}
