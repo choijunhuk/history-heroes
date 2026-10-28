@@ -77,6 +77,14 @@ namespace HistoryHeroes.UI
                 int index = i;
                 rows[i].minus.onClick.AddListener(() => Step(index, -1));
                 rows[i].plus.onClick.AddListener(() => Step(index, +1));
+                // 이름을 누르면 고정 (자동 맞추기가 깎지 않는다, 2개까지 — 전체 검토 2번)
+                if (rows[i].nameLabel != null)
+                {
+                    rows[i].nameLabel.raycastTarget = true;
+                    Button pin = rows[i].nameLabel.GetComponent<Button>() ?? rows[i].nameLabel.gameObject.AddComponent<Button>();
+                    pin.transition = Selectable.Transition.None;
+                    pin.onClick.AddListener(() => TogglePin(index));
+                }
             }
 
             for (int i = 0; i < slotButtons.Length; i++)
@@ -112,7 +120,7 @@ namespace HistoryHeroes.UI
             _makeRecord = makeRecord;
             _onDone = onDone;
             titleLabel.text = title;
-            subtitleLabel.text = subtitle;
+            subtitleLabel.text = subtitle + "\n<size=80%><color=#A9B4C2>이름을 누르면 고정 (자동 맞추기가 안 깎아요, 2개까지) · 장비·룬은 지금 상태로 남아요</color></size>"; // 전체 검토 2번
             subtitleLabel.color = new Color(1f, 1f, 1f, 0.75f);
             skipLabel.text = skip;
             skipButton.gameObject.SetActive(AllowSkip);
@@ -149,6 +157,7 @@ namespace HistoryHeroes.UI
                 RecordDraft.Entry e = _draft.Entries[i];
                 row.band.color = e.IsFusion ? SkillCardView.FusionBand : e.Skill.Kind == SkillKind.Passive ? SkillCardView.PassiveBand : SkillCardView.ActiveBand;
                 row.nameLabel.text = e.IsEvolution ? $"{e.Skill.displayName} (진화)" : e.IsMerge ? $"{e.Skill.displayName} (합체)" : e.Skill.displayName;
+                if (e.Pinned) row.nameLabel.text = "<color=#FFD966>[고정]</color> " + row.nameLabel.text; // 이름을 누르면 고정 · 풀기
 
                 if (e.IsEvolution) row.levelLabel.text = e.Kept ? "남김" : "뺌";
                 else row.levelLabel.text = e.Kept ? $"Lv {e.Level} / {e.OwnedLevel}" : "뺌";
@@ -214,8 +223,11 @@ namespace HistoryHeroes.UI
                 return;
             }
 
-            // 빈 칸이 없다 → 바꿀 칸 고르기
+            // 빈 칸이 없다 → 바꿀 칸 고르기. 새 기록 요약을 위에 보여 주어 바꾸기 전후를 견준다 (전체 검토 2번)
             SaveData data = SaveSystem.Data;
+            RunRecord preview = _makeRecord(_draft);
+            subtitleLabel.text = $"바꿀 칸을 고르세요\n<size=85%><color=#7CFC9A>새 기록</color>  {RecordFormat.Details(preview, database)}</size>";
+            subtitleLabel.color = Color.white;
             for (int i = 0; i < slotButtons.Length; i++)
             {
                 bool exists = i < data.recordSlots;
@@ -270,6 +282,18 @@ namespace HistoryHeroes.UI
             }
 
             Close();
+        }
+
+        private void TogglePin(int index)
+        {
+            if (_draft == null || index < 0 || index >= _draft.Entries.Count) return;
+            if (!_draft.TogglePin(_draft.Entries[index]))
+            {
+                subtitleLabel.text = $"고정은 {RecordDraft.MaxPins}개까지예요 (이름을 다시 누르면 풀려요)";
+                return;
+            }
+
+            Render();
         }
 
         private void Skip() => Close();

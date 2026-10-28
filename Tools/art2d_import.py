@@ -11,38 +11,75 @@ import sys
 
 from PIL import Image
 
-# 이름 → (폴더, 다듬기, 목표 키 px). 다듬기: trim = 가장자리 자르기 + 키 맞춤, tile = 크기만, ui = 가장자리만
+# 이름 앞부분 → (폴더, 다듬기, 목표 키 px). 위에서부터 처음 맞는 규칙. 다듬기: trim = 가장자리 자르기 + 키 맞춤, tile = 크기만, ui = 가장자리만
 CHARACTER_PX = 512
-RULES = {
-    'guan': ('Characters', 'trim', CHARACTER_PX),
-    'yisunsin': ('Characters', 'trim', CHARACTER_PX),
-    'enemy_charger': ('Characters', 'trim', CHARACTER_PX),
-    'enemy_archer': ('Characters', 'trim', CHARACTER_PX),
-    'enemy_bomber': ('Characters', 'trim', 400),
-    'floor': ('Stage', 'tile', 512),
-    'wall': ('Stage', 'ui', 0),
-    'door': ('Stage', 'trim', 384),
-    'pillar': ('Stage', 'trim', 384),
-    'crate': ('Stage', 'trim', 256),
-    'brazier': ('Stage', 'trim', 320),
-    'banner': ('Stage', 'trim', 384),
-    'water': ('Stage', 'tile', 512),
-    'berry': ('Stage', 'trim', 256),
-    'heal': ('Stage', 'trim', 128),
-    'moss': ('Stage', 'ui', 0),
-    'skull': ('Stage', 'trim', 256),
-    'thorns': ('Stage', 'ui', 0),
-    'pet_': ('Characters', 'trim', 256),
-    'card': ('UI', 'ui', 0),
-    'panel': ('UI', 'ui', 0),
-    'button': ('UI', 'ui', 0),
-    'ribbon': ('UI', 'ui', 0),
-}
+RULES = [
+    # 무대 (캐릭터 이름과 겹치는 것부터)
+    ('boss_floor', ('Stage', 'tile', 512)),
+    ('boss_ring', ('Stage', 'ui', 0)),
+    ('ground_', ('Stage', 'tile', 512)),
+    ('floor', ('Stage', 'tile', 512)),
+    ('water', ('Stage', 'tile', 512)),
+    ('conveyor_tile', ('Stage', 'ui', 0)),
+    ('wall', ('Stage', 'ui', 0)),
+    ('thorns', ('Stage', 'ui', 0)),
+    ('vines', ('Stage', 'ui', 0)),
+    ('oblivion', ('Stage', 'ui', 0)),
+    ('moss', ('Stage', 'ui', 0)),
+    ('fire_vent', ('Stage', 'trim', 256)),
+    ('steam_vent', ('Stage', 'trim', 256)),
+    ('door', ('Stage', 'trim', 384)),
+    ('pillar', ('Stage', 'trim', 384)),
+    ('crate', ('Stage', 'trim', 256)),
+    ('brazier', ('Stage', 'trim', 320)),
+    ('survival_brazier', ('Stage', 'trim', 320)),
+    ('banner', ('Stage', 'trim', 384)),
+    ('berry', ('Stage', 'trim', 256)),
+    ('heal', ('Stage', 'trim', 128)),
+    ('skull', ('Stage', 'trim', 256)),
+    ('powder_keg', ('Stage', 'trim', 256)),
+    ('iron_gate', ('Stage', 'trim', 384)),
+    ('saw_gear', ('Stage', 'trim', 256)),
+    ('lever', ('Stage', 'trim', 256)),
+    ('rock', ('Stage', 'trim', 384)),
+    ('tree', ('Stage', 'trim', 512)),
+    ('haystack', ('Stage', 'trim', 256)),
+    ('ruin_house', ('Stage', 'trim', 512)),
+    ('boiler', ('Stage', 'trim', 512)),
+    ('pipe_column', ('Stage', 'trim', 512)),
+    # 스킬 물건
+    ('turtle_ship', ('Stage', 'trim', 384)),
+    ('armored_tank', ('Stage', 'trim', 384)),
+    ('flying_machine', ('Stage', 'trim', 320)),
+    ('stone_sentinel', ('Stage', 'trim', 384)),
+    ('big_arrow', ('Stage', 'trim', 128)),
+    ('cannonball', ('Stage', 'trim', 128)),
+    # 캐릭터
+    ('enemy_bomber', ('Characters', 'trim', 400)),
+    ('enemy_minion', ('Characters', 'trim', 400)),
+    ('enemy_', ('Characters', 'trim', CHARACTER_PX)),
+    ('mid_', ('Characters', 'trim', 640)),
+    ('boss_', ('Characters', 'trim', 768)),
+    ('pet_', ('Characters', 'trim', 256)),
+    ('khan', ('Characters', 'trim', CHARACTER_PX)),
+    ('guan', ('Characters', 'trim', CHARACTER_PX)),
+    ('napoleon', ('Characters', 'trim', CHARACTER_PX)),
+    ('tesla', ('Characters', 'trim', CHARACTER_PX)),
+    ('yisunsin', ('Characters', 'trim', CHARACTER_PX)),
+    ('yiseonggye', ('Characters', 'trim', CHARACTER_PX)),
+    ('davinci', ('Characters', 'trim', CHARACTER_PX)),
+    ('zhuge', ('Characters', 'trim', CHARACTER_PX)),
+    # UI
+    ('card', ('UI', 'ui', 0)),
+    ('panel', ('UI', 'ui', 0)),
+    ('button', ('UI', 'ui', 0)),
+    ('ribbon', ('UI', 'ui', 0)),
+]
 MARGIN = 8
 
 
 def rule_for(name):
-    for prefix, rule in RULES.items():
+    for prefix, rule in RULES:
         if name.startswith(prefix):
             return rule
     return None

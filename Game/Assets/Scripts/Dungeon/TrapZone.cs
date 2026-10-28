@@ -93,14 +93,26 @@ namespace HistoryHeroes.Dungeon
             {
                 area.transform.localScale = new Vector3(size.x, size.y, 1f);
                 area.color = BaseColor(effect);
-                // 2D 그림 시험판: 가시덤불은 코덱스 그림 (색은 그대로 곱해져 예고 · 깜빡임이 보인다)
-                Sprite art2D = Common.Art2D.Enabled && effect == Effect.Thorns ? Common.Art2D.Library.thorns : null;
+                // 2D 그림 시험판: 함정마다 코덱스 그림 (색은 그대로 곱해져 예고 · 깜빡임이 보인다). 컨베이어는 띠 그림을 이어 붙인다
+                Sprite art2D = Common.Art2D.Enabled ? Art2DFor(effect) : null;
+                if (_placeholder == null) _placeholder = area.sprite;
+                area.drawMode = SpriteDrawMode.Simple;
                 if (art2D != null)
                 {
-                    if (_placeholder == null) _placeholder = area.sprite;
                     area.sprite = art2D;
                     Vector2 b = art2D.bounds.size;
-                    area.transform.localScale = new Vector3(size.x / Mathf.Max(0.01f, b.x), size.y / Mathf.Max(0.01f, b.y), 1f);
+                    if (effect == Effect.Conveyor)
+                    {
+                        float k = size.y / Mathf.Max(0.01f, b.y);
+                        area.transform.localScale = new Vector3(k, k, 1f);
+                        area.drawMode = SpriteDrawMode.Tiled;
+                        area.size = new Vector2(size.x / k, b.y);
+                    }
+                    else
+                    {
+                        area.transform.localScale = new Vector3(size.x / Mathf.Max(0.01f, b.x), size.y / Mathf.Max(0.01f, b.y), 1f);
+                    }
+
                     area.color = Color.white;
                 }
                 else if (_placeholder != null)
@@ -122,6 +134,21 @@ namespace HistoryHeroes.Dungeon
 
             if (_mask < 0) _mask = LayerMask.GetMask("Player", "Enemy");
             gameObject.SetActive(true);
+        }
+
+        private static Sprite Art2DFor(Effect e)
+        {
+            Common.Art2DLibrary lib = Common.Art2D.Library;
+            switch (e)
+            {
+                case Effect.Thorns: return lib.thorns;
+                case Effect.FireVent: return lib.fireVent;
+                case Effect.Conveyor: return lib.conveyor;
+                case Effect.Steam: return lib.steam;
+                case Effect.Vines: return lib.vines;
+                case Effect.Oblivion: return lib.oblivion;
+                default: return null; // 낙석은 떨어질 자리 예고 원이 따로 있다
+            }
         }
 
         private static Color BaseColor(Effect e)

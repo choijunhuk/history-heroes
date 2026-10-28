@@ -18,14 +18,36 @@ namespace HistoryHeroes.Common
             public Sprite side;
             [Tooltip("그림 키 = 3D 모델 키 × 이 배율 (그림에 무기·장식이 위로 솟은 만큼)")]
             public float heightScale = 1.1f;
+            [Tooltip("비침 (그림자 쌍둥이의 맞지 않는 쪽 0.45)")]
+            public float alpha = 1f;
         }
 
         public List<Character> characters = new List<Character>();
 
-        [Header("방 (1구간)")]
+        [Header("방 (1구간 · 구간마다 아래 배열이 있으면 그것)")]
         public Sprite floor;
         public Sprite wallTop;
         public Sprite wallSide;
+        [Tooltip("구간 1~5 바닥 · 위아래 벽 · 옆 벽 (비면 1구간 것)")]
+        public Sprite[] floors = new Sprite[5];
+        public Sprite[] wallTops = new Sprite[5];
+        public Sprite[] wallSides = new Sprite[5];
+
+        [Header("보스 경기장 · 서바이벌 맵")]
+        public Sprite bossFloor;
+        public Sprite bossRing;
+        [Tooltip("서바이벌 맵 id(field · city · factory) 순서")]
+        public Sprite[] grounds = new Sprite[3];
+
+        [Header("함정 바닥 (TrapZone 효과마다)")]
+        public Sprite fireVent;
+        public Sprite conveyor;
+        public Sprite steam;
+        public Sprite rockfall;
+        public Sprite vines;
+        public Sprite oblivion;
+        [Tooltip("서바이벌 들판 바위 무리 · 낮은 장애물")]
+        public Sprite rockCluster;
         public Sprite doorClosed;
         public Sprite doorOpen;
         public Sprite pillar;
@@ -67,6 +89,16 @@ namespace HistoryHeroes.Common
             }
 
             return null;
+        }
+
+        public Sprite FloorFor(int chapter) => Pick(floors, chapter, floor);
+        public Sprite WallTopFor(int chapter) => Pick(wallTops, chapter, wallTop);
+        public Sprite WallSideFor(int chapter) => Pick(wallSides, chapter, wallSide);
+
+        private static Sprite Pick(Sprite[] list, int chapter, Sprite fallback)
+        {
+            int i = chapter - 1;
+            return list != null && i >= 0 && i < list.Length && list[i] != null ? list[i] : fallback;
         }
 
         public Character FindCharacter(string modelName)

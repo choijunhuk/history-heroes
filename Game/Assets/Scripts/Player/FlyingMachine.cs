@@ -88,7 +88,8 @@ namespace HistoryHeroes.Player
             float angle = t * 0.8f + _slot * Mathf.PI;
             Vector2 goal = (Vector2)_owner.transform.position + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle) * 0.6f) * 1.3f;
             Vector2 pos = Vector2.Lerp(transform.position, goal, 1f - Mathf.Exp(-6f * Time.deltaTime));
-            transform.position = new Vector3(pos.x, pos.y, -Height - 0.15f * Mathf.Sin(t * 3f + _slot));
+            transform.position = new Vector3(pos.x, pos.y, Common.Art2D.Enabled ? -0.2f : -Height - 0.15f * Mathf.Sin(t * 3f + _slot));
+            if (Common.Art2D.Enabled && _body != null) _body.localPosition = new Vector3(0f, 1.6f + 0.12f * Mathf.Sin(t * 3f + _slot), 0f); // 2D: 위 = 화면 위쪽
             if (_shadow != null) _shadow.position = new Vector3(pos.x, pos.y, -0.01f);
 
             // 날개 퍼덕 (오른쪽 +, 왼쪽 −)

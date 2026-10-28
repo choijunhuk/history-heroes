@@ -368,7 +368,7 @@ namespace HistoryHeroes.Combat
             // 색: 맞으면 붉게 번쩍, 상태 이상은 2D 몸 색을 따라
             Color tint = Time.unscaledTime < _flashUntil ? new Color(1f, 0.45f, 0.45f) : CurrentTint();
             if (tint.r > 1f || tint.g > 1f || tint.b > 1f) tint = Color.white;
-            tint.a = _dead ? 0.75f : 1f;
+            tint.a = (_dead ? 0.75f : 1f) * Mathf.Clamp01(_art.alpha);
             _sprite2D.color = tint;
         }
 

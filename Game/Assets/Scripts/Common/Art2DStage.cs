@@ -7,7 +7,7 @@ namespace HistoryHeroes.Common
     /// <summary>
     /// 2D 그림 시험판: 전투 장면이 열리면 던전 방의 3D 바닥 · 벽 · 문 · 바깥을 숨기고 코덱스 그림으로 다시 깐다.
     /// 카메라는 바로 위에서 내려다본다 (기울기 0) — 그림이 비스듬한 각도로 그려져 있어서 위에서 봐도 서 있어 보인다.
-    /// 판정(벽 콜라이더 · 문 트리거)은 그대로. 보스 원형 경기장 · 서바이벌은 아직 3D (시험판 범위 = 던전 방 하나)
+    /// 판정(벽 콜라이더 · 문 트리거)은 그대로. 던전(구간마다 바닥 · 벽) · 보스 원형 경기장 · 서바이벌 맵 3개 (개발자 결정 2026-10-28: 영웅·적·방은 2D, UI는 나중에)
     /// </summary>
     public sealed class Art2DStage : MonoBehaviour
     {
@@ -32,10 +32,21 @@ namespace HistoryHeroes.Common
 
         private void Start()
         {
-            GameObject dungeon = GameObject.Find("DungeonMode");
-            if (dungeon == null || !dungeon.activeInHierarchy) return; // 던전 방만 (시험판)
-
             foreach (CameraFit fit in FindObjectsByType<CameraFit>(FindObjectsSortMode.None)) fit.Tilt = 0f;
+            if (Camera.main != null) Camera.main.backgroundColor = new Color(0.07f, 0.07f, 0.09f);
+            Hide3D("Outside");
+            // 켜진 모드 묶음만 찾힌다 (GameObject.Find는 켜진 것만)
+            GameObject dungeon = GameObject.Find("DungeonMode");
+            GameObject boss = GameObject.Find("BossMode");
+            GameObject survival = GameObject.Find("SurvivalMode");
+            if (dungeon != null) BuildDungeon(dungeon);
+            else if (boss != null) BuildBoss(boss.transform);
+            else if (survival != null) BuildSurvival(survival.transform);
+        }
+
+        private void BuildDungeon(GameObject dungeon)
+        {
+            int chapter = Mathf.Clamp(GameSession.Chapter, 1, 5);
 
             Transform wallLeft = Find("Arena/Wall Left");
             Transform wallTop = Find("Arena/Wall Top");
@@ -51,17 +62,17 @@ namespace HistoryHeroes.Common
             if (_door != null) Hide3D(_door.transform);
 
             Art2DLibrary lib = Art2D.Library;
-            if (Camera.main != null) Camera.main.backgroundColor = new Color(0.07f, 0.07f, 0.09f);
+            Sprite wallTopArt = lib.WallTopFor(chapter), wallSideArt = lib.WallSideFor(chapter);
 
-            // 바닥: 이음새 없는 무늬를 깐다 (한 장 = 4 유닛)
-            Tiled("Floor2D", lib.floor, new Vector2(0f, 0f), new Vector2(halfW * 2f + 1f, halfH * 2f + 1f), 4f, -2000, 0.02f);
+            // 바닥: 이음새 없는 무늬를 깐다 (한 장 = 4 유닛, 구간마다 다른 바닥)
+            Tiled("Floor2D", lib.FloorFor(chapter), new Vector2(0f, 0f), new Vector2(halfW * 2f + 1f, halfH * 2f + 1f), 4f, -2000, 0.02f);
 
             // 벽: 위 · 아래는 가로 벽, 양옆은 세로 벽 (위 벽은 앞면이 보이게 방 안쪽으로 조금 내려온다)
-            Tiled("WallTop2D", lib.wallTop, new Vector2(0f, halfH + WallThick * 0.42f), new Vector2(halfW * 2f + 2f, WallThick), WallThick, Art2D.SortOrder(halfH + 1f), 0f);
-            SpriteRenderer bottom = Tiled("WallBottom2D", lib.wallTop, new Vector2(0f, -halfH - WallThick * 0.42f), new Vector2(halfW * 2f + 2f, WallThick), WallThick, Art2D.SortOrder(-halfH - 1f), 0f);
+            Tiled("WallTop2D", wallTopArt, new Vector2(0f, halfH + WallThick * 0.42f), new Vector2(halfW * 2f + 2f, WallThick), WallThick, Art2D.SortOrder(halfH + 1f), 0f);
+            SpriteRenderer bottom = Tiled("WallBottom2D", wallTopArt, new Vector2(0f, -halfH - WallThick * 0.42f), new Vector2(halfW * 2f + 2f, WallThick), WallThick, Art2D.SortOrder(-halfH - 1f), 0f);
             if (bottom != null) bottom.flipY = true;
-            Tiled("WallLeft2D", lib.wallSide, new Vector2(-halfW - 0.45f, 0f), new Vector2(1f, halfH * 2f + 2f), 2f, Art2D.SortOrder(-halfH - 2f), 0f);
-            SpriteRenderer right = Tiled("WallRight2D", lib.wallSide, new Vector2(halfW + 0.45f, 0f), new Vector2(1f, halfH * 2f + 2f), 2f, Art2D.SortOrder(-halfH - 2f), 0f);
+            Tiled("WallLeft2D", wallSideArt, new Vector2(-halfW - 0.45f, 0f), new Vector2(1f, halfH * 2f + 2f), 2f, Art2D.SortOrder(-halfH - 2f), 0f);
+            SpriteRenderer right = Tiled("WallRight2D", wallSideArt, new Vector2(halfW + 0.45f, 0f), new Vector2(1f, halfH * 2f + 2f), 2f, Art2D.SortOrder(-halfH - 2f), 0f);
             if (right != null) right.flipX = true;
 
             // 문 (열리면 그림이 바뀐다) · 문 옆 화로 · 모서리 깃발
@@ -78,6 +89,7 @@ namespace HistoryHeroes.Common
                 if (m != null) m.transform.rotation = Quaternion.Euler(0f, 0f, i * 77f);
             }
 
+            if (chapter != 1 && chapter != 4) for (int i = 0; i < mossAt.Length; i++) { Transform m = transform.Find("Moss" + i); if (m != null) m.gameObject.SetActive(false); } // 이끼는 초원 · 협곡만
             Standing("Bones", lib.bones, new Vector2(halfW - 1.2f, halfH - 1.6f), 1.2f, Art2D.SortOrder(halfH - 1.6f));
 
             // 갈림길 문 2개: 3D 아치 대신 열린 문 그림 (표지판 글은 그대로)
@@ -99,6 +111,70 @@ namespace HistoryHeroes.Common
             Standing("BrazierR", lib.brazier, new Vector2(1.9f, halfH + 0.05f), 0.9f, Art2D.SortOrder(halfH + 0.4f));
             Standing("BannerL", lib.banner, new Vector2(-halfW + 0.35f, halfH + 0.1f), 0.8f, Art2D.SortOrder(halfH + 0.3f));
             Standing("BannerR", lib.banner, new Vector2(halfW - 0.35f, halfH + 0.1f), 0.8f, Art2D.SortOrder(halfH + 0.3f));
+        }
+
+        /// <summary>보스 원형 경기장 (반지름 3.9, 가운데 = 보스 묶음 자리): 의식 돌바닥 + 둥근 난간</summary>
+        private void BuildBoss(Transform boss)
+        {
+            const float radius = 3.9f;
+            Hide3D(boss);
+            Art2DLibrary lib = Art2D.Library;
+            Vector2 c = boss.position;
+            Tiled("BossFloor2D", lib.bossFloor != null ? lib.bossFloor : lib.floor, c, Vector2.one * (radius * 2f + 2.5f), 4f, -2000, 0.02f);
+            if (lib.bossRing != null)
+            {
+                var go = new GameObject("BossRing2D");
+                go.transform.SetParent(transform, false);
+                go.transform.position = new Vector3(c.x, c.y, 0.01f);
+                float k = (radius + 0.55f) * 2f / Mathf.Max(0.01f, lib.bossRing.bounds.size.x);
+                go.transform.localScale = new Vector3(k, k, 1f);
+                var r = go.AddComponent<SpriteRenderer>();
+                r.sprite = lib.bossRing;
+                r.sortingOrder = -1500;
+            }
+        }
+
+        /// <summary>서바이벌: 켜진 맵(Map_field · Map_city · Map_factory)의 바닥을 맵 땅 그림으로, 3D 장식은 이름이 맞는 그림으로</summary>
+        private void BuildSurvival(Transform survival)
+        {
+            Art2DLibrary lib = Art2D.Library;
+            for (int i = 0; i < Survival.SurvivalProgress.MapIds.Length; i++)
+            {
+                Transform map = survival.Find("Map_" + Survival.SurvivalProgress.MapIds[i]);
+                if (map == null || !map.gameObject.activeInHierarchy) continue;
+                Transform floor = map.Find("Floor");
+                Vector2 size = floor != null ? (Vector2)floor.lossyScale : new Vector2(100f, 100f);
+                Sprite ground = lib.grounds != null && i < lib.grounds.Length && lib.grounds[i] != null ? lib.grounds[i] : lib.floor;
+                Tiled("Ground2D", ground, floor != null ? (Vector2)floor.position : Vector2.zero, size, 5f, -2000, 0.02f);
+                Replace3D(map);
+                Hide3D(map);
+            }
+        }
+
+        /// <summary>
+        /// 3D 장식을 그림으로: 이름(“(Clone)” 뗀 것)이 그림 목록(props)에 있는 물건마다, 메시를 감싼 상자 아래 끝에 같은 너비로 세운다
+        /// </summary>
+        private void Replace3D(Transform root)
+        {
+            Art2DLibrary lib = Art2D.Library;
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+            {
+                Sprite art = lib.PropFor(t.name.Replace("(Clone)", string.Empty).Trim());
+                if (art == null) continue;
+                bool any = false;
+                var b = new Bounds();
+                foreach (Renderer r in t.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!(r is MeshRenderer) && !(r is SkinnedMeshRenderer)) continue;
+                    if (!any) b = r.bounds;
+                    else b.Encapsulate(r.bounds);
+                    any = true;
+                }
+
+                if (!any) continue;
+                SpriteRenderer s = Standing(t.name + "2D", art, new Vector2(b.center.x, b.min.y), Mathf.Max(0.5f, b.size.x * 1.05f), Art2D.SortOrder(b.min.y));
+                if (s != null) s.transform.SetParent(t, true);
+            }
         }
 
         private void Update()

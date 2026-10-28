@@ -54,6 +54,24 @@ namespace HistoryHeroes.Skills
         public static GameObject Attach(GameObject prefab, Transform owner, float size)
         {
             if (prefab == null || owner == null) return null;
+            if (Common.Art2D.Enabled)
+            {
+                // 2D 그림 시험판: 그림이 있는 스킬 물건은 그림 한 장 (오른쪽을 본 그림 → 주인이 돈 방향을 따른다)
+                Sprite art = Common.Art2D.Library.PropFor(prefab.name);
+                if (art != null)
+                {
+                    var g = new GameObject("Model2D");
+                    g.transform.SetParent(owner, false);
+                    Vector3 ls = owner.lossyScale;
+                    float k = size * 1.3f / Mathf.Max(0.01f, Mathf.Max(art.bounds.size.x, art.bounds.size.y));
+                    g.transform.localScale = new Vector3(k / Mathf.Max(0.0001f, Mathf.Abs(ls.x)), k / Mathf.Max(0.0001f, Mathf.Abs(ls.y)), 1f);
+                    g.transform.localPosition = new Vector3(0f, 0f, -0.05f);
+                    var sr = g.AddComponent<SpriteRenderer>();
+                    sr.sprite = art;
+                    sr.sortingOrder = 400; // 스킬 물건은 캐릭터 위
+                    return g;
+                }
+            }
             GameObject go = Instantiate(prefab, owner, false);
             go.name = "Model3D";
             Vector3 s = owner.lossyScale;

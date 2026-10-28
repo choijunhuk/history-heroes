@@ -30,6 +30,9 @@ namespace HistoryHeroes.Records
             /// <summary>남길 레벨. 0이면 뺀다.</summary>
             public int Level { get; internal set; }
 
+            /// <summary>고정: 자동 맞추기가 깎지 않는다 (전체 검토 2번 "남길 스킬 2개를 보호", 최대 2개)</summary>
+            public bool Pinned { get; internal set; }
+
             public bool Kept => Level > 0;
 
             /// <summary>
@@ -148,19 +151,42 @@ namespace HistoryHeroes.Records
         {
             for (int guard = 0; guard < 500 && !Fits; guard++)
             {
-                Entry victim = PickToCut(damageShare);
+                // 고정한 것은 마지막까지 남긴다 (고정한 것만 남았는데도 넘치면 그때 깎는다)
+                Entry victim = PickToCut(damageShare, skipPinned: true) ?? PickToCut(damageShare, skipPinned: false);
                 if (victim == null) break;
                 SetLevel(victim, victim.IsEvolution ? 0 : victim.Level - 1);
             }
         }
 
-        private Entry PickToCut(Func<string, float> damageShare)
+        public const int MaxPins = 2;
+
+        public int PinCount
+        {
+            get
+            {
+                int n = 0;
+                foreach (Entry e in _entries) if (e.Pinned) n++;
+                return n;
+            }
+        }
+
+        /// <summary>고정 켜기/끄기. 이미 2개면 켜지 않는다. 바뀌었으면 true</summary>
+        public bool TogglePin(Entry e)
+        {
+            if (e == null) return false;
+            if (!e.Pinned && PinCount >= MaxPins) return false;
+            e.Pinned = !e.Pinned;
+            return true;
+        }
+
+        private Entry PickToCut(Func<string, float> damageShare, bool skipPinned = false)
         {
             Entry best = null;
             int bestScore = int.MaxValue;
             foreach (Entry e in _entries)
             {
                 if (!e.Kept) continue;
+                if (skipPinned && e.Pinned) continue;
                 if (e.Level <= 1 && IsRequiredByKeptEvolution(e.Skill)) continue;
 
                 int score = CutPriority(e, damageShare);
@@ -185,15 +211,19 @@ namespace HistoryHeroes.Records
         }
 
         /// <summary>
-        /// 작을수록 먼저 깎는다: 진화·합체 → 등급 → 패시브 먼저 → (피해 비율이 있으면) 피해가 적은 것 먼저 → 레벨이 높은 것부터 한 단계씩.
+        /// 작을수록 먼저 깎는다: 진화·합체 → 등급 → 쓸모 → (피해 비율이 있으면) 피해가 적은 것 먼저 → 레벨이 높은 것부터 한 단계씩.
+        /// 쓸모 (전체 검토 2번: 공격력·공속을 잃고 광역 액티브만 남던 것): 편의 패시브(경험치·이동 등) 0 → 방어 패시브 1 → 액티브 · 기본 공격 패시브 2.
+        /// 기본 공격 패시브(공격력·공속·멀티샷·치명타 …)는 액티브와 같은 줄에서 "피해 50%"로 친다 → 피해가 적은 액티브보다 늦게 깎인다
         /// </summary>
         private static int CutPriority(Entry e, Func<string, float> damageShare)
         {
             int group = e.IsEvolution ? 2 : e.IsMerge ? 1 : 0;
             int rarity = (int)e.Skill.rarity;
-            int kind = e.Skill.Kind == SkillKind.Passive ? 0 : 1;
-            int share = kind == 1 && damageShare != null ? Math.Min(99, (int)(damageShare(e.Skill.id) * 100f)) : 0;
-            return group * 1000000 + rarity * 100000 + kind * 10000 + share * 100 + (99 - e.Level);
+            bool passive = e.Skill.Kind == SkillKind.Passive;
+            bool core = passive && (e.Skill.role == SkillRole.Single || e.Skill.id == "atk_up");
+            int value = !passive || core ? 2 : e.Skill.role == SkillRole.Defense ? 1 : 0;
+            int share = core ? 50 : !passive && damageShare != null ? Math.Min(99, (int)(damageShare(e.Skill.id) * 100f)) : 0;
+            return group * 1000000 + rarity * 100000 + value * 10000 + share * 100 + (99 - e.Level);
         }
 
         /// <summary>저장할 스킬 목록. 진화가 풀린 칸은 진화 전 액티브로 적는다.</summary>
