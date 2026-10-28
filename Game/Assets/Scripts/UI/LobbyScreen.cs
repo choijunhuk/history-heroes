@@ -191,10 +191,12 @@ namespace HistoryHeroes.UI
             Audio.AudioManager.PlayMusic(tutorial ? "opening" : "lobby");
             if (tutorialBoss) GameSession.StartTutorialBoss(data.tutorialRecordId); // 기록은 남겼고 보스 전에 꺼졌다
             else if (tutorial) opening.Open(() => GameSession.StartTutorial(false));
-            if (GameSession.TutorialJustFinished)
+            // 튜토리얼 직후: 다음 목표 하나만 (전체 기획 검토 1번). 출석부·7일 미션·펫은 단추 표시로, 알림 묻기는 다음 로비에서
+            bool justFinished = GameSession.TutorialJustFinished;
+            if (justFinished)
             {
                 GameSession.TutorialJustFinished = false;
-                ShowNotice("튜토리얼 끝! 이제 1구간 던전에 도전하세요 · 출석부·7일 미션·펫이 열렸어요");
+                ShowNotice("튜토리얼 끝! 이제 <b>1구간 던전</b>에 도전하세요");
             }
 
             // 장비가 생기기 전에 깬 보스의 장비 보상 (v0.4)
@@ -207,9 +209,9 @@ namespace HistoryHeroes.UI
                     ShowNotice("보스 격파 보상: " + string.Join(", ", gear).Replace("장비  ", ""));
                 }
 
-                if (!tutorial && !OfferResume() && !OfferLegendaryChoice()) OfferNotifications();
+                if (!tutorial && !justFinished && !OfferResume() && !OfferLegendaryChoice()) OfferNotifications();
             }
-            else if (!tutorial && !OfferResume())
+            else if (!tutorial && !justFinished && !OfferResume())
             {
                 OfferNotifications();
             }
