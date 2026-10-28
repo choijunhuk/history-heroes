@@ -161,18 +161,19 @@ namespace HistoryHeroes.EditorTools
         /// <summary>
         /// 구간별 빛·색 (Content 3장 구간 이름): 1 균열의 초원 (따뜻한 햇빛) · 2 잊힌 성채 (차가운 돌) · 3 녹슨 공방 (녹·구리) ·
         /// 4 그림자 협곡 (보랏빛 저녁) · 5 망각의 왕좌 (어두운 보라 + 금빛) · 서바이벌 풀밭 (밝은 낮).
-        /// 바닥은 전보다 한 단계 밝게 → 어두운 옷의 캐릭터가 묻히지 않게 (그래픽 평가 "조명·색")
+        /// 바닥은 전보다 한 단계 밝게 → 어두운 옷의 캐릭터가 묻히지 않게 (그래픽 평가 "조명·색").
+        /// 2026-10-29 전체 UI 검토: 영웅이 바닥보다 한 단계 밝게 → 바닥 ×0.92, 대신 영웅 둘레 빛(HeroLight)을 키운다
         /// </summary>
         private static void Looks(SerializedProperty list)
         {
             var looks = new[]
             {
                 // key, 바닥, 벽, 해, 해 밝기, 주변광, 화면 색, 노출, 대비, 채도, 배경
-                ("ch1", new Color(1.12f, 1.06f, 0.92f), new Color(1.02f, 0.98f, 0.9f), new Color(1f, 0.94f, 0.8f), 1.4f, new Color(0.56f, 0.58f, 0.6f), new Color(1f, 0.98f, 0.93f), 0.12f, 12f, 16f, new Color(0.1f, 0.09f, 0.07f)),
-                ("ch2", new Color(0.98f, 1.02f, 1.1f), new Color(0.88f, 0.93f, 1.04f), new Color(0.94f, 0.97f, 1f), 1.3f, new Color(0.5f, 0.54f, 0.64f), new Color(0.95f, 0.98f, 1.04f), 0.1f, 12f, 10f, new Color(0.06f, 0.07f, 0.1f)),
-                ("ch3", new Color(1.12f, 0.95f, 0.78f), new Color(1f, 0.82f, 0.66f), new Color(1f, 0.86f, 0.66f), 1.35f, new Color(0.56f, 0.48f, 0.42f), new Color(1.04f, 0.97f, 0.9f), 0.1f, 14f, 12f, new Color(0.1f, 0.07f, 0.05f)),
-                ("ch4", new Color(0.95f, 0.9f, 1.08f), new Color(0.78f, 0.72f, 0.92f), new Color(0.9f, 0.84f, 1f), 1.25f, new Color(0.48f, 0.45f, 0.62f), new Color(0.97f, 0.95f, 1.05f), 0.12f, 14f, 10f, new Color(0.07f, 0.05f, 0.1f)),
-                ("ch5", new Color(0.92f, 0.86f, 1f), new Color(0.66f, 0.6f, 0.76f), new Color(1f, 0.9f, 0.74f), 1.3f, new Color(0.44f, 0.4f, 0.52f), new Color(1f, 0.96f, 1.02f), 0.14f, 16f, 10f, new Color(0.06f, 0.04f, 0.08f)),
+                ("ch1", new Color(1.03f, 0.98f, 0.85f), new Color(1.02f, 0.98f, 0.9f), new Color(1f, 0.94f, 0.8f), 1.4f, new Color(0.56f, 0.58f, 0.6f), new Color(1f, 0.98f, 0.93f), 0.12f, 12f, 16f, new Color(0.1f, 0.09f, 0.07f)),
+                ("ch2", new Color(0.90f, 0.94f, 1.01f), new Color(0.88f, 0.93f, 1.04f), new Color(0.94f, 0.97f, 1f), 1.3f, new Color(0.5f, 0.54f, 0.64f), new Color(0.95f, 0.98f, 1.04f), 0.1f, 12f, 10f, new Color(0.06f, 0.07f, 0.1f)),
+                ("ch3", new Color(1.03f, 0.87f, 0.72f), new Color(1f, 0.82f, 0.66f), new Color(1f, 0.86f, 0.66f), 1.35f, new Color(0.56f, 0.48f, 0.42f), new Color(1.04f, 0.97f, 0.9f), 0.1f, 14f, 12f, new Color(0.1f, 0.07f, 0.05f)),
+                ("ch4", new Color(0.87f, 0.83f, 0.99f), new Color(0.78f, 0.72f, 0.92f), new Color(0.9f, 0.84f, 1f), 1.25f, new Color(0.48f, 0.45f, 0.62f), new Color(0.97f, 0.95f, 1.05f), 0.12f, 14f, 10f, new Color(0.07f, 0.05f, 0.1f)),
+                ("ch5", new Color(0.85f, 0.79f, 0.92f), new Color(0.66f, 0.6f, 0.76f), new Color(1f, 0.9f, 0.74f), 1.3f, new Color(0.44f, 0.4f, 0.52f), new Color(1f, 0.96f, 1.02f), 0.14f, 16f, 10f, new Color(0.06f, 0.04f, 0.08f)),
                 ("survival", Color.white, Color.white, new Color(1f, 0.97f, 0.88f), 1.35f, new Color(0.56f, 0.6f, 0.6f), new Color(1f, 1f, 0.97f), 0.08f, 10f, 14f, new Color(0.1f, 0.12f, 0.08f)),
             };
 

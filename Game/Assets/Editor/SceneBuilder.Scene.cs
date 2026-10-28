@@ -125,8 +125,8 @@ namespace HistoryHeroes.EditorTools
             heroLight.transform.SetParent(playerObject.transform, false);
             heroLight.transform.localPosition = new Vector3(0f, -0.6f, -2.6f);
             heroLight.type = LightType.Point;
-            heroLight.range = 4.5f;
-            heroLight.intensity = 1.6f;
+            heroLight.range = 3.8f; // 전체 UI 검토 "조명·색": 영웅 둘레만 한 단계 밝게 (바닥은 구간 표에서 조금 낮춤)
+            heroLight.intensity = 2.4f;
             heroLight.color = new Color(1f, 0.95f, 0.85f);
             heroLight.shadows = LightShadows.None;
 
