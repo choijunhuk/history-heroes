@@ -25,6 +25,9 @@ namespace HistoryHeroes.Skills
         [SerializeField] private float pullSpeed = 2.5f;
         [SerializeField] private float windDamagePerSecond = 0.4f;
 
+        /// <summary>회오리의 초당 피해 (공격력 비율, 1레벨). 레벨업 카드가 "초당 피해 40% → 50%"를 보여 줄 때 쓴다</summary>
+        public float WindDamagePerSecond => windDamagePerSecond;
+
         private readonly List<EnemyBase> _inside = new List<EnemyBase>();
         private readonly Dictionary<EnemyBase, int> _confused = new Dictionary<EnemyBase, int>(); // 적 → 헤매게 한 삶 (풀에서 다시 나오면 새 적)
 

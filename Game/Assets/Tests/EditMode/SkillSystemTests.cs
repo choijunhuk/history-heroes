@@ -503,12 +503,34 @@ namespace HistoryHeroes.Tests
             shield.countPerLevel = 0;
             shield.damageFirstLevel = 0.10f;
             shield.damagePerLevel = 0.04f;
-            Assert.AreEqual("보호막 10% → 14%", HistoryHeroes.UI.SkillCardView.UpgradeLine(shield, 1, 2));
+            Assert.AreEqual("보호막(최대체력) 10% → 14%", HistoryHeroes.UI.SkillCardView.UpgradeLine(shield, 1, 2));
 
             // 패시브: 능력치 이름 + 퍼센트
             var crit = Make<PassiveSkillData>("crit_rate");
             crit.stats.Add(new PassiveSkillData.StatEntry { stat = Stats.StatType.CritRate, firstLevel = 0.06f, perLevel = 0.04f });
             Assert.AreEqual("치명타 확률 +6% → +10%", HistoryHeroes.UI.SkillCardView.UpgradeLine(crit, 1, 2));
+
+            // 멀티샷: 늘어난 수 + 발(베기)마다 줄어드는 피해
+            var multishot = Make<PassiveSkillData>("multishot");
+            multishot.attack.Add(new PassiveSkillData.AttackEntry { kind = Player.AttackModifierKind.ExtraProjectiles, firstLevel = 1, perLevel = 1 });
+            Assert.AreEqual("추가 공격 +1 → +2\n발당 피해 90% → 80%", HistoryHeroes.UI.SkillCardView.UpgradeLine(multishot, 1, 2));
+            Assert.AreEqual("추가 공격 +1 → +2\n베기당 피해 90% → 80%", HistoryHeroes.UI.SkillCardView.UpgradeLine(multishot, 1, 2, true));
+
+            // 칠성단: DamageAt은 1레벨 대비 배율 → 실제 초당 피해 (회오리 40%)
+            var go = new GameObject("gate");
+            try
+            {
+                var star = Make<ActiveSkillData>("zhuge_sevenstar");
+                star.countPerLevel = 0;
+                star.damageFirstLevel = 1f;
+                star.damagePerLevel = 0.25f;
+                star.behaviourPrefab = go.AddComponent<EightGateBehaviour>();
+                Assert.AreEqual("초당 피해 40% → 50%", HistoryHeroes.UI.SkillCardView.UpgradeLine(star, 1, 2));
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
         }
     }
 }

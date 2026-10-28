@@ -591,10 +591,13 @@ namespace HistoryHeroes.Player
             _attackCooldown = 1f / Stats.Get(StatType.AttackSpeed, StatTarget.BasicAttack);
         }
 
+        /// <summary>멀티샷 하나마다 한 발(한 번 베기)의 피해가 줄어드는 비율 (Skills.md 1장). 레벨업 카드도 이 값을 쓴다</summary>
+        public const float MultishotPenalty = 0.1f;
+
         /// <summary>멀티샷 수에 따른 한 발(한 번 베기)의 피해 배수 + 첫 발 보너스</summary>
         private float NextShotCoefficient(int extra)
         {
-            float coefficient = 1f - 0.1f * extra; // 멀티샷: 발당 -10% (Skills.md 1장)
+            float coefficient = 1f - MultishotPenalty * extra; // 멀티샷: 발당 -10% (Skills.md 1장)
             if (_firstShotPending) coefficient *= 1f + _sig.FirstShotBonus;
             _firstShotThisShot = _firstShotPending;
             _firstShotPending = false;

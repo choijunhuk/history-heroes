@@ -135,7 +135,8 @@ namespace HistoryHeroes.UI
                     nameLabel.text = s.displayName;
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";
                     // 이미 가진 스킬은 바뀌는 수치만 (설명의 숫자는 1레벨 기준이라 같이 두면 헷갈린다). 못 구하면 원래 설명
-                    string upgrade = card.Type == CardType.LevelUp ? UpgradeLine(s, card.NextLevel - 1, card.NextLevel) : string.Empty;
+                    bool melee = skills.HeroClass == Heroes.HeroClass.Warrior;
+                    string upgrade = card.Type == CardType.LevelUp ? UpgradeLine(s, card.NextLevel - 1, card.NextLevel, melee) : string.Empty;
                     descriptionLabel.text = upgrade.Length > 0 ? $"<color=#FFE27A>{upgrade}</color>" : s.DescriptionFor(skills.HeroClass);
                     Paint(RarityColor(s.rarity), GlowFor(s.rarity), s.icon);
                     hint = skills.CardHint(card);
@@ -167,7 +168,8 @@ namespace HistoryHeroes.UI
         /// 레벨업 카드의 "지금 → 고른 뒤" 줄 (전체 UI 검토 6번). 레벨 따라 바뀌는 수치만, 많아야 2개.
         /// 예: "개수 2 → 3", "피해 180% → 225%", "치명타 확률 +6% → +10%"
         /// </summary>
-        public static string UpgradeLine(SkillData skill, int from, int to)
+        /// <param name="melee">전사(근접)면 멀티샷 줄을 "베기당"으로</param>
+        public static string UpgradeLine(SkillData skill, int from, int to, bool melee = false)
         {
             var parts = new List<string>(2);
             void Add(string name, string now, string next)
@@ -178,20 +180,46 @@ namespace HistoryHeroes.UI
             if (skill is ActiveSkillData a)
             {
                 Add("개수", a.CountAt(from).ToString(), a.CountAt(to).ToString());
-                // 수호 방패는 "피해" 칸에 보호막 크기(최대체력 비율)를 담는다
-                Add(a.id == "guard_shield" ? "보호막" : "피해", Percent(a.DamageAt(from)), Percent(a.DamageAt(to)));
+                Add(DamageName(a), Percent(DamageValue(a, from)), Percent(DamageValue(a, to)));
                 Add("지속", $"{a.DurationAt(from):0.#}초", $"{a.DurationAt(to):0.#}초");
                 if (a.radius > 0f) Add("범위", Percent(a.RadiusAt(from) / a.radius), Percent(a.RadiusAt(to) / a.radius));
             }
             else if (skill is PassiveSkillData p)
             {
                 foreach (PassiveSkillData.StatEntry e in p.stats)
-                    Add(Equipment.EquipmentText.StatName(e.stat), "+" + Percent(e.ValueAt(from)), "+" + Percent(e.ValueAt(to)));
+                {
+                    string name = e.stat == Stats.StatType.HpRegen ? "초당 회복(최대체력)" : Equipment.EquipmentText.StatName(e.stat);
+                    Add(name, "+" + Percent(e.ValueAt(from)), "+" + Percent(e.ValueAt(to)));
+                }
+
                 foreach (PassiveSkillData.AttackEntry e in p.attack)
+                {
                     Add(AttackName(e.kind), $"+{e.ValueAt(from)}", $"+{e.ValueAt(to)}");
+                    // 멀티샷은 늘수록 발(베기)마다 피해가 준다 — 고르는 대가를 숨기지 않는다 (Codex 검토 2번)
+                    if (e.kind == Player.AttackModifierKind.ExtraProjectiles)
+                    {
+                        float penalty = Player.PlayerController.MultishotPenalty;
+                        Add(melee ? "베기당 피해" : "발당 피해", Percent(1f - penalty * e.ValueAt(from)), Percent(1f - penalty * e.ValueAt(to)));
+                    }
+                }
             }
 
             return string.Join("\n", parts);
+        }
+
+        /// <summary>"피해" 칸의 실제 뜻: 수호 방패 = 보호막, 칠성단·설명에 "초당"이 있는 스킬 = 초당 피해</summary>
+        private static string DamageName(ActiveSkillData a)
+        {
+            if (a.id == "guard_shield") return "보호막(최대체력)";
+            if (a.behaviourPrefab is EightGateBehaviour || (a.description != null && a.description.Contains("초당"))) return "초당 피해";
+            return "피해";
+        }
+
+        /// <summary>칠성단은 DamageAt을 1레벨 대비 배율로 쓴다 (EightGateBehaviour): 실제 초당 피해로 바꿔 보여 준다</summary>
+        private static float DamageValue(ActiveSkillData a, int level)
+        {
+            if (a.behaviourPrefab is EightGateBehaviour gate) return gate.WindDamagePerSecond * a.DamageAt(level) / Mathf.Max(0.01f, a.DamageAt(1));
+            return a.DamageAt(level);
         }
 
         private static string Percent(float v) => $"{v * 100f:0.#}%";

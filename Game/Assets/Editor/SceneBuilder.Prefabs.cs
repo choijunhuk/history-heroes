@@ -222,7 +222,7 @@ namespace HistoryHeroes.EditorTools
                     markerObject.transform.SetParent(go.transform, false);
                     var marker = markerObject.AddComponent<SpriteRenderer>();
                     marker.sprite = _circle;
-                    marker.color = new Color(1f, 0.2f, 0.2f, 0.35f);
+                    marker.color = new Color(1f, 0.2f, 0.2f, 0.5f); // 적 위험 범위는 진하게 (전체 UI 검토 1번)
                     marker.sortingOrder = -1;
                     marker.enabled = false;
                     props.Ref("blastMarker", marker);

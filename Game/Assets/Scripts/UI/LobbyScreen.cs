@@ -532,16 +532,16 @@ namespace HistoryHeroes.UI
             string dev = progress ? string.Empty : " · 개발용 해금";
             if (riftButtonLabel != null)
             {
-                riftButtonLabel.text = !ModeOpen(data) ? "무한의 균열\n<size=60%>3구간 보스를 깨면 열려요</size>"
-                    : data.rift.weeklyBest > 0 ? $"무한의 균열\n<size=60%>이번 주 {data.rift.weeklyBest}층{dev}</size>"
-                    : $"무한의 균열\n<size=60%>하트 없음 · 끝없는 층{dev}</size>";
+                riftButtonLabel.text = !ModeOpen(data) ? "무한의 균열\n<size=88%>3구간 보스를 깨면 열려요</size>"
+                    : data.rift.weeklyBest > 0 ? $"무한의 균열\n<size=88%>이번 주 {data.rift.weeklyBest}층{dev}</size>"
+                    : $"무한의 균열\n<size=88%>하트 없음 · 끝없는 층{dev}</size>";
             }
 
             if (dailyButtonLabel != null)
             {
-                dailyButtonLabel.text = !ModeOpen(data) ? "일일 도전\n<size=60%>3구간 보스를 깨면 열려요</size>"
-                    : data.dailyChallenge.officialDone ? $"일일 도전\n<size=60%>오늘 {data.dailyChallenge.officialScore}점{dev}</size>"
-                    : $"일일 도전\n<size=60%><color=#FFD966>오늘 도전 가능</color>{dev}</size>";
+                dailyButtonLabel.text = !ModeOpen(data) ? "일일 도전\n<size=88%>3구간 보스를 깨면 열려요</size>"
+                    : data.dailyChallenge.officialDone ? $"일일 도전\n<size=88%>오늘 {data.dailyChallenge.officialScore}점{dev}</size>"
+                    : $"일일 도전\n<size=88%><color=#FFD966>오늘 도전 가능</color>{dev}</size>";
             }
         }
 
