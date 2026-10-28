@@ -61,6 +61,13 @@ namespace HistoryHeroes.Equipment
                 case StatType.DamageReduction: return "피해 감소";
                 case StatType.HpRegen: return "체력 재생";
                 case StatType.HpRegenFlat: return "초당 회복";
+                case StatType.Range: return "사거리";
+                case StatType.Dodge: return "회피";
+                case StatType.Lifesteal: return "흡혈";
+                case StatType.ActiveDamage: return "액티브 피해";
+                case StatType.ExpGain: return "경험치";
+                case StatType.GoldGain: return "골드";
+                case StatType.DamageTaken: return "받는 피해";
                 default: return stat.ToString();
             }
         }

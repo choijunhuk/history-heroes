@@ -690,10 +690,11 @@ namespace HistoryHeroes.EditorTools
             // 큰 스킬 아이콘 (오목한 칸 안)
             if (_kit != null)
             {
-                RectTransform slotRect = Rect("IconSlot", card, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -112f), new Vector2(128f, 128f));
+                // 아이콘 68px (540 기준, 전체 UI 검토 6번: 64~72px)
+                RectTransform slotRect = Rect("IconSlot", card, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -118f), new Vector2(156f, 156f));
                 iconSlot = Img(slotRect, SkillCardView.Common, _kit.Slot);
                 iconSlot.type = Image.Type.Sliced;
-                RectTransform iconRect = Rect("Icon", slotRect, Center, Center, Center, new Vector2(0f, -2f), new Vector2(92f, 92f));
+                RectTransform iconRect = Rect("Icon", slotRect, Center, Center, Center, new Vector2(0f, -2f), new Vector2(136f, 136f));
                 icon = Img(iconRect, Color.white, null);
                 icon.preserveAspect = true;
                 var iconShadow = iconRect.gameObject.AddComponent<Shadow>();
@@ -716,7 +717,7 @@ namespace HistoryHeroes.EditorTools
                 newBadge = badge.gameObject;
             }
 
-            TMP_Text nameLabel = TopLabel("Name", card, 42, 182f, 56f);
+            TMP_Text nameLabel = TopLabel("Name", card, 42, 202f, 52f);
             nameLabel.enableAutoSizing = true;
             nameLabel.fontSizeMin = 28f;
             nameLabel.fontSizeMax = 42f;
@@ -726,13 +727,13 @@ namespace HistoryHeroes.EditorTools
                 if (_buttonMat != null) nameLabel.fontSharedMaterial = _buttonMat;
             }
 
-            TMP_Text level = TopLabel("Level", card, 30, 236f, 40f);
+            TMP_Text level = TopLabel("Level", card, 30, 252f, 38f);
             level.color = new Color(1f, 0.88f, 0.45f);
 
             // 설명: 어두운 둥근 판 위에 크게. 길면 조금 줄어든다
             RectTransform box = Rect("DescriptionBox", card, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             box.offsetMin = new Vector2(16f, 58f);
-            box.offsetMax = new Vector2(-16f, -282f);
+            box.offsetMax = new Vector2(-16f, -296f);
             Image boxImage = Img(box, new Color(0.03f, 0.05f, 0.1f, 0.55f), _kit != null ? _kit.Row : null);
             if (_kit != null)
             {
@@ -740,10 +741,11 @@ namespace HistoryHeroes.EditorTools
                 boxImage.pixelsPerUnitMultiplier = 1.4f;
             }
 
-            TMP_Text description = Label("Description", box, "", 32, TextAlignmentOptions.Center);
+            // 본문 크기(36 = 540 기준 18px), 세 카드의 설명이 같은 높이에서 시작하게 위쪽 정렬 (전체 UI 검토 6번)
+            TMP_Text description = Label("Description", box, "", 36, TextAlignmentOptions.Top);
             description.enableAutoSizing = true;
-            description.fontSizeMin = 22f;
-            description.fontSizeMax = 32f;
+            description.fontSizeMin = 24f;
+            description.fontSizeMax = 36f;
             description.lineSpacing = 6f;
             RectTransform dr = description.rectTransform;
             Stretch(dr);

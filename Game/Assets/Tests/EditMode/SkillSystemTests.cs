@@ -486,5 +486,29 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(0.5f, HistoryHeroes.Common.CameraShake.SettingMultiplier(1));
             Assert.AreEqual(1f, HistoryHeroes.Common.CameraShake.SettingMultiplier(2));
         }
+
+        [Test]
+        public void CardUpgradeLine_ShowsOnlyChangingNumbers()
+        {
+            // 액티브: 개수만 늘면 개수만 (피해·지속·범위는 그대로라 안 나온다)
+            var blades = Make<ActiveSkillData>("spin_blade");
+            blades.countFirstLevel = 2;
+            blades.countPerLevel = 1;
+            blades.damageFirstLevel = 0.4f;
+            blades.damagePerLevel = 0f;
+            Assert.AreEqual("개수 3 → 4", HistoryHeroes.UI.SkillCardView.UpgradeLine(blades, 2, 3));
+
+            // 수호 방패의 "피해" 칸은 보호막
+            var shield = Make<ActiveSkillData>("guard_shield");
+            shield.countPerLevel = 0;
+            shield.damageFirstLevel = 0.10f;
+            shield.damagePerLevel = 0.04f;
+            Assert.AreEqual("보호막 10% → 14%", HistoryHeroes.UI.SkillCardView.UpgradeLine(shield, 1, 2));
+
+            // 패시브: 능력치 이름 + 퍼센트
+            var crit = Make<PassiveSkillData>("crit_rate");
+            crit.stats.Add(new PassiveSkillData.StatEntry { stat = Stats.StatType.CritRate, firstLevel = 0.06f, perLevel = 0.04f });
+            Assert.AreEqual("치명타 확률 +6% → +10%", HistoryHeroes.UI.SkillCardView.UpgradeLine(crit, 1, 2));
+        }
     }
 }

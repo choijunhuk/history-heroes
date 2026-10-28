@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HistoryHeroes.Skills;
 using TMPro;
 using UnityEngine;
@@ -46,7 +47,8 @@ namespace HistoryHeroes.UI
         private const float BoxBottomWithHint = 112f;
 
         // 등급 색 = 테두리·아이콘 칸·뒤 빛 (카드 바탕은 어두운 남색으로 같다)
-        public static readonly Color Common = new Color(0.66f, 0.72f, 0.82f);
+        // 일반은 차분한 테두리, 희귀·전설만 강하게 (전체 UI 검토 6번)
+        public static readonly Color Common = new Color(0.46f, 0.51f, 0.62f);
         public static readonly Color Rare = new Color(0.32f, 0.62f, 1f);
         public static readonly Color Legendary = new Color(1f, 0.78f, 0.24f);
         public static readonly Color CardBase = new Color(0.2f, 0.25f, 0.4f);
@@ -132,7 +134,9 @@ namespace HistoryHeroes.UI
                     kindBand.color = passive ? PassiveBand : ActiveBand;
                     nameLabel.text = s.displayName;
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";
-                    descriptionLabel.text = s.DescriptionFor(skills.HeroClass);
+                    // 이미 가진 스킬은 바뀌는 수치만 (설명의 숫자는 1레벨 기준이라 같이 두면 헷갈린다). 못 구하면 원래 설명
+                    string upgrade = card.Type == CardType.LevelUp ? UpgradeLine(s, card.NextLevel - 1, card.NextLevel) : string.Empty;
+                    descriptionLabel.text = upgrade.Length > 0 ? $"<color=#FFE27A>{upgrade}</color>" : s.DescriptionFor(skills.HeroClass);
                     Paint(RarityColor(s.rarity), GlowFor(s.rarity), s.icon);
                     hint = skills.CardHint(card);
                     if (legendaryWarning && s.rarity == Rarity.Legendary)
@@ -156,6 +160,50 @@ namespace HistoryHeroes.UI
             {
                 pop.Delay = order * 0.07f; // 한 장씩 차례로
                 pop.Play();
+            }
+        }
+
+        /// <summary>
+        /// 레벨업 카드의 "지금 → 고른 뒤" 줄 (전체 UI 검토 6번). 레벨 따라 바뀌는 수치만, 많아야 2개.
+        /// 예: "개수 2 → 3", "피해 180% → 225%", "치명타 확률 +6% → +10%"
+        /// </summary>
+        public static string UpgradeLine(SkillData skill, int from, int to)
+        {
+            var parts = new List<string>(2);
+            void Add(string name, string now, string next)
+            {
+                if (now != next && parts.Count < 2) parts.Add($"{name} {now} → {next}");
+            }
+
+            if (skill is ActiveSkillData a)
+            {
+                Add("개수", a.CountAt(from).ToString(), a.CountAt(to).ToString());
+                // 수호 방패는 "피해" 칸에 보호막 크기(최대체력 비율)를 담는다
+                Add(a.id == "guard_shield" ? "보호막" : "피해", Percent(a.DamageAt(from)), Percent(a.DamageAt(to)));
+                Add("지속", $"{a.DurationAt(from):0.#}초", $"{a.DurationAt(to):0.#}초");
+                if (a.radius > 0f) Add("범위", Percent(a.RadiusAt(from) / a.radius), Percent(a.RadiusAt(to) / a.radius));
+            }
+            else if (skill is PassiveSkillData p)
+            {
+                foreach (PassiveSkillData.StatEntry e in p.stats)
+                    Add(Equipment.EquipmentText.StatName(e.stat), "+" + Percent(e.ValueAt(from)), "+" + Percent(e.ValueAt(to)));
+                foreach (PassiveSkillData.AttackEntry e in p.attack)
+                    Add(AttackName(e.kind), $"+{e.ValueAt(from)}", $"+{e.ValueAt(to)}");
+            }
+
+            return string.Join("\n", parts);
+        }
+
+        private static string Percent(float v) => $"{v * 100f:0.#}%";
+
+        private static string AttackName(Player.AttackModifierKind kind)
+        {
+            switch (kind)
+            {
+                case Player.AttackModifierKind.ExtraProjectiles: return "추가 공격";
+                case Player.AttackModifierKind.Pierce: return "관통";
+                case Player.AttackModifierKind.Ricochet: return "벽 튕김";
+                default: return kind.ToString();
             }
         }
 
