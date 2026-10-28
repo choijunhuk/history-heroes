@@ -7,4 +7,4 @@ if [ -n "$LOCALAPPDATA" ] && command -v cygpath >/dev/null 2>&1; then
 fi
 export UNITY_NO_PAGER=1
 U="unity command --caller plugin --skill unity-cli"
-PY="${PYTHON:-$(command -v python || command -v py || echo python)}"
+PY="${PYTHON:-$(command -v python || command -v python3 || command -v py || echo python)}" # 맥에는 python3만 있다
