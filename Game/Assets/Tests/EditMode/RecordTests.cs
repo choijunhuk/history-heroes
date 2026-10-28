@@ -189,6 +189,34 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Draft_AutoFit_KeepsAttackPassiveOverWeakActive()
+        {
+            // 전체 검토 2번: 공격력(기본 공격 패시브)을 피해가 적은 액티브보다 늦게 깎는다
+            var draft = new RecordDraft(new[] { Entry(_atk, 1), Entry(_blade, 1) }, 2); // 1 + 2 = 3 > 2
+            draft.AutoFit(id => id == "spin_blade" ? 0.03f : 0f);
+            Assert.IsTrue(draft.Fits);
+            Assert.IsTrue(draft.Entries[0].Kept, "공격력은 남는다");
+            Assert.IsFalse(draft.Entries[1].Kept, "피해 3%인 회전 칼날을 뺀다");
+        }
+
+        [Test]
+        public void Draft_PinnedSkillIsCutLast_AndAtMostTwo()
+        {
+            var draft = new RecordDraft(new[] { Entry(_def, 3), Entry(_lightning, 1), Entry(_atk, 1) }, 4); // 3 + 3 + 1 = 7 > 4
+            Assert.IsTrue(draft.TogglePin(draft.Entries[0]), "방어력 고정");
+            draft.AutoFit();
+            Assert.IsTrue(draft.Fits, $"비용 {draft.TotalCost}");
+            Assert.AreEqual(3, draft.Entries[0].Level, "고정한 방어력은 그대로");
+            Assert.IsFalse(draft.Entries[1].Kept, "대신 낙뢰를 뺀다");
+
+            Assert.IsTrue(draft.TogglePin(draft.Entries[2]));
+            Assert.IsFalse(draft.TogglePin(draft.Entries[1]), "세 번째 고정은 안 된다");
+            Assert.AreEqual(2, draft.PinCount);
+            Assert.IsTrue(draft.TogglePin(draft.Entries[2]), "다시 누르면 풀린다");
+            Assert.AreEqual(1, draft.PinCount);
+        }
+
+        [Test]
         public void Strength_SumsSaveCostByRole_AndPicksMain()
         {
             _blade.role = SkillRole.Defense;   // 2 + 2×(Lv-1)

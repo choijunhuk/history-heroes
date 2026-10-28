@@ -45,7 +45,7 @@ namespace HistoryHeroes.Heroes
         /// <summary>"1구간 보스를 깨면 열려요" 같은 안내</summary>
         public static string Condition(HeroData hero)
         {
-            if (hero.gemsOnly) return $"보석 {Wallet.Format(hero.unlockGems)}개로 열려요";
+            if (hero.gemsOnly) return $"보석 {Wallet.Format(hero.unlockGems)}개로 열려요 (던전 {FreePickRuns}판 하면 보석 영웅 한 명은 무료)";
             return hero.unlockAfterBossChapter <= 0 ? "처음부터" : $"{hero.unlockAfterBossChapter}구간 보스를 깨면 열려요";
         }
 
@@ -53,6 +53,21 @@ namespace HistoryHeroes.Heroes
         public static string LockText(HeroData hero)
         {
             return hero.gemsOnly ? Condition(hero) : $"{Condition(hero)} (또는 보석 {Wallet.Format(hero.unlockGems)})";
+        }
+
+        /// <summary>던전을 이만큼 하면 보석 영웅(다빈치 · 제갈량) 가운데 한 명을 무료로 (전체 검토 8번: 4,000보석 = 약 30일치)</summary>
+        public const int FreePickRuns = 10;
+
+        public static bool CanClaimFree(SaveData d, HeroData hero) =>
+            hero != null && hero.gemsOnly && !d.freeHeroClaimed && d.dungeonRuns >= FreePickRuns && !IsUnlocked(d, hero);
+
+        /// <summary>10판 기념 무료 해금 (한 명만, 보석 영웅만)</summary>
+        public static bool TryClaimFree(SaveData d, HeroData hero)
+        {
+            if (!CanClaimFree(d, hero)) return false;
+            d.freeHeroClaimed = true;
+            d.unlockedHeroes.Add(hero.id);
+            return true;
         }
 
         public static bool TryBuy(SaveData d, HeroData hero)

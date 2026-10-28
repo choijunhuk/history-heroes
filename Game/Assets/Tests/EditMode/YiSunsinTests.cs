@@ -119,6 +119,16 @@ namespace HistoryHeroes.Tests
             }
 
             Assert.IsTrue(HeroUnlock.IsUnlocked(new SaveData(), roster.Default), "칭기즈 칸은 처음부터");
+
+            // 던전 10판 기념: 보석 영웅 가운데 한 명만 무료 (전체 검토 8번)
+            var runs = new SaveData { dungeonRuns = 9 };
+            HeroData davinci = roster.Find("davinci"), zhuge = roster.Find("zhuge");
+            Assert.IsFalse(HeroUnlock.CanClaimFree(runs, davinci), "9판은 아직");
+            runs.dungeonRuns = 10;
+            Assert.IsFalse(HeroUnlock.CanClaimFree(runs, roster.Find("guan")), "보석 영웅만");
+            Assert.IsTrue(HeroUnlock.TryClaimFree(runs, zhuge));
+            Assert.IsTrue(HeroUnlock.IsUnlocked(runs, zhuge));
+            Assert.IsFalse(HeroUnlock.CanClaimFree(runs, davinci), "한 명만");
             StringAssert.Contains("(또는 보석", HeroUnlock.LockText(roster.Find("guan")));
         }
 

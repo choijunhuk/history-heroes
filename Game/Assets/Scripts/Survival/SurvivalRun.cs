@@ -62,9 +62,10 @@ namespace HistoryHeroes.Survival
 
             player.Teleport(playerStart != null ? (Vector2)playerStart.position : Vector2.zero);
             player.Health.Died += _ => Finish(victory: false);
-            if (SaveSystem.Data.run.valid)
+            RunSnapshot resume = GameSession.ConsumeResume();
+            if (resume == null && SaveSystem.Data.run.valid)
             {
-                SaveSystem.Data.run = new RunSnapshot(); // 서바이벌은 이어하지 않는다 (10분짜리, 적 수백 마리)
+                SaveSystem.Data.run = new RunSnapshot(); // 새 판: 전에 남은 판은 지운다
                 SaveSystem.Save();
             }
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
@@ -76,12 +77,94 @@ namespace HistoryHeroes.Survival
             levelUp.Floor = 1;
             StageLook.Show(string.IsNullOrEmpty(data.lookKey) ? "survival" : data.lookKey); // 맵마다 색 (들판 · 성곽 · 공장)
             StartCrates(); // 짚더미 · 화로 (확장 1차 6-4장)
-            hud.ShowNotice($"{data.mapName} — 임무: {MissionText}", 3f);
+            if (resume != null && resume.mode == (int)BattleMode.Survival) RestoreSnapshot(resume);
+            else hud.ShowNotice($"{data.mapName} — 임무: {MissionText}", 3f);
+            _nextSnapshot = _elapsed + SnapshotEvery;
+        }
+
+        // ---------------------------------------------------------------- 이어하기 (전체 검토 6번)
+
+        private const float SnapshotEvery = 30f;
+        private float _nextSnapshot;
+
+        /// <summary>
+        /// 30초마다 판 상태를 남긴다: 빌드 · 레벨 · 체력 · 시간 · 임무 · 다음 엘리트 · 무리.
+        /// 중간 보스가 살아 있으면 "중간 보스 1초 전"으로, 마지막 보스가 나왔으면 "보스 2초 전"으로 남긴다 (이어하면 그 보스부터 다시)
+        /// </summary>
+        private void SaveSnapshot()
+        {
+            if (_finished) return;
+            float at = _elapsed;
+            bool midBossDone = _midBossDone;
+            if (_midBoss != null && _midBoss.isActiveAndEnabled && !_midBoss.Health.IsDead)
+            {
+                midBossDone = false;
+                at = Mathf.Min(at, Mathf.Max(0f, data.midBossTime - 1f));
+            }
+
+            if (_bossSpawned) at = Mathf.Min(at, Mathf.Max(0f, data.duration - 2f));
+            var s = new RunSnapshot
+            {
+                valid = true,
+                mode = (int)BattleMode.Survival,
+                survivalMap = _mapIndex,
+                heroId = skills.HeroId,
+                level = experience.Level.Level,
+                experience = experience.Level.Experience,
+                hpRatio = player.Health.Current / Mathf.Max(1f, player.Health.Max),
+                kills = experience.Kills,
+                elapsed = at,
+                offersMade = skills.OffersMade,
+                choseLegendary = skills.ChoseLegendary,
+                rerollsLeft = levelUp.RerollsLeft,
+                heartSpent = GameSession.HeartSpent,
+                hasMeta = true,
+                meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)),
+                savedAt = Clock.UnixSeconds,
+                nextElite = _nextElite,
+                midBossDone = midBossDone,
+                nextSwarm = _nextSwarm,
+                cratesBroken = _cratesBroken,
+                elitesEarly = _elitesEarly,
+                bagGold = _bagGold,
+            };
+            skills.CaptureFusionHistory(s);
+            foreach (SkillInstance k in skills.Loadout.Actives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
+            foreach (SkillInstance k in skills.Loadout.Passives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
+            s.fusions.AddRange(_fusions);
+            SaveSystem.Data.run = s;
+            SaveSystem.Save();
+        }
+
+        private void RestoreSnapshot(RunSnapshot s)
+        {
+            skills.ApplyRecord(s.skills, database);
+            skills.RestoreRunState(s.offersMade, s.choseLegendary);
+            skills.RestoreFusionHistory(s, database);
+            experience.Level.Restore(s.level, s.experience);
+            experience.RestoreKills(s.kills);
+            _fusions.AddRange(s.fusions);
+            levelUp.RestoreRerolls(s.rerollsLeft);
+            _elapsed = Mathf.Clamp(s.elapsed, 0f, Mathf.Max(0f, data.duration - 1f));
+            _nextElite = s.nextElite;
+            _midBossDone = s.midBossDone;
+            _nextSwarm = s.nextSwarm;
+            _cratesBroken = s.cratesBroken;
+            _elitesEarly = s.elitesEarly;
+            _bagGold = s.bagGold;
+            levelUp.Floor = 1 + Mathf.FloorToInt(_elapsed / 60f * data.floorPerMinute);
+            player.Health.Revive(player.Health.Max * Mathf.Clamp(s.hpRatio, 0.05f, 1f));
+            hud.ShowNotice($"{data.mapName} — {Format(_elapsed)}부터 이어서", 2.5f);
         }
 
         private void Update()
         {
             if (_finished || GamePause.IsPaused) return;
+            if (_elapsed >= _nextSnapshot)
+            {
+                _nextSnapshot = _elapsed + SnapshotEvery;
+                SaveSnapshot();
+            }
             _elapsed += Time.deltaTime;
             levelUp.Floor = 1 + Mathf.FloorToInt(_elapsed / 60f * data.floorPerMinute); // 전설 확률: 경과 시간 기준 (8-1)
             UpdateClock();
@@ -314,6 +397,7 @@ namespace HistoryHeroes.Survival
         {
             if (_finished) return;
             _finished = true;
+            SaveSystem.Data.run = new RunSnapshot(); // 판이 끝났다 → 이어하기 없음
             player.Health.Invulnerable = true;
             experience.AttractAll();
 

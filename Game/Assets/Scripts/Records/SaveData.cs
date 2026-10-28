@@ -43,6 +43,8 @@ namespace HistoryHeroes.Records
 
         /// <summary>판 수 (통계·테스트용)</summary>
         public int dungeonRuns;
+        /// <summary>10판 기념으로 보석 영웅 한 명을 무료로 열었나 (전체 검토 8번, 한 번만)</summary>
+        public bool freeHeroClaimed;
         public int bossRuns;
 
         // ---------------- v0.2b 경제 (Economy.md, Stats.md 7장, Modes.md 3장) ----------------
@@ -310,6 +312,8 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+        /// <summary>이 영웅으로 끝낸 던전 판 수 (첫 판이면 첫 카드에 전용 액티브 확정, 전체 검토 3번)</summary>
+        public int runs;
     }
 
     // ---------------------------------------------------------------- v0.6 무한의 균열 · 일일 도전
@@ -388,6 +392,15 @@ namespace HistoryHeroes.Records
         /// <summary>판을 시작할 때의 판 밖 성장 (이어할 때 그대로 — 로비에서 바꾼 강화가 끼어들지 않게)</summary>
         public bool hasMeta;
         public MetaSnapshot meta;
+
+        // ── 서바이벌 이어하기 (전체 검토 6번: 10분짜리 판이 앱이 꺼지면 통째로 사라지던 것) ──
+        public int survivalMap;
+        public int nextElite;
+        public bool midBossDone;
+        public int nextSwarm;
+        public int cratesBroken;
+        public int elitesEarly;
+        public int bagGold;
         /// <summary>조합 이력: 재료로 쓴 스킬 · 끝낸 조합 · 이번 판에 숨긴 조합</summary>
         public List<string> consumed = new List<string>();
         public List<string> completedFusions = new List<string>();

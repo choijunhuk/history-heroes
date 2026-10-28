@@ -228,9 +228,12 @@ namespace HistoryHeroes.UI
             }
 
             unlockButton.gameObject.SetActive(!focusUnlocked);
+            bool free = HeroUnlock.CanClaimFree(d, focus);
             bool enough = Wallet.Gems(d) >= focus.unlockGems;
-            unlockButton.interactable = enough;
-            unlockLabel.text = enough ? $"보석 {Wallet.Format(focus.unlockGems)}로 바로 해금" : $"보석이 모자라요 ({Wallet.Format(Wallet.Gems(d))}/{Wallet.Format(focus.unlockGems)})";
+            unlockButton.interactable = free || enough;
+            unlockLabel.text = free ? $"던전 {HeroUnlock.FreePickRuns}판 기념 무료로 열기\n<size=80%>(보석 영웅 중 한 명만)</size>"
+                : enough ? $"보석 {Wallet.Format(focus.unlockGems)}로 바로 해금"
+                : $"보석이 모자라요 ({Wallet.Format(Wallet.Gems(d))}/{Wallet.Format(focus.unlockGems)})";
         }
 
         private void SelectFocused()
@@ -246,7 +249,7 @@ namespace HistoryHeroes.UI
         private void UnlockFocused()
         {
             HeroData focus = roster.heroes[_focus];
-            if (!HeroUnlock.TryBuy(SaveSystem.Data, focus)) return;
+            if (!HeroUnlock.TryClaimFree(SaveSystem.Data, focus) && !HeroUnlock.TryBuy(SaveSystem.Data, focus)) return;
             SaveSystem.Data.selectedHero = focus.id;
             SaveSystem.Save();
             Render();

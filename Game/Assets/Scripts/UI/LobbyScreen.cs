@@ -275,8 +275,7 @@ namespace HistoryHeroes.UI
             RunSnapshot run = data.run;
             if (run == null || !run.valid || choice == null) return false;
             var mode = (BattleMode)run.mode;
-            bool stale = mode == BattleMode.Survival
-                         || (mode == BattleMode.Daily && run.dayKey != DailyRules.DayKey(Clock.Now()))
+            bool stale = (mode == BattleMode.Daily && run.dayKey != DailyRules.DayKey(Clock.Now()))
                          || (mode == BattleMode.Rift && run.weekKey != RiftRules.WeekKey(Clock.Now()));
             if (stale)
             {
@@ -290,6 +289,7 @@ namespace HistoryHeroes.UI
             string where = mode == BattleMode.Boss ? $"{ChapterTitle(run.chapter)} 보스 — 처음부터 다시 (하트 없이)"
                 : mode == BattleMode.Rift ? $"무한의 균열 {run.room}층부터"
                 : mode == BattleMode.Daily ? $"일일 도전 연습 방 {run.room}부터"
+                : mode == BattleMode.Survival ? $"서바이벌 {Mathf.FloorToInt(run.elapsed / 60f):0}:{Mathf.FloorToInt(run.elapsed % 60f):00}부터"
                 : $"{ChapterTitle(run.chapter)} 던전 방 {run.room}부터";
             var options = new List<ChoicePanel.Option>
             {
