@@ -82,7 +82,7 @@ namespace HistoryHeroes.UI
                 deleteButtons[i].gameObject.SetActive(record != null && !record.locked);
                 deleteLabels[i].text = _confirmSlot == i ? "한 번 더 누르면 지워요" : "지우기";
                 if (lockButtons != null && i < lockButtons.Length) lockButtons[i].gameObject.SetActive(record != null);
-                if (lockLabels != null && i < lockLabels.Length && record != null) lockLabels[i].text = record.locked ? "🔒 풀기" : "🔓 잠금";
+                if (lockLabels != null && i < lockLabels.Length && record != null) lockLabels[i].text = record.locked ? "잠금 풀기" : "잠그기";
             }
 
             RunRecord temp = data.TempRecord;

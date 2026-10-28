@@ -288,7 +288,7 @@ namespace HistoryHeroes.EditorTools
                 Place(titles[i].rectTransform, Center, Center, new Vector2(0f, 105f), new Vector2(920f, 50f));
                 details[i] = Label("Details", box, "", 24, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
                 Place(details[i].rectTransform, Center, Center, new Vector2(0f, 0f), new Vector2(920f, 155f));
-                locks[i] = Btn("Lock", box, "🔓 잠금", new Vector2(-320f, -115f), new Vector2(300f, 65f), ButtonBlue, out lockLabels[i]);
+                locks[i] = Btn("Lock", box, "잠그기", new Vector2(-320f, -115f), new Vector2(300f, 65f), ButtonBlue, out lockLabels[i]);
                 deletes[i] = Btn("Delete", box, "지우기", new Vector2(320f, -115f), new Vector2(300f, 65f), new Color(0.5f, 0.22f, 0.22f), out deleteLabels[i]);
                 lockLabels[i].fontSize = deleteLabels[i].fontSize = 26;
             }

@@ -332,7 +332,7 @@ namespace HistoryHeroes.Tests
             json = json.Replace("\"tempRecords\":[],", "").Replace(",\"tempRecords\":[]", "");
             json = json.Replace("\"locked\":false,", "").Replace(",\"locked\":false", "");
             StringAssert.DoesNotContain("tempRecords", json);
-            StringAssert.DoesNotContain("locked", json);
+            StringAssert.DoesNotContain("\"locked\"", json); // "unlockedChapter"에도 locked 글자가 있어서 필드 이름 그대로 본다
             Directory.CreateDirectory(_folder);
             File.WriteAllText(store.MainPath, SaveStore.Sign(json));
 

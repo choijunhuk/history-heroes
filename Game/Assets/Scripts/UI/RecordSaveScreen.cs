@@ -252,7 +252,7 @@ namespace HistoryHeroes.UI
                 if (!exists) continue;
                 RunRecord old = data.RecordInSlot(i);
                 slotButtons[i].interactable = old == null || !old.locked;
-                slotLabels[i].text = old != null ? $"{(old.locked ? "🔒 " : "")}{RecordFormat.Title(old, database)}\n{RecordFormat.Details(old, database)}" : $"{i + 1}번 칸 (비어 있음)";
+                slotLabels[i].text = old != null ? $"{(old.locked ? "<color=#FFD966>[잠김]</color> " : "")}{RecordFormat.Title(old, database)}\n{RecordFormat.Details(old, database)}" : $"{i + 1}번 칸 (비어 있음)";
             }
 
             if (tempButton != null) tempButton.gameObject.SetActive(true);
