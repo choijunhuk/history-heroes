@@ -443,7 +443,7 @@ namespace HistoryHeroes.UI
             chapterInfo.text = stars + "\n" + bossState + next;
 
             int records = data.records.Count;
-            bool hasRecord = records > 0;
+            bool hasRecord = records > 0 || data.TempRecord != null;
             bossButton.interactable = boss != null && hasRecord;
             bossButtonLabel.text = boss == null ? "보스 준비 중" : hasRecord ? "보스 도전" : "보스 도전 (기록이 있어야 해요)";
             archiveButtonLabel.text = $"기록 보관함  {records}/{data.recordSlots}";

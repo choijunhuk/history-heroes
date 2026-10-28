@@ -91,8 +91,8 @@ namespace HistoryHeroes.EditorTools
             // 칸 고르기 (빈 칸이 없을 때)
             RectTransform slotPanel = Rect("SlotPanel", holder, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             Img(slotPanel, new Color(0f, 0f, 0f, 0.92f), null).raycastTarget = true;
-            TMP_Text slotTitle = Label("Title", slotPanel, "바꿀 칸을 고르세요\n(그 칸의 기록은 지워져요)", 40, TextAlignmentOptions.Center);
-            Place(slotTitle.rectTransform, Center, Center, new Vector2(0f, 560f), new Vector2(1000f, 130f));
+            TMP_Text slotTitle = Label("Title", slotPanel, "바꿀 칸을 고르세요", 34, TextAlignmentOptions.Center);
+            Place(slotTitle.rectTransform, Center, Center, new Vector2(0f, 560f), new Vector2(1000f, 170f));
             var slotButtons = new Button[3];
             var slotLabels = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
@@ -105,7 +105,8 @@ namespace HistoryHeroes.EditorTools
                 slotLabels[i] = label;
             }
 
-            Button slotCancel = Btn("Cancel", slotPanel, "취소", new Vector2(0f, -500f), new Vector2(400f, 110f), ButtonGray, out _);
+            Button temp = Btn("Temp", slotPanel, "임시 칸에 두기", new Vector2(0f, -385f), new Vector2(720f, 100f), ButtonBlue, out TMP_Text tempLabel);
+            Button slotCancel = Btn("Cancel", slotPanel, "취소", new Vector2(0f, -545f), new Vector2(400f, 100f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
@@ -114,6 +115,7 @@ namespace HistoryHeroes.EditorTools
                     .Ref("autoFitButton", autoFit).Ref("saveButton", save).Ref("saveLabel", saveLabel)
                     .Ref("skipButton", skip).Ref("skipLabel", skipLabel)
                     .Ref("slotPanel", slotPanel.gameObject).Refs("slotButtons", slotButtons).Refs("slotLabels", slotLabels).Ref("slotCancel", slotCancel)
+                    .Ref("slotTitleLabel", slotTitle).Ref("tempButton", temp).Ref("tempLabel", tempLabel)
                     .Ref("database", database);
             }
 

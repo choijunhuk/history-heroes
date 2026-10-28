@@ -26,7 +26,8 @@ namespace HistoryHeroes.Records
 
             string heroAndType = $"{record.heroName} {type}".Trim();
             string hero = string.IsNullOrEmpty(heroAndType) ? string.Empty : $" · {heroAndType}";
-            return $"{record.slot + 1}번 기록{hero} · {progress} · {When(record.createdAt)}";
+            string name = record.slot < 0 ? "임시 기록" : $"{record.slot + 1}번 기록";
+            return $"{name}{hero} · {progress} · {When(record.createdAt)}";
         }
 
         public static string When(string isoUtc)

@@ -484,22 +484,70 @@ namespace HistoryHeroes.Records
             if (data.unlockedChapter < 1) data.unlockedChapter = 1;
 
             data.records.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id));
+            var slots = new HashSet<int>();
+            var misplaced = new List<RunRecord>();
+            for (int i = 0; i < data.records.Count; i++)
+            {
+                RunRecord record = data.records[i];
+                if (record.slot < 0 || record.slot >= data.recordSlots || !slots.Add(record.slot))
+                {
+                    misplaced.Add(record);
+                    data.records.RemoveAt(i--);
+                }
+            }
+
+            // 정상 칸을 먼저 남겨야 잘못된 칸의 기록이 정상 기록을 밀어내지 않는다.
+            // 기록은 절대 버리지 않는다: 빈 칸 → 임시 칸(비었으면) → 그래도 남으면 예전처럼 목록에 그대로 둔다 (Claude 검토)
+            data.tempRecords ??= new List<RunRecord>();
+            foreach (RunRecord record in misplaced)
+            {
+                int free = data.FirstFreeSlot();
+                if (free >= 0)
+                {
+                    record.slot = free;
+                    data.records.Add(record);
+                }
+                else if (data.tempRecords.Count == 0) data.tempRecords.Add(record);
+                else data.records.Add(record);
+            }
+
+            var recordIds = new HashSet<string>();
+            foreach (RunRecord record in data.records)
+            {
+                while (!recordIds.Add(record.id)) record.id = Guid.NewGuid().ToString("N");
+                NormalizeRecord(record);
+            }
+
+            data.tempRecords ??= new List<RunRecord>();
+            data.tempRecords.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id));
+            if (data.tempRecords.Count > 1) data.tempRecords.RemoveRange(1, data.tempRecords.Count - 1);
+            if (data.TempRecord != null)
+            {
+                RunRecord record = data.TempRecord;
+                // 번호 칸의 참조는 유지하고, 충돌한 임시 기록은 내용 그대로 새 ID를 붙인다.
+                while (!recordIds.Add(record.id)) record.id = Guid.NewGuid().ToString("N");
+                record.slot = -1;
+                record.locked = false;
+                NormalizeRecord(record);
+            }
+
             if (!string.IsNullOrEmpty(data.tutorialRecordId) && data.FindRecord(data.tutorialRecordId) == null) data.tutorialRecordId = null;
             // 구조 5로 옮길 때 판 수를 안 봐서 끼어 버린 저장 (던전만 몇 판 한 v0.3 저장)도 여기서 풀린다
             if (!data.tutorialDone && data.ProgressedWithoutTutorial()) data.tutorialDone = true;
-            foreach (RunRecord r in data.records)
-            {
-                r.skills ??= new List<RecordSkill>();
-                r.bossesDefeated ??= new List<string>();
-                r.bossWins ??= new List<BossWin>();
-                r.meta ??= new MetaSnapshot();
-                r.meta.equipment ??= new List<EquippedItem>();
-                r.meta.training ??= new List<int>();
-                r.meta.relics ??= new List<RelicStar>();
-                if (r.meta.heroLevel < 1) r.meta.heroLevel = 1;
-                if (r.meta.heroStars < 1) r.meta.heroStars = 1;
-                r.skills.RemoveAll(s => s == null || string.IsNullOrEmpty(s.id));
-            }
+        }
+
+        private static void NormalizeRecord(RunRecord record)
+        {
+            record.skills ??= new List<RecordSkill>();
+            record.bossesDefeated ??= new List<string>();
+            record.bossWins ??= new List<BossWin>();
+            record.meta ??= new MetaSnapshot();
+            record.meta.equipment ??= new List<EquippedItem>();
+            record.meta.training ??= new List<int>();
+            record.meta.relics ??= new List<RelicStar>();
+            if (record.meta.heroLevel < 1) record.meta.heroLevel = 1;
+            if (record.meta.heroStars < 1) record.meta.heroStars = 1;
+            record.skills.RemoveAll(s => s == null || string.IsNullOrEmpty(s.id));
         }
 
         /// <summary>읽지 못한 파일을 지우지 않고 사본으로 남긴다. 이미 같은 이름이 있으면 번호를 붙인다.</summary>
