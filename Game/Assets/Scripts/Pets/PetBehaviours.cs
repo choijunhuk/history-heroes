@@ -504,13 +504,13 @@ namespace HistoryHeroes.Pets
         public int Fetched { get; private set; }
 
         /// <summary>보물 한 개: 열매(회복)인가, 골드면 얼마인가 (roll·doubleRoll = 0~1 무작위 값)</summary>
-        public static (bool fruit, int gold) RollTreasure(int chapter, bool awakenedFirst, bool awakenedSecond, float roll, float doubleRoll)
+        public static (bool fruit, int gold) RollTreasure(int chapter, bool awakenedFirst, bool awakenedSecond, float roll, float doubleRoll, bool practice = false)
         {
             float fruitChance = awakenedSecond ? FruitChanceAwakened : FruitChance;
             if (roll < fruitChance) return (true, 0);
             int gold = 10 + 5 * Mathf.Max(1, chapter);
             if (awakenedFirst && doubleRoll < 0.05f) gold *= 2;
-            return (false, gold);
+            return (false, practice ? 0 : gold);
         }
 
         private void OnRoomEntered(int room)
@@ -623,19 +623,20 @@ namespace HistoryHeroes.Pets
         {
             _treasureShown = false;
             _pet.HideMarker();
-            (bool fruit, int gold) = RollTreasure(GameSession.Chapter, _pet.AwakenedFirst, _pet.AwakenedSecond, UnityEngine.Random.value, UnityEngine.Random.value);
+            (bool fruit, int gold) = RollTreasure(GameSession.Chapter, _pet.AwakenedFirst, _pet.AwakenedSecond, UnityEngine.Random.value, UnityEngine.Random.value, GameSession.Practice);
             UI.HudView hud = UnityEngine.Object.FindAnyObjectByType<UI.HudView>();
             if (fruit)
             {
                 _pet.Player.Health.Heal(_pet.Player.Health.Max * FruitHeal);
                 if (hud != null) hud.ShowNotice("흰 비둘기: 회복 열매 (체력 +15%)");
             }
-            else
+            else if (gold > 0)
             {
                 Economy.Wallet.Grant(Records.SaveSystem.Data, new Economy.Reward { Gold = gold });
                 Records.SaveSystem.MarkDirty(); // 앱이 바로 꺼져도 다음 안전한 저장에서 남는다 (Codex v0.5 5번)
                 if (hud != null) hud.ShowNotice($"흰 비둘기: 보물 골드 +{gold}");
             }
+            else if (hud != null) hud.ShowNotice("흰 비둘기: 연습은 골드 보상이 없어요");
 
             AttackFx.Burst(_treasure, 0.6f, new Color(1f, 0.9f, 0.35f, 0.8f), 0.2f);
         }

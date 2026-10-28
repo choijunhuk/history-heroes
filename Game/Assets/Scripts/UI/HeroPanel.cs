@@ -24,6 +24,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text selectLabel;
         [SerializeField] private Button unlockButton;
         [SerializeField] private TMP_Text unlockLabel;
+        [SerializeField] private Button trialButton;
         [SerializeField] private Button backButton;
         [Header("v0.4 장비")]
         [SerializeField] private Button equipButton;
@@ -69,6 +70,10 @@ namespace HistoryHeroes.UI
 
             selectButton.onClick.AddListener(SelectFocused);
             unlockButton.onClick.AddListener(UnlockFocused);
+            if (trialButton != null) trialButton.onClick.AddListener(() =>
+            {
+                if (!HeroUnlock.IsUnlocked(SaveSystem.Data, FocusHero)) GameSession.StartHeroTrial(FocusHero.id);
+            });
             backButton.onClick.AddListener(() => root.SetActive(false));
             if (equipButton != null) equipButton.onClick.AddListener(OpenEquipment);
             if (levelButton != null) levelButton.onClick.AddListener(LevelUpFocused);
@@ -184,6 +189,8 @@ namespace HistoryHeroes.UI
                 }
             }
 
+            selectButton.gameObject.SetActive(focusUnlocked);
+            if (trialButton != null) trialButton.gameObject.SetActive(!focusUnlocked);
             selectButton.interactable = focusUnlocked && focus != selected;
             selectLabel.text = !focusUnlocked ? "잠긴 영웅" : focus == selected ? "지금 영웅" : KoreanText.Josa(focus.displayName, "으로", "로") + " 하기";
 

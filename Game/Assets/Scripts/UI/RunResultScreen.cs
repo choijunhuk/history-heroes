@@ -88,6 +88,17 @@ namespace HistoryHeroes.UI
             SetButtons(GameSession.Practice ? "다시 연습" : "다시 도전 (하트 1)", Retry, "로비로", GameSession.ToLobby);
         }
 
+        public void ShowHeroTrial(Heroes.HeroData hero)
+        {
+            Open();
+            transform.SetAsLastSibling(); // 같은 프레임에 열린 카드·보상 방보다 결과가 앞에 오게
+            titleLabel.text = "체험 끝";
+            bodyLabel.text = hero != null
+                ? $"{hero.displayName} · Lv1 ★1\n\n{Heroes.HeroUnlock.LockText(hero)}\n\n체험은 보상과 기록을 남기지 않아요"
+                : "체험은 보상과 기록을 남기지 않아요";
+            SetButtons("영웅 보러 가기", GameSession.ToLobby, "로비", GameSession.ToLobby);
+        }
+
         public void ShowSurvival(Survival.SurvivalSummary s)
         {
             Open();

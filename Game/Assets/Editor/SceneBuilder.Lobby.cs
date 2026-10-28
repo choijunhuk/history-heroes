@@ -384,6 +384,8 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(panel.gameObject.AddComponent<HeroPortraits>())) props.Ref("roster", roster).Refs("images", portraits).Int("textureSize", 480);
 
             Button select = Btn("SelectHero", panel, "고르기", new Vector2(-250f, -450f + below), new Vector2(440f, 110f), ButtonGreen, out TMP_Text selectLabel);
+            Button trial = Btn("HeroTrial", panel, "3분 체험", new Vector2(-250f, -450f + below), new Vector2(440f, 110f), ButtonBlue, out _);
+            trial.gameObject.SetActive(false);
             Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(250f, -450f + below), new Vector2(440f, 110f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
             unlockLabel.fontSize = 28;
             Button level = Btn("HeroLevelUp", panel, "레벨업", new Vector2(-250f, -575f + below), new Vector2(440f, 110f), new Color(0.2f, 0.42f, 0.5f), out TMP_Text levelLabel);
@@ -419,7 +421,7 @@ namespace HistoryHeroes.EditorTools
                     .Ref("trainingButton", trainingButton).Ref("messageLabel", heroMessage).Ref("runeButton", runeButton).Ref("runeLabel", runeLabel);
                 props.Ref("root", panel.gameObject).Ref("roster", roster).Refs("heroButtons", buttons).Refs("heroBackgrounds", backgrounds)
                     .Refs("heroLabels", labels).Ref("selectButton", select).Ref("selectLabel", selectLabel)
-                    .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("backButton", back)
+                    .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("trialButton", trial).Ref("backButton", back)
                     .Ref("bigPortrait", big).Ref("detailName", detailName).Ref("detailBody", detailBody);
             }
 

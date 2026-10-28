@@ -35,6 +35,28 @@ namespace HistoryHeroes.Common
         /// <summary>보스 연습: 하트를 안 쓰고 보상·별·해금도 없다 (Economy 3-4 "하트가 0이어도 보스맵 연습")</summary>
         public static bool Practice { get; private set; }
 
+        public const float HeroTrialSeconds = 180f;
+        public static string TrialHeroId { get; private set; }
+        public static bool IsHeroTrial => !string.IsNullOrEmpty(TrialHeroId);
+        public static bool HeroTrialExpired(float elapsed) => IsHeroTrial && elapsed >= HeroTrialSeconds;
+
+        /// <summary>장면을 열지 않고 체험을 준비한다. 하트와 저장된 영웅 선택은 건드리지 않는다.</summary>
+        public static void PrepareHeroTrial(SaveData data, string heroId)
+        {
+            if (data == null) throw new System.ArgumentNullException(nameof(data));
+            if (string.IsNullOrEmpty(heroId)) throw new System.ArgumentException("체험할 영웅이 필요해요", nameof(heroId));
+            PrepareDungeon(Mathf.Clamp(data.unlockedChapter, 1, 5));
+            HeartSpent = false;
+            Practice = true;
+            TrialHeroId = heroId;
+        }
+
+        public static void StartHeroTrial(string heroId)
+        {
+            PrepareHeroTrial(SaveSystem.Data, heroId);
+            Load(BattleScene);
+        }
+
         public static void StartBossPractice(int chapter, string recordId)
         {
             HeartSpent = false;
@@ -175,6 +197,7 @@ namespace HistoryHeroes.Common
         public static void ClearSpecialRun()
         {
             Resuming = null;
+            TrialHeroId = null;
             Tutorial = false;
             RunSeed = 0;
             CustomPlan = null;
@@ -323,12 +346,18 @@ namespace HistoryHeroes.Common
 
         public static void StartDungeon(int chapter)
         {
+            PrepareDungeon(chapter);
+            Load(BattleScene);
+        }
+
+        /// <summary>장면을 열지 않고 일반 던전 설정으로 바꾼다.</summary>
+        public static void PrepareDungeon(int chapter)
+        {
             Practice = false;
             ClearSpecialRun();
             Mode = BattleMode.Dungeon;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = null;
-            Load(BattleScene);
         }
 
         public static void StartBoss(int chapter, string recordId)
@@ -344,7 +373,11 @@ namespace HistoryHeroes.Common
         /// <summary>같은 설정으로 한 번 더 (결과 화면의 "다시 도전")</summary>
         public static void Retry() => Load(BattleScene);
 
-        public static void ToLobby() => Load(LobbyScene);
+        public static void ToLobby()
+        {
+            if (IsHeroTrial) PrepareDungeon(Chapter); // 로비의 미션·성장은 다시 정상 처리한다
+            Load(LobbyScene);
+        }
 
         private static void Load(string scene)
         {

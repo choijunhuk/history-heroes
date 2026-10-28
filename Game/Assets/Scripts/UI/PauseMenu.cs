@@ -92,6 +92,7 @@ namespace HistoryHeroes.UI
         /// <summary>포기하면 어떻게 되나 (모드마다)</summary>
         private static string GiveUpText()
         {
+            if (GameSession.IsHeroTrial) return "포기하면 체험이 끝나요 (보상·기록 없음)";
             switch (GameSession.Mode)
             {
                 case BattleMode.Boss: return GameSession.Practice ? "포기하면 연습이 끝나요" : "포기하면 패배로 끝나요 (하트는 돌아오지 않아요)";

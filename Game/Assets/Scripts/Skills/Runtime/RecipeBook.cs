@@ -11,6 +11,7 @@ namespace HistoryHeroes.Skills
     {
         public static void Discover(FusionRecipe recipe)
         {
+            if (Common.GameSession.Practice) return;
             if (recipe == null || string.IsNullOrEmpty(recipe.id)) return;
             var found = SaveSystem.Data.discoveredRecipes;
             if (found.Contains(recipe.id)) return;

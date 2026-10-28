@@ -75,7 +75,8 @@ namespace HistoryHeroes.UI
             labels[0].text = healPercent > 0f ? $"체력 회복\n<size=75%>최대 체력의 {Mathf.RoundToInt(healPercent * 100f)}%</size>" : "체력 회복\n<size=75%>오늘은 회복 없음</size>";
             buttons[0].interactable = healPercent > 0f;
             labels[1].text = "스킬 카드 1장 더\n<size=75%>레벨업 한 번</size>";
-            labels[2].text = $"골드\n<size=75%>+{gold}</size>";
+            labels[2].text = gold > 0 ? $"골드\n<size=75%>+{gold}</size>" : "골드\n<size=75%>연습은 보상이 없어요</size>";
+            buttons[2].interactable = gold > 0;
             root.SetActive(true);
             GamePause.Pause(this);
         }

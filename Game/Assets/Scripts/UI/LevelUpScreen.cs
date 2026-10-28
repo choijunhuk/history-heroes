@@ -109,7 +109,7 @@ namespace HistoryHeroes.UI
         private void Open()
         {
             // 던전 ★3 "전설 없이 클리어"를 아직 안 땄고 이번 판에 전설을 안 골랐으면 경고한다
-            _legendaryWarning = GameSession.Mode == BattleMode.Dungeon && !skills.ChoseLegendary
+            _legendaryWarning = GameSession.Mode == BattleMode.Dungeon && !GameSession.Practice && !skills.ChoseLegendary
                 && !Economy.Stars.Has(Records.SaveSystem.Data, GameSession.Chapter, Economy.Stars.Dungeon, 3);
             GamePause.Pause(this);
             root.SetActive(true);
@@ -191,7 +191,7 @@ namespace HistoryHeroes.UI
                 HypeFx.Banner("전설!", new Color(1f, 0.82f, 0.3f));
             }
             _legendaryWarning &= !skills.ChoseLegendary; // 전설을 골랐으면 이번 판 ★3은 이미 실패
-            Records.SaveSystem.SaveIfDirty(); // 스킬 선택 확정 = 안전한 저장 시점 (조합 도감 발견, 12-2)
+            if (!GameSession.Practice) Records.SaveSystem.SaveIfDirty(); // 스킬 선택 확정 = 안전한 저장 시점 (조합 도감 발견, 12-2)
             _pending--;
 
             if (_pending > 0)
