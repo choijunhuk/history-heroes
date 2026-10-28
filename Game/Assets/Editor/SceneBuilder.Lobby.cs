@@ -82,6 +82,7 @@ namespace HistoryHeroes.EditorTools
             }
 
             AddUiSounds(root);
+            ApplyTypeScale();
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
         }
 

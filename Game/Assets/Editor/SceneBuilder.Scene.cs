@@ -257,6 +257,7 @@ namespace HistoryHeroes.EditorTools
             SetPresets(cheats, d);
 
             AddUiSounds(ui.Hud.transform.root); // v1.0 버튼 소리
+            ApplyTypeScale();
             EditorSceneManager.SaveScene(scene, BattleScenePath);
         }
 

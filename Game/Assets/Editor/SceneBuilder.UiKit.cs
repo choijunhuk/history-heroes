@@ -96,6 +96,31 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>장면을 새로 연 뒤에도 다시 잡는다 (ReloadShared)</summary>
+        // ---------- 글자 체계 (전체 UI 검토 3번) ----------
+        // 기준 화면 1080×1920 = 검토의 540px 캡처 × 2. 보조 15~16px → 30~32 · 본문 18~20px → 36~40 · 제목 28~34px → 56~68
+        private const float MinTextSize = 30f;
+
+        /// <summary>
+        /// 장면 저장 직전: 보조 크기(30)보다 작은 글자를 모두 30까지 키운다.
+        /// 칸이 좁아 넘치는 글자는 자동 크기로 원래 크기까지만 줄어든다 (그래서 배치는 안 깨진다).
+        /// </summary>
+        private static void ApplyTypeScale()
+        {
+            foreach (TextMeshProUGUI t in Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (t.enableAutoSizing)
+                {
+                    t.fontSizeMax = Mathf.Max(t.fontSizeMax, MinTextSize);
+                    continue;
+                }
+
+                if (t.fontSize >= MinTextSize) continue;
+                t.fontSizeMin = t.fontSize;
+                t.fontSizeMax = MinTextSize;
+                t.enableAutoSizing = true;
+            }
+        }
+
         private static void LoadUiKit()
         {
             Sprite S(string name) => AssetDatabase.LoadAssetAtPath<Sprite>($"{KitDir}/{name}.png");
@@ -108,7 +133,8 @@ namespace HistoryHeroes.EditorTools
             };
             if (_kit.Button == null) _kit = null; // 그림이 없으면 예전 납작한 모양
             _titleFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(TitleFontAssetPath);
-            if (_font != null) _bodyMat = TextPreset(_font, "Body", 0.12f, 0.55f, 0.6f);
+            // 본문은 얇은 테두리 · 옅은 그림자 (전체 UI 검토 3번: 굵은 외곽선은 제목만)
+            if (_font != null) _bodyMat = TextPreset(_font, "Body", 0.07f, 0.45f, 0.5f);
             if (_titleFont != null)
             {
                 _titleMat = TextPreset(_titleFont, "Title", 0.24f, 0.9f, 0.85f);
