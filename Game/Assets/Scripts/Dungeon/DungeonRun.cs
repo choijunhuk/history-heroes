@@ -143,13 +143,19 @@ namespace HistoryHeroes.Dungeon
             EnterRoom(first);
         }
 
+        private void Update()
+        {
+            if (!_finished && GameSession.HeroTrialExpired(Time.time - _startTime))
+                Finish(victory: false);
+        }
+
         // ---------------------------------------------------------------- v1.0 판 이어하기
 
         /// <summary>방에 들어갈 때 판 상태를 남긴다 (일일 도전 공식 판은 남기지 않는다 — 끄면 0점)</summary>
         private void SaveSnapshot(int room)
         {
             if (_daily && GameSession.DailyOfficial) return;
-            if (GameSession.Tutorial) return; // 튜토리얼은 처음부터 다시
+            if (GameSession.Tutorial || GameSession.Practice) return; // 체험·연습은 이어하기를 남기지 않는다
             var s = new RunSnapshot
             {
                 valid = true,
@@ -191,10 +197,11 @@ namespace HistoryHeroes.Dungeon
         /// <summary>보상을 받았다고 스냅샷에 적고 바로 저장 (골드와 "받음"이 같이 남는다 → 껐다 켜도 다시 못 받는다)</summary>
         private void MarkRewardTaken()
         {
-            RunSnapshot run = SaveSystem.Data.run;
-            if (run != null && run.valid && run.room == _room) run.rewardTaken = true;
             _resumeRewardTaken = true;
             _resumeRoom = _room;
+            if (GameSession.Practice) return;
+            RunSnapshot run = SaveSystem.Data.run;
+            if (run != null && run.valid && run.room == _room) run.rewardTaken = true;
             SaveSystem.Save();
         }
 
@@ -586,7 +593,7 @@ namespace HistoryHeroes.Dungeon
         {
             _alive = 0;
             PlacePedestalModel(specialArt.chestModel, 1.15f); // 받침대 자리에 금 상자
-            int gold = SpecialRooms.RewardGold(GameSession.Chapter);
+            int gold = GameSession.Practice ? 0 : SpecialRooms.RewardGold(GameSession.Chapter);
             if (rewardRoom == null)
             {
                 OnRoomCleared();
@@ -605,6 +612,7 @@ namespace HistoryHeroes.Dungeon
                         experience.GrantLevelUp();
                         break;
                     case RewardRoomPanel.Choice.Gold:
+                        if (GameSession.Practice) break;
                         Wallet.Grant(SaveSystem.Data, new Reward { Gold = gold });
                         SaveSystem.MarkDirty();
                         hud.ShowNotice($"골드 +{gold}");
@@ -773,13 +781,13 @@ namespace HistoryHeroes.Dungeon
             }
 
             // 지금 끝나면 남길 수 있는 기록 용량 / 클리어하면 (조사 A7: "한 방만 더"의 동기)
-            if (_room < RoomCount)
+            if (_room < RoomCount && !GameSession.Practice)
             {
                 int now = RecordCapacity.For(_roomsCleared, RoomCount, cleared: false);
                 int full = RecordCapacity.For(RoomCount, RoomCount, cleared: true);
                 hud.ShowNotice($"기록 용량  지금 {now}pt · 클리어하면 {full}pt");
             }
-            SaveSystem.SaveIfDirty(); // 안전한 시점: 새로 발견한 조합 등 (GameDesign 12-2)
+            if (!GameSession.Practice) SaveSystem.SaveIfDirty(); // 안전한 시점: 새로 발견한 조합 등 (GameDesign 12-2)
             if (_room >= RoomCount)
             {
                 // 마지막 방을 깨면 그 순간 클리어. 남은 보석이 날아오는 동안 맞아도 지지 않는다
@@ -901,6 +909,13 @@ namespace HistoryHeroes.Dungeon
         {
             if (_finished) return;
             _finished = true;
+            if (GameSession.IsHeroTrial)
+            {
+                StopAllCoroutines();
+                result.ShowHeroTrial(player.Hero);
+                return;
+            }
+
             SaveSystem.Data.run = new RunSnapshot(); // 판이 끝났다 → 이어하기 없음
             SaveSystem.MarkDirty();
             if (_rift)
@@ -1169,7 +1184,7 @@ namespace HistoryHeroes.Dungeon
         private void ShowHitCounter()
         {
             int chapter = GameSession.Chapter;
-            bool challenge = !_rift && !_daily && !GameSession.Tutorial && !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2); // 균열·일일 도전·튜토리얼은 별이 없다
+            bool challenge = !_rift && !_daily && !GameSession.Tutorial && !GameSession.Practice && !Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, 2); // 연습·체험도 별이 없다
             hud.SetHitCounter(challenge, () => _hitsTaken, Stars.DungeonHitLimit(chapter));
         }
 

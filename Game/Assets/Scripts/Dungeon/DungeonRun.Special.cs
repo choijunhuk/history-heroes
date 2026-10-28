@@ -208,7 +208,7 @@ namespace HistoryHeroes.Dungeon
             _openFork.Choice = index == 1 ? 1 : 0;
             _openFork = null;
             // 검토 5번: 고른 문을 바로 저장 (화면 전환 중에 꺼져도 선택이 남는다)
-            RunSnapshot run = SaveSystem.Data.run;
+            RunSnapshot run = GameSession.Practice ? null : SaveSystem.Data.run;
             if (run != null && run.valid && run.room == _room)
             {
                 run.forkChoices = _special.Choices();
@@ -320,7 +320,7 @@ namespace HistoryHeroes.Dungeon
             _challengeFailed = true;
             _challengeFailedRoom = _room;
             hud.ShowNotice("도전 실패 — 맞았어요. 방은 그대로 깨면 돼요", 2.5f);
-            RunSnapshot run = SaveSystem.Data.run;
+            RunSnapshot run = GameSession.Practice ? null : SaveSystem.Data.run;
             if (run != null && run.valid && run.room == _room)
             {
                 run.challengeFailed = true; // 껐다 켜서 다시 도전하지 못하게
@@ -338,13 +338,16 @@ namespace HistoryHeroes.Dungeon
         private void ChallengeSucceeded()
         {
             if (_resumeRewardTaken && _room == _resumeRoom) return;
-            int gold = SpecialRooms.ChallengeGold(GameSession.Chapter);
-            Wallet.Grant(SaveSystem.Data, new Reward { Gold = gold });
-            SaveSystem.MarkDirty();
+            int gold = GameSession.Practice ? 0 : SpecialRooms.ChallengeGold(GameSession.Chapter);
+            if (!GameSession.Practice)
+            {
+                Wallet.Grant(SaveSystem.Data, new Reward { Gold = gold });
+                SaveSystem.MarkDirty();
+            }
             skills.DetourOffersNext++; // 보상 카드는 갈림길 난수로
             experience.GrantLevelUp();
             HypeFx.Banner("도전 성공!", new Color(1f, 0.82f, 0.3f));
-            _pendingNotice = $"도전 보상: 레벨업 1번 + 골드 {gold}"; // 방 깰 때 알림(기록 용량)보다 뒤에 보이게
+            _pendingNotice = GameSession.Practice ? "도전 성공: 레벨업 1번" : $"도전 보상: 레벨업 1번 + 골드 {gold}"; // 방 깰 때 알림(기록 용량)보다 뒤에 보이게
             MarkRewardTaken();
             SaveAfterRewards();
         }
@@ -419,7 +422,7 @@ namespace HistoryHeroes.Dungeon
         private void ChooseBlessing(string id)
         {
             ApplyBlessing(id);
-            RunSnapshot run = SaveSystem.Data.run;
+            RunSnapshot run = GameSession.Practice ? null : SaveSystem.Data.run;
             if (run != null && run.valid && run.room == _room) run.blessings.Add(id); // MarkRewardTaken이 같이 저장한다
             if (id == "wisdom") experience.GrantLevelUp();
             int i = Blessings.IndexOf(id);
@@ -444,7 +447,7 @@ namespace HistoryHeroes.Dungeon
         /// </summary>
         private void SaveAfterRewards()
         {
-            if (_rift) return; // 균열은 체크포인트로
+            if (_rift || GameSession.Practice) return; // 균열은 체크포인트로, 체험·연습은 저장하지 않는다
             StartCoroutine(SaveWhenCardsDone());
         }
 
