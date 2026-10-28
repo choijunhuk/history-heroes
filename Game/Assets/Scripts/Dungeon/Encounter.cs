@@ -17,10 +17,12 @@ namespace HistoryHeroes.Dungeon
             if (plan.kind == RoomKind.Reward || plan.kind == RoomKind.Boss) return result;
 
             var available = new List<EnemyCost>();
+            // only = 설계자가 고른 적 (튜토리얼): 구간의 "몇 번 방부터" 규칙은 건너뛴다 (튜토리얼 첫 방 궁병, Codex 검토 1번)
+            bool picked = !string.IsNullOrEmpty(plan.only);
             foreach (EnemyCost e in chapter.enemies)
             {
-                if (e.prefab == null || e.cost <= 0 || e.fromRoom > room) continue;
-                if (!string.IsNullOrEmpty(plan.only) && (e.prefab.Data == null || e.prefab.Data.id != plan.only)) continue;
+                if (e.prefab == null || e.cost <= 0 || (!picked && e.fromRoom > room)) continue;
+                if (picked && (e.prefab.Data == null || e.prefab.Data.id != plan.only)) continue;
                 available.Add(e);
             }
 

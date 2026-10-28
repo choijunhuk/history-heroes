@@ -207,12 +207,22 @@ namespace HistoryHeroes.UI
             return string.Join("\n", parts);
         }
 
-        /// <summary>"피해" 칸의 실제 뜻: 수호 방패 = 보호막, 칠성단·설명에 "초당"이 있는 스킬 = 초당 피해</summary>
+        /// <summary>
+        /// "피해" 칸의 실제 뜻 (Codex 검토로 레벨 따라 크는 액티브 25종을 효과 코드와 맞춰 봄): 대부분 한 번 맞히는 피해.
+        /// 다른 뜻인 것만 여기 적는다. 칠성단은 EightGateBehaviour (초당, 배율을 실제 값으로 바꿔 보여 준다)
+        /// </summary>
+        private static readonly Dictionary<string, string> DamageNames = new Dictionary<string, string>
+        {
+            ["guard_shield"] = "보호막(최대체력)",
+            ["blizzard"] = "초당 피해",
+            ["thunder_fire"] = "번개 피해",
+            ["dav_spiral"] = "발당 피해",
+        };
+
         private static string DamageName(ActiveSkillData a)
         {
-            if (a.id == "guard_shield") return "보호막(최대체력)";
-            if (a.behaviourPrefab is EightGateBehaviour || (a.description != null && a.description.Contains("초당"))) return "초당 피해";
-            return "피해";
+            if (a.behaviourPrefab is EightGateBehaviour) return "초당 피해";
+            return a.id != null && DamageNames.TryGetValue(a.id, out string name) ? name : "피해";
         }
 
         /// <summary>칠성단은 DamageAt을 1레벨 대비 배율로 쓴다 (EightGateBehaviour): 실제 초당 피해로 바꿔 보여 준다</summary>

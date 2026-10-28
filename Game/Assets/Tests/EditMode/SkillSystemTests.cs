@@ -505,6 +505,14 @@ namespace HistoryHeroes.Tests
             shield.damagePerLevel = 0.04f;
             Assert.AreEqual("보호막(최대체력) 10% → 14%", HistoryHeroes.UI.SkillCardView.UpgradeLine(shield, 1, 2));
 
+            // 뇌화 폭풍의 피해 칸은 번개 한 번 (설명에 "초당"이 있어도 초당이 아니다, Codex 검토 3번)
+            var thunderFire = Make<ActiveSkillData>("thunder_fire");
+            thunderFire.countPerLevel = 0;
+            thunderFire.damageFirstLevel = 1.5f;
+            thunderFire.damagePerLevel = 0.5f;
+            thunderFire.description = "장판은 초당 30%";
+            Assert.AreEqual("번개 피해 150% → 200%", HistoryHeroes.UI.SkillCardView.UpgradeLine(thunderFire, 1, 2));
+
             // 패시브: 능력치 이름 + 퍼센트
             var crit = Make<PassiveSkillData>("crit_rate");
             crit.stats.Add(new PassiveSkillData.StatEntry { stat = Stats.StatType.CritRate, firstLevel = 0.06f, perLevel = 0.04f });

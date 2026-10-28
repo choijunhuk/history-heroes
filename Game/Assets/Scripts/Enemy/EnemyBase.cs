@@ -139,7 +139,11 @@ namespace HistoryHeroes.Enemy
             state = next;
             stateTimer = duration;
             if (telegraphLine != null) telegraphLine.enabled = next == State.Telegraph;
-            if (next == State.Telegraph) _telegraphTotal = Mathf.Max(0.01f, duration);
+            if (next == State.Telegraph)
+            {
+                _telegraphTotal = Mathf.Max(0.01f, duration);
+                FadeTelegraphLine(); // 첫 프레임부터 옅게 (지난 공격의 진한 색이 남지 않게)
+            }
             if (next != State.Approach && next != State.Attack) body.linearVelocity = Vector2.zero;
         }
 

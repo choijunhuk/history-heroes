@@ -403,6 +403,8 @@ namespace HistoryHeroes.Dungeon
             levelUp.Floor = room;
             RunRandom.BeginRoom(room); // 방마다 적 난수 새로 (갈림길 · 플레이 차이가 뒤 방에 번지지 않게)
             BeginSpecialRoom(room);
+            // 튜토리얼: 방 3에 들어서면 레벨업 하나 더 → 방 4까지 7번째 카드 = 첫 조합 (첫 조합 3분 안, Codex 검토 2번)
+            if (GameSession.Tutorial && room == Progress.Tutorial.BonusLevelRoom) experience.GrantLevelUp();
             if (_rift)
             {
                 EnsureRiftFloor(room + 9); // 진행 바에 보일 층까지

@@ -200,6 +200,14 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual("archer", plan[0].only);
             Assert.IsTrue(plan.TrueForAll(r => r.budget > 0), "빈 방이 없다");
             Assert.AreEqual(RoomKind.Elite, plan[5].kind);
+
+            // 실제 1구간 데이터: 궁병은 "2번 방부터"지만 튜토리얼이 고른 적이라 첫 방에 1마리 나온다 (Codex 검토 1번)
+            var chapter1 = UnityEditor.AssetDatabase.LoadAssetAtPath<ChapterData>("Assets/Data/Dungeons/Chapter_1.asset");
+            Assert.IsNotNull(chapter1);
+            List<SpawnEntry> first = Encounter.Build(chapter1, plan[0], 1, new System.Random(1));
+            Assert.AreEqual(1, first.Count);
+            Assert.AreEqual(1, first[0].count);
+            Assert.AreEqual("archer", first[0].prefab.Data.id);
         }
     }
 }

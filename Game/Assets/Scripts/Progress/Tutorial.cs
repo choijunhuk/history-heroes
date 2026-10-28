@@ -22,6 +22,9 @@ namespace HistoryHeroes.Progress
         public const float BossAttack = 0.3f;
         public const float ExpMultiplier = 2f;
 
+        /// <summary>이 방에 들어서면 레벨업 하나 더 (회전 칼날 5번 + 방어력 + 조합 = 7번째 카드가 방 4까지 나오게)</summary>
+        public const int BonusLevelRoom = 3;
+
         /// <summary>쓰러질 만큼 맞으면 이만큼 체력으로 (지지 않게)</summary>
         public const float SaveHp = 0.5f;
 
