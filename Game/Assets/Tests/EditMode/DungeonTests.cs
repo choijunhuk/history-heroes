@@ -190,5 +190,16 @@ namespace HistoryHeroes.Tests
             Assert.IsNull(EquipmentInventory.TakeLegendaryChoice(save, table, "weapon_timeguard_l"), "한 번만");
             Assert.AreEqual(1, save.equipment.items.Count);
         }
+
+        [Test]
+        public void TutorialPlan_ShootsFromFirstRoom()
+        {
+            // 첫 공격 20초 · 첫 카드 45초 (전체 기획 검토 1번): 빈 방 없이 첫 방부터 궁병, 방 6개, 마지막은 엘리트
+            List<RoomPlan> plan = Progress.Tutorial.Plan();
+            Assert.AreEqual(6, plan.Count);
+            Assert.AreEqual("archer", plan[0].only);
+            Assert.IsTrue(plan.TrueForAll(r => r.budget > 0), "빈 방이 없다");
+            Assert.AreEqual(RoomKind.Elite, plan[5].kind);
+        }
     }
 }

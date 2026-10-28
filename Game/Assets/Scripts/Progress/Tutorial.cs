@@ -32,17 +32,18 @@ namespace HistoryHeroes.Progress
         public static bool BossPending(SaveData s) => !s.tutorialDone && !string.IsNullOrEmpty(s.tutorialRecordId) && s.FindRecord(s.tutorialRecordId) != null;
 
         /// <summary>
-        /// 방 6개: ① 빈 방 (이동) ② 궁병 1 (멈추면 쏜다) ③ 돌진병 2 (예고선 → 피하기) ④⑤ 섞어서 (레벨업·조합) ⑥ 엘리트 돌진병 (마지막)
+        /// 방 6개: ① 궁병 1 (이동 + 멈추면 쏜다, 첫 처치 = 첫 레벨업) ② 돌진병 2 (예고선 → 피하기) ③④⑤ 섞어서 (레벨업·조합) ⑥ 엘리트 돌진병 (마지막).
+        /// 2026-10-29 전체 기획 검토 1번: 첫 공격 20초 · 첫 카드 45초 · 첫 조합 3분 안 → 빈 방을 빼고 처음부터 쏘게 했다
         /// </summary>
         public static List<RoomPlan> Plan()
         {
             return new List<RoomPlan>
             {
-                new RoomPlan { kind = RoomKind.Normal, budget = 0, minTypes = 1, maxTypes = 1 },
                 new RoomPlan { kind = RoomKind.Normal, budget = 2, minTypes = 1, maxTypes = 1, only = "archer" },
                 new RoomPlan { kind = RoomKind.Normal, budget = 4, minTypes = 1, maxTypes = 1, only = "charger" },
+                new RoomPlan { kind = RoomKind.Normal, budget = 5, minTypes = 2, maxTypes = 2 },
                 new RoomPlan { kind = RoomKind.Normal, budget = 6, minTypes = 2, maxTypes = 2 },
-                new RoomPlan { kind = RoomKind.Normal, budget = 8, minTypes = 2, maxTypes = 2 },
+                new RoomPlan { kind = RoomKind.Normal, budget = 5, minTypes = 2, maxTypes = 2 },
                 new RoomPlan { kind = RoomKind.Elite, budget = 2, minTypes = 1, maxTypes = 1, elites = 1, only = "charger" },
             };
         }

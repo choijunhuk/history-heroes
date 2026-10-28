@@ -236,6 +236,7 @@ namespace HistoryHeroes.Dungeon
             {
                 // 튜토리얼: 지지 않는다 (쓰러질 만큼 맞으면 체력 50%로), 경험치 두 배, 카드는 정해 둔 순서부터
                 experience.ExpMultiplier = Progress.Tutorial.ExpMultiplier;
+                experience.LevelOnFirstKill = true;
                 player.Health.PreventDeath = () =>
                 {
                     player.Health.Revive(player.Health.Max * Progress.Tutorial.SaveHp);
