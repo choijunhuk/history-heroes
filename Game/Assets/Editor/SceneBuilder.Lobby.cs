@@ -231,7 +231,7 @@ namespace HistoryHeroes.EditorTools
             var labels = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
             {
-                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 340f - i * 250f), new Vector2(980f, 225f), RowColor, out TMP_Text label);
+                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 350f - i * 245f), new Vector2(980f, 210f), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
                 label.fontSize = 27;
                 label.alignment = TextAlignmentOptions.MidlineLeft;
@@ -240,16 +240,24 @@ namespace HistoryHeroes.EditorTools
                 labels[i] = label;
             }
 
-            Button start = Btn("Start", panel, "도전", new Vector2(-150f, -430f), new Vector2(560f, 150f), ButtonGreen, out TMP_Text startLabel); // 주 행동
+            Button temp = Btn("Temp", panel, "", new Vector2(0f, -385f), new Vector2(980f, 210f), ButtonBlue, out TMP_Text tempLabel);
+            Image tempBackground = temp.GetComponent<Image>();
+            tempLabel.fontSize = 27;
+            tempLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            tempLabel.rectTransform.offsetMin = new Vector2(30f, 10f);
+            tempLabel.rectTransform.offsetMax = new Vector2(-30f, -10f);
+
+            Button start = Btn("Start", panel, "도전", new Vector2(-150f, -620f), new Vector2(560f, 125f), ButtonGreen, out TMP_Text startLabel); // 주 행동
             startLabel.fontSize = 46;
-            Button practice = Btn("Practice", panel, "연습\n<size=60%>하트·보상 없음</size>", new Vector2(320f, -430f), new Vector2(330f, 150f), ButtonGray, out TMP_Text practiceLabel);
+            Button practice = Btn("Practice", panel, "연습\n<size=60%>하트·보상 없음</size>", new Vector2(320f, -620f), new Vector2(330f, 125f), ButtonGray, out TMP_Text practiceLabel);
             practiceLabel.fontSize = 36;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -610f), new Vector2(400f, 110f), ButtonGray, out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -780f), new Vector2(400f, 100f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("testsLabel", tests).Ref("recommendLabel", recommend)
                     .Refs("slotButtons", buttons).Refs("slotBackgrounds", backgrounds).Refs("slotLabels", labels)
+                    .Ref("tempButton", temp).Ref("tempBackground", tempBackground).Ref("tempLabel", tempLabel)
                     .Ref("startButton", start).Ref("startLabel", startLabel).Ref("backButton", back).Ref("practiceButton", practice).Ref("database", database);
             }
 
@@ -263,31 +271,44 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text title = Label("Title", panel, "기록 보관함", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 790f), new Vector2(900f, 100f));
-            TMP_Text help = Label("Help", panel, "기록은 보스맵에서 계속 쓸 수 있어요. 새 기록을 만들면 빈 칸이나 고른 칸에 들어가요.", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            TMP_Text help = Label("Help", panel, "기록은 보스맵에서 계속 쓸 수 있어요. 잠그면 덮어쓰기와 지우기를 막아요.", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
             Place(help.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(1000f, 70f));
 
             var titles = new TMP_Text[3];
             var details = new TMP_Text[3];
             var deletes = new Button[3];
             var deleteLabels = new TMP_Text[3];
+            var locks = new Button[3];
+            var lockLabels = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
             {
-                RectTransform box = Rect($"Slot{i + 1}", panel, Center, Center, Center, new Vector2(0f, 470f - i * 360f), new Vector2(980f, 320f));
+                RectTransform box = Rect($"Slot{i + 1}", panel, Center, Center, Center, new Vector2(0f, 500f - i * 320f), new Vector2(980f, 300f));
                 Img(box, RowColor, null);
-                titles[i] = Label("Title", box, "", 34, TextAlignmentOptions.TopLeft);
-                Place(titles[i].rectTransform, Center, Center, new Vector2(0f, 110f), new Vector2(920f, 60f));
-                details[i] = Label("Details", box, "", 26, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
-                Place(details[i].rectTransform, Center, Center, new Vector2(0f, -10f), new Vector2(920f, 170f));
-                deletes[i] = Btn("Delete", box, "지우기", new Vector2(320f, -115f), new Vector2(300f, 70f), new Color(0.5f, 0.22f, 0.22f), out deleteLabels[i]);
-                deleteLabels[i].fontSize = 26;
+                titles[i] = Label("Title", box, "", 32, TextAlignmentOptions.TopLeft);
+                Place(titles[i].rectTransform, Center, Center, new Vector2(0f, 105f), new Vector2(920f, 50f));
+                details[i] = Label("Details", box, "", 24, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
+                Place(details[i].rectTransform, Center, Center, new Vector2(0f, 0f), new Vector2(920f, 155f));
+                locks[i] = Btn("Lock", box, "🔓 잠금", new Vector2(-320f, -115f), new Vector2(300f, 65f), ButtonBlue, out lockLabels[i]);
+                deletes[i] = Btn("Delete", box, "지우기", new Vector2(320f, -115f), new Vector2(300f, 65f), new Color(0.5f, 0.22f, 0.22f), out deleteLabels[i]);
+                lockLabels[i].fontSize = deleteLabels[i].fontSize = 26;
             }
 
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -660f), new Vector2(400f, 110f), ButtonGray, out _);
+            RectTransform tempBox = Rect("Temp", panel, Center, Center, Center, new Vector2(0f, -460f), new Vector2(980f, 300f));
+            Img(tempBox, RowColor, null);
+            TMP_Text tempTitle = Label("Title", tempBox, "임시 칸", 32, TextAlignmentOptions.TopLeft);
+            Place(tempTitle.rectTransform, Center, Center, new Vector2(0f, 105f), new Vector2(920f, 50f));
+            TMP_Text tempDetails = Label("Details", tempBox, "", 24, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
+            Place(tempDetails.rectTransform, Center, Center, new Vector2(0f, 0f), new Vector2(920f, 155f));
+            Button moveTemp = Btn("MoveTemp", tempBox, "보관함으로 옮기기", new Vector2(0f, -115f), new Vector2(620f, 65f), ButtonBlue, out _);
+
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -790f), new Vector2(400f, 100f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Refs("slotTitles", titles).Refs("slotDetails", details)
-                    .Refs("deleteButtons", deletes).Refs("deleteLabels", deleteLabels).Ref("backButton", back).Ref("database", database);
+                    .Refs("deleteButtons", deletes).Refs("deleteLabels", deleteLabels).Refs("lockButtons", locks).Refs("lockLabels", lockLabels)
+                    .Ref("tempTitle", tempTitle).Ref("tempDetails", tempDetails).Ref("moveTempButton", moveTemp)
+                    .Ref("statusLabel", help).Ref("backButton", back).Ref("database", database);
             }
 
             return screen;

@@ -82,7 +82,7 @@ namespace HistoryHeroes.Missions
                 case MissionGate.None: return true;
                 case MissionGate.Survival: return save.unlockedChapter >= 2; // 서바이벌은 1구간 보스 격파 뒤 (확장 결정 2, 전체 검토 12번)
                 case MissionGate.Equipment: return Equipment.EquipmentInventory.Unlocked(save);
-                case MissionGate.BossRecord: return save.records.Count > 0;
+                case MissionGate.BossRecord: return save.records.Count > 0 || save.TempRecord != null;
                 case MissionGate.RiftDaily: return Modes.RiftRules.Unlocked(save);
                 default: return false;
             }

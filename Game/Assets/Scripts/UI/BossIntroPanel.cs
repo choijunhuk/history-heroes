@@ -24,6 +24,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button[] slotButtons;
         [SerializeField] private Image[] slotBackgrounds;
         [SerializeField] private TMP_Text[] slotLabels;
+        [SerializeField] private Button tempButton;
+        [SerializeField] private Image tempBackground;
+        [SerializeField] private TMP_Text tempLabel;
 
         [SerializeField] private Button startButton;
         [SerializeField] private TMP_Text startLabel;
@@ -39,7 +42,7 @@ namespace HistoryHeroes.UI
 
         private BossData _boss;
         private int _chapter;
-        private int _selectedSlot = -1;
+        private string _selectedRecordId;
 
         private void Awake()
         {
@@ -49,6 +52,12 @@ namespace HistoryHeroes.UI
                 int slot = i;
                 slotButtons[i].onClick.AddListener(() => Select(slot));
             }
+
+            if (tempButton != null) tempButton.onClick.AddListener(() =>
+            {
+                RunRecord record = SaveSystem.Data.TempRecord;
+                if (record != null) SelectRecord(record);
+            });
 
             startButton.onClick.AddListener(StartFight);
             if (practiceButton != null) practiceButton.onClick.AddListener(StartPractice);
@@ -68,7 +77,7 @@ namespace HistoryHeroes.UI
                 : "추천: " + boss.recommend;
 
             // 이 보스를 아직 못 깬 기록 중 가장 최근 것을 먼저 골라 둔다 (★3 "서로 다른 기록 2개" 유도)
-            _selectedSlot = -1;
+            _selectedRecordId = null;
             SaveData data = SaveSystem.Data;
             RunRecord pick = null;
             foreach (RunRecord r in data.records)
@@ -76,15 +85,23 @@ namespace HistoryHeroes.UI
                 if (pick == null || !r.bossesDefeated.Contains(boss.id)) pick = r;
             }
 
-            if (pick != null) _selectedSlot = pick.slot;
+            RunRecord temp = data.TempRecord;
+            if (temp != null && (pick == null || !temp.bossesDefeated.Contains(boss.id))) pick = temp;
+
+            if (pick != null) _selectedRecordId = pick.id;
             root.SetActive(true);
             Render();
         }
 
         private void Select(int slot)
         {
-            if (SaveSystem.Data.RecordInSlot(slot) == null) return;
-            _selectedSlot = slot;
+            SelectRecord(SaveSystem.Data.RecordInSlot(slot));
+        }
+
+        private void SelectRecord(RunRecord record)
+        {
+            if (record == null) return;
+            _selectedRecordId = record.id;
             Render();
         }
 
@@ -99,7 +116,7 @@ namespace HistoryHeroes.UI
 
                 RunRecord record = data.RecordInSlot(i);
                 slotButtons[i].interactable = record != null;
-                slotBackgrounds[i].color = i == _selectedSlot ? Selected : Normal;
+                slotBackgrounds[i].color = record != null && record.id == _selectedRecordId ? Selected : Normal;
 
                 if (record == null)
                 {
@@ -107,14 +124,15 @@ namespace HistoryHeroes.UI
                     continue;
                 }
 
-                string beaten = record.bossesDefeated.Contains(_boss.id) ? "  (이 기록으로 격파함)" : string.Empty;
-                // 강점이 보스 추천 역할과 같으면 배지 (조사 A8). 고르는 건 플레이어 자유
-                bool recommended = _boss.recommendedRole != SkillRole.None && RecordStrength.Of(record, database).Main == _boss.recommendedRole;
-                string badge = recommended ? "<color=#7CE38B>◎ 추천</color>  " : string.Empty;
-                slotLabels[i].text = $"{badge}{RecordFormat.Title(record, database)}{beaten}\n{RecordFormat.Details(record, database)}";
+                slotLabels[i].text = RecordLine(record);
             }
 
-            RunRecord selected = data.RecordInSlot(_selectedSlot);
+            RunRecord temp = data.TempRecord;
+            if (tempButton != null) tempButton.gameObject.SetActive(temp != null);
+            if (temp != null && tempLabel != null) tempLabel.text = "임시 칸 · " + RecordLine(temp);
+            if (temp != null && tempBackground != null) tempBackground.color = temp.id == _selectedRecordId ? Selected : Normal;
+
+            RunRecord selected = data.FindRecord(_selectedRecordId);
             startButton.interactable = selected != null;
             bool over = selected != null && RecordValidator.Validate(selected, database).OverCapacity;
             if (practiceButton != null) practiceButton.interactable = selected != null && !over;
@@ -123,14 +141,14 @@ namespace HistoryHeroes.UI
 
         private void StartFight()
         {
-            RunRecord record = SaveSystem.Data.RecordInSlot(_selectedSlot);
+            RunRecord record = SaveSystem.Data.FindRecord(_selectedRecordId);
             if (record == null) return;
 
             RecordValidator.Result build = RecordValidator.Validate(record, database);
             if (build.OverCapacity && reselect != null)
             {
                 reselect.OpenReselect(DraftFrom(record, build), d => d.ToRecord(record.heroId, record.chapter, record.roomReached, record.roomCount, record.cleared, database.balanceVersion),
-                    record.slot, Render);
+                    record.id, Render);
                 return;
             }
 
@@ -140,9 +158,17 @@ namespace HistoryHeroes.UI
         /// <summary>하트 없이, 보상 없이 (Economy 3-4)</summary>
         private void StartPractice()
         {
-            RunRecord record = SaveSystem.Data.RecordInSlot(_selectedSlot);
+            RunRecord record = SaveSystem.Data.FindRecord(_selectedRecordId);
             if (record == null || RecordValidator.Validate(record, database).OverCapacity) return;
             GameSession.StartBossPractice(_chapter, record.id);
+        }
+
+        private string RecordLine(RunRecord record)
+        {
+            string beaten = record.bossesDefeated.Contains(_boss.id) ? "  (이 기록으로 격파함)" : string.Empty;
+            bool recommended = _boss.recommendedRole != SkillRole.None && RecordStrength.Of(record, database).Main == _boss.recommendedRole;
+            string badge = recommended ? "<color=#7CE38B>◎ 추천</color>  " : string.Empty;
+            return $"{badge}{RecordFormat.Title(record, database)}{beaten}\n{RecordFormat.Details(record, database)}";
         }
 
         private RecordDraft DraftFrom(RunRecord record, RecordValidator.Result build)

@@ -32,6 +32,11 @@ namespace HistoryHeroes.Records
         /// <summary>기록들. 슬롯 번호는 RunRecord.slot (0부터)</summary>
         public List<RunRecord> records = new List<RunRecord>();
 
+        /// <summary>번호 칸과 따로 두는 임시 기록 (없거나 하나). 보관함 개수에는 세지 않는다.</summary>
+        public List<RunRecord> tempRecords = new List<RunRecord>();
+
+        public RunRecord TempRecord => tempRecords != null && tempRecords.Count > 0 ? tempRecords[0] : null;
+
         /// <summary>조합 도감: 한 번이라도 만든 레시피 ID</summary>
         public List<string> discoveredRecipes = new List<string>();
 
@@ -154,6 +159,7 @@ namespace HistoryHeroes.Records
 
         public RunRecord RecordInSlot(int slot)
         {
+            if (slot < 0 || slot >= recordSlots) return null;
             foreach (RunRecord r in records)
             {
                 if (r.slot == slot) return r;
@@ -195,12 +201,13 @@ namespace HistoryHeroes.Records
 
         public RunRecord FindRecord(string recordId)
         {
+            if (string.IsNullOrEmpty(recordId)) return null;
             foreach (RunRecord r in records)
             {
                 if (r.id == recordId) return r;
             }
 
-            return null;
+            return TempRecord != null && TempRecord.id == recordId ? TempRecord : null;
         }
     }
 
@@ -212,6 +219,7 @@ namespace HistoryHeroes.Records
     {
         public string id;
         public int slot;
+        public bool locked;
         public string heroId;
         /// <summary>화면 표시용 (영웅 이름이 바뀌어도 ID로 다시 찾는다)</summary>
         public string heroName;
