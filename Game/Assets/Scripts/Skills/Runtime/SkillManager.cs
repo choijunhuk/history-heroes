@@ -123,7 +123,9 @@ namespace HistoryHeroes.Skills
             SkillData exclusive = player.Hero != null ? player.Hero.exclusiveActive : null;
             if (exclusive == null || offer.Exists(c => c.Skill == exclusive)) return;
             SkillCard card = candidates.Find(c => c.Skill == exclusive);
-            if (card == null || Common.RunRandom.Card01() > firstOfferExclusiveChance) return;
+            // 이 영웅의 첫 판이면 확정 (전체 검토 3번: 새 영웅의 손맛을 첫 판에 바로)
+            bool firstRun = Records.SaveSystem.Data != null && !string.IsNullOrEmpty(HeroId) && Records.SaveSystem.Data.Hero(HeroId).runs == 0;
+            if (card == null || (!firstRun && Common.RunRandom.Card01() > firstOfferExclusiveChance)) return;
 
             for (int i = offer.Count - 1; i >= 0; i--)
             {

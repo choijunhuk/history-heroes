@@ -312,6 +312,8 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+        /// <summary>이 영웅으로 끝낸 던전 판 수 (첫 판이면 첫 카드에 전용 액티브 확정, 전체 검토 3번)</summary>
+        public int runs;
     }
 
     // ---------------------------------------------------------------- v0.6 무한의 균열 · 일일 도전

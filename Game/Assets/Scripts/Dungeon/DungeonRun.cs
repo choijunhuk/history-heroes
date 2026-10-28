@@ -939,6 +939,7 @@ namespace HistoryHeroes.Dungeon
             summary.HitsTaken = _hitsTaken;
             summary.TopDamage = RunText.TopDamage(database, player.Hero);
             Missions.MissionEvents.DungeonFinished(skills.HeroId, GameSession.Chapter, victory, skills.ChoseLegendary);
+            if (!string.IsNullOrEmpty(skills.HeroId)) SaveSystem.Data.Hero(skills.HeroId).runs++; // 첫 판 전용 액티브 확정용
             if (victory && _hitsTaken <= 10) Missions.MissionEvents.Raise(Missions.Newcomer.LowHitEvent); // 신규 7일 미션 "피격 10회 이하로 클리어"
             summary.RewardLines = GrantRewards(victory, roomsCleared);
             if (!victory && Economy.Hearts.TryRefundEarlyDeath(SaveSystem.Data, GameSession.Chapter, _room, GameSession.HeartSpent, Clock.UnixSeconds, Clock.Today))
