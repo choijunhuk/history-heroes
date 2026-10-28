@@ -12,7 +12,6 @@ using UnityEngine;
 namespace HistoryHeroes.Tests
 {
     /// <summary>체험 설정과 성장을 확인한다. 장면이나 기기의 저장 파일은 열지 않는다.</summary>
-    [NonParallelizable]
     public sealed class HeroTrialTests
     {
         private readonly List<Object> _objects = new List<Object>();
