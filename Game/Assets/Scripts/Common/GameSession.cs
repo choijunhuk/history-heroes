@@ -103,6 +103,12 @@ namespace HistoryHeroes.Common
                     }
 
                     return;
+                case BattleMode.Survival:
+                    ClearSpecialRun();
+                    Practice = false;
+                    Mode = BattleMode.Survival;
+                    SurvivalMap = Mathf.Clamp(s.survivalMap, 0, Survival.SurvivalProgress.MapIds.Length - 1);
+                    break;
                 case BattleMode.Daily:
                     ClearSpecialRun();
                     Practice = true;

@@ -388,6 +388,15 @@ namespace HistoryHeroes.Records
         /// <summary>판을 시작할 때의 판 밖 성장 (이어할 때 그대로 — 로비에서 바꾼 강화가 끼어들지 않게)</summary>
         public bool hasMeta;
         public MetaSnapshot meta;
+
+        // ── 서바이벌 이어하기 (전체 검토 6번: 10분짜리 판이 앱이 꺼지면 통째로 사라지던 것) ──
+        public int survivalMap;
+        public int nextElite;
+        public bool midBossDone;
+        public int nextSwarm;
+        public int cratesBroken;
+        public int elitesEarly;
+        public int bagGold;
         /// <summary>조합 이력: 재료로 쓴 스킬 · 끝낸 조합 · 이번 판에 숨긴 조합</summary>
         public List<string> consumed = new List<string>();
         public List<string> completedFusions = new List<string>();
