@@ -244,7 +244,7 @@ namespace HistoryHeroes.EditorTools
             Image p = pattern.gameObject.AddComponent<Image>();
             p.sprite = _kit.Pattern;
             p.type = Image.Type.Tiled;
-            p.color = new Color(1f, 1f, 1f, 0.55f);
+            p.color = new Color(1f, 1f, 1f, 0.25f); // 격자 무늬는 흐리게 (전체 UI 검토 4번: 배경이 내용보다 튄다)
             p.raycastTarget = false;
             var vignette = (RectTransform)new GameObject("Vignette", typeof(RectTransform)).transform;
             vignette.SetParent(image.transform, false);

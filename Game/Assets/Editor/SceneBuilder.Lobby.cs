@@ -240,7 +240,7 @@ namespace HistoryHeroes.EditorTools
                 labels[i] = label;
             }
 
-            Button start = Btn("Start", panel, "도전", new Vector2(-150f, -430f), new Vector2(560f, 150f), new Color(0.55f, 0.25f, 0.35f), out TMP_Text startLabel);
+            Button start = Btn("Start", panel, "도전", new Vector2(-150f, -430f), new Vector2(560f, 150f), ButtonGreen, out TMP_Text startLabel); // 주 행동
             startLabel.fontSize = 46;
             Button practice = Btn("Practice", panel, "연습\n<size=60%>하트·보상 없음</size>", new Vector2(320f, -430f), new Vector2(330f, 150f), ButtonGray, out TMP_Text practiceLabel);
             practiceLabel.fontSize = 36;
@@ -395,7 +395,7 @@ namespace HistoryHeroes.EditorTools
             trainingLabel.fontSize = 24;
             Button runeButton = Btn("HeroRunes", panel, "룬", new Vector2(-126f, -700f + below), new Vector2(240f, 110f), new Color(0.32f, 0.25f, 0.45f), out TMP_Text runeLabel);
             runeLabel.fontSize = 24;
-            Button petButton = Btn("HeroPet", panel, "펫", new Vector2(126f, -700f + below), new Vector2(240f, 110f), new Color(0.25f, 0.42f, 0.3f), out TMP_Text petLabel);
+            Button petButton = Btn("HeroPet", panel, "펫", new Vector2(126f, -700f + below), new Vector2(240f, 110f), ButtonBlue, out TMP_Text petLabel);
             petLabel.fontSize = 24;
             foreach (TMP_Text t in new[] { trainingLabel, runeLabel, petLabel })
             {

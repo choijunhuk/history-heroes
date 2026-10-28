@@ -930,6 +930,24 @@ namespace HistoryHeroes.EditorTools
             return label;
         }
 
+        // 단추는 세 가지뿐 (전체 UI 검토 4번): 주 행동 = 선명한 초록 · 보조 = 차분한 남회색 · 위험 = 어두운 빨강 (덜 튀게)
+        private static readonly Color ButtonSecondaryTone = new Color(0.34f, 0.4f, 0.54f);
+        private static readonly Color ButtonDangerTone = new Color(0.56f, 0.24f, 0.26f);
+
+        /// <summary>빌더가 넘긴 색을 세 역할 중 하나로: 빨강 → 위험, 초록·금색(강화·레벨업) → 주 행동, 나머지 → 보조</summary>
+        private static Color ButtonRole(Color c)
+        {
+            Color.RGBToHSV(c, out float h, out float s, out float _);
+            Color o;
+            if (s < 0.25f) o = ButtonSecondaryTone; // 회색
+            else if (h < 0.04f || h > 0.95f) o = ButtonDangerTone; // 지우기·분해·판 포기
+            else if (h > 0.22f && h < 0.45f) o = Vivid(c); // 초록
+            else if (h >= 0.08f && h <= 0.16f) o = Vivid(ButtonGreen); // 금색 = 강화·레벨업·각성
+            else o = ButtonSecondaryTone; // 파랑·보라·청록
+            o.a = c.a;
+            return o;
+        }
+
         private static Button Btn(string name, Transform parent, string text, Vector2 position, Vector2 size, Color color, out TMP_Text label)
         {
             RectTransform rt = Rect(name, parent, Center, Center, Center, position, size);
@@ -937,7 +955,7 @@ namespace HistoryHeroes.EditorTools
             if (_kit != null)
             {
                 // 두툼한 게임 버튼: 선명한 색 · 아래 두께 · 광택 · 밑 그림자 · 누르면 눌림 (그래픽 평가 3번)
-                image = Img(rt, Vivid(color), _kit.Button);
+                image = Img(rt, ButtonRole(color), _kit.Button);
                 image.type = Image.Type.Sliced;
                 image.pixelsPerUnitMultiplier = BorderScale(size.y, 120f);
                 var shadow = rt.gameObject.AddComponent<Shadow>();
