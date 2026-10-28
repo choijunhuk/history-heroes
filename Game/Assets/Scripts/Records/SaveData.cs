@@ -43,6 +43,8 @@ namespace HistoryHeroes.Records
 
         /// <summary>판 수 (통계·테스트용)</summary>
         public int dungeonRuns;
+        /// <summary>10판 기념으로 보석 영웅 한 명을 무료로 열었나 (전체 검토 8번, 한 번만)</summary>
+        public bool freeHeroClaimed;
         public int bossRuns;
 
         // ---------------- v0.2b 경제 (Economy.md, Stats.md 7장, Modes.md 3장) ----------------
