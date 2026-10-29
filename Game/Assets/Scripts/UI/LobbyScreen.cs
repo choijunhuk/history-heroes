@@ -196,6 +196,13 @@ namespace HistoryHeroes.UI
             Audio.AudioManager.PlayMusic(tutorial ? "opening" : "lobby");
             if (tutorialBoss) GameSession.StartTutorialBoss(data.tutorialRecordId); // 기록은 남겼고 보스 전에 꺼졌다
             else if (tutorial) opening.Open(() => GameSession.StartTutorial(false));
+            else if (opening != null && Story.GodsTeaser.Pending(data))
+            {
+                // 망각의 왕 첫 격파 뒤 한 번: 신의 심판 예고 (GodsVsHumanity 2장). 본 순간 저장 (건너뛰어도 다시 안 뜬다)
+                data.godsTeaserSeen = true;
+                SaveSystem.Save();
+                opening.Open(Story.GodsTeaser.Scenes, Story.GodsTeaser.Tints, "확인", null);
+            }
             // 튜토리얼 직후: 다음 목표 하나만 (전체 기획 검토 1번). 출석부·7일 미션·펫은 단추 표시로, 알림 묻기는 다음 로비에서
             bool justFinished = GameSession.TutorialJustFinished;
             if (justFinished)

@@ -132,6 +132,8 @@ namespace HistoryHeroes.Records
         public List<string> titles = new List<string>();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
+        /// <summary>망각의 왕 첫 격파 뒤 "신의 심판" 예고 장면을 봤다 (GodsVsHumanity 2장, 한 번만)</summary>
+        public bool godsTeaserSeen;
 
         public int ItemCount(string itemId)
         {
