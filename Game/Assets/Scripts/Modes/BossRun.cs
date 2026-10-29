@@ -22,6 +22,7 @@ namespace HistoryHeroes.Modes
     {
         [SerializeField] private List<BossData> bosses = new List<BossData>();
         [SerializeField] private BossData thorTrial;
+        [SerializeField] private BossData[] godTrials;
         [SerializeField] private SkillDatabase database;
         [Tooltip("보스 최초 격파 장비 보상 (v0.4)")]
         [SerializeField] private Meta.MetaTable metaTable;
@@ -283,7 +284,13 @@ namespace HistoryHeroes.Modes
 
         private BossData FindBoss(int chapter)
         {
-            if (GameSession.IsGodTrial) return thorTrial != null && thorTrial.id == GameSession.GodTrialId ? thorTrial : null;
+            if (GameSession.IsGodTrial)
+            {
+                if (godTrials != null)
+                    foreach (BossData trial in godTrials)
+                        if (trial != null && trial.id == GameSession.GodTrialId) return trial;
+                return thorTrial != null && thorTrial.id == GameSession.GodTrialId ? thorTrial : null;
+            }
             foreach (BossData b in bosses)
             {
                 if (b != null && b.chapter == chapter) return b;

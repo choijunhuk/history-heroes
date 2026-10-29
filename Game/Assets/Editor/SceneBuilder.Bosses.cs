@@ -15,8 +15,8 @@ namespace HistoryHeroes.EditorTools
         private sealed class BossDataSet
         {
             public EnemyData Bison, Torch, Golem, Hunter, HunterClone, Executor;
-            public EnemyData Wraith, Colossus, Twins, King, Thor;
-            public BossData WraithLord, SteelColossus, ShadowTwins, OblivionKing, ThorTrial;
+            public EnemyData Wraith, Colossus, Twins, King, Thor, Anubis, Zeus, MemoryGuardian;
+            public BossData WraithLord, SteelColossus, ShadowTwins, OblivionKing, ThorTrial, AnubisTrial, ZeusTrial;
         }
 
         private static BossDataSet _bosses;
@@ -36,8 +36,11 @@ namespace HistoryHeroes.EditorTools
                 Twins = Enemy("boss_twins", "그림자 쌍둥이", 2.2f, 0.85f, 1.4f, new Color(0.22f, 0.2f, 0.32f)),
                 King = Enemy("boss_king", "망각의 왕", 1.6f, 1f, 1.4f, new Color(0.55f, 0.3f, 0.75f)),
                 Thor = Enemy("thor_trial", "토르의 시험 형상", 2.2f, 1.1f, 1.5f, new Color(0.55f, 0.58f, 0.65f)),
+                Anubis = Enemy("anubis_trial", "아누비스의 시험 형상", 1.6f, 1f, 1.5f, new Color(0.2f, 0.17f, 0.12f)),
+                Zeus = Enemy("zeus_trial", "제우스의 시험 형상", 0.8f, 1f, 1.6f, new Color(0.92f, 0.91f, 0.82f)),
+                MemoryGuardian = Enemy("memory_guardian", "기억의 수호병", 2.4f, 0.8f, 1.1f, new Color(0.77f, 0.65f, 0.42f)),
             };
-            foreach (EnemyData e in new[] { b.Bison, b.Torch, b.Golem, b.Hunter, b.Executor, b.Wraith, b.Colossus, b.Twins, b.King, b.Thor })
+            foreach (EnemyData e in new[] { b.Bison, b.Torch, b.Golem, b.Hunter, b.Executor, b.Wraith, b.Colossus, b.Twins, b.King, b.Thor, b.Anubis, b.Zeus })
             {
                 e.experience = 0; // 보스는 경험치 대신 방 클리어로
                 EditorUtility.SetDirty(e);
@@ -46,12 +49,16 @@ namespace HistoryHeroes.EditorTools
             b.HunterClone.maxHp = 100f;
             b.HunterClone.experience = 1;
             EditorUtility.SetDirty(b.HunterClone);
+            b.MemoryGuardian.experience = 0;
+            EditorUtility.SetDirty(b.MemoryGuardian);
 
             b.WraithLord = Boss("wraith_lord", "망령 군주", 2, "잡몹을 계속 부른다 → 광역 빌드", "광역 빌드 (번개·불꽃 장판·독 구름)", SkillRole.Area, 420f, 1.7f, 7);
             b.SteelColossus = Boss("steel_colossus", "강철 거상", 3, "탄막을 쏟아붓는다 → 칼날 탱커형, 피하기", "칼날 탱커형 (강철 회오리·방어력·최대체력)", SkillRole.Defense, 560f, 2f, 6);
             b.ShadowTwins = Boss("shadow_twins", "그림자 쌍둥이", 4, "둘이 따로 움직이고 한 번에 하나만 맞는다 → 단일 순간 화력", "연사형 (공격속도·멀티샷·공격력)", SkillRole.Single, 680f, 2.3f, 6);
             b.OblivionKing = Boss("oblivion_king", "망각의 왕", 5, "앞 보스의 시험을 전부 섞는다 → 완성된 빌드", "강점이 고른 빌드 (조합 1~2개 + 기본 공격)", SkillRole.None, 900f, 2.7f, 5);
             b.ThorTrial = Boss("thor_trial", "토르", 5, "망치 내려치기 → 직선 충격파 → 멈춰 쏠 빈틈", "정지 단일 화력 (공격속도·공격력)", SkillRole.Single, 780f, 2.35f, 0);
+            b.AnubisTrial = Boss("anubis_trial", "아누비스", 2, "기억의 수호병 소환 → 수호병을 줄여 보호 걷기", "광역·소환 정리 (장판·낙뢰)", SkillRole.Area, 830f, 2.3f, 0);
+            b.ZeusTrial = Boss("zeus_trial", "제우스", 3, "차례로 오는 번개 탄막 사이로 이동 → 멈춰 공격", "탄 차단·방어 (방패·최대체력)", SkillRole.Defense, 880f, 2.5f, 0);
             _bosses = b;
         }
 
@@ -104,7 +111,17 @@ namespace HistoryHeroes.EditorTools
                 Common(false, 2.1f)(go, props);
                 props.Ref("minion", p.Minion);
             });
+            b.AnubisTrial.prefab = EnemyPrefab<WraithLordBoss>("Boss_AnubisTrial", b.Anubis, _circle, line, false, (go, props) =>
+            {
+                Common(false, 2.3f)(go, props);
+                props.Ref("minion", p.MemoryGuardian).Float("summonRecover", 1.8f).Float("attackRecover", 1.8f);
+            });
             p.SteelColossus = EnemyPrefab<SteelColossusBoss>("Boss_SteelColossus", b.Colossus, _square, line, false, Common(false, 2.4f));
+            b.ZeusTrial.prefab = EnemyPrefab<SteelColossusBoss>("Boss_ZeusTrial", b.Zeus, _square, line, false, (go, props) =>
+            {
+                Common(false, 2.4f)(go, props);
+                props.Float("barrageRecover", 1.8f).Bool("lightningBarrage", true);
+            });
             p.ShadowTwins = EnemyPrefab<ShadowTwinsBoss>("Boss_ShadowTwins", b.Twins, _circle, line, false, (go, props) =>
             {
                 Common(false, 1.9f)(go, props);
@@ -146,7 +163,7 @@ namespace HistoryHeroes.EditorTools
             b.SteelColossus.prefab = p.SteelColossus;
             b.ShadowTwins.prefab = p.ShadowTwins;
             b.OblivionKing.prefab = p.OblivionKing;
-            foreach (BossData boss in new[] { b.WraithLord, b.SteelColossus, b.ShadowTwins, b.OblivionKing, b.ThorTrial }) EditorUtility.SetDirty(boss);
+            foreach (BossData boss in new[] { b.WraithLord, b.SteelColossus, b.ShadowTwins, b.OblivionKing, b.ThorTrial, b.AnubisTrial, b.ZeusTrial }) EditorUtility.SetDirty(boss);
         }
 
         /// <summary>구간 1~5 보스맵 보스 (로비·보스맵이 같이 쓴다)</summary>
@@ -164,5 +181,12 @@ namespace HistoryHeroes.EditorTools
         }
 
         private static BossData LoadThorTrial() => AssetDatabase.LoadAssetAtPath<BossData>($"{DataDir}/Bosses/Boss_thor_trial.asset");
+
+        private static BossData[] LoadGodTrials() => new[]
+        {
+            LoadThorTrial(),
+            AssetDatabase.LoadAssetAtPath<BossData>($"{DataDir}/Bosses/Boss_anubis_trial.asset"),
+            AssetDatabase.LoadAssetAtPath<BossData>($"{DataDir}/Bosses/Boss_zeus_trial.asset"),
+        };
     }
 }

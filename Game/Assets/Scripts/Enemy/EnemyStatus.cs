@@ -24,8 +24,7 @@ namespace HistoryHeroes.Enemy
         private SpriteRenderer _tint;
         private Color _baseColor;
 
-        private float _slowFraction;
-        private float _slowUntil;
+        private readonly SlowChannels _slow = new SlowChannels();
         private float _freezeUntil;
         private int _chillStacks;
         private float _chillUntil;
@@ -50,7 +49,7 @@ namespace HistoryHeroes.Enemy
         private Vector2 _push; // 흡인 중에 들어온 밀침 (다음 물리 걸음에 흡인과 함께)
 
         public bool IsFrozen => Time.time < _freezeUntil;
-        public float SpeedMultiplier => (Time.time < _slowUntil ? 1f - _slowFraction : 1f) * Haste;
+        public float SpeedMultiplier => (1f - _slow.FractionAt(Time.time)) * Haste;
 
         /// <summary>빨라짐 배수 (엘리트 "분노한" 속성: 1.3). 이동과 공격 시간이 함께 빨라진다</summary>
         public float Haste { get; set; } = 1f;
@@ -69,17 +68,17 @@ namespace HistoryHeroes.Enemy
         /// <summary>다시 나올 때 (오브젝트 풀) 상태를 비운다</summary>
         public void Clear()
         {
-            _slowUntil = _freezeUntil = _chillUntil = _pullUntil = 0f;
+            _slow.Clear();
+            _freezeUntil = _chillUntil = _pullUntil = 0f;
             Haste = 1f;
             _chillStacks = 0;
             _poison.Clear();
             if (_tint != null) _tint.color = _baseColor;
         }
 
-        public void ApplySlow(float fraction, float duration)
+        public void ApplySlow(float fraction, float duration, object source = null)
         {
-            if (Time.time >= _slowUntil || fraction >= _slowFraction) _slowFraction = Mathf.Clamp01(fraction);
-            _slowUntil = Mathf.Max(_slowUntil, Time.time + duration);
+            _slow.Apply(fraction, duration, Time.time, source);
         }
 
         /// <summary>서리 창: 둔화를 1번 쌓는다. stacksToFreeze번 쌓이면 빙결</summary>
@@ -207,7 +206,7 @@ namespace HistoryHeroes.Enemy
                 Color target = _baseColor;
                 if (IsFrozen) target = new Color(0.6f, 0.85f, 1f);
                 else if (_poison.Count > 0) target = Color.Lerp(_baseColor, new Color(0.45f, 0.9f, 0.35f), 0.5f);
-                else if (now < _slowUntil) target = Color.Lerp(_baseColor, new Color(0.6f, 0.8f, 1f), 0.4f);
+                else if (_slow.FractionAt(now) > 0f) target = Color.Lerp(_baseColor, new Color(0.6f, 0.8f, 1f), 0.4f);
                 if (_tint.color != target) _tint.color = target;
             }
         }

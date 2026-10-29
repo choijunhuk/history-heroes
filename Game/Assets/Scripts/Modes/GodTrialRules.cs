@@ -10,29 +10,64 @@ namespace HistoryHeroes.Modes
     {
         public const string ThorTrialId = "thor_trial";
         public const string ThorHeroId = "thor";
+        public const string AnubisTrialId = "anubis_trial";
+        public const string AnubisHeroId = "anubis";
+        public const string ZeusTrialId = "zeus_trial";
         public const int UnlockShards = 30;
         public const int FirstClearShards = 10;
         public const int WeeklyShards = 5;
         public const string ThorTitle = "천둥의 증인";
 
-        public static bool IsGod(string heroId) => heroId == ThorHeroId;
-        public static bool IsHeroUnlocked(SaveData save, string heroId) => !IsGod(heroId) || save.unlockedHeroes.Contains(heroId);
+        private static readonly GodTrialDefinition[] Definitions =
+        {
+            new GodTrialDefinition(ThorTrialId, 1, 1, "rift_warden", ThorHeroId, "토르", ThorTitle, FirstClearShards),
+            new GodTrialDefinition(AnubisTrialId, 2, 2, "wraith_lord", AnubisHeroId, "아누비스", "저울의 증인", 10),
+            new GodTrialDefinition(ZeusTrialId, 3, 3, "steel_colossus", null, "제우스", "하늘의 증인", 0),
+        };
+
+        public static IReadOnlyList<GodTrialDefinition> Trials { get; } = Array.AsReadOnly(Definitions);
+
+        public static GodTrialDefinition Find(string trialId)
+        {
+            foreach (GodTrialDefinition trial in Definitions)
+                if (trial.Id == trialId) return trial;
+            return null;
+        }
+
+        public static GodTrialDefinition ForHero(string heroId)
+        {
+            if (string.IsNullOrEmpty(heroId)) return null;
+            foreach (GodTrialDefinition trial in Definitions)
+                if (trial.HeroId == heroId) return trial;
+            return null;
+        }
+
+        public static bool IsGod(string heroId) => ForHero(heroId) != null;
+        public static bool IsHeroUnlocked(SaveData save, string heroId) => !IsGod(heroId) || save != null && save.unlockedHeroes.Contains(heroId);
         public static bool CanReceiveNormalShards(SaveData save, string heroId) => !IsGod(heroId) || IsHeroUnlocked(save, heroId);
 
-        /// <summary>망각의 왕 본인 기록 첫 격파는 기존 보스의 영구 격파 표식을 쓴다.</summary>
-        public static bool IsUnlocked(SaveData save, string trialId) =>
-            save != null && trialId == ThorTrialId && save.defeatedBosses.Contains("oblivion_king");
+        /// <summary>앞 시련의 본인 기록 첫 승리를 저장한 표식으로 다음 시련을 연다.</summary>
+        public static bool IsUnlocked(SaveData save, string trialId)
+        {
+            GodTrialDefinition trial = Find(trialId);
+            if (save == null || trial == null) return false;
+            if (trial.Order == 1) return save.defeatedBosses.Contains("oblivion_king");
+            if (save.godTrials == null) return false;
+            GodTrialDefinition previous = Definitions[trial.Order - 2];
+            return IsUnlocked(save, previous.Id) && save.godTrials.cleared.Contains(previous.Id);
+        }
 
         /// <summary>조각 30개를 소비한 뒤에는 사람 영웅과 같은 Lv1 ★1 성장 규칙을 쓴다.</summary>
         public static bool TryUnlockHero(SaveData save, string heroId)
         {
-            if (save == null || heroId != ThorHeroId || !IsUnlocked(save, ThorTrialId) || IsHeroUnlocked(save, heroId)
+            GodTrialDefinition trial = ForHero(heroId);
+            if (save == null || trial == null || !IsUnlocked(save, trial.Id) || IsHeroUnlocked(save, heroId)
                 || !Wallet.TrySpendItem(save, Wallet.HeroShard(heroId), UnlockShards)) return false;
             save.unlockedHeroes.Add(heroId);
             HeroProgress progress = save.Hero(heroId);
             progress.level = 1;
             progress.stars = 1;
-            if (save.godTrials.goalTrialId == ThorTrialId) save.godTrials.goalTrialId = null;
+            if (save.godTrials.goalTrialId == trial.Id) save.godTrials.goalTrialId = null;
             return true;
         }
 
@@ -54,8 +89,11 @@ namespace HistoryHeroes.Modes
         /// <summary>첫 승리 전에는 목표를 바꿀 수 있고, 첫 승리부터는 그 주 동안 고정된다.</summary>
         public static bool TryChooseGoal(SaveData save, string trialId, DateTimeOffset now)
         {
-            if (!IsUnlocked(save, trialId) || IsHeroUnlocked(save, ThorHeroId)) return false;
+            GodTrialDefinition trial = Find(trialId);
+            if (trial == null || trial.HeroId == null || !IsUnlocked(save, trialId)
+                || IsHeroUnlocked(save, trial.HeroId)) return false;
             EnsureWeek(save, now);
+            if (save.godTrials.weeklyShards >= WeeklyShards) return false;
             if (save.godTrials.goalLocked && save.godTrials.goalTrialId != trialId) return false;
             save.godTrials.goalTrialId = trialId;
             return true;
@@ -66,7 +104,8 @@ namespace HistoryHeroes.Modes
             ICollection<string> foughtActives, bool victory, bool practice, bool heartSpent, DateTimeOffset now)
         {
             var result = new GodTrialResult();
-            if (!IsUnlocked(save, trialId) || practice || record == null || save.FindRecord(record.id) != record) return result;
+            GodTrialDefinition trial = Find(trialId);
+            if (trial == null || !IsUnlocked(save, trialId) || practice || record == null || save.FindRecord(record.id) != record) return result;
 
             GodTrialSave trials = save.godTrials;
             string today = now.ToString("yyyy-MM-dd");
@@ -85,15 +124,15 @@ namespace HistoryHeroes.Modes
             if (result.FirstClear)
             {
                 trials.cleared.Add(trialId);
-                if (!save.titles.Contains(ThorTitle)) save.titles.Add(ThorTitle);
-                result.Lines.Add("첫 시련 격파 · 칭호 천둥의 증인");
-                if (!IsHeroUnlocked(save, ThorHeroId))
+                if (!save.titles.Contains(trial.Title)) save.titles.Add(trial.Title);
+                result.Lines.Add($"첫 시련 격파 · 칭호 {trial.Title}");
+                if (trial.HeroId != null && !IsHeroUnlocked(save, trial.HeroId))
                 {
-                    int earned = Math.Min(FirstClearShards, Math.Max(0, UnlockShards - save.ItemCount(Wallet.HeroShard(ThorHeroId))));
+                    int earned = Math.Min(trial.FirstClearShards, Math.Max(0, UnlockShards - save.ItemCount(Wallet.HeroShard(trial.HeroId))));
                     if (earned > 0)
                     {
-                        save.AddItem(Wallet.HeroShard(ThorHeroId), earned);
-                        result.Reward = new Reward { HeroId = ThorHeroId, HeroShards = earned };
+                        save.AddItem(Wallet.HeroShard(trial.HeroId), earned);
+                        result.Reward = new Reward { HeroId = trial.HeroId, HeroShards = earned };
                     }
                 }
             }
@@ -107,7 +146,8 @@ namespace HistoryHeroes.Modes
             else if (!result.FirstClear) result.Lines.Add("오늘 반복 격파 보상은 다 받았어요 (하루 3번)");
 
             EnsureWeek(save, now);
-            if (trials.goalTrialId == trialId && !IsHeroUnlocked(save, ThorHeroId) && trials.weeklyShards < WeeklyShards)
+            if (trials.goalTrialId == trialId && trial.HeroId != null
+                && !IsHeroUnlocked(save, trial.HeroId) && trials.weeklyShards < WeeklyShards)
             {
                 var actives = new List<string>(foughtActives ?? Array.Empty<string>());
                 if (string.IsNullOrEmpty(trials.firstRecordId))
@@ -118,11 +158,11 @@ namespace HistoryHeroes.Modes
                 }
                 else if (trials.weeklyWins.Exists(w => w.recordId != record.id && DifferentActives(w.actives, actives)))
                 {
-                    result.WeeklyShards = Math.Min(WeeklyShards, Math.Max(0, UnlockShards - save.ItemCount(Wallet.HeroShard(ThorHeroId))));
+                    result.WeeklyShards = Math.Min(WeeklyShards, Math.Max(0, UnlockShards - save.ItemCount(Wallet.HeroShard(trial.HeroId))));
                     if (result.WeeklyShards > 0)
                     {
-                        save.AddItem(Wallet.HeroShard(ThorHeroId), result.WeeklyShards);
-                        result.Lines.Add($"주간 목표 · 토르 조각 +{result.WeeklyShards}");
+                        save.AddItem(Wallet.HeroShard(trial.HeroId), result.WeeklyShards);
+                        result.Lines.Add($"주간 목표 · {trial.DisplayName} 조각 +{result.WeeklyShards}");
                     }
 
                     trials.weeklyShards = WeeklyShards;

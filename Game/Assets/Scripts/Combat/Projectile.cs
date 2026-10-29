@@ -26,6 +26,8 @@ namespace HistoryHeroes.Combat
         private Action<Projectile> _release;
         private Action<DamageInfo, float> _onHit;
         private Action<Health, Vector2> _onHitTarget;
+        private bool _notifyFirstTargetOnly;
+        private bool _targetNotified;
         private TrailRenderer[] _trails;
 
         // 한 번에 여러 개를 받아서, 방금 뚫고 지나온 적은 빼고 가장 가까운 것을 고른다
@@ -44,9 +46,11 @@ namespace HistoryHeroes.Combat
 
         public void Launch(Vector2 direction, float speed, DamageInfo damage, LayerMask hitMask, LayerMask wallMask,
             int pierce, int ricochet, Action<Projectile> release, Action<DamageInfo, float> onHit = null,
-            float pierceFalloff = 0.2f, Action<Health, Vector2> onHitTarget = null)
+            float pierceFalloff = 0.2f, Action<Health, Vector2> onHitTarget = null, bool notifyFirstTargetOnly = false)
         {
             _onHitTarget = onHitTarget;
+            _notifyFirstTargetOnly = notifyFirstTargetOnly;
+            _targetNotified = false;
             _direction = direction.normalized;
             _speed = speed;
             SlowFactor = 1f;
@@ -132,7 +136,11 @@ namespace HistoryHeroes.Combat
             if (hit.collider.TryGetComponent(out Health health) && health.TryTakeDamage(_damage, out float dealt))
             {
                 _onHit?.Invoke(_damage, dealt);
-                _onHitTarget?.Invoke(health, hit.centroid);
+                if (!_notifyFirstTargetOnly || !_targetNotified)
+                {
+                    _onHitTarget?.Invoke(health, hit.centroid);
+                    _targetNotified = true;
+                }
             }
 
             if (_pierceLeft <= 0)

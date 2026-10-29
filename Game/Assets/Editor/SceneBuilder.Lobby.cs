@@ -60,7 +60,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(heroPanel)) props.Ref("relics", relicPanel).Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster).Ref("relics", meta != null ? meta.relics : null);
             using (var props = new Props(relicPanel)) props.Ref("shop", shopPanel);
-            using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel).Ref("opening", opening).Ref("thorTrial", LoadThorTrial());
+            using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel).Ref("opening", opening).Ref("thorTrial", LoadThorTrial()).Refs("godTrials", LoadGodTrials());
 
             using (var props = new Props(lobby))
             {
@@ -221,24 +221,33 @@ namespace HistoryHeroes.EditorTools
             var screen = holder.AddComponent<BossIntroPanel>();
 
             TMP_Text title = Label("Title", panel, "보스", 68, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 770f), new Vector2(900f, 100f));
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 680f), new Vector2(900f, 100f));
             Button normalTab = Btn("NormalBossTab", panel, "기존 보스", new Vector2(-260f, 890f), new Vector2(470f, 90f), ButtonBlue, out _);
             Button trialTab = Btn("GodTrialTab", panel, "신의 시련", new Vector2(260f, 890f), new Vector2(470f, 90f), ButtonBlue, out _);
+            var trialButtons = new Button[3];
+            var trialLabels = new TMP_Text[3];
+            string[] trialNames = { "TrialThor", "TrialAnubis", "TrialZeus" };
+            string[] trialTitles = { "토르", "아누비스", "제우스" };
+            for (int i = 0; i < trialButtons.Length; i++)
+            {
+                trialButtons[i] = Btn(trialNames[i], panel, trialTitles[i], new Vector2(-340f + i * 340f, 775f), new Vector2(320f, 90f), ButtonBlue, out trialLabels[i]);
+                trialLabels[i].fontSize = 25f;
+            }
             TMP_Text tests = Label("Tests", panel, "", 32, TextAlignmentOptions.Center);
-            Place(tests.rectTransform, Center, Center, new Vector2(0f, 670f), new Vector2(980f, 90f));
+            Place(tests.rectTransform, Center, Center, new Vector2(0f, 570f), new Vector2(980f, 90f));
             TMP_Text recommend = Label("Recommend", panel, "", 28, TextAlignmentOptions.Center, new Color(0.7f, 0.9f, 1f));
-            Place(recommend.rectTransform, Center, Center, new Vector2(0f, 590f), new Vector2(980f, 70f));
-            Button weeklyGoal = Btn("ChooseGodGoal", panel, "주간 목표 선택", new Vector2(0f, 510f), new Vector2(920f, 70f), ButtonBlue, out TMP_Text weeklyLabel);
+            Place(recommend.rectTransform, Center, Center, new Vector2(0f, 500f), new Vector2(980f, 70f));
+            Button weeklyGoal = Btn("ChooseGodGoal", panel, "주간 목표 선택", new Vector2(0f, 420f), new Vector2(920f, 70f), ButtonBlue, out TMP_Text weeklyLabel);
             weeklyLabel.fontSize = 25;
             TMP_Text pick = Label("Pick", panel, "싸울 기록을 고르세요 (기록은 이겨도 져도 사라지지 않아요)", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(pick.rectTransform, Center, Center, new Vector2(0f, 452f), new Vector2(1000f, 44f)); // 탭이 생긴 뒤 1번 칸에 가려졌다 → 칸을 내림
+            Place(pick.rectTransform, Center, Center, new Vector2(0f, 355f), new Vector2(1000f, 44f));
 
             var buttons = new Button[3];
             var backgrounds = new Image[3];
             var labels = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
             {
-                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 328f - i * 240f), new Vector2(980f, 196f), RowColor, out TMP_Text label);
+                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 250f - i * 240f), new Vector2(980f, 196f), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
                 label.fontSize = 27;
                 label.alignment = TextAlignmentOptions.MidlineLeft;
@@ -247,7 +256,7 @@ namespace HistoryHeroes.EditorTools
                 labels[i] = label;
             }
 
-            Button temp = Btn("Temp", panel, "", new Vector2(0f, -385f), new Vector2(980f, 210f), ButtonBlue, out TMP_Text tempLabel);
+            Button temp = Btn("Temp", panel, "", new Vector2(0f, -440f), new Vector2(980f, 210f), ButtonBlue, out TMP_Text tempLabel);
             Image tempBackground = temp.GetComponent<Image>();
             tempLabel.fontSize = 27;
             tempLabel.alignment = TextAlignmentOptions.MidlineLeft;
@@ -263,7 +272,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("testsLabel", tests).Ref("recommendLabel", recommend)
-                    .Ref("normalTab", normalTab).Ref("trialTab", trialTab).Ref("weeklyGoalButton", weeklyGoal).Ref("weeklyGoalLabel", weeklyLabel)
+                    .Ref("normalTab", normalTab).Ref("trialTab", trialTab).Refs("trialButtons", trialButtons).Refs("trialLabels", trialLabels).Ref("weeklyGoalButton", weeklyGoal).Ref("weeklyGoalLabel", weeklyLabel)
                     .Refs("slotButtons", buttons).Refs("slotBackgrounds", backgrounds).Refs("slotLabels", labels)
                     .Ref("tempButton", temp).Ref("tempBackground", tempBackground).Ref("tempLabel", tempLabel)
                     .Ref("startButton", start).Ref("startLabel", startLabel).Ref("backButton", back).Ref("practiceButton", practice).Ref("database", database);

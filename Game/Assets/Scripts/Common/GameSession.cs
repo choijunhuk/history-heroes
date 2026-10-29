@@ -29,7 +29,7 @@ namespace HistoryHeroes.Common
         /// <summary>보스전에 쓸 기록 ID</summary>
         public static string BossRecordId { get; private set; }
 
-        /// <summary>신의 시련은 기존 보스 모드·1구간 경기장을 쓰고 진행과 보상만 나눈다.</summary>
+        /// <summary>신의 시련은 기존 보스 모드·해당 구간 경기장을 쓰고 진행과 보상만 나눈다.</summary>
         public static string GodTrialId { get; private set; }
         public static bool IsGodTrial => !string.IsNullOrEmpty(GodTrialId);
 
@@ -47,7 +47,7 @@ namespace HistoryHeroes.Common
             ClearSpecialRun();
             GodTrialId = trialId;
             Mode = BattleMode.Boss;
-            Chapter = 1;
+            Chapter = Modes.GodTrialRules.Find(trialId).ArenaChapter;
             BossRecordId = recordId;
             Practice = practice;
             HeartSpent = false;
