@@ -68,12 +68,23 @@ namespace HistoryHeroes.Records
         }
 
         /// <summary>보관함 칸에 쓰는 여러 줄 설명</summary>
-        public static string Details(RunRecord record, SkillDatabase database)
+        /// <param name="maxSkills">스킬 줄을 이만큼만 (레벨 높은 순) + "외 N개". 보관함 카드처럼 좁은 곳용 (전체 UI 검토 9번)</param>
+        public static string Details(RunRecord record, SkillDatabase database, int maxSkills = int.MaxValue)
         {
             if (record == null) return "비어 있어요";
             RecordValidator.Result checkedBuild = RecordValidator.Validate(record, database);
             var sb = new StringBuilder();
-            List<string> lines = SkillLines(checkedBuild.Skills, database);
+            var shown = new List<RecordSkill>(checkedBuild.Skills);
+            int hidden = 0;
+            if (shown.Count > maxSkills)
+            {
+                shown.Sort((a, b) => b.level.CompareTo(a.level));
+                hidden = shown.Count - maxSkills;
+                shown.RemoveRange(maxSkills, hidden);
+            }
+
+            List<string> lines = SkillLines(shown, database);
+            if (hidden > 0) lines.Add($"외 {hidden}개");
             sb.AppendLine(RecordStrength.Of(checkedBuild.Skills, database).Bar()); // 강점 막대 (조사 A8)
             sb.AppendLine(lines.Count > 0 ? string.Join(" · ", lines) : "스킬 없음 (기본 공격만)");
             sb.Append($"비용 {checkedBuild.Cost} / {record.capacity}pt");

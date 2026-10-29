@@ -323,6 +323,23 @@ namespace HistoryHeroes.Tests
             new RunRecord { id = id, slot = slot, heroId = "khan", capacity = 27, createdAt = "2026-10-29T00:00:00Z" };
 
         [Test]
+        public void Details_CardShowsTopFourSkillsByLevelPlusCount()
+        {
+            // 보관함 카드 (전체 UI 검토 9번): 레벨 높은 순 4개 + "외 N개"
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            RunRecord r = NewRecord("many", 0);
+            string[] ids = { "spin_blade", "lightning", "ice_shard", "atk_up", "aspd_up", "hp_up" };
+            int[] levels = { 1, 5, 2, 4, 3, 1 };
+            for (int i = 0; i < ids.Length; i++) r.skills.Add(new RecordSkill { id = ids[i], level = levels[i] });
+
+            string card = RecordFormat.Details(r, db, 4);
+            StringAssert.Contains("외 2개", card);
+            StringAssert.Contains(db.Find("lightning").displayName, card); // Lv5는 남는다
+            StringAssert.DoesNotContain(db.Find("spin_blade").displayName, card); // Lv1은 빠진다
+            StringAssert.DoesNotContain("외 ", RecordFormat.Details(r, db)); // 기본은 전부
+        }
+
+        [Test]
         public void Load_OldJsonWithoutTempOrLock_KeepsNumberedRecordUnlocked()
         {
             var store = new SaveStore(_folder);

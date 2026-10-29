@@ -67,6 +67,9 @@ namespace HistoryHeroes.UI
             }
         }
 
+        /// <summary>보관함 카드엔 대표 스킬 4개만 (레벨 높은 순), 나머지는 "외 N개" — 전체 UI 검토 9번</summary>
+        private const int CardSkills = 4;
+
         private void Render()
         {
             SaveData data = SaveSystem.Data;
@@ -78,7 +81,7 @@ namespace HistoryHeroes.UI
 
                 RunRecord record = data.RecordInSlot(i);
                 slotTitles[i].text = record != null ? RecordFormat.Title(record, database) : $"{i + 1}번 칸";
-                slotDetails[i].text = record != null ? RecordFormat.Details(record, database) : "비어 있어요. 던전을 끝내면 기록을 남길 수 있어요.";
+                slotDetails[i].text = record != null ? RecordFormat.Details(record, database, CardSkills) : "비어 있어요. 던전을 끝내면 기록을 남길 수 있어요.";
                 deleteButtons[i].gameObject.SetActive(record != null && !record.locked);
                 deleteLabels[i].text = _confirmSlot == i ? "한 번 더 누르면 지워요" : "지우기";
                 if (lockButtons != null && i < lockButtons.Length) lockButtons[i].gameObject.SetActive(record != null);
@@ -87,7 +90,7 @@ namespace HistoryHeroes.UI
 
             RunRecord temp = data.TempRecord;
             if (tempTitle != null) tempTitle.text = temp != null ? "임시 칸 · " + RecordFormat.Title(temp, database) : "임시 칸 · 비어 있음";
-            if (tempDetails != null) tempDetails.text = temp != null ? RecordFormat.Details(temp, database) : "보관함이 찼을 때 새 기록 하나를 둘 수 있어요.";
+            if (tempDetails != null) tempDetails.text = temp != null ? RecordFormat.Details(temp, database, CardSkills) : "보관함이 찼을 때 새 기록 하나를 둘 수 있어요.";
             if (moveTempButton != null) moveTempButton.gameObject.SetActive(temp != null && data.FirstFreeSlot() >= 0);
         }
 
