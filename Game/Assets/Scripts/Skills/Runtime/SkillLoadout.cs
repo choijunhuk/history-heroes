@@ -13,6 +13,11 @@ namespace HistoryHeroes.Skills
         private readonly HashSet<SkillData> _consumedMaterials = new HashSet<SkillData>();
         private readonly HashSet<FusionRecipe> _completedFusions = new HashSet<FusionRecipe>();
         private readonly HashSet<FusionRecipe> _hiddenThisRun = new HashSet<FusionRecipe>();
+        private readonly HashSet<string> _bannedSkillIds = new HashSet<string>();
+
+        public const int BansPerRun = 2;
+        public int BansLeft { get; private set; } = BansPerRun;
+        public IEnumerable<string> BannedSkillIds => _bannedSkillIds;
 
         public int ActiveSlots { get; }
         public int PassiveSlots { get; }
@@ -67,5 +72,31 @@ namespace HistoryHeroes.Skills
         /// <summary>조합 카드의 "이번 판에서 숨기기"</summary>
         public void Hide(FusionRecipe recipe) => _hiddenThisRun.Add(recipe);
         public bool IsHidden(FusionRecipe recipe) => _hiddenThisRun.Contains(recipe);
+
+        /// <summary>가진 스킬의 효과는 남기고, 이번 판의 신규·레벨업 후보에서만 뺀다.</summary>
+        public bool TryBan(SkillCard card)
+        {
+            if (card == null || (card.Type != CardType.NewSkill && card.Type != CardType.LevelUp)
+                || card.Skill == null || string.IsNullOrEmpty(card.Skill.id) || BansLeft <= 0) return false;
+            if (!_bannedSkillIds.Add(card.Skill.id)) return false;
+            BansLeft--;
+            return true;
+        }
+
+        public bool IsBanned(SkillData skill) => skill != null && _bannedSkillIds.Contains(skill.id);
+
+        public void RestoreBans(IEnumerable<string> ids, int left)
+        {
+            _bannedSkillIds.Clear();
+            if (ids != null)
+            {
+                foreach (string id in ids)
+                {
+                    if (!string.IsNullOrEmpty(id)) _bannedSkillIds.Add(id);
+                }
+            }
+
+            BansLeft = System.Math.Clamp(left, 0, BansPerRun);
+        }
     }
 }

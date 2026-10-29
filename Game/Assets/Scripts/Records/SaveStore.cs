@@ -360,6 +360,19 @@ namespace HistoryHeroes.Records
                 data.titles = new List<string>();
             }
 
+            if (data.schemaVersion < 6)
+            {
+                // 5 → 6: 옛 판에는 빼기 이력이 없으므로 무료 횟수를 전부 준다.
+                data.targetRecipes = new List<string>();
+                data.run ??= new RunSnapshot();
+                data.run.bannedSkillIds = new List<string>();
+                data.run.bansLeft = Skills.SkillLoadout.BansPerRun;
+                data.rift ??= new RiftSave();
+                data.rift.checkpoint ??= new RiftCheckpoint();
+                data.rift.checkpoint.bannedSkillIds = new List<string>();
+                data.rift.checkpoint.bansLeft = Skills.SkillLoadout.BansPerRun;
+            }
+
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -368,6 +381,10 @@ namespace HistoryHeroes.Records
         {
             data.records ??= new List<RunRecord>();
             data.discoveredRecipes ??= new List<string>();
+            data.targetRecipes ??= new List<string>();
+            var targetIds = new HashSet<string>();
+            data.targetRecipes.RemoveAll(id => string.IsNullOrEmpty(id) || !data.discoveredRecipes.Contains(id) || !targetIds.Add(id));
+            if (data.targetRecipes.Count > 2) data.targetRecipes.RemoveRange(2, data.targetRecipes.Count - 2);
             data.defeatedBosses ??= new List<string>();
             data.stars ??= new List<string>();
             data.items ??= new List<ItemCount>();
@@ -434,6 +451,9 @@ namespace HistoryHeroes.Records
             data.rift.checkpoint ??= new RiftCheckpoint();
             data.rift.checkpoint.skills ??= new List<RecordSkill>();
             data.rift.checkpoint.boosts ??= new List<int>();
+            data.rift.checkpoint.bannedSkillIds ??= new List<string>();
+            data.rift.checkpoint.bannedSkillIds.RemoveAll(string.IsNullOrEmpty);
+            data.rift.checkpoint.bansLeft = Math.Clamp(data.rift.checkpoint.bansLeft, 0, Skills.SkillLoadout.BansPerRun);
             data.attendance ??= new AttendanceSave();
             data.newcomer ??= new NewcomerSave();
             data.newcomer.counts ??= new List<NamedCount>();
@@ -450,6 +470,9 @@ namespace HistoryHeroes.Records
             data.run.consumed ??= new List<string>();
             data.run.completedFusions ??= new List<string>();
             data.run.hiddenFusions ??= new List<string>();
+            data.run.bannedSkillIds ??= new List<string>();
+            data.run.bannedSkillIds.RemoveAll(string.IsNullOrEmpty);
+            data.run.bansLeft = Math.Clamp(data.run.bansLeft, 0, Skills.SkillLoadout.BansPerRun);
             data.dailyChallenge ??= new DailySave();
             data.dailyChallenge.history ??= new List<DailyResult>();
             data.dailyChallenge.history.RemoveAll(h => h == null);

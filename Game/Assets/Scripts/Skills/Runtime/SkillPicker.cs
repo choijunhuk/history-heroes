@@ -27,7 +27,7 @@ namespace HistoryHeroes.Skills
             var candidates = new List<SkillCard>();
             foreach (SkillData skill in pool)
             {
-                if (skill == null || !skill.IsAvailableFor(heroId) || loadout.IsConsumed(skill)) continue;
+                if (skill == null || !skill.IsAvailableFor(heroId) || loadout.IsConsumed(skill) || loadout.IsBanned(skill)) continue;
 
                 SkillInstance owned = loadout.Find(skill);
                 if (owned != null)
@@ -46,13 +46,24 @@ namespace HistoryHeroes.Skills
             // 조합 결과는 풀에 없지만 레벨업은 된다 (합체 결과 Lv2 +25%, Lv3 +50% — Skills.md 4-2)
             foreach (SkillInstance owned in loadout.Actives)
             {
-                if (owned.IsFusionResult && !owned.IsMaxLevel)
+                if (owned.IsFusionResult && !owned.IsMaxLevel && !loadout.IsBanned(owned.Data))
                 {
                     candidates.Add(new SkillCard { Type = CardType.LevelUp, Skill = owned.Data, NextLevel = owned.Level + 1 });
                 }
             }
 
             return candidates;
+        }
+
+        /// <summary>고른 카드 한 장만 빼고 바꾼다. 나머지 카드와 등급·룬 추첨 규칙은 그대로 둔다.</summary>
+        public static bool TryBanAndReplace(SkillLoadout loadout, IEnumerable<SkillData> pool, string heroId,
+            List<SkillCard> current, int index, int floor, RarityTable rarityTable, IWeightModifier modifier = null)
+        {
+            if (current == null || index < 0 || index >= current.Count || !loadout.TryBan(current[index])) return false;
+            List<SkillCard> candidates = BuildCandidates(loadout, pool, heroId);
+            ExcludeShown(candidates, current);
+            current[index] = PickSkills(candidates, 1, floor, rarityTable, modifier, loadout)[0];
+            return true;
         }
 
         /// <summary>

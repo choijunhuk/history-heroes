@@ -620,14 +620,16 @@ namespace HistoryHeroes.EditorTools
             rerollLabel.textWrappingMode = TextWrappingModes.NoWrap;
             rerollLabel.rectTransform.offsetMin = new Vector2(14f, 0f);
             rerollLabel.rectTransform.offsetMax = new Vector2(-14f, 0f);
-            Button hide = Btn("HideFusion", panel, "이번 판 숨기기", new Vector2(220f, -400f), new Vector2(390f, 120f), new Color(0.38f, 0.25f, 0.45f), out _);
+            Button ban = Btn("Ban", panel, "빼기 (남은 2)", new Vector2(220f, -400f), new Vector2(390f, 120f), ButtonBlue, out TMP_Text banLabel);
+            Button hide = Btn("HideFusion", panel, "이번 판 숨기기", new Vector2(0f, -550f), new Vector2(390f, 100f), ButtonBlue, out _);
             TMP_Text note = Label("RerollNote", panel, "리롤은 다시 뽑을 기회일 뿐, 더 좋은 카드를 보장하지 않아요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.55f));
-            Place(note.rectTransform, Center, Center, new Vector2(0f, -500f), new Vector2(1000f, 40f));
+            Place(note.rectTransform, Center, Center, new Vector2(0f, -660f), new Vector2(960f, 90f));
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Refs("cards", cards)
-                    .Ref("rerollButton", reroll).Ref("rerollLabel", rerollLabel).Ref("hideFusionButton", hide);
+                    .Ref("rerollButton", reroll).Ref("rerollLabel", rerollLabel).Ref("hideFusionButton", hide)
+                    .Ref("banButton", ban).Ref("banLabel", banLabel).Ref("noticeLabel", note);
             }
 
             return screen;
@@ -661,6 +663,10 @@ namespace HistoryHeroes.EditorTools
             }
 
             background.raycastTarget = true;
+            var banOutline = background.gameObject.AddComponent<Outline>();
+            banOutline.effectColor = new Color(0.9f, 0.22f, 0.25f);
+            banOutline.effectDistance = new Vector2(5f, -5f);
+            banOutline.enabled = false;
             var button = card.gameObject.AddComponent<Button>();
             button.targetGraphic = background;
 
@@ -772,7 +778,7 @@ namespace HistoryHeroes.EditorTools
             {
                 props.Ref("button", button).Ref("background", background).Ref("kindBand", bandImage).Ref("kindLabel", kind)
                     .Ref("nameLabel", nameLabel).Ref("levelLabel", level).Ref("descriptionLabel", description).Ref("materialLabel", material).Ref("descriptionBox", box).Ref("hintBox", hintBox.gameObject)
-                    .Ref("frame", frame).Ref("glow", glow).Ref("iconSlot", iconSlot).Ref("icon", icon).Ref("newBadge", newBadge).Ref("pop", pop).Int("order", index)
+                    .Ref("frame", frame).Ref("banOutline", banOutline).Ref("glow", glow).Ref("iconSlot", iconSlot).Ref("icon", icon).Ref("newBadge", newBadge).Ref("pop", pop).Int("order", index)
                     .Ref("attackIcon", Icon("atk_up")).Ref("hpIcon", Icon("hp_up")).Ref("speedIcon", Icon("aspd_up")).Ref("healIcon", Icon("heal"));
             }
 
