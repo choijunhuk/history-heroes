@@ -34,7 +34,7 @@ namespace HistoryHeroes.Tests
         [Test]
         public void TrialTableKeepsOrderSourceAndPlayableGods()
         {
-            Assert.AreEqual(3, GodTrialRules.Trials.Count);
+            Assert.AreEqual(5, GodTrialRules.Trials.Count);
             Assert.AreEqual(GodTrialRules.ThorTrialId, GodTrialRules.Trials[0].Id);
             Assert.AreEqual("rift_warden", GodTrialRules.Trials[0].SourceBossId);
             Assert.AreEqual("thor", GodTrialRules.Trials[0].HeroId);

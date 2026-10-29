@@ -110,6 +110,7 @@ namespace HistoryHeroes.Player
             _lowHpActive = false;
             ApplyHeroBaseStats();
             Health.Init(Team.Player, Stats.Get(StatType.MaxHp), Stats, invulnerableDuration: 0.5f);
+            Health.Guard = BlockAthenaProjectile;
             CreateProjectilePool();
         }
 
@@ -123,6 +124,7 @@ namespace HistoryHeroes.Player
             Health = GetComponent<Health>();
             ApplyHeroBaseStats();
             Health.Init(Team.Player, Stats.Get(StatType.MaxHp), Stats, invulnerableDuration: 0.5f);
+            Health.Guard = BlockAthenaProjectile;
             Stats.Changed += OnStatsChanged;
 
             _targets = new TargetSelector(enemyMask, wallMask);
@@ -133,6 +135,8 @@ namespace HistoryHeroes.Player
 
             Stop.Moved += () => _firstShotPending = true;
             Stop.Moved += _thunder.Moved;
+            Stop.Moved += _windSlash.Moved;
+            Stop.Moved += _athenaShield.CancelPreparation;
             Stop.Moved += ResetGuardian;
             Stop.Stopped += () => _momentumUntil = Time.time + MomentumSeconds;
             Health.Damaged += OnDamagedIronclad; // 이순신 철갑
@@ -262,6 +266,7 @@ namespace HistoryHeroes.Player
             Stop.Tick(ReadInput(), dt);
             _observation.Tick(dt, Stop.IsStopped, hero);
             _reclaim.Tick(dt, Stop.IsStopped, hero);
+            _athenaShield.Tick(dt, Stop.IsStopped, Time.time, _sig.ShieldPrepareSeconds);
             if (!Stop.IsStopped) ResetGuardian();
 
             // 쿨다운은 이동 중에도 흐른다 → 멈췄다 움직이기를 반복해도 공격속도보다 빨리 쏠 수 없다.
@@ -476,6 +481,13 @@ namespace HistoryHeroes.Player
 
         private readonly ThorThunderState _thunder = new ThorThunderState();
         public int ThunderCount => _thunder.Count;
+        private readonly SusanooWindState _windSlash = new SusanooWindState();
+        public int WindSlashCount => _windSlash.Count;
+        private readonly AthenaShieldState _athenaShield = new AthenaShieldState();
+        public bool AthenaShieldReady => _athenaShield.IsReady;
+        public float AthenaShieldProgress => _athenaShield.Progress;
+        public float AthenaShieldCooldownRemaining => _athenaShield.CooldownRemaining(Time.time);
+        private readonly AthenaOwlState _owlMarks = new AthenaOwlState();
         private readonly AnubisMarkState _mark = new AnubisMarkState();
         public int MarkCount => _mark.Hits;
         public bool MarkReady => _mark.IsReady(Time.time, _sig.MarkHits);
@@ -498,6 +510,9 @@ namespace HistoryHeroes.Player
             _observation.Reset();
             _reclaim.Reset();
             _thunder.Moved();
+            _windSlash.Moved();
+            _athenaShield.CancelPreparation();
+            _owlMarks.Clear();
             _mark.Reset();
             ResetGuardian();
         }
@@ -736,7 +751,7 @@ namespace HistoryHeroes.Player
                 return;
             }
 
-            if (hero.attackKind == BasicAttackKind.MeleeArc) Slash(target);
+            if (hero.attackKind == BasicAttackKind.MeleeArc || hero.attackKind == BasicAttackKind.MeleeThrust) Slash(target);
             else Fire(target);
 
             // 나폴레옹 포병의 눈: 쏜 총알 3발마다 작은 포탄 (멀티샷이면 더 자주)
@@ -922,7 +937,20 @@ namespace HistoryHeroes.Player
 
                 bool reclaim = reclaimed && s == 0;
                 float swingCoefficient = coefficient * (reclaim ? 1f + _sig.ReclaimAttackBonus : 1f);
-                SlashOnce(origin, aim, swingCoefficient, arc, reclaim);
+                if (hero.attackKind == BasicAttackKind.MeleeThrust)
+                    ThrustOnce(origin, aim, swingCoefficient);
+                else
+                {
+                    float swingArc = arc;
+                    if (hero.windFirstArc > 0f)
+                    {
+                        SusanooWindState.SlashShape shape = _windSlash.RecordSlash(hero.windFirstArc, _sig.WindFirstCoefficient,
+                            hero.windFollowArc, _sig.WindFollowCoefficient);
+                        swingArc = shape.Arc + (Attack.Get(AttackModifierKind.Pierce) > 0 ? 40f : 0f);
+                        swingCoefficient *= shape.Coefficient;
+                    }
+                    SlashOnce(origin, aim, swingCoefficient, swingArc, reclaim);
+                }
                 if (thunder && s == 0) ThunderShockwave(origin, aim);
                 if (waveBounces > 0) FireWave(origin, aim, waveBounces);
                 if (s < swings - 1) yield return new WaitForSeconds(swingInterval);
@@ -980,6 +1008,76 @@ namespace HistoryHeroes.Player
             }
         }
 
+        /// <summary>창끝의 직선 안에 있는 적만 맞는다. 부채꼴 공격과 판정을 공유하지 않는다.</summary>
+        public static bool InSpearPath(Vector2 origin, Vector2 aim, Vector2 point, float reach, float width)
+        {
+            Vector2 to = point - origin;
+            float along = Vector2.Dot(aim, to);
+            return along >= 0f && along <= reach && Mathf.Abs(aim.x * to.y - aim.y * to.x) <= width * 0.5f;
+        }
+
+        private void ThrustOnce(Vector2 origin, Vector2 aim, float coefficient)
+        {
+            float reach = Stats.Get(StatType.Range);
+            AttackFx.Line(origin, origin + aim * reach, hero.spearWidth, slashColor, 0.16f);
+            PlayAttack(aim);
+
+            _overlap.Clear();
+            Physics2D.OverlapCircle(origin, reach, _enemyFilter, _overlap);
+            for (int i = 0; i < _overlap.Count; i++)
+            {
+                if (!_overlap[i].TryGetComponent(out Health target) || target.IsDead
+                    || !InSpearPath(origin, aim, target.transform.position, reach, hero.spearWidth)) continue;
+                DamageInfo damage = DamageCalculator.Roll(Stats, coefficient, DamageKind.BasicAttack);
+                damage.Direction = aim;
+                damage.HasDirection = true;
+                if (!target.TryTakeDamage(damage, out float dealt)) continue;
+                OnBasicAttackHit(damage, dealt);
+                ApplyOwlBonus(target);
+            }
+
+            _overlap.Clear();
+            Physics2D.OverlapCircle(origin, reach, new ContactFilter2D { useLayerMask = true, layerMask = wallMask }, _overlap);
+            for (int i = 0; i < _overlap.Count; i++)
+                if (_overlap[i].TryGetComponent(out Dungeon.IShotTarget obstacle)
+                    && InSpearPath(origin, aim, _overlap[i].transform.position, reach, hero.spearWidth)) obstacle.Hit();
+        }
+
+        private void ApplyOwlBonus(Health target)
+        {
+            if (_sig.OwlBonusCoefficient <= 0f || target.IsDead) return;
+            float coefficient = _owlMarks.BonusFor(target, target.Life, Time.time, DamageKind.BasicAttack, _sig.OwlBonusCoefficient);
+            if (coefficient <= 0f) return;
+            // 추가 타격은 따로 치명타를 굴리지 않아 기본 공격 보너스가 ★5에서도 25%를 넘지 않는다.
+            var bonus = new DamageInfo
+            {
+                Amount = Stats.Get(StatType.Attack, StatTarget.BasicAttack) * coefficient,
+                Kind = DamageKind.BasicAttack,
+                AttackerTeam = Team.Player,
+                SourceId = "sig_athena",
+            };
+            if (target.TryTakeDamage(bonus, out float dealt)) OnBasicAttackHit(bonus, dealt);
+        }
+
+        /// <summary>올빼미의 눈 발동마다 지난 표식을 버린다.</summary>
+        public void BeginOwlMarks(object owner) => _owlMarks.Begin(owner);
+
+        public void ClearOwlMarks(object owner) => _owlMarks.ClearFor(owner);
+
+        public void AddOwlMark(Health target, float duration, int maxTargets)
+        {
+            if (target != null && !target.IsDead) _owlMarks.Add(target, target.Life, Time.time, duration, maxTargets);
+        }
+
+        private DamageInfo BlockAthenaProjectile(DamageInfo info)
+        {
+            if (_sig.ShieldPrepareSeconds <= 0f || info.AttackerTeam != Team.Enemy || !info.IsProjectile
+                || !_athenaShield.TryBlock(Time.time, hero.shieldReuseSeconds)) return info;
+            info.Amount = 0f;
+            AttackFx.Burst(transform.position, 0.6f, new Color(0.85f, 0.72f, 0.4f, 0.45f), 0.18f);
+            return info;
+        }
+
         private void ReclaimSpace(Health target, Vector2 direction)
         {
             if (target.IsDead || !target.TryGetComponent(out EnemyBase enemy)) return;
@@ -1005,7 +1103,8 @@ namespace HistoryHeroes.Player
         {
             DamageInfo damage = DamageCalculator.Roll(Stats, hero.meleeWaveCoefficient, DamageKind.BasicAttack);
             Projectile p = _projectiles.Get(origin, Quaternion.identity);
-            p.Launch(aim, 12f, damage, enemyMask, wallMask, 0, bounces, _projectiles.Release, OnBasicAttackHit);
+            p.Launch(aim, 12f, damage, enemyMask, wallMask, 0, bounces, _projectiles.Release, OnBasicAttackHit,
+                onHitTarget: _sig.OwlBonusCoefficient > 0f ? (target, _) => ApplyOwlBonus(target) : null);
         }
 
         // ---------------------------------------------------------------- 흡혈
@@ -1034,7 +1133,8 @@ namespace HistoryHeroes.Player
 
         /// <summary>다른 투사체 프리팹으로 쏜다 (얼음 파편 등, 프리팹마다 풀을 따로 둔다)</summary>
         public void LaunchSkillProjectile(Projectile prefab, Vector2 origin, Vector2 direction, float speed, DamageInfo damage, int pierce,
-            System.Action<Health, Vector2> onHitTarget, object owner = null)
+            System.Action<Health, Vector2> onHitTarget, object owner = null, float maxDistance = float.PositiveInfinity,
+            bool hitOncePerTarget = false)
         {
             if (!_extraPools.TryGetValue(prefab, out ComponentPool<Projectile> pool))
             {
@@ -1044,7 +1144,8 @@ namespace HistoryHeroes.Player
 
             Projectile p = pool.Get(origin, Quaternion.identity);
             Track(p, owner, pool);
-            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, ReleaseFor(pool), null, 0f, onHitTarget);
+            p.Launch(direction, speed, damage, enemyMask, wallMask, pierce, 0, ReleaseFor(pool), null, 0f, onHitTarget,
+                maxDistance: maxDistance, hitOncePerTarget: hitOncePerTarget);
         }
 
         /// <summary>스킬이 조합 재료로 사라지거나 기록을 다시 불러올 때, 그 스킬이 쏜 투사체를 모두 거둔다 (12-2 정리 계약)</summary>

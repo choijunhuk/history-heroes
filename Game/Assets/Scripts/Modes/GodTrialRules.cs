@@ -13,6 +13,10 @@ namespace HistoryHeroes.Modes
         public const string AnubisTrialId = "anubis_trial";
         public const string AnubisHeroId = "anubis";
         public const string ZeusTrialId = "zeus_trial";
+        public const string SusanooTrialId = "susanoo_trial";
+        public const string SusanooHeroId = "susanoo";
+        public const string AthenaTrialId = "athena_trial";
+        public const string AthenaHeroId = "athena";
         public const int UnlockShards = 30;
         public const int FirstClearShards = 10;
         public const int WeeklyShards = 5;
@@ -23,6 +27,8 @@ namespace HistoryHeroes.Modes
             new GodTrialDefinition(ThorTrialId, 1, 1, "rift_warden", ThorHeroId, "토르", ThorTitle, FirstClearShards),
             new GodTrialDefinition(AnubisTrialId, 2, 2, "wraith_lord", AnubisHeroId, "아누비스", "저울의 증인", 10),
             new GodTrialDefinition(ZeusTrialId, 3, 3, "steel_colossus", null, "제우스", "하늘의 증인", 0),
+            new GodTrialDefinition(SusanooTrialId, 4, 4, "shadow_twins", SusanooHeroId, "스사노오", "바람의 증인", FirstClearShards),
+            new GodTrialDefinition(AthenaTrialId, 5, 5, "oblivion_king", AthenaHeroId, "아테나", "지혜의 증인", FirstClearShards),
         };
 
         public static IReadOnlyList<GodTrialDefinition> Trials { get; } = Array.AsReadOnly(Definitions);

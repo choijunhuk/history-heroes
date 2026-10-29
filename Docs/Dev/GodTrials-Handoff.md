@@ -120,3 +120,117 @@
 - `Game/Assets/Tests/EditMode/GodTrialExpansionTests.cs.meta` — 대응 C# 파일의 새 GUID. 파일과 함께 반영한다.
 - `Game/Assets/Tests/EditMode/JeanneTests.cs` — 기존 명단 순서 뒤에 아누비스를 추가하는 정확한 비교 유지.
 - `Game/Assets/Tests/EditMode/SeondeokTests.cs` — 영웅·미션 명단의 정확한 14명 비교 유지.
+
+## 시련 4·5·플레이 스사노오/아테나 구현 계획 (2026-10-29)
+
+- 가지 `feature/gods-final`, 생성 에셋·폰트·Unity 실행·커밋은 이번 작업에서 제외한다.
+- 시련 표·기존 패턴·보상 경로, 플레이 전투, 외형·대사·명단을 파일 소유 범위로 나눠 구현한다. 문서·통합 검사·인계는 리더가 맡는다.
+- 기존 그림자 쌍둥이는 실제로 공유 체력과 그림자다. 스사노오 시련에만 두 형상 처치 상태를 추가하고 기존 AI와 원형 설정은 보존한다.
+- 수치·기술 기준은 GodsVsHumanity 3·4장과 Heroes 6-11·6-12에 먼저 기록한다. 검증 전 시작값이며 화면·밸런스 통과 표시가 아니다.
+- 순수 EditMode 검사 작성, 별도 C# 정적 컴파일과 가능한 관리 코드 검사, 기존 검사 보존·금지 경로·메타·공백 검사를 수행한다.
+
+## 시련 4·5 최종 인계 (2026-10-29, feature/gods-final)
+
+### 구현과 단순화
+
+- 시련 4 스사노오 합계 HP **112,800**(각 56,400)·공격 **153**, 시련 5 아테나 HP **120,000**·공격 **156**. 아테나는 최고 체력과 복합 패턴으로 마지막 난도를 맡고, 공격력은 왕의 162보다 낮다. 공격 뒤 빈틈은 최소 **1.8초**다.
+- 플레이 스사노오 **1,200/110/공속 1.0**, 아테나 **1,250/108/공속 0.9**. 인간 전사 범위이며 별도 성장 배율은 없다. 상세 이유는 GodsVsHumanity·Heroes에 있다.
+- 기존 시련 표·성장·조각·공유 보상 상한을 재사용했다. 저장 구조 9·재화·의존성·일반 보스의 기본 패턴 설정은 늘리지 않았다. 생성 에셋은 빌더 코드만 작성했다.
+- 원형 그림자 쌍둥이는 공유 체력이다. 스사노오 시련에만 두 형상 체력을 추가했다. 한 형상이 쓰러진 뒤에도 남은 형상의 Health/Life를 보존해 표식이 다른 몸에 넘어가지 않는다. HUD는 합계 체력, 자동 표적은 열린 형상만 본다.
+- 독립 검토에서 찾은 최종 피해 증폭 후 과처치·닫힌 형상 오표적·표식/상태 이상·빈틈 고리·검기 반복 관통을 수정했다. 제한 재검토에서 남은 지적은 없었다. Unity 실행 통과 판정은 아니다.
+- 기존 검사에서 바뀐 것은 정확한 명단 14→16·여성 4→5와 시련 개수 3→5 비교뿐이다. 기존 토르 규칙·세션·전투/아누비스 전투 검사의 내용은 보존했다. 두 신규 신의 해금 전 경제 제외는 공통 IsGod 경로를 사용한다.
+
+### 최종 검증과 한계
+
+- PASS: Unity 6000.3.27f1 설치본 모듈 DLL 참조로 Runtime **271**·Editor **41**·EditMode 검사 **48** C# 파일 정적 컴파일, 오류 **0**. 런타임 직렬화 필드·기존 API 관련 경고 등 **662**개는 남아 있다. 참조 패키지는 설치본 URP 템플릿 **17.0.14**이므로 프로젝트 **17.3.0**의 실제 Unity 컴파일을 대신하지 않는다.
+- PASS: 엔진 호출이 없는 기존/신규 NUnit 검사 메서드 **49개**를 관리 코드에서 직접 실행, 실패 **0**. 정지 베기·방패 준비/취소/8초·기본 공격 전용 표식/최대 3체·표식 소유자·두 몸 처치·시련 순서/보상/주간/환급/조각·외형 정의·대사 포함. 전체 NUnit runner를 실행했다는 뜻이 아니다.
+- NOT_RUN: Unity Editor 컴파일·전체 EditMode runner, ScriptableObject/JsonUtility/물리·실제 Health 생성이 필요한 검사. 특히 새 `GodTrialsFinalHealthTests`의 최종 피해 제한·전달 검사와 `ProjectileWaveTests`의 겹친 적 관통 검사는 리드가 Editor에서 실행한다. 첫 관리 검사 시도에 섞인 ScriptableObject 검사는 엔진 호출 불가로 중단됐고, 이후 관리 코드만 별도로 선별했다. 해당 검사를 통과로 세지 않았다.
+- PASS: 소스/문서 공백 검사, 새 C# **15개**와 `.meta` **15개**의 GUID 형식·중복 검사, 금지 경로/생성 `.unity`·`.prefab`·`.asset`/폰트 SDF 변경 없음. LFS 필터를 끄면 수정으로 보이는 기존 바이너리 **152개**는 SHA-256이 HEAD 포인터와 모두 같다.
+- PASS: 다섯 탭 사각형 좌표 확인. 폭 184·간격 10, y 780±45. 위 탭과 20px, 제목과 5px 간격이다. 기록 안내 하단 336과 첫 칸 상단 333은 3px 간격이다. 실제 글자 줄바꿈·폰 가독성은 NOT_RUN이다.
+- NOT_RUN: `visual-verdict` 화면 비교. 이미지가 없어 점수를 매기지 않았다. `.omx/state/gods-final/ralph-progress.json`에 NOT_RUN 사유를 남겼다.
+- 임시 검증 근거: `/tmp/history-heroes-gods-final-check/`의 `compile.py`, `manifest.json`, 어셈블리 로그, `managed-tests.cs`·로그, `source-check.py`·결과. 이 경로는 로컬 임시 파일이며 저장소에 포함되지 않는다.
+- Unity를 실행하거나 커밋하지 않았다.
+
+### 리드가 확인할 순서와 남은 위험
+
+1. Play를 멈춘 상태에서 Unity 컴파일 → `Art3DCharacters.BuildAll()` → `SceneBuilder.BuildAll()` → 생성 에셋·메타 확인 → 전체 EditMode 실행. 생성 명단을 갱신하기 전에는 16명 명단 검사가 옛 에셋 때문에 실패한다.
+2. 스사노오 두 형상은 각각 처치하되, 한 몸 먼저 처치·둘째 먼저 처치·과피해·사냥매/아누비스/아테나 표식·빙결/둔화·체력 단계·패배/재시작을 화면에서 확인한다. 아테나에는 왕의 보호막을 붙이지 않는다.
+3. 첫 보상 각 10·네 신 합산 주5·시련별 일5 환급·보스 합산 반복 일3·30개 소비 해금·본인/빌린/연습·임시/잠금 기록·앱 중단 복구를 확인한다.
+4. 같은 인간 빌드로 시련 4·5를 비교해 아테나가 가장 어렵고, 공격 뒤 근접 1~2타·2~3분 완주·기본 공격 비중·저사양 성능이 맞는지 확인한다.
+5. 아테나 `Enemy_TowerShield`는 기존 외형 API가 소품별 축소를 지원하지 않아 생략했다. `Hair_Buns`는 유지했으므로 `Athena_Helmet`과의 겹침은 화면에서 판단한다. 등록된 창 전용 찌르기 동작이 없어 `Sword_Regular_A`를 사용했다. 창의 실제 직선 판정과 보이는 동작, 여자 손/머리 기준 소품 위치를 확인한다. 스사노오의 긴 머리·검도 확인한다.
+
+### 이번 묶음 파일별 변경 (한 파일 한 줄)
+
+- `Docs/Design/Economy.md` — 두 신 첫 조각·칭호·30개 해금과 네 신 주간 상한, 다섯 시련 반복·환급 규칙.
+- `Docs/Design/GodsVsHumanity.md` — 시련 4·5와 두 영웅의 확정 시작 수치·이유·구현 상태·외형 한계.
+- `Docs/Design/Heroes.md` — 15·16번째 전사·대표 효과·별 강화·성장·체험·외형.
+- `Docs/Design/Modes.md` — 시련 순차 개방·두 형상/복합전·기록·보상·다섯 탭.
+- `Docs/Design/Skills.md` — 바람 베기·폭풍의 길·올빼미의 눈·수호자의 시선과 레시피·비용.
+- `Docs/Design/Story.md` — 신화·각색을 나눈 두 줄 시련 소개·각 영웅 7상황 대사.
+- `Docs/Design/StorySources.md` — 박물관의 검·오로치와 창·투구 상징 출처, 게임 창작의 경계.
+- `Docs/Design/Systems.md` — 시련 1~5·플레이 신 4명 코드 작성과 Unity 확인 전 상태.
+- `Docs/Dev/GodTrials-Handoff.md` — 이번 묶음의 변경·검증·남은 확인·파일별 인계.
+- `Docs/GameDesign.md` — 영웅 16명 개요와 v4.36 변경 이력.
+- `Docs/TODO.md` — 작성/정적 검사 완료와 리드의 Unity·화면 확인을 구분.
+- `Game/Assets/Editor/Art3DCharacters.cs` — 두 영웅과 시련 공유 외형·스사노오 두 번째 형상 조립.
+- `Game/Assets/Editor/AthenaDefinition.cs` — 아테나 능력치·별 강화·표식 기술·진화 수치.
+- `Game/Assets/Editor/AthenaDefinition.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Editor/SceneBuilder.Bosses.cs` — 시련 4·5 데이터·두 형상·아테나 복합 패턴 프리팹 생성 코드.
+- `Game/Assets/Editor/SceneBuilder.Data.cs` — 영웅 16명·전용 스킬 4개·진화 2개 등록과 동작 연결.
+- `Game/Assets/Editor/SceneBuilder.Lobby.cs` — 다섯 시련 탭과 제목·설명·기록 안내 간격.
+- `Game/Assets/Editor/SceneBuilder.Missions.cs` — 생성 미션 명단에 스사노오·아테나를 끝에 추가.
+- `Game/Assets/Editor/SceneBuilder.Prefabs.cs` — 직선 검기와 두 전용 액티브·진화 동작 프리팹 생성 코드.
+- `Game/Assets/Editor/SusanooDefinition.cs` — 스사노오 능력치·베기 단계·검기 기술·진화 수치.
+- `Game/Assets/Editor/SusanooDefinition.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Scripts/Combat/Damage.cs` — 적 탄 한 발 차단을 위한 실제 투사체 정보.
+- `Game/Assets/Scripts/Combat/Health.cs` — 피격 무적 뒤 차단, 두 형상 피해 전달과 최종 피해 제한.
+- `Game/Assets/Scripts/Combat/Projectile.cs` — 거리 제한·검기 한 대상 한 번 명중·정적 버퍼 초기화와 기존 탄 기본값 보존.
+- `Game/Assets/Scripts/Enemy/Bosses/OblivionKingBoss.cs` — 왕의 기존 공격만 사용하는 아테나 설정·매 공격 뒤 빈틈.
+- `Game/Assets/Scripts/Enemy/Bosses/ShadowTrialForm.cs` — 두 번째 형상의 표적·생명·상태 이상과 보스 단계 연결.
+- `Game/Assets/Scripts/Enemy/Bosses/ShadowTrialForm.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Scripts/Enemy/Bosses/ShadowTwinTrialState.cs` — 두 형상의 독립 잔여 체력과 모두 처치 조건.
+- `Game/Assets/Scripts/Enemy/Bosses/ShadowTwinTrialState.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Scripts/Enemy/Bosses/ShadowTwinsBoss.cs` — 스사노오 전용 두 몸 교대·피해 한도·남은 형상 유지, 원형 기본값 보존.
+- `Game/Assets/Scripts/Enemy/EnemyBase.cs` — 열린 형상만 공통 자동 표적 목록에 등록하는 작은 진입점.
+- `Game/Assets/Scripts/Enemy/Gimmicks/ShadowMarksGimmick.cs` — 실제 열린 형상 위치를 노려 기존 표식을 해제.
+- `Game/Assets/Scripts/Heroes/AthenaOwlState.cs` — 생명·소유자·기한을 나눈 최대 3표식과 기본 공격 보너스.
+- `Game/Assets/Scripts/Heroes/AthenaOwlState.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Scripts/Heroes/AthenaShieldState.cs` — 정지 준비·이동 취소와 성공 뒤 8초 재사용 상태.
+- `Game/Assets/Scripts/Heroes/AthenaShieldState.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Scripts/Heroes/HeroData.cs` — 두 영웅의 조정 필드와 직선 창 공격 종류.
+- `Game/Assets/Scripts/Heroes/HeroSignature.cs` — 두 영웅의 ★3·★5 수치와 성장 안내.
+- `Game/Assets/Scripts/Heroes/SusanooWindState.cs` — 첫 베기/후속 베기와 이동 초기화의 순수 상태.
+- `Game/Assets/Scripts/Heroes/SusanooWindState.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Scripts/Missions/MissionTable.cs` — 기본 명단의 기존 순서를 보존해 16명으로 확장.
+- `Game/Assets/Scripts/Modes/BossRun.cs` — 아테나 시련에 왕의 보호막 기믹을 붙이지 않음.
+- `Game/Assets/Scripts/Modes/GodTrialRules.cs` — 기존 시련 표 뒤에 스사노오·아테나와 칭호·첫 조각 추가.
+- `Game/Assets/Scripts/Player/HeroSignatureHud.cs` — 베기 단계와 방패 준비 상태를 기존 머리 위 표시로 전달.
+- `Game/Assets/Scripts/Player/PlayerController.cs` — 베기·직선 창·한 발 차단·기본 공격 표식·중앙 초기화와 스킬 투사체 연결.
+- `Game/Assets/Scripts/Skills/Data/ActiveSkillData.cs` — 검기 길이·속도·간격·밀침의 조정 필드.
+- `Game/Assets/Scripts/Skills/Effects/OwlEyeBehaviour.cs` — 가까운 1/3체 표식·시각 표시·소유자별 제거.
+- `Game/Assets/Scripts/Skills/Effects/OwlEyeBehaviour.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Scripts/Skills/Effects/WindSlashBehaviour.cs` — 한 방향 검기 1/3파와 공통 밀침·피해 중복 방지 옵션.
+- `Game/Assets/Scripts/Skills/Effects/WindSlashBehaviour.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Scripts/Story/GodTrialIntro.cs` — 두 시련의 건너뛸 수 있는 두 줄 소개.
+- `Game/Assets/Scripts/Story/StoryLines.cs` — 두 영웅의 7상황 한국어 창작 대사.
+- `Game/Assets/Scripts/UI/BossIntroPanel.cs` — 아테나의 제거된 보호막 기믹 안내도 숨김.
+- `Game/Assets/Scripts/UI/CodexPanel.cs` — 신화·각색과 인류 동행 이유.
+- `Game/Assets/Scripts/UI/SkillCardView.cs` — 표식의 탐색 거리 성장을 피해 범위와 구분해 표시.
+- `Game/Assets/Tests/EditMode/AthenaCombatTests.cs` — 정지·이동·재사용·창 경로·표식/소유자·전용 진화 검사.
+- `Game/Assets/Tests/EditMode/AthenaCombatTests.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Tests/EditMode/BoudicaTests.cs` — 정확한 명단 14→16·여성 4→5 비교만 확장.
+- `Game/Assets/Tests/EditMode/CleopatraTests.cs` — 정확한 명단 14→16·여성 4→5 비교만 확장.
+- `Game/Assets/Tests/EditMode/GodFinalPresentationTests.cs` — 새 외형·소품·16명 순서·시련 소개와 7상황 대사 검사.
+- `Game/Assets/Tests/EditMode/GodFinalPresentationTests.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Tests/EditMode/GodTrialBuilderTests.cs` — 기존 정확한 외형 순서 뒤 두 영웅·여성 5명 조건.
+- `Game/Assets/Tests/EditMode/GodTrialExpansionTests.cs` — 정확한 시련 개수 3→5만 변경하고 기존 검사는 보존.
+- `Game/Assets/Tests/EditMode/GodTrialsFinalHealthTests.cs` — 최종 과피해 제한과 전달 명중·피해 로그 한 번 검사.
+- `Game/Assets/Tests/EditMode/GodTrialsFinalHealthTests.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Tests/EditMode/GodTrialsFinalTests.cs` — 시련 3→4→5·보상/주간/환급/해금/제외·두 형상 처치 검사.
+- `Game/Assets/Tests/EditMode/GodTrialsFinalTests.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Tests/EditMode/JeanneTests.cs` — 생성 명단의 정확한 순서 끝에 두 영웅 추가.
+- `Game/Assets/Tests/EditMode/ProjectileWaveTests.cs` — 겹친 두 적을 검기 한 파가 각각 한 번 타격하고 일반 탄은 첫 적에서 끝나는 실제 물리 경로 검사.
+- `Game/Assets/Tests/EditMode/ProjectileWaveTests.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.
+- `Game/Assets/Tests/EditMode/SeondeokTests.cs` — 생성 영웅·미션 명단의 정확한 16명 비교.
+- `Game/Assets/Tests/EditMode/SusanooCombatTests.cs` — 베기 단계·이동·별 수치·검기·전용 진화 검사.
+- `Game/Assets/Tests/EditMode/SusanooCombatTests.cs.meta` — 새 C# 파일의 연결 GUID. 파일과 함께 반영한다.

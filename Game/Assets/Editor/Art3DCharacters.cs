@@ -43,6 +43,7 @@ namespace HistoryHeroes.EditorTools
             foreach (Look look in Heroes) log.Add(Compose(look, Override(look.name, baseController, look.attack), Characters));
             foreach (EnemyLook e in Enemies) log.Add(Compose(e.look, Override(e.look.name, baseController, e.look.attack), EnemyCharacters));
             log.Add(Compose(TwinGhost, Override(TwinGhost.name, baseController, TwinGhost.attack), EnemyCharacters));
+            log.Add(Compose(SusanooGhost, Override(SusanooGhost.name, baseController, SusanooGhost.attack), EnemyCharacters));
             log.Add(Art3DPets.BuildAll());
             AssetDatabase.SaveAssets();
             return string.Join("\n", log);
@@ -226,6 +227,10 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "Cleopatra", female = true, body = "Female_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.98f, 0.94f, 0.82f), metalParts = new[] { "Female_Peasant_Legs" }, metalColor = new Color(0.12f, 0.55f, 0.53f), goldParts = new[] { "Female_Peasant_Body" }, hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.035f, 0.03f, 0.035f), props = new[] { "Cleopatra_Crown", "Cleopatra_Collar", "Davinci_Scroll" } },
             // 사람 머리·눈을 붙이지 않아 자칼 가면만 보인다. Enemy_Staff는 Imp 손 기준이라 손에는 달지 않는다.
             new Look { name = "Anubis", body = "Male_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.27f, 0.23f, 0.19f), head = false, hide = new[] { "Male_Ranger_Head_Hood" }, metalParts = new[] { "Male_Ranger_Acc_Pauldron", "Male_Ranger_Arms_Bracer" }, metalColor = new Color(0.8f, 0.64f, 0.27f), props = new[] { "Anubis_Mask" } },
+            // 긴 머리와 검, 청록·남색 옷으로 구별한다. 시험 형상도 이 모델을 쓴다.
+            new Look { name = "Susanoo", body = "Male_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = new Color(0.48f, 0.88f, 0.84f), hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_Long", "Eyebrows" }, hairColor = new Color(0.08f, 0.12f, 0.17f), attack = "Sword_Regular_A", props = new[] { "Susanoo_Sword" } },
+            // 투구는 여자 몸에 맞춘 소품이다. 방패는 소품별 크기 조절을 지원하기 전까지 생략한다.
+            new Look { name = "Athena", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = new Color(0.95f, 0.91f, 0.78f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.67f, 0.45f, 0.24f), hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.18f, 0.12f, 0.08f), attack = "Sword_Regular_A", props = new[] { "Athena_Spear", "Athena_Helmet" } },
         };
 
         public sealed class EnemyLook
@@ -269,10 +274,21 @@ namespace HistoryHeroes.EditorTools
         /// <summary>그림자 쌍둥이의 맞지 않는 쪽: 보스와 같은 옷을 비치게 (2D 때 흐린 원 → 3D 유령)</summary>
         public static readonly Look TwinGhost = Soldier("B_TwinsGhost", "Male_Ranger", "T_Ranger_BaseColor", new Color(0.62f, 0.56f, 0.95f), "Sword_Regular_A", false, ghost: 0.38f);
 
+        /// <summary>스사노오의 두 번째 시험 형상도 같은 검과 옷을 비치게 한다.</summary>
+        public static readonly Look SusanooGhost = new Look
+        {
+            name = "B_SusanooGhost", body = "Male_Ranger", bodyTex = "T_Ranger_Navy_BaseColor",
+            tint = new Color(0.48f, 0.88f, 0.84f), hide = new[] { "Male_Ranger_Head_Hood" },
+            hair = new[] { "Hair_Long", "Eyebrows" }, hairColor = new Color(0.08f, 0.12f, 0.17f),
+            attack = "Sword_Regular_A", props = new[] { "Susanoo_Sword" }, shadows = false, ghost = 0.38f,
+        };
+
         public const float TwinHeight = 1.72f;
 
         /// <summary>쌍둥이 유령 모델 (없으면 null)</summary>
         public static GameObject TwinGhostModel() => AssetDatabase.LoadAssetAtPath<GameObject>($"{EnemyCharacters}/{TwinGhost.name}3D.prefab");
+
+        public static GameObject SusanooGhostModel() => AssetDatabase.LoadAssetAtPath<GameObject>($"{EnemyCharacters}/{SusanooGhost.name}3D.prefab");
 
         /// <summary>
         /// 적 모델 (데이터 id → 모델). 서바이벌 무리(돌진병·궁병·투척병·졸개)는 가장 가벼운 Puglin(꼭짓점 4.5천),
@@ -328,6 +344,11 @@ namespace HistoryHeroes.EditorTools
             {
                 height = 1.72f;
                 return HeroModel("anubis");
+            }
+            if (id == "susanoo_trial" || id == "athena_trial")
+            {
+                height = 1.72f;
+                return HeroModel(id == "susanoo_trial" ? "susanoo" : "athena");
             }
             foreach (EnemyLook e in Enemies)
             {

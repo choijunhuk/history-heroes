@@ -32,6 +32,8 @@ namespace HistoryHeroes.Combat
         public bool HasDirection;
         /// <summary>관통하는 투사체 (방패를 뚫는다, Content 4장 "튕김·관통")</summary>
         public bool Piercing;
+        /// <summary>적의 실제 투사체 충돌인가. 근접·장판은 방패 한 발 차단을 쓰지 않는다.</summary>
+        public bool IsProjectile;
     }
 
     /// <summary>

@@ -19,8 +19,8 @@ namespace HistoryHeroes.EditorTools
             public EnemyBase MidBison, MidTorch, MidGolem, MidHunter, MidExecutor;
             public EnemyBase WraithLord, SteelColossus, ShadowTwins, OblivionKing;
             public EnemyBase RiftWarden;
-            public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust, Starlight, SandOrb, ZeusLightning;
-            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate;
+            public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust, Starlight, SandOrb, ZeusLightning, WindWave;
+            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate, WindSlash, StormPath, OwlEye, GuardianGaze;
             public Projectile IceShardProjectile;
             public ActiveSkillBehaviour IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillBehaviour FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -45,6 +45,7 @@ namespace HistoryHeroes.EditorTools
                 SwordWave = ProjectilePrefab("SwordWave_Guan", new Color(0.85f, 1f, 0.9f, 0.85f), new Vector2(0.2f, 0.8f), 0.3f, 1.2f, fx: Fx.Wave),
                 SandOrb = ProjectilePrefab("Orb_Anubis", new Color(0.9f, 0.75f, 0.42f), new Vector2(0.32f, 0.32f), 0.16f, 3f, _circle, Fx.SandOrb),
                 ZeusLightning = ProjectilePrefab("Bolt_Zeus", new Color(1f, 0.48f, 0.72f), new Vector2(0.4f, 0.2f), 0.16f, 4f, fx: Fx.ZeusLightning),
+                WindWave = ProjectilePrefab("Wave_Susanoo", new Color(0.45f, 0.88f, 0.82f), new Vector2(0.65f, 0.4f), 0.2f, 1f, fx: Fx.Wave),
             };
 
             Material line = AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
@@ -144,6 +145,10 @@ namespace HistoryHeroes.EditorTools
             p.ThorReturn = Behaviour<ThorHammerBehaviour>("Skill_ThorReturn", props => props.Ref("hammerModel", hammer));
             p.SandStatue = Behaviour<SandStatueBehaviour>("Skill_SandStatue", props => props.Ref("stoneModel", stone).Color("tint", new Color(0.82f, 0.69f, 0.35f, 0.7f)));
             p.SandGate = Behaviour<SandStatueBehaviour>("Skill_SandGate", props => props.Ref("stoneModel", stone).Color("tint", new Color(0.93f, 0.75f, 0.3f, 0.75f)));
+            p.WindSlash = Behaviour<WindSlashBehaviour>("Skill_WindSlash", props => props.Ref("wavePrefab", p.WindWave));
+            p.StormPath = Behaviour<WindSlashBehaviour>("Skill_StormPath", props => props.Ref("wavePrefab", p.WindWave));
+            p.OwlEye = Behaviour<OwlEyeBehaviour>("Skill_OwlEye", null);
+            p.GuardianGaze = Behaviour<OwlEyeBehaviour>("Skill_GuardianGaze", null);
             GameObject tank = Art3DStage.Prefab("Fx_ArmoredTank");
             p.DavTank = Behaviour<ArmoredTankBehaviour>("Skill_DavTank", props => props.Ref("tankModel", tank));
             p.DavSpiral = Behaviour<ArmoredTankBehaviour>("Skill_DavSpiral", props => props.Ref("tankModel", tank).Bool("spiral", true));

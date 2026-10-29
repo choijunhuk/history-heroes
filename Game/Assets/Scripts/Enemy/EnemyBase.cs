@@ -67,6 +67,18 @@ namespace HistoryHeroes.Enemy
         /// <summary>지금 살아 있는 적 (액티브 스킬 표적 고르기용). 물리 검사보다 싸다.</summary>
         public static IReadOnlyList<EnemyBase> Alive => _alive;
 
+        /// <summary>교대하는 시험 형상의 닫힌 몸체를 자동 기술의 표적 목록에서 잠시 뺀다.</summary>
+        public void SetTargetable(bool targetable)
+        {
+            if (!targetable)
+            {
+                _alive.Remove(this);
+                return;
+            }
+
+            if (isActiveAndEnabled && health != null && !health.IsDead && !_alive.Contains(this)) _alive.Add(this);
+        }
+
         // "도메인 다시 불러오기"를 끈 Play 모드에서도 지난 판의 목록이 남지 않게
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()

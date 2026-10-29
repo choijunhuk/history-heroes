@@ -19,6 +19,8 @@ namespace HistoryHeroes.Heroes
         Projectile,
         /// <summary>근접 부채꼴 베기: 맞은 적 전부 (관우)</summary>
         MeleeArc,
+        /// <summary>짧고 좁은 직선 찌르기 (아테나)</summary>
+        MeleeThrust,
     }
 
     /// <summary>
@@ -53,6 +55,18 @@ namespace HistoryHeroes.Heroes
         public float meleeArcDegrees = 120f;
         [Tooltip("근접 + 벽 튕김: 베기마다 날아가는 검기의 피해 (공격력 배수)")]
         public float meleeWaveCoefficient = 0.4f;
+
+        [Header("스사노오 바람의 간격")]
+        public float windFirstArc;
+        public float windFirstCoefficient;
+        public float windFollowArc;
+        public float windFollowCoefficient;
+
+        [Header("아테나 판단의 방패·올빼미의 눈")]
+        public float spearWidth;
+        public float shieldPrepareSeconds;
+        public float shieldReuseSeconds;
+        public float owlBonusCoefficient;
 
         [Header("대표 효과")]
         public string signatureName = "기마 속사";
@@ -233,6 +247,14 @@ namespace HistoryHeroes.Heroes
         public float star3MarkDuration = -1f;
         [Tooltip("★5 표식 둔화 세기")]
         public float star5MarkSlow = -1f;
+        [Tooltip("★3 스사노오 첫 베기 피해 배수")]
+        public float star3WindFirstCoefficient = -1f;
+        [Tooltip("★5 스사노오 후속 베기 피해 배수")]
+        public float star5WindFollowCoefficient = -1f;
+        [Tooltip("★3 아테나 방패 준비 시간")]
+        public float star3ShieldPrepareSeconds = -1f;
+        [Tooltip("★5 아테나 표식 기본 공격 추가 피해 배수")]
+        public float star5OwlBonusCoefficient = -1f;
         [Tooltip("★3 수호상 한 타격의 공격력 배수")]
         public float star3GuardianCoefficient = -1f;
         [Tooltip("★5 수호상 한 번이 공격할 최대 적 수 (원래 표적 포함)")]
