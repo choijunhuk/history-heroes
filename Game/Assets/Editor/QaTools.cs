@@ -291,7 +291,7 @@ namespace HistoryHeroes.EditorTools
 
         /// <summary>
         /// 판 밖 성장 스냅샷 예시: "none" 판 밖 0 / "week" 무과금 1주 (Stats 4장 ×1.2 근처: 영웅 Lv8, 1구간 보스 희귀 무기 Lv10, 일반 갑옷 Lv5)
-        /// / "month" 1개월 (×1.4 근처) / "max" 전부 최대 (영웅 Lv30 ★5, 전설 3칸 Lv40, 수련 최대, 유물 24개 ★3)
+        /// / "month" 1개월 (×1.4 근처) / "max" 전부 최대 (영웅 Lv30 ★5, 전설 6칸 Lv40, 수련 최대, 유물 24개 ★3)
         /// </summary>
         public static Records.MetaSnapshot MetaPreset(string name)
         {
@@ -303,6 +303,9 @@ namespace HistoryHeroes.EditorTools
                     s.heroLevel = 8;
                     Equip(0, "weapon_general_r", 10);
                     Equip(1, "armor_recruit_c", 5);
+                    Equip(3, "gloves_general_r", 10);
+                    Equip(4, "belt_recruit_c", 5);
+                    Equip(5, "boots_recruit_c", 5);
                     break;
                 case "month":
                     s.heroLevel = 15;
@@ -310,6 +313,9 @@ namespace HistoryHeroes.EditorTools
                     Equip(0, "weapon_general_r", 20);
                     Equip(1, "armor_general_r", 20);
                     Equip(2, "acc_signet_r", 15);
+                    Equip(3, "gloves_general_r", 20);
+                    Equip(4, "belt_general_r", 20);
+                    Equip(5, "boots_general_r", 20);
                     s.training = new List<int> { 5, 5, 3, 2, 2, 0 };
                     break;
                 case "max":
@@ -318,6 +324,9 @@ namespace HistoryHeroes.EditorTools
                     Equip(0, "weapon_conqueror_l", 40);
                     Equip(1, "armor_timeguard_l", 40);
                     Equip(2, "acc_hourglass_l", 40);
+                    Equip(3, "gloves_conqueror_l", 40);
+                    Equip(4, "belt_timeguard_l", 40);
+                    Equip(5, "boots_timeguard_l", 40);
                     s.training = new List<int> { 20, 20, 20, 20, 20, 10 };
                     var relics = UnityEditor.AssetDatabase.LoadAssetAtPath<Relics.RelicTable>("Assets/Data/Relics/RelicTable.asset");
                     foreach (Relics.RelicData r in relics.relics) s.relics.Add(new Records.RelicStar { id = r.id, stars = 3 });

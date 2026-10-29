@@ -56,16 +56,23 @@ namespace HistoryHeroes.EditorTools
             TMP_Text summary = Label("Summary", panel, "", 26, TextAlignmentOptions.Center);
             Place(summary.rectTransform, Center, Center, new Vector2(0f, 760f), new Vector2(1000f, 100f));
 
-            var slotButtons = new Button[3];
-            var slotLabels = new TMP_Text[3];
-            for (int i = 0; i < 3; i++)
+            var slotButtons = new Button[EquipmentInventory.SlotCount];
+            var slotLabels = new TMP_Text[EquipmentInventory.SlotCount];
+            EquipSlot[] layout = { EquipSlot.Weapon, EquipSlot.Armor, EquipSlot.Necklace, EquipSlot.Belt, EquipSlot.Gloves, EquipSlot.Boots };
+            for (int i = 0; i < layout.Length; i++)
             {
-                slotButtons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 640f - i * 112f), new Vector2(1000f, 100f), RowColor, out TMP_Text label);
-                label.fontSize = 28;
+                int index = (int)layout[i];
+                int row = i / 2;
+                int column = i % 2;
+                slotButtons[index] = Btn($"Slot{index + 1}", panel, "", new Vector2(column == 0 ? -252f : 252f, 625f - row * 105f), new Vector2(496f, 90f), RowColor, out TMP_Text label);
+                label.fontSize = 23;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 18f;
+                label.fontSizeMax = 23f;
                 label.alignment = TextAlignmentOptions.MidlineLeft;
-                label.rectTransform.offsetMin = new Vector2(28f, 4f);
-                label.rectTransform.offsetMax = new Vector2(-28f, -4f);
-                slotLabels[i] = label;
+                label.rectTransform.offsetMin = new Vector2(16f, 4f);
+                label.rectTransform.offsetMax = new Vector2(-16f, -4f);
+                slotLabels[index] = label;
             }
 
             Button enhance = Btn("Enhance", panel, "강화", new Vector2(-252f, 300f), new Vector2(496f, 90f), ButtonGreen, out TMP_Text enhanceLabel);

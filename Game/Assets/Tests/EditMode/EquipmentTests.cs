@@ -37,28 +37,28 @@ namespace HistoryHeroes.Tests
         public void SetUp()
         {
             _table = ScriptableObject.CreateInstance<EquipmentTable>();
-            // Equipment 7장 21종과 같은 부가 능력치
+            // 기존 3칸의 장착·합성 회귀 확인용 장비 정의
             Make("w_c", EquipSlot.Weapon, EquipRarity.Common);
-            Make("w_u1", EquipSlot.Weapon, EquipRarity.Uncommon, StatType.CritDamage, 0.05f);
-            Make("w_u2", EquipSlot.Weapon, EquipRarity.Uncommon, StatType.CooldownReduction, 0.01f);
-            Make("w_r1", EquipSlot.Weapon, EquipRarity.Rare, StatType.CritDamage, 0.10f);
-            Make("w_r2", EquipSlot.Weapon, EquipRarity.Rare, StatType.CooldownReduction, 0.02f);
-            Make("w_l1", EquipSlot.Weapon, EquipRarity.Legendary, StatType.CritRate, 0.03f);
-            Make("w_l2", EquipSlot.Weapon, EquipRarity.Legendary, StatType.CritDamage, 0.20f);
+            Make("w_u1", EquipSlot.Weapon, EquipRarity.Uncommon, StatType.CritDamage, 0.03f);
+            Make("w_u2", EquipSlot.Weapon, EquipRarity.Uncommon, StatType.CooldownReduction, 0.006f);
+            Make("w_r1", EquipSlot.Weapon, EquipRarity.Rare, StatType.CritDamage, 0.06f);
+            Make("w_r2", EquipSlot.Weapon, EquipRarity.Rare, StatType.CooldownReduction, 0.012f);
+            Make("w_l1", EquipSlot.Weapon, EquipRarity.Legendary, StatType.CritRate, 0.018f);
+            Make("w_l2", EquipSlot.Weapon, EquipRarity.Legendary, StatType.CritDamage, 0.12f);
             Make("a_c", EquipSlot.Armor, EquipRarity.Common);
-            Make("a_u1", EquipSlot.Armor, EquipRarity.Uncommon, StatType.DamageReduction, 0.01f);
-            Make("a_u2", EquipSlot.Armor, EquipRarity.Uncommon, StatType.MoveSpeed, 0.01f, ModifierKind.Percent);
-            Make("a_r1", EquipSlot.Armor, EquipRarity.Rare, StatType.DamageReduction, 0.03f);
-            Make("a_r2", EquipSlot.Armor, EquipRarity.Rare, StatType.MoveSpeed, 0.015f, ModifierKind.Percent);
-            Make("a_l1", EquipSlot.Armor, EquipRarity.Legendary, StatType.DamageReduction, 0.06f);
-            Make("a_l2", EquipSlot.Armor, EquipRarity.Legendary, StatType.MoveSpeed, 0.02f, ModifierKind.Percent);
-            Make("x_c", EquipSlot.Accessory, EquipRarity.Common);
-            Make("x_u1", EquipSlot.Accessory, EquipRarity.Uncommon, StatType.CritRate, 0.01f);
-            Make("x_u2", EquipSlot.Accessory, EquipRarity.Uncommon, StatType.MoveSpeed, 0.02f, ModifierKind.Percent);
-            Make("x_r1", EquipSlot.Accessory, EquipRarity.Rare, StatType.CritRate, 0.015f);
-            Make("x_r2", EquipSlot.Accessory, EquipRarity.Rare, StatType.CooldownReduction, 0.02f);
-            Make("x_l1", EquipSlot.Accessory, EquipRarity.Legendary, StatType.CritRate, 0.02f);
-            Make("x_l2", EquipSlot.Accessory, EquipRarity.Legendary, StatType.MoveSpeed, 0.03f, ModifierKind.Percent);
+            Make("a_u1", EquipSlot.Armor, EquipRarity.Uncommon, StatType.DamageReduction, 0.005f);
+            Make("a_u2", EquipSlot.Armor, EquipRarity.Uncommon, StatType.MoveSpeed, 0.005f, ModifierKind.Percent);
+            Make("a_r1", EquipSlot.Armor, EquipRarity.Rare, StatType.DamageReduction, 0.015f);
+            Make("a_r2", EquipSlot.Armor, EquipRarity.Rare, StatType.MoveSpeed, 0.0075f, ModifierKind.Percent);
+            Make("a_l1", EquipSlot.Armor, EquipRarity.Legendary, StatType.DamageReduction, 0.03f);
+            Make("a_l2", EquipSlot.Armor, EquipRarity.Legendary, StatType.MoveSpeed, 0.01f, ModifierKind.Percent);
+            Make("x_c", EquipSlot.Necklace, EquipRarity.Common);
+            Make("x_u1", EquipSlot.Necklace, EquipRarity.Uncommon, StatType.CritRate, 0.01f);
+            Make("x_u2", EquipSlot.Necklace, EquipRarity.Uncommon, StatType.MoveSpeed, 0.02f, ModifierKind.Percent);
+            Make("x_r1", EquipSlot.Necklace, EquipRarity.Rare, StatType.CritRate, 0.015f);
+            Make("x_r2", EquipSlot.Necklace, EquipRarity.Rare, StatType.CooldownReduction, 0.02f);
+            Make("x_l1", EquipSlot.Necklace, EquipRarity.Legendary, StatType.CritRate, 0.02f);
+            Make("x_l2", EquipSlot.Necklace, EquipRarity.Legendary, StatType.MoveSpeed, 0.03f, ModifierKind.Percent);
 
             _meta = ScriptableObject.CreateInstance<MetaTable>();
             _meta.equipment = _table;
@@ -77,12 +77,12 @@ namespace HistoryHeroes.Tests
         [Test]
         public void MainPercent_BaseAndEnhanceCappedByRarity()
         {
-            Assert.AreEqual(0.055f, _table.MainPercent(_table.Find("w_c"), 10), 1e-5f, "일반 Lv10 = 3 + 2.5");
-            Assert.AreEqual(0.11f, _table.MainPercent(_table.Find("w_u1"), 25), 1e-5f, "고급은 Lv20까지만: 6 + 5");
-            Assert.AreEqual(0.25f, _table.MainPercent(_table.Find("w_l1"), 40), 1e-5f, "전설 Lv40 = 15 + 10");
-            Assert.AreEqual(0.08f, _table.MainPercent(_table.Find("x_l2"), 40), 1e-5f, "장신구 전설 Lv40 = 6 + 2");
-            Assert.AreEqual(100, _table.EnhanceCost(0));
-            Assert.AreEqual(3900, _table.EnhanceCost(39));
+            Assert.AreEqual(0.033f, _table.MainPercent(_table.Find("w_c"), 10), 1e-5f, "무기 일반 Lv10 = (3 + 2.5) × 60%");
+            Assert.AreEqual(0.066f, _table.MainPercent(_table.Find("w_u1"), 25), 1e-5f, "무기 고급은 Lv20까지만: (6 + 5) × 60%");
+            Assert.AreEqual(0.15f, _table.MainPercent(_table.Find("w_l1"), 40), 1e-5f, "무기 전설 Lv40 = (15 + 10) × 60%");
+            Assert.AreEqual(0.08f, _table.MainPercent(_table.Find("x_l2"), 40), 1e-5f, "목걸이 전설 Lv40 = 6 + 2");
+            Assert.AreEqual(50, _table.EnhanceCost(0));
+            Assert.AreEqual(1950, _table.EnhanceCost(39));
         }
 
         /// <summary>힘 예산 (원칙 1장, 3-5장): 어떤 조합으로도 장비 몫을 넘지 않는다</summary>
@@ -119,7 +119,7 @@ namespace HistoryHeroes.Tests
                 float main = _table.MainPercent(d, 40);
                 if (d.slot == EquipSlot.Weapon) atk = Mathf.Max(atk, main);
                 if (d.slot == EquipSlot.Armor) hp = Mathf.Max(hp, main);
-                if (d.slot == EquipSlot.Accessory) aspd = Mathf.Max(aspd, main);
+                if (d.slot == EquipSlot.Necklace) aspd = Mathf.Max(aspd, main);
             }
 
             Assert.LessOrEqual(atk, 0.25f + 1e-5f);
@@ -166,9 +166,9 @@ namespace HistoryHeroes.Tests
 
             EquipmentItem common = EquipmentInventory.Add(save, _table, _table.Find("w_c")).Item;
             EquipmentInventory.Equip(save, _table, "khan", common.uid);
-            Assert.AreEqual(10, EquipmentInventory.EnhanceMax(save, _table, "khan", EquipSlot.Weapon), "일반은 Lv10까지");
+            Assert.AreEqual(9, EquipmentInventory.EnhanceMax(save, _table, "khan", EquipSlot.Weapon), "Lv1에서 일반 상한 Lv10까지");
             Assert.AreEqual(10, EquipmentInventory.SlotLevel(save, EquipSlot.Weapon));
-            Assert.AreEqual(1_000_000 - (100 + 100 * (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9)), save.gold);
+            Assert.AreEqual(1_000_000 - 50 * (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9), save.gold);
 
             // 더 좋은 장비로 바꿔도 칸 강화는 남는다 → 이어서 올릴 수 있다
             EquipmentItem rare = EquipmentInventory.Add(save, _table, _table.Find("w_r1")).Item;
@@ -275,8 +275,8 @@ namespace HistoryHeroes.Tests
 
             MetaSnapshot snap = MetaStats.FromAccount(save, _meta, "khan");
             List<StatModifier> mods = MetaStats.Build(snap, _meta, this);
-            Assert.AreEqual(0.10f + 0.06f + 0.25f, MetaStats.Sum(mods, StatType.Attack, ModifierKind.Percent), 1e-5f, "레벨 10% + ★3 6% + 전설 무기 25%");
-            Assert.AreEqual(0.20f, MetaStats.Sum(mods, StatType.CritDamage, ModifierKind.Flat), 1e-5f);
+            Assert.AreEqual(0.10f + 0.06f + 0.15f, MetaStats.Sum(mods, StatType.Attack, ModifierKind.Percent), 1e-5f, "레벨 10% + ★3 6% + 전설 무기 15%");
+            Assert.AreEqual(0.12f, MetaStats.Sum(mods, StatType.CritDamage, ModifierKind.Flat), 1e-5f);
 
             // 기록에 고정된 뒤 장비를 바꿔도 스냅샷은 그대로 (7-5)
             EquipmentInventory.Unequip(save, "khan", EquipSlot.Weapon);
@@ -284,7 +284,7 @@ namespace HistoryHeroes.Tests
 
             // 패치로 장비 수치가 바뀌면 옛 기록에도 적용된다 (수치는 최신 데이터)
             _table.weaponBase[3] = 0.20f;
-            Assert.AreEqual(0.10f + 0.06f + 0.30f, MetaStats.Sum(MetaStats.Build(snap, _meta, this), StatType.Attack, ModifierKind.Percent), 1e-5f);
+            Assert.AreEqual(0.10f + 0.06f + 0.18f, MetaStats.Sum(MetaStats.Build(snap, _meta, this), StatType.Attack, ModifierKind.Percent), 1e-5f);
 
             // 없어진 장비는 빼고 싸운다
             snap.equipment[0].dataId = "deleted";
@@ -323,7 +323,7 @@ namespace HistoryHeroes.Tests
                 Assert.AreEqual(SaveData.CurrentSchemaVersion, loaded.schemaVersion);
                 Assert.AreEqual(777, loaded.gold);
                 Assert.IsNotNull(loaded.equipment);
-                Assert.AreEqual(3, loaded.equipment.slotLevels.Count);
+                Assert.AreEqual(6, loaded.equipment.slotLevels.Count);
                 Assert.IsNotNull(loaded.records[0].meta);
                 Assert.AreEqual(1, loaded.records[0].meta.heroLevel, "옛 기록 = 판 밖 성장 없음");
                 Assert.AreEqual(0, loaded.records[0].meta.equipment.Count);

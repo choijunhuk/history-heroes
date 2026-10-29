@@ -13,10 +13,12 @@ namespace HistoryHeroes.Equipment
     {
         public List<EquipmentData> items = new List<EquipmentData>();
 
-        [Header("주 능력치 기본값 (등급 순서: 일반·고급·희귀·전설)")]
+        [Header("주 능력치 전체 예산 (등급 순서: 일반·고급·희귀·전설)")]
         public float[] weaponBase = { 0.03f, 0.06f, 0.10f, 0.15f };
         public float[] armorBase = { 0.03f, 0.06f, 0.10f, 0.15f };
         public float[] accessoryBase = { 0.015f, 0.03f, 0.045f, 0.06f };
+        [Tooltip("저장번호 순: 무기·갑옷·목걸이·장갑·허리띠·신발. 기존 총 예산을 나누는 비율")]
+        public float[] mainShares = { 0.6f, 0.5f, 1f, 0.4f, 0.3f, 0.2f };
 
         [Header("칸 강화")]
         [Tooltip("등급별 강화 상한 (이 레벨까지만 효과)")]
@@ -25,7 +27,7 @@ namespace HistoryHeroes.Equipment
         public float armorPerLevel = 0.0025f;
         public float accessoryPerLevel = 0.0005f;
         [Tooltip("Lv n → n+1 = 이 값 × n (Lv0 → 1도 이 값)")]
-        public int enhanceCostPerLevel = 100;
+        public int enhanceCostPerLevel = 50;
         public int MaxSlotLevel => enhanceCap[enhanceCap.Length - 1];
 
         [Header("합성 (같은 칸·같은 등급 3개 → 다음 등급, 희귀까지)")]
@@ -69,8 +71,10 @@ namespace HistoryHeroes.Equipment
         {
             switch (slot)
             {
-                case EquipSlot.Armor: return StatType.MaxHp;
-                case EquipSlot.Accessory: return StatType.AttackSpeed;
+                case EquipSlot.Armor:
+                case EquipSlot.Belt:
+                case EquipSlot.Boots: return StatType.MaxHp;
+                case EquipSlot.Necklace: return StatType.AttackSpeed;
                 default: return StatType.Attack;
             }
         }
@@ -86,15 +90,18 @@ namespace HistoryHeroes.Equipment
             if (data == null) return 0f;
             int r = (int)data.rarity;
             int level = EffectiveLevel(data, slotLevel);
+            float share = mainShares[(int)data.slot];
             switch (data.slot)
             {
-                case EquipSlot.Armor: return armorBase[r] + level * armorPerLevel;
-                case EquipSlot.Accessory: return accessoryBase[r] + level * accessoryPerLevel;
-                default: return weaponBase[r] + level * weaponPerLevel;
+                case EquipSlot.Armor:
+                case EquipSlot.Belt:
+                case EquipSlot.Boots: return (armorBase[r] + level * armorPerLevel) * share;
+                case EquipSlot.Necklace: return (accessoryBase[r] + level * accessoryPerLevel) * share;
+                default: return (weaponBase[r] + level * weaponPerLevel) * share;
             }
         }
 
-        /// <summary>칸 강화 Lv n → n+1 비용 (🪙 100 × n, 실패 없음)</summary>
+        /// <summary>칸 강화 Lv n → n+1 비용 (🪙 50 × n, 실패 없음). 옛 Lv0 → 1도 50</summary>
         public int EnhanceCost(int currentLevel) => enhanceCostPerLevel * Mathf.Max(1, currentLevel);
 
         /// <summary>등급을 올리는 합성 비용 (일반→고급 500, 고급→희귀 3,000). 희귀·전설은 합성 불가 → -1</summary>

@@ -12,7 +12,7 @@ using UnityEngine.UI;
 namespace HistoryHeroes.UI
 {
     /// <summary>
-    /// 영웅 장비 화면 (Equipment 11장): 장비 3칸 → 칸을 누르면 그 칸 장비 목록 → 장비를 누르면 비교("공격력 +11% → +17.5%")
+    /// 영웅 장비 화면 (Equipment 11장): 장비 6칸 → 칸을 누르면 그 칸 장비 목록 → 장비를 누르면 비교("공격력 +11% → +17.5%")
     /// → 장착·잠금·분해. 칸 강화(+최대까지), 합성(같은 칸·등급 3개 → 다음 등급 중 고르기), 중복 자동 분해 켜고 끄기.
     /// 바꿀 때마다 바로 저장한다. 분해는 3초 안에 한 번 더 눌러야 한다 (실수 방지).
     /// </summary>
@@ -83,12 +83,13 @@ namespace HistoryHeroes.UI
             backButton.onClick.AddListener(Close);
         }
 
-        public void Open(string heroId, string heroName, Action onClosed = null)
+        public void Open(string heroId, string heroName, Action onClosed = null, EquipSlot initialSlot = EquipSlot.Weapon)
         {
+            if ((int)initialSlot < 0 || (int)initialSlot >= EquipmentInventory.SlotCount) initialSlot = EquipSlot.Weapon;
             _heroId = heroId;
             _heroName = heroName;
             _onClosed = onClosed;
-            _slot = EquipSlot.Weapon;
+            _slot = initialSlot;
             _selected = null;
             _synthMode = false;
             _message = null;
@@ -139,7 +140,7 @@ namespace HistoryHeroes.UI
             bool unlocked = table != null && EquipmentInventory.Unlocked(save);
             if (!unlocked)
             {
-                summaryLabel.text = "<color=#FFB347>1구간 보스를 깨면 장비 3칸과 강화가 열려요</color>";
+                summaryLabel.text = "<color=#FFB347>1구간 보스를 깨면 장비 6칸과 강화가 열려요</color>";
                 for (int i = 0; i < slotLabels.Length; i++)
                 {
                     slotLabels[i].text = $"{EquipmentText.SlotName((EquipSlot)i)}  <color=#A9B4C2>잠김</color>";
@@ -198,7 +199,7 @@ namespace HistoryHeroes.UI
         private static void AddPart(List<string> parts, List<StatModifier> mods, StatType stat, ModifierKind kind)
         {
             float v = MetaStats.Sum(mods, stat, kind);
-            if (v > 0f) parts.Add($"{EquipmentText.StatName(stat)} +{v * 100f:0.#}%");
+            if (v > 0f) parts.Add($"{EquipmentText.StatName(stat)} +{v * 100f:0.###}%");
         }
 
         private string SlotLine(SaveData save, EquipmentTable table, EquipSlot slot)
@@ -209,14 +210,13 @@ namespace HistoryHeroes.UI
             if (data == null) return $"{EquipmentText.SlotName(slot)}  <color=#A9B4C2>비어 있음</color>  <size=85%>칸 Lv {level}</size>";
             int cap = table.CapOf(data.rarity);
             string over = level > cap ? $" <color=#FFB347>(상한 {cap})</color>" : string.Empty;
-            string second = data.hasSecondary ? $" · {data.SecondaryText}" : string.Empty;
-            return $"{EquipmentText.SlotName(slot)}  {Name(data)}\n<size=85%>칸 Lv {Mathf.Min(level, cap)}/{cap}{over} · {MainText(table, data, level)}{second}</size>";
+            return $"{EquipmentText.SlotName(slot)}  {Name(data)}\n<size=85%>Lv {Mathf.Min(level, cap)}/{cap}{over} · {MainText(table, data, level)}</size>";
         }
 
         private static string Name(EquipmentData data) => $"<color={EquipmentText.RarityColor(data.rarity)}>{data.displayName} ({EquipmentText.RarityName(data.rarity)})</color>";
 
         private static string MainText(EquipmentTable table, EquipmentData data, int slotLevel) =>
-            $"{EquipmentText.StatName(EquipmentTable.MainStat(data.slot))} +{table.MainPercent(data, slotLevel) * 100f:0.##}%";
+            $"{EquipmentText.StatName(EquipmentTable.MainStat(data.slot))} +{table.MainPercent(data, slotLevel) * 100f:0.###}%";
 
         private void RenderBag(SaveData save, EquipmentTable table, bool scrollToTop)
         {
@@ -265,8 +265,8 @@ namespace HistoryHeroes.UI
             float before = currentData != null ? table.MainPercent(currentData, level) : 0f;
             float after = table.MainPercent(data, level);
             string compare = item.uid == mine
-                ? $"지금 끼는 장비 · {EquipmentText.StatName(main)} +{after * 100f:0.##}%"
-                : $"끼우면: {EquipmentText.StatName(main)} +{before * 100f:0.##}% → <color={(after >= before ? "#7CE38B" : "#FF7A6B")}>+{after * 100f:0.##}%</color>";
+                ? $"지금 끼는 장비 · {EquipmentText.StatName(main)} +{after * 100f:0.###}%"
+                : $"끼우면: {EquipmentText.StatName(main)} +{before * 100f:0.###}% → <color={(after >= before ? "#7CE38B" : "#FF7A6B")}>+{after * 100f:0.###}%</color>";
             string second = currentData != null && currentData.hasSecondary ? currentData.SecondaryText : "없음";
             string secondAfter = data.hasSecondary ? data.SecondaryText : "없음";
             if (item.uid != mine) compare += $"\n<size=85%>부가: {second} → {secondAfter}</size>";
@@ -349,7 +349,7 @@ namespace HistoryHeroes.UI
 
         private void EquipSelected()
         {
-            if (!Apply(() => EquipmentInventory.Equip(SaveSystem.Data, Table, _heroId, _selected), "<color=#7CE38B>장착했어요</color>")) return;
+            if (!Apply(() => EquipmentInventory.Equip(SaveSystem.Data, Table, _heroId, _slot, _selected), "<color=#7CE38B>장착했어요</color>")) return;
             Missions.MissionEvents.Raise(Missions.MissionEvents.Equip); // 미션 "장비 1개 장착 바꾸기"
             SaveSystem.SaveIfDirty();
         }
