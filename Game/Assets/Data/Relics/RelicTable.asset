@@ -47,6 +47,12 @@ MonoBehaviour:
   perStar: 0.0008333333
   setBonus: 0.0066666664
   setDamageReduction: 0.0066666664
-  starCosts: 1e00000050000000
-  exchangeCost: 120
+  pullShardCost: 100
+  tenPullShardCost: 900
+  pullGemCost: 100
+  tenPullGemCost: 900
+  newRelicPity: 20
+  duplicateCosts: 0100000002000000
+  overflowShards: 5
+  sourceShards: 20
   bossRepeatShards: 5
