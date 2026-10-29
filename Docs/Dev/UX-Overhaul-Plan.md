@@ -58,3 +58,6 @@
 | 2026-10-29 | P2 보상 · 재화 그림 10장 (이미지 생성) → 맨 위 재화 줄 컬러 그림 + **글 속 아이콘** (`<sprite name=gold>` 등, TMP 기본 스프라이트 묶음 `RewardIcons`): 결과 · 미션 상자 · 보스 · 균열 · 서바이벌 · 유물 보상 글 앞에 그림. 남은 것: 상점 상자 그림 · 보상 창 아이템 카드 |
 | 2026-10-29 | P3 여자 영웅 준비: Quaternius 여자 몸 · 옷 · 머리 FBX 6개를 `Art/3D/Models`에 (휴머노이드 OK). 다음: `Art3DCharacters`의 머리 떼어 오기가 남자 몸(`Superhero_Male_FullBody`)으로 고정 → 영웅별로 고를 수 있게 한 뒤 잔 다르크 모습 · 기획 · 구현 |
 | 2026-10-29 | 유물 뽑기: Codex 구현 중 (작업 폴더 `../history-heroes-gacha`, 가지 `feature/relic-gacha`). 다음: 장비 6칸 |
+| 2026-10-29 | 유물 뽑기 합침 (테스트 356개 통과, 상점 "유물 뽑기" 탭 · 결과 카드 화면 확인). 남은 것: 유물 그림 24장 (Codex 이미지 생성 중) → `RelicData` 아이콘으로 |
+| 2026-10-29 | 장비 6칸: Codex 구현 중 (`../history-heroes-gear`, 가지 `feature/gear-six`) |
+| 2026-10-29 | 잔 다르크 조립에 고칠 곳 (`Editor/Art3DCharacters.cs`): ① `ExtractHead()`가 `Superhero_Male_FullBody` · 메시 `SuperHero_Male` 고정 → 몸 파일 · 메시 이름 · 저장 경로를 받게 (여자: `Superhero_Female_FullBody` · `Superhero_Female` · `Head_Female.asset`) ② `Look`에 `female` → 머리 붙이기(약 501줄 `Attach(...)`)와 피부 그림 `T_Superhero_Male_Dark/Normal`을 여자용으로 (UBC 묶음 Textures에서 `T_Superhero_Female_*` 가져오기) ③ 팔 재질 판별 `Contains("Regular_Male")` → `Regular_Female`도 ④ 눈썹 `Eyebrows` → `Eyebrows_Female` ⑤ Look: `body = "Female_Ranger"`, 레인저 옷 은빛·청색 tint, 머리 `Hair_BuzzedFemale` (짧은 머리), 검 소품. 여자 FBX 6개는 `Art/3D/Models`에 있음 |
