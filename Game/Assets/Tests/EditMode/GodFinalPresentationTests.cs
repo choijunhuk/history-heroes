@@ -32,7 +32,7 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual("hand_r", Art3DProps.Bones["Athena_Spear"]);
             Assert.AreEqual("Head", Art3DProps.Bones["Athena_Helmet"]);
             Assert.That(athena.metalColor.r, Is.GreaterThan(athena.metalColor.b));
-            Assert.AreEqual(5, Art3DCharacters.Heroes.Count(look => look.female));
+            Assert.AreEqual(8, Art3DCharacters.Heroes.Count(look => look.female));
         }
 
         [Test]
@@ -60,9 +60,9 @@ namespace HistoryHeroes.Tests
                 CollectionAssert.AreEqual(new[]
                 {
                     "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge",
-                    "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena",
+                    "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena", "tomoe", "wuzetian", "curie",
                 }, table.heroOrder);
-                Assert.AreEqual(16, table.heroOrder.Distinct().Count());
+                Assert.AreEqual(19, table.heroOrder.Distinct().Count());
             }
             finally { Object.DestroyImmediate(table); }
         }

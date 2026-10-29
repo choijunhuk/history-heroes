@@ -138,6 +138,7 @@ namespace HistoryHeroes.Player
             Stop.Moved += _windSlash.Moved;
             Stop.Moved += _athenaShield.CancelPreparation;
             Stop.Moved += ResetGuardian;
+            Stop.Moved += () => ResetStopSignatures(moved: true);
             Stop.Stopped += () => _momentumUntil = Time.time + MomentumSeconds;
             Health.Damaged += OnDamagedIronclad; // 이순신 철갑
             Stop.Moved += OnMovedCharge; // 이성계 백발백중: 움직이기 시작하면 모은 화살을 놓는다
@@ -499,13 +500,32 @@ namespace HistoryHeroes.Player
         public int GuardianCount => _guardian.Count;
         public bool GuardianReady => _guardian.IsReady;
 
+        private readonly TomoeCrossfireState _crossfire = new TomoeCrossfireState();
+        private readonly WuzetianSealState _seal = new WuzetianSealState();
+        private readonly CurieObservationState _curie = new CurieObservationState();
+        private readonly List<EnemyBase> _observationHits = new List<EnemyBase>(8);
+        private int _stopSignatureGeneration;
+        public int CrossfireCount => _crossfire.Count;
+        public int SealHits => _seal.Hits;
+        public bool HasObservationMark => _curie.HasMark;
+
         /// <summary>
-        /// 멈춤에 묶인 대표 효과 상태를 비운다 (잔 다르크 깃발 · 선덕여왕 관측 · 부디카 되찾는 자리 · 토르 천둥 · 아누비스 저울 · 클레오파트라 수호상).
+        /// 멈춤에 묶인 대표 효과 상태를 비운다. 이동 때는 새 영웅의 연속 공격만 지우고 무측천의 제어 제한과 퀴리의 기존 표식은 유지한다.
         /// 방 이동 · 영웅 변경 · 사망 · 꺼짐 · 파괴가 모두 여기로 온다 — 새 영웅의 상태는 여기 한 곳에만 더한다
         /// (예전엔 같은 6줄이 다섯 군데 있어서 하나를 빠뜨리기 쉬웠다, 2026-10-29 Codex 리뷰).
         /// </summary>
-        private void ResetStopSignatures()
+        private void ResetStopSignatures(bool moved = false)
         {
+            // 이동 전 날아간 탄이 다시 멈춘 뒤 명중해도 이전 준비를 되살리지 않는다.
+            _stopSignatureGeneration++;
+            _crossfire.Reset();
+            _seal.Reset(clearControls: !moved);
+            if (moved)
+            {
+                _curie.InvalidateAttack();
+                return;
+            }
+            _curie.Reset();
             ClearBanner();
             _observation.Reset();
             _reclaim.Reset();
@@ -790,6 +810,11 @@ namespace HistoryHeroes.Player
             int count = Mathf.Max(1, hero.fanShots) + extra; // 제갈량 깃털 부채: 3갈래
             // 표적을 찾고 실제로 발사할 때만 준비를 쓰므로 빈 방에서 관통을 잃지 않는다.
             bool observedShot = _observation.TryConsume();
+            bool crossShot = hero.crossShotEvery > 0 && _crossfire.RecordAttack(Stop.IsStopped, true, hero);
+            object markedTarget = null;
+            int markedLife = 0;
+            int observationAttack = hero.observationMark ? _curie.BeginAttack(out markedTarget, out markedLife) : 0;
+            int generation = _stopSignatureGeneration;
             float perProjectile = NextShotCoefficient(extra) * (hero.fanShots > 1 ? hero.fanCoefficient : 1f);
             if (observedShot) perProjectile *= 1f + _sig.ObservationAttackBonus;
             _lastShotCoefficient = perProjectile;
@@ -805,20 +830,74 @@ namespace HistoryHeroes.Player
             for (int i = 0; i < count; i++)
             {
                 Vector2 direction = Quaternion.Euler(0f, 0f, start + spread * i) * aim;
-                DamageInfo damage = DamageCalculator.Roll(Stats, perProjectile, DamageKind.BasicAttack);
-                if (i == 0) damage.Amount += TakeIroncladStore(); // 이순신 철갑: 첫 발에 쌓인 피해
-                Projectile p = _projectiles.Get(origin, Quaternion.identity);
-                int pierce = Attack.Get(AttackModifierKind.Pierce) + (_sig.FirstShotPierce && _firstShotThisShot ? 1 : 0)
-                    + (observedShot ? 1 : 0); // 관측은 멀티샷 묶음 하나의 기본 공격에 적용한다.
-                p.Launch(direction, hero.projectileSpeed, damage, enemyMask, wallMask,
-                    pierce, Attack.Get(AttackModifierKind.Ricochet),
-                    _projectiles.Release, OnBasicAttackHit,
-                    onHitTarget: i == 0 && _sig.MarkHits > 0 ? OnMarkProjectileHitTarget : needsTarget ? OnProjectileHitTarget : null,
-                    notifyFirstTargetOnly: i == 0 && _sig.MarkHits > 0);
+                // 두 번째 공격의 주화살만 대체한다. 추가 멀티샷은 갈라지거나 공격 횟수를 늘리지 않는다.
+                int branches = crossShot && i == 0 ? 2 : 1;
+                for (int branch = 0; branch < branches; branch++)
+                {
+                    Vector2 branchDirection = branches == 2
+                        ? (Vector2)(Quaternion.Euler(0f, 0f, branch == 0 ? -hero.crossShotHalfAngle : hero.crossShotHalfAngle) * direction)
+                        : direction;
+                    DamageInfo damage = DamageCalculator.Roll(Stats, perProjectile * (branches == 2 ? _sig.CrossShotCoefficient : 1f), DamageKind.BasicAttack);
+                    if (i == 0 && branch == 0) damage.Amount += TakeIroncladStore();
+                    Projectile p = _projectiles.Get(origin, Quaternion.identity);
+                    int pierce = Attack.Get(AttackModifierKind.Pierce) + (_sig.FirstShotPierce && _firstShotThisShot ? 1 : 0)
+                        + (observedShot ? 1 : 0);
+                    bool humanHit = i == 0 && (hero.sealHits > 0 || hero.observationMark);
+                    System.Action<Health, Vector2> onTarget = humanHit
+                        ? (h, point) => OnHumanProjectileHitTarget(h, point, generation, observationAttack)
+                        : i == 0 && _sig.MarkHits > 0 ? OnMarkProjectileHitTarget : needsTarget ? OnProjectileHitTarget : null;
+                    p.Launch(branchDirection, hero.projectileSpeed, damage, enemyMask, wallMask,
+                        pierce, Attack.Get(AttackModifierKind.Ricochet),
+                        _projectiles.Release, OnBasicAttackHit, onHitTarget: onTarget,
+                        notifyFirstTargetOnly: humanHit || i == 0 && _sig.MarkHits > 0);
+                }
             }
 
             // 모든 탄을 먼저 보낸 뒤 같은 표적에 동반 타격한다. 표적을 쓰러뜨려도 멀티샷 수는 바뀌지 않는다.
             if (hero.guardianAttacks > 0) JoinGuardianAttack(target);
+            if (hero.observationMark) ReleaseObservationWave(markedTarget as Health, markedLife);
+        }
+
+        private void OnHumanProjectileHitTarget(Health target, Vector2 point, int generation, int observationAttack)
+        {
+            if (!isActiveAndEnabled || Health.IsDead || !Stop.IsStopped || generation != _stopSignatureGeneration || target == null) return;
+            if (hero.sealHits > 0 && _seal.RecordHit(target, target.Life, true, true, hero.sealHits)) ApplySeal(target, point);
+            if (hero.observationMark && !target.IsDead && _curie.TryMark(target, target.Life, observationAttack, true))
+                AttackFx.Burst(point, 0.35f, new Color(0.72f, 0.82f, 0.95f, 0.3f), 0.3f);
+        }
+
+        private void ApplySeal(Health target, Vector2 point)
+        {
+            EnemyBase chosen = null;
+            float closest = _sig.SealRadius * _sig.SealRadius;
+            foreach (EnemyBase enemy in EnemyBase.Alive)
+            {
+                if (enemy == null || enemy.Health == null || enemy.Health.IsDead) continue;
+                float distance = ((Vector2)enemy.transform.position - point).sqrMagnitude;
+                if (!WuzetianSealState.CanRoot(enemy is IPhasedBoss, enemy.IsElite, enemy.Health == target, distance, _sig.SealRadius)
+                    || distance > closest) continue;
+                chosen = enemy;
+                closest = distance;
+            }
+            // 주변 일반 적이 없을 때만 맞힌 보스에 작은 둔화를 준다. 보스를 묶지는 않는다.
+            if (chosen == null && !target.IsDead && target.TryGetComponent(out EnemyBase anchor) && anchor is IPhasedBoss) chosen = anchor;
+            if (chosen == null || !_seal.TryControl(chosen.Health, chosen.Health.Life, Time.time,
+                    chosen is IPhasedBoss, chosen.IsElite, hero, out float slow)) return;
+            chosen.Status.ApplySlow(slow, Mathf.Min(1f, _sig.SealDuration), _seal);
+            AttackFx.Burst(chosen.transform.position, 0.5f, new Color(0.9f, 0.55f, 0.28f, 0.3f), 0.25f);
+        }
+
+        private void ReleaseObservationWave(Health target, int life)
+        {
+            if (target == null || !CurieObservationState.CanRelease(target, life, target.Life, !target.IsDead)) return;
+            Vector2 center = target.transform.position;
+            AttackFx.Burst(center, _sig.ObservationWaveRadius, new Color(0.72f, 0.82f, 0.95f, 0.3f), 0.2f);
+            Skills.CombatQuery.EnemiesWithin(center, _sig.ObservationWaveRadius, _observationHits);
+            foreach (EnemyBase enemy in _observationHits)
+            {
+                DamageInfo damage = DamageCalculator.Roll(Stats, _sig.ObservationWaveCoefficient, DamageKind.BasicAttack, source: "sig_curie");
+                if (enemy.Health.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
+            }
         }
 
         /// <summary>

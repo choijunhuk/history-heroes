@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok, Boudica, Thor, Cleopatra, Anubis, Susanoo, Athena;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok, Boudica, Thor, Cleopatra, Anubis, Susanoo, Athena, Tomoe, Wuzetian, Curie;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate, WindSlash, StormPath, OwlEye, GuardianGaze;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate, WindSlash, StormPath, OwlEye, GuardianGaze, TomoeVolley, TomoeCrosswind, WuzetianDecree, WuzetianOrder, CuriePrism, CurieSpectrum;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -237,6 +237,21 @@ namespace HistoryHeroes.EditorTools
             AthenaDefinition.ConfigureHero(d.Athena);
             d.Athena.model3D = Art3DCharacters.HeroModel("athena");
             d.Athena.modelHeight = HeroModelHeight;
+
+            d.Tomoe = AssetUtil.LoadOrCreate<HeroData>($"{DataDir}/Heroes/Hero_tomoe.asset");
+            TomoeDefinition.ConfigureHero(d.Tomoe);
+            d.Tomoe.model3D = Art3DCharacters.HeroModel("tomoe");
+            d.Tomoe.modelHeight = HeroModelHeight;
+
+            d.Wuzetian = AssetUtil.LoadOrCreate<HeroData>($"{DataDir}/Heroes/Hero_wuzetian.asset");
+            WuzetianDefinition.ConfigureHero(d.Wuzetian);
+            d.Wuzetian.model3D = Art3DCharacters.HeroModel("wuzetian");
+            d.Wuzetian.modelHeight = HeroModelHeight;
+
+            d.Curie = AssetUtil.LoadOrCreate<HeroData>($"{DataDir}/Heroes/Hero_curie.asset");
+            CurieDefinition.ConfigureHero(d.Curie);
+            d.Curie.model3D = Art3DCharacters.HeroModel("curie");
+            d.Curie.modelHeight = HeroModelHeight;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -528,6 +543,21 @@ namespace HistoryHeroes.EditorTools
             d.OwlEye.icon = Icon("shield");
             d.Pool.Add(d.OwlEye);
             d.Athena.exclusiveActive = d.OwlEye;
+            d.TomoeVolley = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_tomoe_volley.asset");
+            TomoeDefinition.ConfigureVolley(d.TomoeVolley);
+            d.TomoeVolley.icon = Icon("khan_volley");
+            d.Pool.Add(d.TomoeVolley);
+            d.Tomoe.exclusiveActive = d.TomoeVolley;
+            d.WuzetianDecree = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_wuzetian_decree.asset");
+            WuzetianDefinition.ConfigureDecree(d.WuzetianDecree);
+            d.WuzetianDecree.icon = Icon("star");
+            d.Pool.Add(d.WuzetianDecree);
+            d.Wuzetian.exclusiveActive = d.WuzetianDecree;
+            d.CuriePrism = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_curie_prism.asset");
+            CurieDefinition.ConfigurePrism(d.CuriePrism);
+            d.CuriePrism.icon = Icon("star");
+            d.Pool.Add(d.CuriePrism);
+            d.Curie.exclusiveActive = d.CuriePrism;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -594,7 +624,16 @@ namespace HistoryHeroes.EditorTools
             d.CleopatraLibrary = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_cleopatra_library.asset");
             CleopatraDefinition.ConfigureLibrary(d.CleopatraLibrary);
             d.CleopatraLibrary.icon = Icon("star");
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate, d.StormPath, d.GuardianGaze }) UnityEditor.EditorUtility.SetDirty(s);
+            d.TomoeCrosswind = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_tomoe_crosswind.asset");
+            TomoeDefinition.ConfigureCrosswind(d.TomoeCrosswind);
+            d.TomoeCrosswind.icon = Icon("khan_volley");
+            d.WuzetianOrder = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_wuzetian_order.asset");
+            WuzetianDefinition.ConfigureOrder(d.WuzetianOrder);
+            d.WuzetianOrder.icon = Icon("star");
+            d.CurieSpectrum = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_curie_spectrum.asset");
+            CurieDefinition.ConfigureSpectrum(d.CurieSpectrum);
+            d.CurieSpectrum.icon = Icon("star");
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate, d.StormPath, d.GuardianGaze, d.TomoeCrosswind, d.WuzetianOrder, d.CurieSpectrum }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -632,9 +671,18 @@ namespace HistoryHeroes.EditorTools
             FusionRecipe cleopatraRecipe = AddHeroRecipe(d, "cleopatra_library", FusionType.Evolution, d.CleopatraPharos, 5, activeDamage, 1, d.CleopatraLibrary, "cleopatra");
             CleopatraDefinition.ConfigureRecipe(cleopatraRecipe, d.CleopatraPharos, activeDamage, d.CleopatraLibrary);
             UnityEditor.EditorUtility.SetDirty(cleopatraRecipe);
+            FusionRecipe tomoeRecipe = AddHeroRecipe(d, "tomoe_crosswind", FusionType.Evolution, d.TomoeVolley, 5, aspd, 1, d.TomoeCrosswind, "tomoe");
+            TomoeDefinition.ConfigureRecipe(tomoeRecipe, d.TomoeVolley, aspd, d.TomoeCrosswind);
+            UnityEditor.EditorUtility.SetDirty(tomoeRecipe);
+            FusionRecipe wuzetianRecipe = AddHeroRecipe(d, "wuzetian_order", FusionType.Evolution, d.WuzetianDecree, 5, d.DefUp, 1, d.WuzetianOrder, "wuzetian");
+            WuzetianDefinition.ConfigureRecipe(wuzetianRecipe, d.WuzetianDecree, d.DefUp, d.WuzetianOrder);
+            UnityEditor.EditorUtility.SetDirty(wuzetianRecipe);
+            FusionRecipe curieRecipe = AddHeroRecipe(d, "curie_spectrum", FusionType.Evolution, d.CuriePrism, 5, activeDamage, 1, d.CurieSpectrum, "curie");
+            CurieDefinition.ConfigureRecipe(curieRecipe, d.CuriePrism, activeDamage, d.CurieSpectrum);
+            UnityEditor.EditorUtility.SetDirty(curieRecipe);
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok, d.Boudica, d.Thor, d.Cleopatra, d.Anubis, d.Susanoo, d.Athena };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok, d.Boudica, d.Thor, d.Cleopatra, d.Anubis, d.Susanoo, d.Athena, d.Tomoe, d.Wuzetian, d.Curie };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -643,7 +691,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate, d.StormPath, d.GuardianGaze,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate, d.StormPath, d.GuardianGaze, d.TomoeCrosswind, d.WuzetianOrder, d.CurieSpectrum,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -697,6 +745,9 @@ namespace HistoryHeroes.EditorTools
             ["wind_slash"] = SkillRole.Single, ["storm_path"] = SkillRole.Single,
             ["owl_eye"] = SkillRole.Single, ["guardian_gaze"] = SkillRole.Single,
             ["cleopatra_pharos"] = SkillRole.Area, ["cleopatra_library"] = SkillRole.Area,
+            ["tomoe_volley"] = SkillRole.Area, ["tomoe_crosswind"] = SkillRole.Area,
+            ["wuzetian_decree"] = SkillRole.Area, ["wuzetian_order"] = SkillRole.Area,
+            ["curie_prism"] = SkillRole.Area, ["curie_spectrum"] = SkillRole.Area,
             ["ysg_pyeonjeon"] = SkillRole.Single, ["ysg_shingung"] = SkillRole.Single,
             ["zhuge_gate"] = SkillRole.Defense,
             // 방어: 버티기·막기
@@ -880,6 +931,15 @@ namespace HistoryHeroes.EditorTools
             d.Cleopatra.projectilePrefab = p.Starlight;
             d.CleopatraPharos.behaviourPrefab = p.CleopatraPharos;
             d.CleopatraLibrary.behaviourPrefab = p.CleopatraLibrary;
+            d.Tomoe.projectilePrefab = p.PlayerArrow;
+            d.TomoeVolley.behaviourPrefab = p.TomoeVolley;
+            d.TomoeCrosswind.behaviourPrefab = p.TomoeCrosswind;
+            d.Wuzetian.projectilePrefab = p.Orb;
+            d.WuzetianDecree.behaviourPrefab = p.WuzetianDecree;
+            d.WuzetianOrder.behaviourPrefab = p.WuzetianOrder;
+            d.Curie.projectilePrefab = p.Starlight;
+            d.CuriePrism.behaviourPrefab = p.CuriePrism;
+            d.CurieSpectrum.behaviourPrefab = p.CurieSpectrum;
             d.KhanVolley.behaviourPrefab = p.KhanVolley;
             d.KhanStorm.behaviourPrefab = p.KhanStorm;
             d.GuanSpin.behaviourPrefab = p.GuanSpin;

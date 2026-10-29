@@ -48,6 +48,11 @@ namespace HistoryHeroes.Heroes
         public readonly float WindFollowCoefficient;
         public readonly float ShieldPrepareSeconds;
         public readonly float OwlBonusCoefficient;
+        public readonly float CrossShotCoefficient;
+        public readonly float SealDuration;
+        public readonly float SealRadius;
+        public readonly float ObservationWaveCoefficient;
+        public readonly float ObservationWaveRadius;
 
         private HeroSignature(float firstShotBonus, bool firstShotPierce, float damageReduction, float lowHpAttackBonus,
             float cannonRadius, int cannonEvery, int chainBounces, float chainFalloff, float stopGuard = 0f, float stopGuardCap = 0f,
@@ -56,8 +61,15 @@ namespace HistoryHeroes.Heroes
             float reclaimKnockback = 0f, float reclaimAttackBonus = 0f, float thunderRadius = 0f, float thunderCoefficient = 0f,
             float guardianCoefficient = 0f, int guardianTargets = 0, int markHits = 0, float markSlow = 0f,
             float markDuration = 0f, float markCooldown = 0f, float windFirstCoefficient = 0f,
-            float windFollowCoefficient = 0f, float shieldPrepareSeconds = 0f, float owlBonusCoefficient = 0f)
+            float windFollowCoefficient = 0f, float shieldPrepareSeconds = 0f, float owlBonusCoefficient = 0f,
+            float crossShotCoefficient = 0f, float sealDuration = 0f, float sealRadius = 0f,
+            float observationWaveCoefficient = 0f, float observationWaveRadius = 0f)
         {
+            CrossShotCoefficient = crossShotCoefficient;
+            SealDuration = sealDuration;
+            SealRadius = sealRadius;
+            ObservationWaveCoefficient = observationWaveCoefficient;
+            ObservationWaveRadius = observationWaveRadius;
             WindFirstCoefficient = windFirstCoefficient;
             WindFollowCoefficient = windFollowCoefficient;
             ShieldPrepareSeconds = shieldPrepareSeconds;
@@ -136,7 +148,13 @@ namespace HistoryHeroes.Heroes
                 hero.windFirstArc > 0f ? (s3 && hero.star3WindFirstCoefficient >= 0f ? hero.star3WindFirstCoefficient : hero.windFirstCoefficient) : 0f,
                 hero.windFollowArc > 0f ? (s5 && hero.star5WindFollowCoefficient >= 0f ? hero.star5WindFollowCoefficient : hero.windFollowCoefficient) : 0f,
                 hero.shieldPrepareSeconds > 0f ? (s3 && hero.star3ShieldPrepareSeconds > 0f ? hero.star3ShieldPrepareSeconds : hero.shieldPrepareSeconds) : 0f,
-                hero.owlBonusCoefficient > 0f ? (s5 && hero.star5OwlBonusCoefficient >= 0f ? hero.star5OwlBonusCoefficient : hero.owlBonusCoefficient) : 0f);
+                hero.owlBonusCoefficient > 0f ? (s5 && hero.star5OwlBonusCoefficient >= 0f ? hero.star5OwlBonusCoefficient : hero.owlBonusCoefficient) : 0f,
+                hero.crossShotEvery > 0 ? (s5 && hero.star5CrossShotCoefficient >= 0f ? hero.star5CrossShotCoefficient :
+                    s3 && hero.star3CrossShotCoefficient >= 0f ? hero.star3CrossShotCoefficient : hero.crossShotCoefficient) : 0f,
+                hero.sealHits > 0 ? (s3 && hero.star3SealRootDuration >= 0f ? hero.star3SealRootDuration : hero.sealRootDuration) : 0f,
+                hero.sealHits > 0 ? (s5 && hero.star5SealRadius >= 0f ? hero.star5SealRadius : hero.sealRadius) : 0f,
+                hero.observationMark ? (s3 && hero.star3ObservationWaveCoefficient >= 0f ? hero.star3ObservationWaveCoefficient : hero.observationWaveCoefficient) : 0f,
+                hero.observationMark ? (s5 && hero.star5ObservationWaveRadius >= 0f ? hero.star5ObservationWaveRadius : hero.observationWaveRadius) : 0f);
         }
 
         /// <summary>별 강화 설명 ("★3 첫 발 피해 +75% · ★5 첫 발 +100%, 관통")</summary>
@@ -160,6 +178,9 @@ namespace HistoryHeroes.Heroes
             if (hero.markHits > 0 && hero.star3MarkDuration >= 0f) s3 = $"표식 둔화 {hero.star3MarkDuration:0.#}초";
             if (hero.windFirstArc > 0f && hero.star3WindFirstCoefficient >= 0f) s3 = $"첫 베기 피해 {hero.star3WindFirstCoefficient * 100f:0}%";
             if (hero.shieldPrepareSeconds > 0f && hero.star3ShieldPrepareSeconds > 0f) s3 = $"방패 준비 {hero.star3ShieldPrepareSeconds:0.#}초";
+            if (hero.crossShotEvery > 0 && hero.star3CrossShotCoefficient >= 0f) s3 = $"교차 화살 한 갈래 {hero.star3CrossShotCoefficient * 100f:0}%";
+            if (hero.sealHits > 0 && hero.star3SealRootDuration >= 0f) s3 = $"인장 지속 {hero.star3SealRootDuration:0.#}초";
+            if (hero.observationMark && hero.star3ObservationWaveCoefficient >= 0f) s3 = $"관측 파동 피해 {hero.star3ObservationWaveCoefficient * 100f:0}%";
             if (hero.star5FirstShotBonus >= 0f) s5 = $"첫 발 피해 +{hero.star5FirstShotBonus * 100f:0}%" + (hero.star5FirstShotPierce ? ", 첫 발 관통" : string.Empty);
             if (hero.star5LowHpAttackBonus >= 0f) s5 = $"체력 50% 아래 공격력 +{hero.star5LowHpAttackBonus * 100f:0}%";
             if (hero.star5CannonEvery > 0) s5 = $"{hero.star5CannonEvery}발마다 포탄";
@@ -176,6 +197,9 @@ namespace HistoryHeroes.Heroes
             if (hero.markHits > 0 && hero.star5MarkSlow >= 0f) s5 = $"표식 둔화 {hero.star5MarkSlow * 100f:0}%";
             if (hero.windFollowArc > 0f && hero.star5WindFollowCoefficient >= 0f) s5 = $"연속 베기 피해 {hero.star5WindFollowCoefficient * 100f:0}%";
             if (hero.owlBonusCoefficient > 0f && hero.star5OwlBonusCoefficient >= 0f) s5 = $"표식 기본 공격 추가 {hero.star5OwlBonusCoefficient * 100f:0}%";
+            if (hero.crossShotEvery > 0 && hero.star5CrossShotCoefficient >= 0f) s5 = $"교차 화살 한 갈래 {hero.star5CrossShotCoefficient * 100f:0}%";
+            if (hero.sealHits > 0 && hero.star5SealRadius >= 0f) s5 = $"인장 탐색 반경 {hero.star5SealRadius:0.#}";
+            if (hero.observationMark && hero.star5ObservationWaveRadius >= 0f) s5 = $"관측 파동 반경 {hero.star5ObservationWaveRadius:0.#}";
             return $"★3 {s3 ?? "—"} · ★5 {s5 ?? "—"}";
         }
     }

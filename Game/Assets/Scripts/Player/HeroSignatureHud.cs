@@ -118,6 +118,7 @@ namespace HistoryHeroes.Player
             {
                 // 관측·되찾기 점은 대표 효과만 뜻한다. 부품 그림을 붙이면 작업대처럼 보인다.
                 sprite = art != null && _player.Hero.observationSeconds <= 0f && _player.Hero.reclaimStopSeconds <= 0f && _player.Hero.thunderEvery <= 0 && _player.Hero.guardianAttacks <= 0 && _player.Hero.markHits <= 0 && _player.Hero.windFirstArc <= 0f && _player.Hero.shieldPrepareSeconds <= 0f
+                    && _player.Hero.crossShotEvery <= 0 && _player.Hero.sealHits <= 0 && !_player.Hero.observationMark
                     ? (_player.Hero.chargeShot ? art.hudCharge : art.hudParts) : null;
                 int total = _player.Hero.chargeShot ? 3 : _player.Hero.observationSeconds > 0f || _player.Hero.reclaimStopSeconds > 0f
                     ? 1 : _player.Hero.thunderEvery > 0 ? 2 : _player.Hero.guardianAttacks > 0
@@ -209,6 +210,24 @@ namespace HistoryHeroes.Player
                 filled = _player.AthenaShieldReady ? 1 : 0;
                 total = 1;
                 on = Athena;
+            }
+            else if (_player.Hero.crossShotEvery > 0)
+            {
+                filled = _player.CrossfireCount;
+                total = Mathf.Clamp(_player.Hero.crossShotEvery - 1, 1, _pips.Length);
+                on = _player.Hero.color;
+            }
+            else if (_player.Hero.sealHits > 0)
+            {
+                filled = _player.SealHits;
+                total = Mathf.Clamp(_player.Hero.sealHits - 1, 1, _pips.Length);
+                on = _player.Hero.color;
+            }
+            else if (_player.Hero.observationMark)
+            {
+                filled = _player.HasObservationMark ? 1 : 0;
+                total = 1;
+                on = new Color(0.72f, 0.82f, 0.95f);
             }
 
             bool show = alive && total > 0 && (stopped || filled > 0 || reclaim && _player.ReclaimCooldownRemaining > 0f
