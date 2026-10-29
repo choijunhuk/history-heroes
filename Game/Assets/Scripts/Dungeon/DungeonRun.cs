@@ -328,6 +328,7 @@ namespace HistoryHeroes.Dungeon
             EnsureRiftFloor(cp.floor + 1);
             skills.ApplyRecord(cp.skills, database);
             skills.RestoreRiftBoosts(cp.boosts);
+            skills.Loadout.RestoreBans(cp.bannedSkillIds, cp.bansLeft);
             experience.Level.Restore(cp.level, cp.experience);
             player.Health.Revive(player.Health.Max * Mathf.Clamp(cp.hpRatio, 0.2f, 1f));
             _roomsCleared = cp.floor;
@@ -870,6 +871,8 @@ namespace HistoryHeroes.Dungeon
                 level = experience.Level.Level,
                 experience = experience.Level.Experience,
             };
+            cp.bannedSkillIds = new List<string>(skills.Loadout.BannedSkillIds);
+            cp.bansLeft = skills.Loadout.BansLeft;
             foreach (SkillInstance s in skills.Loadout.Actives) cp.skills.Add(new RecordSkill(s.Data.id, s.Level, s.IsFusionResult));
             foreach (SkillInstance s in skills.Loadout.Passives) cp.skills.Add(new RecordSkill(s.Data.id, s.Level, s.IsFusionResult));
             cp.boosts = skills.RiftBoostCounts();

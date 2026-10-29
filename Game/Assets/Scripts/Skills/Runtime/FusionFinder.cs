@@ -23,6 +23,7 @@ namespace HistoryHeroes.Skills
                 if (recipe == null || recipe.materialA == null || recipe.materialB == null || recipe.result == null) continue;
                 if (!string.IsNullOrEmpty(recipe.heroOnlyId) && recipe.heroOnlyId != heroId) continue;
                 if (loadout.IsCompleted(recipe) || loadout.IsHidden(recipe)) continue;
+                if (loadout.IsBanned(recipe.materialA) || loadout.IsBanned(recipe.materialB)) continue;
                 if (loadout.Find(recipe.result) != null) continue; // 같은 결과를 이미 가지고 있음
 
                 SkillInstance a = loadout.Find(recipe.materialA);

@@ -30,6 +30,7 @@ namespace HistoryHeroes.UI
 
         [Header("그래픽 평가 3번: 아이콘 · 등급 테두리 · 뒤 빛 · 튀어나오기")]
         [SerializeField] private Image frame;
+        [SerializeField] private Outline banOutline;
         [SerializeField] private Image glow;
         [SerializeField] private Image iconSlot;
         [SerializeField] private Image icon;
@@ -44,7 +45,6 @@ namespace HistoryHeroes.UI
         [SerializeField] private Sprite healIcon;
 
         private const float BoxBottomPlain = 58f;
-        private const float BoxBottomWithHint = 112f;
 
         // 등급 색 = 테두리·아이콘 칸·뒤 빛 (카드 바탕은 어두운 남색으로 같다)
         // 일반은 차분한 테두리, 희귀·전설만 강하게 (전체 UI 검토 6번)
@@ -90,10 +90,11 @@ namespace HistoryHeroes.UI
         private static float GlowFor(Rarity rarity) => rarity == Rarity.Legendary ? 0.75f : rarity == Rarity.Rare ? 0.45f : 0f;
 
         /// <param name="legendaryWarning">던전 ★3(전설 없이 클리어) 도전 중이면 전설 카드에 경고 (Modes 3-2)</param>
-        public void Show(SkillCard card, SkillManager skills, Action onClick, bool legendaryWarning = false)
+        public void Show(SkillCard card, SkillManager skills, Action onClick, bool legendaryWarning = false, bool banMode = false)
         {
             _onClick = onClick;
             _rainbow = card.Type == CardType.Fusion;
+            if (banOutline != null) banOutline.enabled = banMode && (card.Type == CardType.NewSkill || card.Type == CardType.LevelUp);
             string hint = null;
 
             switch (card.Type)
@@ -149,6 +150,11 @@ namespace HistoryHeroes.UI
                     break;
             }
 
+            if (banMode)
+            {
+                hint = skills.BanHint(card);
+                if ((card.Type == CardType.NewSkill || card.Type == CardType.LevelUp) && frame != null) frame.color = new Color(0.9f, 0.22f, 0.25f);
+            }
             SetHint(hint);
             if (newBadge != null)
             {
@@ -251,7 +257,11 @@ namespace HistoryHeroes.UI
             materialLabel.gameObject.SetActive(has);
             if (hintBox != null) hintBox.SetActive(has);
             materialLabel.text = has ? hint : string.Empty;
-            if (descriptionBox != null) descriptionBox.offsetMin = new Vector2(descriptionBox.offsetMin.x, has ? BoxBottomWithHint : BoxBottomPlain);
+            // 목표 두 개와 조합 진행·빼기 경고가 여러 줄이어도 설명과 겹치지 않게 한다.
+            float height = has ? Mathf.Clamp(materialLabel.GetPreferredValues(hint, materialLabel.rectTransform.rect.width, Mathf.Infinity).y, 96f, 176f) : 96f;
+            materialLabel.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+            if (hintBox != null) ((RectTransform)hintBox.transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height + 4f);
+            if (descriptionBox != null) descriptionBox.offsetMin = new Vector2(descriptionBox.offsetMin.x, has ? height + 16f : BoxBottomPlain);
         }
 
         public static Color RarityColor(Rarity rarity)

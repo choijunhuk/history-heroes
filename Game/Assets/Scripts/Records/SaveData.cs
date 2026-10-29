@@ -13,7 +13,8 @@ namespace HistoryHeroes.Records
         /// <summary>저장 구조가 바뀌면 올린다. 읽을 때 옛 구조면 옮겨 담고(Migrate), 더 새 구조면 읽지 않고 원본을 보존한다.</summary>
         /// 1: v0.2 기록·도감·구간 / 2: v0.2b 재화·하트·계정 레벨·별 / 3: v0.4 장비·영웅 성장·수련·상자·상점
         /// <summary>4 (v0.5): 서바이벌·펫·미션 — 빈 상태로 시작 (Normalize가 채운다). 옛 빌드는 더 새 파일을 읽지 않고 멈춘다</summary>
-        public const int CurrentSchemaVersion = 5;
+        /// <summary>6: 카드 빼기 이력·남은 횟수와 목표 레시피 (옛 저장은 빼기 2회부터)</summary>
+        public const int CurrentSchemaVersion = 6;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -39,6 +40,9 @@ namespace HistoryHeroes.Records
 
         /// <summary>조합 도감: 한 번이라도 만든 레시피 ID</summary>
         public List<string> discoveredRecipes = new List<string>();
+
+        /// <summary>발견한 레시피 중 목표로 고른 ID (최대 2개, 뽑기 확률은 그대로)</summary>
+        public List<string> targetRecipes = new List<string>();
 
         /// <summary>열린 구간 (1부터). 구간 보스를 처음 깨면 +1 (GameDesign 7-4)</summary>
         public int unlockedChapter = 1;
@@ -352,6 +356,8 @@ namespace HistoryHeroes.Records
         public List<RecordSkill> skills = new List<RecordSkill>();
         /// <summary>균열 강화를 고른 횟수 (공격력 / 체력 / 공격속도 순서)</summary>
         public List<int> boosts = new List<int>();
+        public List<string> bannedSkillIds = new List<string>();
+        public int bansLeft = 2;
     }
 
     /// <summary>
@@ -387,6 +393,8 @@ namespace HistoryHeroes.Records
         public int offersMade;
         public bool choseLegendary;
         public int rerollsLeft = -1;
+        public List<string> bannedSkillIds = new List<string>();
+        public int bansLeft = 2;
         /// <summary>확장 1차 3장: 갈림길에서 고른 문 (갈림길마다 -1 = 아직, 0 = 왼쪽(평범), 1 = 오른쪽(특별))</summary>
         public List<int> forkChoices = new List<int>();
         /// <summary>기억의 석비에서 고른 축복 id (판 안 효과, 없으면 빈 글)</summary>

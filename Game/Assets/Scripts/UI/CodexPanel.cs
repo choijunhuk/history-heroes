@@ -16,6 +16,10 @@ namespace HistoryHeroes.UI
         [SerializeField] private GameObject root;
         [SerializeField] private TMP_Text progressLabel;
         [SerializeField] private TMP_Text listLabel;
+        [SerializeField] private TMP_Text messageLabel;
+        [SerializeField] private TMP_Text[] recipeLabels;
+        [SerializeField] private Button[] recipeButtons;
+        [SerializeField] private ScrollRect scroll;
         [SerializeField] private Button backButton;
         [SerializeField] private SkillDatabase database;
         [Tooltip("유물 도감 (v0.4, 조합 도감 옆)")]
@@ -29,22 +33,56 @@ namespace HistoryHeroes.UI
             root.SetActive(false);
             backButton.onClick.AddListener(() => root.SetActive(false));
             if (relicButton != null) relicButton.onClick.AddListener(() => relics.Open());
+#if UNITY_EDITOR
+            if (recipeLabels == null || recipeButtons == null || recipeLabels.Length != database.recipes.Count || recipeButtons.Length != recipeLabels.Length)
+                Debug.LogWarning("[CodexPanel] 목표 레시피 단추 연결이 없습니다. SceneBuilder.BuildAll로 장면을 다시 만들어 주세요.", this);
+#endif
+            for (int i = 0; recipeButtons != null && i < recipeButtons.Length; i++)
+            {
+                int index = i;
+                recipeButtons[i].onClick.AddListener(() => ToggleTarget(index));
+            }
         }
 
         public void Open()
         {
             root.SetActive(true);
+            if (messageLabel != null) messageLabel.text = "";
             Render();
-            listLabel.rectTransform.anchoredPosition = Vector2.zero; // 늘 맨 위부터
+            if (scroll != null) scroll.verticalNormalizedPosition = 1f;
+            else listLabel.rectTransform.anchoredPosition = Vector2.zero;
+        }
+
+        private void ToggleTarget(int index)
+        {
+            if (index >= database.recipes.Count) return;
+            FusionRecipe recipe = database.recipes[index];
+            if (!RecipeBook.IsDiscovered(recipe)) return;
+            bool selected = RecipeBook.IsTargeted(recipe);
+            SaveSystem.CommitResult result = RecipeBook.TrySetTarget(recipe, !selected);
+            if (messageLabel != null)
+            {
+                if (result == SaveSystem.CommitResult.SaveFailed) messageLabel.text = SaveSystem.SaveFailedText;
+                else if (result == SaveSystem.CommitResult.Rejected && !selected) messageLabel.text = "목표는 최대 2개까지 고를 수 있어요";
+                else messageLabel.text = "";
+            }
+            Render();
         }
 
         private void Render()
         {
             int found = 0;
             var sb = new StringBuilder();
-            foreach (FusionRecipe r in database.recipes)
+            bool hasRows = recipeLabels != null && recipeButtons != null && recipeLabels.Length == database.recipes.Count && recipeButtons.Length == recipeLabels.Length;
+            for (int i = 0; i < database.recipes.Count; i++)
             {
-                if (r == null || r.result == null) continue;
+                FusionRecipe r = database.recipes[i];
+                if (r == null || r.result == null)
+                {
+                    if (hasRows) recipeLabels[i].transform.parent.gameObject.SetActive(false);
+                    continue;
+                }
+                if (hasRows) recipeLabels[i].transform.parent.gameObject.SetActive(true);
                 bool known = RecipeBook.IsDiscovered(r);
                 if (known) found++;
 
@@ -54,17 +92,24 @@ namespace HistoryHeroes.UI
                     string a = r.materialA != null ? r.materialA.displayName : "?";
                     string b = r.materialB != null ? r.materialB.displayName : "?";
                     string rule = r.type == FusionType.Evolution ? $"{a} Lv{r.requiredLevelA} + {b}" : $"{a} Lv{r.requiredLevelA} + {b} Lv{r.requiredLevelB}";
-                    sb.AppendLine($"<b>{r.result.displayName}</b>  ({kind})");
-                    sb.AppendLine($"  {rule}");
+                    if (hasRows)
+                    {
+                        recipeLabels[i].text = $"<b>{r.result.displayName}</b>  ({kind})\n{rule}";
+                        recipeButtons[i].gameObject.SetActive(true);
+                        recipeButtons[i].GetComponentInChildren<TMP_Text>().text = RecipeBook.IsTargeted(r) ? "★ 목표" : "목표";
+                    }
+                    else sb.AppendLine($"<b>{r.result.displayName}</b>  ({kind})\n  {rule}\n");
                 }
                 else
                 {
                     string hint = r.type == FusionType.Evolution ? "액티브 최대 레벨 + 패시브" : "액티브 Lv3 + 액티브 Lv3";
-                    sb.AppendLine($"<b>???</b>  ({kind})");
-                    sb.AppendLine($"  {hint}");
+                    if (hasRows)
+                    {
+                        recipeLabels[i].text = $"<b>???</b>  ({kind})\n{hint}";
+                        recipeButtons[i].gameObject.SetActive(false);
+                    }
+                    else sb.AppendLine($"<b>???</b>  ({kind})\n  {hint}\n");
                 }
-
-                sb.AppendLine();
             }
 
             // 스킬별 조합 수 (조사 A3): 미발견 조합은 결과·짝 대신 개수만
