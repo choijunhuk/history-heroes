@@ -36,6 +36,7 @@ namespace HistoryHeroes.Heroes
         public static bool IsUnlocked(SaveData d, HeroData hero)
         {
             if (hero == null) return false;
+            if (Modes.GodTrialRules.IsGod(hero.id)) return Modes.GodTrialRules.IsHeroUnlocked(d, hero.id);
             if (hero.gemsOnly) return d.unlockedHeroes.Contains(hero.id); // 보석으로만 (코드 검토: 0구간 = 처음부터로 읽혀 공짜로 열리던 것)
             if (hero.unlockAfterBossChapter <= 0) return true;
             if (d.unlockedChapter > hero.unlockAfterBossChapter) return true; // 그 구간 보스를 깼다
@@ -45,6 +46,7 @@ namespace HistoryHeroes.Heroes
         /// <summary>"1구간 보스를 깨면 열려요" 같은 안내</summary>
         public static string Condition(HeroData hero)
         {
+            if (Modes.GodTrialRules.IsGod(hero.id)) return "토르의 시련에서 조각 30개를 모으면 열려요";
             if (hero.gemsOnly) return $"보석 {Wallet.Format(hero.unlockGems)}개로 열려요 (던전 {FreePickRuns}판 하면 보석 영웅 한 명은 무료)";
             return hero.unlockAfterBossChapter <= 0 ? "처음부터" : $"{hero.unlockAfterBossChapter}구간 보스를 깨면 열려요";
         }
@@ -52,6 +54,7 @@ namespace HistoryHeroes.Heroes
         /// <summary>잠긴 영웅 안내 한 줄: "2구간 보스를 깨면 열려요 (또는 보석 1,500)" / "보석 2,000개로 열려요"</summary>
         public static string LockText(HeroData hero)
         {
+            if (Modes.GodTrialRules.IsGod(hero.id)) return Condition(hero);
             return hero.gemsOnly ? Condition(hero) : $"{Condition(hero)} (또는 보석 {Wallet.Format(hero.unlockGems)})";
         }
 
@@ -59,7 +62,8 @@ namespace HistoryHeroes.Heroes
         public const int FreePickRuns = 10;
 
         public static bool CanClaimFree(SaveData d, HeroData hero) =>
-            hero != null && hero.gemsOnly && !d.freeHeroClaimed && d.dungeonRuns >= FreePickRuns && !IsUnlocked(d, hero);
+            hero != null && !Modes.GodTrialRules.IsGod(hero.id) && hero.gemsOnly
+            && !d.freeHeroClaimed && d.dungeonRuns >= FreePickRuns && !IsUnlocked(d, hero);
 
         /// <summary>10판 기념 무료 해금 (한 명만, 보석 영웅만)</summary>
         public static bool TryClaimFree(SaveData d, HeroData hero)
@@ -72,7 +76,8 @@ namespace HistoryHeroes.Heroes
 
         public static bool TryBuy(SaveData d, HeroData hero)
         {
-            if (hero == null || IsUnlocked(d, hero) || !Wallet.TrySpendGems(d, hero.unlockGems)) return false;
+            if (hero == null || Modes.GodTrialRules.IsGod(hero.id) || IsUnlocked(d, hero)
+                || !Wallet.TrySpendGems(d, hero.unlockGems)) return false;
             d.unlockedHeroes.Add(hero.id);
             return true;
         }

@@ -49,8 +49,9 @@ namespace HistoryHeroes.Modes
             if (GameSession.Mode == BattleMode.Boss)
             {
                 RunRecord record = save.FindRecord(GameSession.BossRecordId);
-                if (record == null && save.records.Count > 0) record = save.records[save.records.Count - 1];
+                if (record == null && !GameSession.IsGodTrial && save.records.Count > 0) record = save.records[save.records.Count - 1];
                 if (record != null) return roster.Find(record.heroId);
+                if (GameSession.IsGodTrial) return null;
             }
 
             // 튜토리얼 던전: 칭기즈 칸 (UX 4장)
@@ -102,7 +103,7 @@ namespace HistoryHeroes.Modes
             if (GameSession.Mode == BattleMode.Boss)
             {
                 RunRecord record = save.FindRecord(GameSession.BossRecordId);
-                if (record == null && save.records.Count > 0) record = save.records[save.records.Count - 1];
+                if (record == null && !GameSession.IsGodTrial && save.records.Count > 0) record = save.records[save.records.Count - 1];
                 return record != null && record.meta != null ? record.meta : new MetaSnapshot();
             }
 

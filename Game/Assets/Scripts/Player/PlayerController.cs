@@ -61,6 +61,7 @@ namespace HistoryHeroes.Player
         private readonly object _lowHpModifier = new object();
         private readonly List<Collider2D> _overlap = new List<Collider2D>(32);
         private readonly HashSet<Health> _chainVisited = new HashSet<Health>();
+        private readonly List<EnemyBase> _thunderHits = new List<EnemyBase>(8);
         private ContactFilter2D _enemyFilter;
 
         /// <summary>표적이 없을 때 다시 찾기까지 (매 프레임 물리 검사를 하지 않게)</summary>
@@ -131,6 +132,7 @@ namespace HistoryHeroes.Player
             ShowHeroModel();
 
             Stop.Moved += () => _firstShotPending = true;
+            Stop.Moved += _thunder.Moved;
             Stop.Stopped += () => _momentumUntil = Time.time + MomentumSeconds;
             Health.Damaged += OnDamagedIronclad; // 이순신 철갑
             Stop.Moved += OnMovedCharge; // 이성계 백발백중: 움직이기 시작하면 모은 화살을 놓는다
@@ -183,6 +185,7 @@ namespace HistoryHeroes.Player
             ClearBanner();
             _observation.Reset();
             _reclaim.Reset();
+            _thunder.Moved();
             Stats.Changed -= OnStatsChanged;
             if (_sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone();
         }
@@ -196,6 +199,7 @@ namespace HistoryHeroes.Player
             ClearBanner();
             _observation.Reset();
             _reclaim.Reset();
+            _thunder.Moved();
             Stats.RemoveAllFrom(_ironOwner);
             _ironOn = false;
             _ironStore = 0f;
@@ -246,6 +250,7 @@ namespace HistoryHeroes.Player
             ClearBanner();
             _observation.Reset();
             _reclaim.Reset();
+            _thunder.Moved();
             _body.position = position;
             _body.linearVelocity = Vector2.zero;
             transform.position = position;
@@ -259,6 +264,7 @@ namespace HistoryHeroes.Player
                 if (Health.IsDead) ClearBanner();
                 if (Health.IsDead) _observation.Reset();
                 if (Health.IsDead) _reclaim.Reset();
+                if (Health.IsDead) _thunder.Moved();
                 if (Health.IsDead && _sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone(); // 동남풍은 살아 있을 때만
                 return;
             }
@@ -465,6 +471,7 @@ namespace HistoryHeroes.Player
             ClearBanner();
             _observation.Reset();
             _reclaim.Reset();
+            _thunder.Moved();
         }
 
         // ---------------------------------------------------------------- 선덕여왕 별자리 관측
@@ -479,6 +486,9 @@ namespace HistoryHeroes.Player
         public float ReclaimProgress => _reclaim.Progress;
         public bool ReclaimReady => _reclaim.IsReady;
         public float ReclaimCooldownRemaining => _reclaim.CooldownRemaining;
+
+        private readonly ThorThunderState _thunder = new ThorThunderState();
+        public int ThunderCount => _thunder.Count;
 
         // ---------------------------------------------------------------- 다빈치 작업대
 
@@ -804,10 +814,11 @@ namespace HistoryHeroes.Player
             int waveBounces = Attack.Get(AttackModifierKind.Ricochet);
             // 표적을 찾은 실제 공격만 준비를 쓴다. 연속 베기와 검기에 효과를 복제하지 않는다.
             bool reclaimed = _reclaim.TryConsume(hero);
-            StartCoroutine(Swings(target, 1 + extra, coefficient, arc, waveBounces, reclaimed));
+            bool thunder = Stop.IsStopped && _thunder.RecordAttack(hero.thunderEvery);
+            StartCoroutine(Swings(target, 1 + extra, coefficient, arc, waveBounces, reclaimed, thunder));
         }
 
-        private IEnumerator Swings(Health target, int swings, float coefficient, float arc, int waveBounces, bool reclaimed)
+        private IEnumerator Swings(Health target, int swings, float coefficient, float arc, int waveBounces, bool reclaimed, bool thunder)
         {
             for (int s = 0; s < swings; s++)
             {
@@ -821,8 +832,22 @@ namespace HistoryHeroes.Player
                 bool reclaim = reclaimed && s == 0;
                 float swingCoefficient = coefficient * (reclaim ? 1f + _sig.ReclaimAttackBonus : 1f);
                 SlashOnce(origin, aim, swingCoefficient, arc, reclaim);
+                if (thunder && s == 0) ThunderShockwave(origin, aim);
                 if (waveBounces > 0) FireWave(origin, aim, waveBounces);
                 if (s < swings - 1) yield return new WaitForSeconds(swingInterval);
+            }
+        }
+
+        private void ThunderShockwave(Vector2 origin, Vector2 aim)
+        {
+            Vector2 center = origin + aim * 1.2f;
+            float radius = _sig.ThunderRadius;
+            AttackFx.Burst(center, radius, new Color(0.52f, 0.75f, 0.95f, 0.35f));
+            Skills.CombatQuery.EnemiesWithin(center, radius, _thunderHits);
+            foreach (EnemyBase enemy in _thunderHits)
+            {
+                DamageInfo damage = DamageCalculator.Roll(Stats, _sig.ThunderCoefficient, DamageKind.BasicAttack, source: "sig_thor");
+                if (enemy.Health.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
             }
         }
 

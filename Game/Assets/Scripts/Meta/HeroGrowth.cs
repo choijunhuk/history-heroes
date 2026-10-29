@@ -21,6 +21,11 @@ namespace HistoryHeroes.Meta
 
         public static bool CanLevelUp(SaveData save, MetaTable table, string heroId, out int cost)
         {
+            if (!Modes.GodTrialRules.IsHeroUnlocked(save, heroId))
+            {
+                cost = 0;
+                return false;
+            }
             HeroProgress h = save.Hero(heroId);
             cost = table.HeroLevelCost(h.level);
             return h.level < table.maxHeroLevel;
@@ -28,6 +33,7 @@ namespace HistoryHeroes.Meta
 
         public static bool TryLevelUp(SaveData save, MetaTable table, string heroId)
         {
+            if (!Modes.GodTrialRules.IsHeroUnlocked(save, heroId)) return false;
             if (!CanLevelUp(save, table, heroId, out int cost) || !Wallet.TrySpendGold(save, cost)) return false;
             save.Hero(heroId).level++;
             return true;
@@ -40,6 +46,7 @@ namespace HistoryHeroes.Meta
 
         public static bool TryAwaken(SaveData save, MetaTable table, string heroId)
         {
+            if (!Modes.GodTrialRules.IsHeroUnlocked(save, heroId)) return false;
             int cost = AwakenCost(save, table, heroId);
             if (cost < 0 || Shards(save, heroId) < cost) return false;
             save.AddItem(Wallet.HeroShard(heroId), -cost);
@@ -89,7 +96,8 @@ namespace HistoryHeroes.Meta
 
         public static bool TryBuyHeroShard(SaveData save, string heroId, string today)
         {
-            if (string.IsNullOrEmpty(heroId) || ShardsLeftToday(save, today) <= 0) return false;
+            if (string.IsNullOrEmpty(heroId) || !Modes.GodTrialRules.CanReceiveNormalShards(save, heroId)
+                || ShardsLeftToday(save, today) <= 0) return false;
             if (!Wallet.TrySpendGold(save, ShardPrice)) return false;
             if (save.shop.date != today)
             {

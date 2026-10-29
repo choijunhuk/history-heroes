@@ -60,7 +60,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(heroPanel)) props.Ref("relics", relicPanel).Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
             using (var props = new Props(shopPanel)) props.Ref("roster", roster).Ref("relics", meta != null ? meta.relics : null);
             using (var props = new Props(relicPanel)) props.Ref("shop", shopPanel);
-            using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel);
+            using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel).Ref("opening", opening).Ref("thorTrial", LoadThorTrial());
 
             using (var props = new Props(lobby))
             {
@@ -222,12 +222,16 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text title = Label("Title", panel, "보스", 68, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 770f), new Vector2(900f, 100f));
+            Button normalTab = Btn("NormalBossTab", panel, "기존 보스", new Vector2(-260f, 890f), new Vector2(470f, 90f), ButtonBlue, out _);
+            Button trialTab = Btn("GodTrialTab", panel, "신의 시련", new Vector2(260f, 890f), new Vector2(470f, 90f), ButtonBlue, out _);
             TMP_Text tests = Label("Tests", panel, "", 32, TextAlignmentOptions.Center);
             Place(tests.rectTransform, Center, Center, new Vector2(0f, 670f), new Vector2(980f, 90f));
             TMP_Text recommend = Label("Recommend", panel, "", 28, TextAlignmentOptions.Center, new Color(0.7f, 0.9f, 1f));
             Place(recommend.rectTransform, Center, Center, new Vector2(0f, 590f), new Vector2(980f, 70f));
+            Button weeklyGoal = Btn("ChooseGodGoal", panel, "주간 목표 선택", new Vector2(0f, 510f), new Vector2(920f, 70f), ButtonBlue, out TMP_Text weeklyLabel);
+            weeklyLabel.fontSize = 25;
             TMP_Text pick = Label("Pick", panel, "싸울 기록을 고르세요 (기록은 이겨도 져도 사라지지 않아요)", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(pick.rectTransform, Center, Center, new Vector2(0f, 510f), new Vector2(1000f, 50f));
+            Place(pick.rectTransform, Center, Center, new Vector2(0f, 445f), new Vector2(1000f, 50f));
 
             var buttons = new Button[3];
             var backgrounds = new Image[3];
@@ -259,6 +263,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("testsLabel", tests).Ref("recommendLabel", recommend)
+                    .Ref("normalTab", normalTab).Ref("trialTab", trialTab).Ref("weeklyGoalButton", weeklyGoal).Ref("weeklyGoalLabel", weeklyLabel)
                     .Refs("slotButtons", buttons).Refs("slotBackgrounds", backgrounds).Refs("slotLabels", labels)
                     .Ref("tempButton", temp).Ref("tempBackground", tempBackground).Ref("tempLabel", tempLabel)
                     .Ref("startButton", start).Ref("startLabel", startLabel).Ref("backButton", back).Ref("practiceButton", practice).Ref("database", database);
@@ -326,20 +331,18 @@ namespace HistoryHeroes.EditorTools
             Place(title.rectTransform, Center, Center, new Vector2(0f, 850f), new Vector2(900f, 100f));
 
             // 그래픽 재평가 3번: 고른 영웅을 크게 (무대 빛 + 받침 고리 + 큰 초상), 그 아래 이름·역할·고유 능력 카드
-            // 영웅이 6명 넘으면 고르기 칸을 두 줄로 (새 영웅 화면 점검 6번: "칸이 너무 작고 빽빽하다") → 위쪽을 조금 올린다
+            // 고른 영웅은 크게 보여 주고, 아래 고르기 칸은 가로로 넘긴다.
             int heroCount = Mathf.Max(4, roster != null ? roster.heroes.Count : 4);
-            bool twoRows = false; // 2026-10-29 탕탕특공대식: 영웅 바꾸기는 맨 아래 한 줄
-            float lift = twoRows ? 60f : 0f;
             RawImage big = null;
             if (_kit != null)
             {
-                RectTransform stage = Rect("StageGlow", panel, Center, Center, Center, new Vector2(0f, 470f + lift), new Vector2(820f, 820f));
+                RectTransform stage = Rect("StageGlow", panel, Center, Center, Center, new Vector2(0f, 470f), new Vector2(820f, 820f));
                 Img(stage, new Color(1f, 0.8f, 0.4f, 0.28f), _kit.Glow);
-                RectTransform pedestal = Rect("Pedestal", panel, Center, Center, Center, new Vector2(0f, 205f + lift), new Vector2(460f, 130f));
+                RectTransform pedestal = Rect("Pedestal", panel, Center, Center, Center, new Vector2(0f, 205f), new Vector2(460f, 130f));
                 Img(pedestal, new Color(1f, 0.85f, 0.45f, 0.75f), _kit.Ring);
             }
 
-            RectTransform bigRect = Rect("BigPortrait", panel, Center, Center, Center, new Vector2(0f, 480f + lift), new Vector2(540f, 620f));
+            RectTransform bigRect = Rect("BigPortrait", panel, Center, Center, Center, new Vector2(0f, 480f), new Vector2(540f, 620f));
             big = bigRect.gameObject.AddComponent<RawImage>();
             big.color = new Color(1f, 1f, 1f, 0f);
             big.raycastTarget = false;
@@ -359,23 +362,28 @@ namespace HistoryHeroes.EditorTools
             detailBody.fontSizeMin = 20f; // 화면 점검 2차 5번: 설명이 너무 작다 → 대표 효과 글을 줄이고 글씨 하한을 올림
             detailBody.fontSizeMax = 28f;
 
-            // 영웅 고르기 칸 (영웅 수만큼): 작은 초상 + 이름 · 레벨. 5명까지 한 줄, 6명부터 한 줄 4칸씩 두 줄
-            int perRow = twoRows ? 4 : heroCount;
-            float step = Mathf.Min(250f, 1040f / perRow);
-            float tileWidth = step - 18f;
+            // 고정 폭 칸을 가로로 넘긴다. 12명이 되어도 이름과 3D 초상에 같은 자리를 준다.
+            const float step = 160f;
+            const float tileWidth = 150f;
             float tileHeight = 200f;
-            float rowGap = tileHeight + 14f;
-            float firstRowY = -560f;
-            float below = twoRows ? -75f : 0f; // 아래 단추들을 내리는 만큼
+            float contentWidth = heroCount * step;
+            RectTransform viewport = Rect("HeroScrollViewport", panel, Center, Center, Center, new Vector2(0f, -560f), new Vector2(1040f, 215f));
+            Img(viewport, new Color(0f, 0f, 0f, 0.001f), null).raycastTarget = true;
+            viewport.gameObject.AddComponent<RectMask2D>();
+            RectTransform content = Rect("HeroScrollContent", viewport, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(contentWidth, 210f));
+            ScrollRect heroScroll = viewport.gameObject.AddComponent<ScrollRect>();
+            heroScroll.viewport = viewport;
+            heroScroll.content = content;
+            heroScroll.horizontal = true;
+            heroScroll.vertical = false;
+            heroScroll.movementType = ScrollRect.MovementType.Clamped;
             var buttons = new Button[heroCount];
             var backgrounds = new Image[heroCount];
             var labels = new TMP_Text[heroCount];
             var portraits = new RawImage[heroCount];
             for (int i = 0; i < heroCount; i++)
             {
-                int row = i / perRow, col = i % perRow;
-                int inRow = Mathf.Min(perRow, heroCount - row * perRow);
-                buttons[i] = Btn($"Hero{i + 1}", panel, "", new Vector2(-step * (inRow - 1) * 0.5f + col * step, firstRowY - row * rowGap), new Vector2(tileWidth, tileHeight), RowColor, out TMP_Text label);
+                buttons[i] = Btn($"Hero{i + 1}", content, "", new Vector2(-contentWidth * 0.5f + step * (i + 0.5f), 0f), new Vector2(tileWidth, tileHeight), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
                 RectTransform lr = label.rectTransform;
                 lr.anchorMin = new Vector2(0f, 0f);
@@ -391,7 +399,7 @@ namespace HistoryHeroes.EditorTools
                 labels[i] = label;
 
                 // 3D 초상 (Art3D-Plan 7번): 끌면 돈다. 누르면 칸 버튼이 받는다
-                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(Mathf.Min(150f, tileWidth - 30f), twoRows ? 140f : 168f));
+                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(120f, 168f));
                 portraits[i] = portrait.gameObject.AddComponent<RawImage>();
                 portraits[i].color = new Color(1f, 1f, 1f, 0f); // 그림이 생기기 전에는 투명
                 portraits[i].raycastTarget = true;
@@ -466,6 +474,7 @@ namespace HistoryHeroes.EditorTools
                     .Ref("levelButton", level).Ref("levelLabel", levelLabel).Ref("awakenButton", awaken).Ref("awakenLabel", awakenLabel)
                     .Ref("trainingButton", trainingButton).Ref("messageLabel", heroMessage).Ref("runeButton", runeButton).Ref("runeLabel", runeLabel);
                 props.Ref("root", panel.gameObject).Ref("roster", roster).Refs("heroButtons", buttons).Refs("heroBackgrounds", backgrounds)
+                    .Ref("heroScroll", heroScroll)
                     .Refs("heroLabels", labels).Ref("selectButton", select).Ref("selectLabel", selectLabel)
                     .Ref("unlockButton", unlock).Ref("unlockLabel", unlockLabel).Ref("trialButton", trial).Ref("backButton", back)
                     .Ref("bigPortrait", big).Ref("detailName", detailName).Ref("detailBody", detailBody)

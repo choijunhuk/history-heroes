@@ -50,7 +50,9 @@ namespace HistoryHeroes.Economy
             AddFreeGems(d, r.Gems);
             if (r.Tickets > 0) d.AddItem(Ticket, r.Tickets);
             if (r.GearShards > 0) d.AddItem(GearShard, r.GearShards);
-            if (r.HeroShards > 0 && !string.IsNullOrEmpty(r.HeroId)) d.AddItem(HeroShard(r.HeroId), r.HeroShards);
+            if (r.HeroShards > 0 && !string.IsNullOrEmpty(r.HeroId)
+                && Modes.GodTrialRules.CanReceiveNormalShards(d, r.HeroId))
+                d.AddItem(HeroShard(r.HeroId), r.HeroShards);
         }
 
         /// <summary>"1,234" 형태</summary>

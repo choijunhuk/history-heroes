@@ -36,13 +36,17 @@ namespace HistoryHeroes.Heroes
         /// <summary>부디카 되찾는 자리: 준비한 첫 베기의 밀침 거리 · 피해 보너스</summary>
         public readonly float ReclaimKnockback;
         public readonly float ReclaimAttackBonus;
+        public readonly float ThunderRadius;
+        public readonly float ThunderCoefficient;
 
         private HeroSignature(float firstShotBonus, bool firstShotPierce, float damageReduction, float lowHpAttackBonus,
             float cannonRadius, int cannonEvery, int chainBounces, float chainFalloff, float stopGuard = 0f, float stopGuardCap = 0f,
             float chargeFull = 0f, float chargeFullTime = 0f, float machineDamage = 0f, int maxMachines = 0, float windRadius = 0f, float windSlow = 0f,
             float bannerDuration = 0f, float bannerAttackBonus = 0f, float observationAttackBonus = 0f,
-            float reclaimKnockback = 0f, float reclaimAttackBonus = 0f)
+            float reclaimKnockback = 0f, float reclaimAttackBonus = 0f, float thunderRadius = 0f, float thunderCoefficient = 0f)
         {
+            ThunderRadius = thunderRadius;
+            ThunderCoefficient = thunderCoefficient;
             ReclaimKnockback = reclaimKnockback;
             ReclaimAttackBonus = reclaimAttackBonus;
             ObservationAttackBonus = observationAttackBonus;
@@ -97,7 +101,9 @@ namespace HistoryHeroes.Heroes
                 hero.bannerDeploySeconds > 0f ? (s5 && hero.star5BannerAttackBonus >= 0f ? hero.star5BannerAttackBonus : hero.bannerAttackBonus) : 0f,
                 hero.observationSeconds > 0f ? observationBonus : 0f,
                 hero.reclaimStopSeconds > 0f ? (s3 && hero.star3ReclaimKnockback >= 0f ? hero.star3ReclaimKnockback : hero.reclaimKnockback) : 0f,
-                hero.reclaimStopSeconds > 0f && s5 && hero.star5ReclaimAttackBonus >= 0f ? hero.star5ReclaimAttackBonus : 0f);
+                hero.reclaimStopSeconds > 0f && s5 && hero.star5ReclaimAttackBonus >= 0f ? hero.star5ReclaimAttackBonus : 0f,
+                hero.thunderEvery > 0 ? (s3 && hero.star3ThunderRadius > 0f ? hero.star3ThunderRadius : hero.thunderRadius) : 0f,
+                hero.thunderEvery > 0 ? (s5 && hero.star5ThunderCoefficient > 0f ? hero.star5ThunderCoefficient : hero.thunderCoefficient) : 0f);
         }
 
         /// <summary>별 강화 설명 ("★3 첫 발 피해 +75% · ★5 첫 발 +100%, 관통")</summary>
@@ -116,6 +122,7 @@ namespace HistoryHeroes.Heroes
             if (hero.star3BannerDuration > 0f) s3 = $"깃발 지속 {hero.star3BannerDuration:0.#}초";
             if (hero.observationSeconds > 0f && hero.star3ObservationAttackBonus >= 0f) s3 = $"관측 공격 피해 +{hero.star3ObservationAttackBonus * 100f:0}%";
             if (hero.reclaimStopSeconds > 0f && hero.star3ReclaimKnockback >= 0f) s3 = $"밀침 거리 {hero.star3ReclaimKnockback:0.#}";
+            if (hero.thunderEvery > 0 && hero.star3ThunderRadius > 0f) s3 = $"충격파 반경 {hero.star3ThunderRadius:0.#}";
             if (hero.star5FirstShotBonus >= 0f) s5 = $"첫 발 피해 +{hero.star5FirstShotBonus * 100f:0}%" + (hero.star5FirstShotPierce ? ", 첫 발 관통" : string.Empty);
             if (hero.star5LowHpAttackBonus >= 0f) s5 = $"체력 50% 아래 공격력 +{hero.star5LowHpAttackBonus * 100f:0}%";
             if (hero.star5CannonEvery > 0) s5 = $"{hero.star5CannonEvery}발마다 포탄";
@@ -127,6 +134,7 @@ namespace HistoryHeroes.Heroes
             if (hero.star5BannerAttackBonus >= 0f) s5 = $"깃발 안 기본 공격력 +{hero.star5BannerAttackBonus * 100f:0}%";
             if (hero.observationSeconds > 0f && hero.star5ObservationAttackBonus >= 0f) s5 = $"관측 공격 피해 +{hero.star5ObservationAttackBonus * 100f:0}%";
             if (hero.reclaimStopSeconds > 0f && hero.star5ReclaimAttackBonus >= 0f) s5 = $"준비 공격 피해 +{hero.star5ReclaimAttackBonus * 100f:0}%";
+            if (hero.thunderEvery > 0 && hero.star5ThunderCoefficient > 0f) s5 = $"충격파 피해 {hero.star5ThunderCoefficient * 100f:0}%";
             return $"★3 {s3 ?? "—"} · ★5 {s5 ?? "—"}";
         }
     }

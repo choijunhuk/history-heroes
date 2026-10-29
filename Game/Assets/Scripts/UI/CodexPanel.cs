@@ -112,6 +112,10 @@ namespace HistoryHeroes.UI
                 }
             }
 
+            sb.AppendLine("<b>토르 · 북유럽 신화</b>  <color=#9FD8FF>신화 · 각색</color>");
+            sb.AppendLine("천둥의 무게 · 귀환 망치 · 천둥의 귀환은 게임 각색 기술입니다.");
+            sb.AppendLine("<color=#C8D6E5>‘실패를 지우지 않고 다시 지키려는 인간의 선택을 보았기에, 나도 기록을 지키겠다.’</color>\n");
+
             // 스킬별 조합 수 (조사 A3): 미발견 조합은 결과·짝 대신 개수만
             sb.AppendLine("<b>스킬별 조합</b>");
             foreach (SkillData s in database.skills)

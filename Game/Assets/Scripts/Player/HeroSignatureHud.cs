@@ -23,6 +23,7 @@ namespace HistoryHeroes.Player
         private static readonly Color Part = new Color(0.95f, 0.68f, 0.35f, 1f);
         private static readonly Color Star = new Color(0.9f, 0.74f, 1f, 1f);
         private static readonly Color Reclaim = new Color(0.72f, 0.82f, 0.4f, 1f);
+        private static readonly Color Thunder = new Color(0.58f, 0.82f, 1f, 1f);
         private static readonly Color Wind = new Color(0.45f, 0.95f, 1f, 0.32f); // 화면 점검 2차: 벽 밖까지 보이는 원이 헷갈리지 않게 옅게
         private static readonly Color[] Stage = { new Color(1f, 1f, 1f, 0.95f), new Color(0.45f, 0.85f, 1f, 1f), new Color(1f, 0.82f, 0.25f, 1f) };
 
@@ -112,10 +113,10 @@ namespace HistoryHeroes.Player
             else if (_pips[0].enabled)
             {
                 // 관측·되찾기 점은 대표 효과만 뜻한다. 부품 그림을 붙이면 작업대처럼 보인다.
-                sprite = art != null && _player.Hero.observationSeconds <= 0f && _player.Hero.reclaimStopSeconds <= 0f
+                sprite = art != null && _player.Hero.observationSeconds <= 0f && _player.Hero.reclaimStopSeconds <= 0f && _player.Hero.thunderEvery <= 0
                     ? (_player.Hero.chargeShot ? art.hudCharge : art.hudParts) : null;
                 int total = _player.Hero.chargeShot ? 3 : _player.Hero.observationSeconds > 0f || _player.Hero.reclaimStopSeconds > 0f
-                    ? 1 : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
+                    ? 1 : _player.Hero.thunderEvery > 0 ? 2 : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
                 left = -(total - 1) * 0.5f * PipGap - 0.42f;
             }
 
@@ -148,6 +149,7 @@ namespace HistoryHeroes.Player
             bool charge = _player.Hero.chargeShot;
             bool observation = _player.Hero.observationSeconds > 0f;
             bool reclaim = _player.Hero.reclaimStopSeconds > 0f;
+            bool thunder = _player.Hero.thunderEvery > 0;
             if (charge)
             {
                 filled = _player.ChargeStage;
@@ -170,6 +172,12 @@ namespace HistoryHeroes.Player
                 filled = _player.ReclaimReady ? 1 : 0;
                 total = 1;
                 on = Reclaim;
+            }
+            else if (thunder)
+            {
+                filled = _player.ThunderCount;
+                total = 2;
+                on = Thunder;
             }
 
             bool show = alive && total > 0 && (stopped || filled > 0 || reclaim && _player.ReclaimCooldownRemaining > 0f);

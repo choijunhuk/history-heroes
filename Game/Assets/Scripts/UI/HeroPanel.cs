@@ -2,6 +2,7 @@ using System;
 using HistoryHeroes.Common;
 using HistoryHeroes.Economy;
 using HistoryHeroes.Heroes;
+using HistoryHeroes.Modes;
 using HistoryHeroes.Records;
 using TMPro;
 using UnityEngine;
@@ -20,6 +21,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button[] heroButtons;
         [SerializeField] private Image[] heroBackgrounds;
         [SerializeField] private TMP_Text[] heroLabels;
+        [SerializeField] private ScrollRect heroScroll;
         [SerializeField] private Button selectButton;
         [SerializeField] private TMP_Text selectLabel;
         [SerializeField] private Button unlockButton;
@@ -182,12 +184,24 @@ namespace HistoryHeroes.UI
             _focus = Mathf.Max(0, roster.heroes.IndexOf(selected));
             root.SetActive(true);
             Render();
+            ScrollToFocus();
         }
 
         private void Focus(int index)
         {
             _focus = index;
             Render();
+            ScrollToFocus();
+        }
+
+        private void ScrollToFocus()
+        {
+            if (heroScroll == null || heroScroll.content == null) return;
+            float available = heroScroll.content.rect.width - heroScroll.viewport.rect.width;
+            if (available <= 0f) return;
+            const float tileStep = 160f;
+            float centered = (_focus + 0.5f) * tileStep - heroScroll.viewport.rect.width * 0.5f;
+            heroScroll.horizontalNormalizedPosition = Mathf.Clamp01(centered / available);
         }
 
         private void Render()
@@ -218,7 +232,8 @@ namespace HistoryHeroes.UI
                 {
                     // 칸에는 이름과 레벨만 (자세한 것은 위 큰 카드)
                     string state = !unlocked ? "<color=#FFB347>잠김</color>" : h == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"Lv {progress.level} <color=#FFD966>{new string('★', progress.stars)}</color>";
-                    heroLabels[i].text = $"<b>{h.displayName}</b>\n<size=70%>{state}</size>";
+                    string tileName = h.id == "davinci" ? "다빈치" : h.id == "tesla" ? "테슬라" : h.displayName;
+                    heroLabels[i].text = $"<b>{tileName}</b>\n<size=70%>{state}</size>";
                     continue;
                 }
 
@@ -236,7 +251,9 @@ namespace HistoryHeroes.UI
                 Records.HeroProgress fp = d.Hero(focus.id);
                 string state = !focusUnlocked ? "<color=#FFB347>잠김</color>" : focus == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"<color=#9FD8FF>Lv {fp.level}</color> <color=#FFD966>{new string('★', fp.stars)}{new string('☆', 5 - fp.stars)}</color>";
                 if (detailName != null) detailName.text = $"{focus.displayName}  <size=55%>{focus.ClassLabel} · {state}</size>";
-                string lockText = focusUnlocked ? string.Empty : $"\n<color=#FFB347>{HeroUnlock.LockText(focus)}</color>";
+                string lockText = focusUnlocked ? string.Empty : focus.id == GodTrialRules.ThorHeroId
+                    ? $"\n<color=#FFB347>토르 조각 {Meta.HeroGrowth.Shards(d, focus.id)}/30 · 신의 시련에서 획득</color>"
+                    : $"\n<color=#FFB347>{HeroUnlock.LockText(focus)}</color>";
                 detailBody.text =
                     $"<color=#FFD966><b>{focus.signatureName}</b></color>  {focus.signatureDescription}\n" +
                     $"<size=80%><color=#A9B4C2>{Heroes.HeroSignature.StarText(focus)}</color></size>\n" +
@@ -295,6 +312,13 @@ namespace HistoryHeroes.UI
             }
 
             unlockButton.gameObject.SetActive(!focusUnlocked);
+            if (focus.id == GodTrialRules.ThorHeroId)
+            {
+                int godShards = Meta.HeroGrowth.Shards(d, focus.id);
+                unlockButton.interactable = godShards >= 30;
+                unlockLabel.text = $"토르 조각으로 해금\n<size=80%>{godShards}/30 · Lv1 ★1</size>";
+                return;
+            }
             bool free = HeroUnlock.CanClaimFree(d, focus);
             bool enough = Wallet.Gems(d) >= focus.unlockGems;
             unlockButton.interactable = free || enough;
@@ -316,6 +340,19 @@ namespace HistoryHeroes.UI
         private void UnlockFocused()
         {
             HeroData focus = roster.heroes[_focus];
+            if (focus.id == GodTrialRules.ThorHeroId)
+            {
+                SaveSystem.CommitResult result = SaveSystem.Commit(() =>
+                {
+                    if (!GodTrialRules.TryUnlockHero(SaveSystem.Data, focus.id)) return false;
+                    SaveSystem.Data.selectedHero = focus.id;
+                    return true;
+                });
+                if (result == SaveSystem.CommitResult.SaveFailed && messageLabel != null) messageLabel.text = SaveSystem.SaveFailedText;
+                Render();
+                if (result == SaveSystem.CommitResult.Saved) _onChanged?.Invoke();
+                return;
+            }
             if (!HeroUnlock.TryClaimFree(SaveSystem.Data, focus) && !HeroUnlock.TryBuy(SaveSystem.Data, focus)) return;
             SaveSystem.Data.selectedHero = focus.id;
             SaveSystem.Save();
