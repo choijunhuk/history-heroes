@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3bc6d1f39a0264c963774252ca5201, type: 3}
+  m_Name: Boss_anubis_trial
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Modes.BossData
+  id: anubis_trial
+  displayName: "\uC544\uB204\uBE44\uC2A4"
+  chapter: 2
+  tests: "\uAE30\uC5B5\uC758 \uC218\uD638\uBCD1 \uC18C\uD658 \u2192 \uC218\uD638\uBCD1\uC744
+    \uC904\uC5EC \uBCF4\uD638 \uAC77\uAE30"
+  recommend: "\uAD11\uC5ED\xB7\uC18C\uD658 \uC815\uB9AC (\uC7A5\uD310\xB7\uB099\uB8B0)"
+  recommendedRole: 2
+  prefab: {fileID: 4762823430677903741, guid: 16ff9ae895fdd4c5e8aa9fa14e5c3b1c, type: 3}
+  hpMultiplier: 830
+  attackMultiplier: 2.3
+  star2MaxHits: 0

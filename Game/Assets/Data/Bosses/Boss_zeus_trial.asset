@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3bc6d1f39a0264c963774252ca5201, type: 3}
+  m_Name: Boss_zeus_trial
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Modes.BossData
+  id: zeus_trial
+  displayName: "\uC81C\uC6B0\uC2A4"
+  chapter: 3
+  tests: "\uCC28\uB840\uB85C \uC624\uB294 \uBC88\uAC1C \uD0C4\uB9C9 \uC0AC\uC774\uB85C
+    \uC774\uB3D9 \u2192 \uBA48\uCDB0 \uACF5\uACA9"
+  recommend: "\uD0C4 \uCC28\uB2E8\xB7\uBC29\uC5B4 (\uBC29\uD328\xB7\uCD5C\uB300\uCCB4\uB825)"
+  recommendedRole: 3
+  prefab: {fileID: 4135345100249710897, guid: 6d8b840077d0a49e294631d8b3a4a7fd, type: 3}
+  hpMultiplier: 880
+  attackMultiplier: 2.5
+  star2MaxHits: 0

@@ -242,6 +242,8 @@ MonoBehaviour:
   ringSpeed: 4.5
   wardPerMinion: 0.15
   wardMax: 0.9
+  summonRecover: 1.8
+  attackRecover: 1.5
 --- !u!1 &1100568824202605425
 GameObject:
   m_ObjectHideFlags: 0

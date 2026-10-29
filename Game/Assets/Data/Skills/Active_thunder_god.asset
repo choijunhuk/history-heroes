@@ -35,5 +35,9 @@ MonoBehaviour:
   radiusPerLevel: 0
   duration: 0
   durationPerLevel: 0
+  slowFirstLevel: 0
+  slowPerLevel: 0
+  slowBossScale: 0.3
+  waveRadius: 0
   returnImpactCoefficient: 0
   behaviourPrefab: {fileID: 2526611667929961471, guid: 72713664916bad544be9d516aaac8d15, type: 3}

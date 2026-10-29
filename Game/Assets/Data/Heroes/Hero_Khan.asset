@@ -80,6 +80,11 @@ MonoBehaviour:
   thunderRadius: 0
   thunderCoefficient: 0
   godShardUnlock: 0
+  markHits: 0
+  markSlow: 0
+  markDuration: 0
+  markCooldown: 0
+  markBossScale: 0.3
   guardianAttacks: 0
   guardianCoefficient: 0
   guardianNearbyRadius: 0
@@ -108,6 +113,8 @@ MonoBehaviour:
   star5ReclaimAttackBonus: -1
   star3ThunderRadius: -1
   star5ThunderCoefficient: -1
+  star3MarkDuration: -1
+  star5MarkSlow: -1
   star3GuardianCoefficient: -1
   star5GuardianTargets: -1
   exclusiveActive: {fileID: 11400000, guid: b74edf6d9a1c89047b621fbec9c88907, type: 2}

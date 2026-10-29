@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_sand_statue
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: sand_statue
+  displayName: "\uBAA8\uB798 \uC218\uD638\uC0C1"
+  description: "9\uCD08\uB9C8\uB2E4 \uC218\uD638\uC0C1 1\uAE30, 4\uCD08\uAC04 \uC8FC\uBCC0
+    \uC801 20% \uB454\uD654\n\uC9C1\uC811 \uD53C\uD574 \uC5C6\uC74C \xB7 \uB808\uBCA8\uB9C8\uB2E4
+    \uB454\uD654 +2.5%p, \uBC18\uACBD +0.1"
+  warriorDescription: 
+  icon: {fileID: 21300000, guid: 07eaf87ade54b6845b2c59a2b3431a72, type: 3}
+  rarity: 1
+  tags: 1026
+  role: 3
+  maxLevel: 5
+  saveCostFirstLevel: 3
+  saveCostPerLevel: 3
+  recordable: 1
+  heroOnlyId: anubis
+  cooldown: 9
+  damageFirstLevel: 0
+  damagePerLevel: 0
+  countFirstLevel: 1
+  countPerLevel: 0
+  radius: 1.6
+  radiusPerLevel: 0.0625
+  duration: 4
+  durationPerLevel: 0
+  slowFirstLevel: 0.2
+  slowPerLevel: 0.025
+  slowBossScale: 0.3
+  waveRadius: 0
+  returnImpactCoefficient: 0
+  behaviourPrefab: {fileID: 1641901697969911988, guid: c347016a8fca741f5b59910ee81c3b75, type: 3}

@@ -328,6 +328,8 @@ MonoBehaviour:
   openingRing: {fileID: 1608173937633355842}
   bulletSpeed: 4.2
   bulletDamage: 0.55
+  barrageRecover: 1.6
+  lightningBarrage: 0
 --- !u!1 &8062217206667609758
 GameObject:
   m_ObjectHideFlags: 0
