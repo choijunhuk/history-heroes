@@ -74,6 +74,10 @@ MonoBehaviour:
   bannerDamageReduction: 0
   observationSeconds: 1
   observationAttackBonus: 0
+  reclaimStopSeconds: 0
+  reclaimCooldown: 0
+  reclaimKnockback: 0
+  reclaimBossScale: 0
   star3FirstShotBonus: -1
   star5FirstShotBonus: -1
   star5FirstShotPierce: 0
@@ -95,6 +99,8 @@ MonoBehaviour:
   star5BannerAttackBonus: -1
   star3ObservationAttackBonus: 0.15
   star5ObservationAttackBonus: 0.3
+  star3ReclaimKnockback: -1
+  star5ReclaimAttackBonus: -1
   exclusiveActive: {fileID: 11400000, guid: 72464ae7e51834db4af593c925ae36e8, type: 2}
   unlockAfterBossChapter: 0
   gemsOnly: 1

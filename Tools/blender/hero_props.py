@@ -108,20 +108,24 @@ objs = [
 export("Boudica_Sword", objs)
 reset()
 
-# 3) 잔 다르크 깃발: 등 뒤 깃대 + 흰 깃발 (금 띠·금 끝). spine_03 (0, 0.007, 1.311) 뒤 = +Y
+# 3) 잔 다르크 깃발: 등 뒤 깃대 + 가로대에 매달린 세로 깃발 (파랑 바탕 · 금 테두리 · 금 문장). spine_03 (0, 0.007, 1.311) 뒤 = +Y
+#    처음 만든 옆으로 뻗은 흰 천은 화면에서 낫 날처럼 보였다 → 아래로 늘어진 깃발로 (2026-10-29 화면 확인)
 PX, PY = 0.12, 0.17
+L, R, TOP, BOT = PX + 0.03, PX + 0.33, 2.17, 1.72
 flag = bmesh.new()
-pts = [(PX + 0.01, 2.20), (PX + 0.40, 2.17), (PX + 0.30, 2.05), (PX + 0.40, 1.93), (PX + 0.01, 1.90)]  # 제비꼬리
+pts = [(L, TOP), (R, TOP), (R, BOT), ((L + R) / 2, BOT + 0.09), (L, BOT)]  # 아래 끝 제비꼬리
 vs = [flag.verts.new((x, PY, z)) for x, z in pts]
 face = flag.faces.new(vs)
 ext = bmesh.ops.extrude_face_region(flag, geom=[face])  # 앞뒤 두 면 + 옆면 (한쪽 면만 있으면 뒤에서 안 보인다)
 bmesh.ops.translate(flag, vec=Vector((0, 0.012, 0)), verts=[v for v in ext["geom"] if isinstance(v, bmesh.types.BMVert)])
 bmesh.ops.recalc_face_normals(flag, faces=flag.faces)
 objs = [
-    cyl_z("pole", (PX, PY, 1.62), 0.016, 1.30, "Wood"),
-    sphere("tip", (PX, PY, 2.30), 0.03, "Gold"),
-    new_obj("cloth", flag, "White"),
-    box("band", (PX + 0.13, PY, 1.915), (0.24, 0.016, 0.03), "Gold"),
+    cyl_z("pole", (PX, PY, 1.64), 0.016, 1.34, "Wood"),
+    sphere("tip", (PX, PY, 2.33), 0.032, "Gold"),
+    box("crossbar", ((PX + R) / 2 + 0.01, PY + 0.006, TOP + 0.015), (R - PX + 0.04, 0.03, 0.03), "Gold"),
+    new_obj("cloth", flag, "Blue"),
+    box("emblem", ((L + R) / 2, PY + 0.006, 1.98), (0.09, 0.03, 0.11), "Gold"),
+    box("trim", ((L + R) / 2, PY + 0.006, TOP - 0.03), (R - L, 0.026, 0.025), "Gold"),
 ]
 export("Jeanne_Banner", objs)
 reset()

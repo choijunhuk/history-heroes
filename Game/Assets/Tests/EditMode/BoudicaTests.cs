@@ -85,7 +85,9 @@ namespace HistoryHeroes.Tests
             Assert.Greater(look.hairColor.g, look.hairColor.b);
             Assert.Greater(look.metalColor.r, look.metalColor.g);
             Assert.Greater(look.metalColor.g, look.metalColor.b);
-            Assert.IsEmpty(look.props, "공통 검은 데스크톱 제작 전까지 붙이지 않는다");
+            // 켈트 잎 모양 검 (블렌더 스크립트 Tools/blender/hero_props.py, 2026-10-29) — 손 뼈가 등록돼 있어야 붙는다
+            CollectionAssert.AreEqual(new[] { "Boudica_Sword" }, look.props);
+            Assert.AreEqual("hand_r", Art3DProps.Bones["Boudica_Sword"]);
             Assert.AreEqual("Sword_Regular_A", look.attack);
         }
 

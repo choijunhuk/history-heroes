@@ -215,11 +215,11 @@ namespace HistoryHeroes.EditorTools
             // 제갈량: 흰·남색 학창의 (T_Peasant_2를 밝기 따라 남색→흰색으로 다시 칠한 그림) + 긴 머리·수염 + 윤건 · 오른손 깃털 부채 (주문 쏘기)
             new Look { name = "Zhuge", body = "Male_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.05f, 0.045f, 0.045f), props = new[] { "Zhuge_Fan", "Zhuge_Hat" } },
             // 잔 다르크: 짧은 머리, 후드 없는 레인저와 어깨 갑옷. 남색·은빛 옷으로 구별한다.
-            new Look { name = "Jeanne", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = Color.white, hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, hair = new[] { "Hair_BuzzedFemale", "Eyebrows_Female" }, hairColor = new Color(0.34f, 0.22f, 0.14f), attack = "Sword_Regular_A" },
+            new Look { name = "Jeanne", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = Color.white, hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, hair = new[] { "Hair_BuzzedFemale", "Eyebrows_Female" }, hairColor = new Color(0.34f, 0.22f, 0.14f), attack = "Sword_Regular_A", props = new[] { "Jeanne_Sword", "Jeanne_Banner" } },
             // 선덕여왕: 기존 농민 옷의 몸통을 금색, 나머지를 보라색으로 나눠 왕실 색을 낸다. 관식은 별도 제작 전까지 쓰지 않는다.
             new Look { name = "Seondeok", female = true, body = "Female_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.66f, 0.38f, 0.82f), goldParts = new[] { "Female_Peasant_Body" }, hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.09f, 0.065f, 0.09f), props = new[] { "Davinci_Scroll" } },
             // 부디카: 녹색 옷과 갈색 가죽 위에 청동 보호대. 새 검을 만들기 전까지 손은 비워 둔다.
-            new Look { name = "Boudica", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.88f, 0.92f, 0.78f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.67f, 0.43f, 0.24f), hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.48f, 0.21f, 0.11f), attack = "Sword_Regular_A" },
+            new Look { name = "Boudica", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.88f, 0.92f, 0.78f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.67f, 0.43f, 0.24f), hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.48f, 0.21f, 0.11f), attack = "Sword_Regular_A", props = new[] { "Boudica_Sword" } },
         };
 
         public sealed class EnemyLook

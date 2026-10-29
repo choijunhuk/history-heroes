@@ -402,6 +402,8 @@ namespace HistoryHeroes.EditorTools
                 TMP_Text lockLabel = Label("Lock", lockBack, "잠김", 28, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
                 Stretch(lockLabel.rectTransform);
                 lockLabel.raycastTarget = false;
+                lockLabel.textWrappingMode = TextWrappingModes.NoWrap; // 영웅이 11명 넘어 칸이 좁으면 "잠/김"으로 접혔다 → 한 줄로 (칸 밖으로 조금 넘쳐도 됨)
+                lockLabel.overflowMode = TextOverflowModes.Overflow;
                 lockBack.gameObject.SetActive(false); // 받침 띠째로 켜고 끈다 (HeroPortraits.SetLocked)
             }
 
