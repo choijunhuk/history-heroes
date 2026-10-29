@@ -30,6 +30,14 @@ MonoBehaviour:
   projectileSpeed: 14
   meleeArcDegrees: 100
   meleeWaveCoefficient: 0.4
+  windFirstArc: 0
+  windFirstCoefficient: 0
+  windFollowArc: 0
+  windFollowCoefficient: 0
+  spearWidth: 0
+  shieldPrepareSeconds: 0
+  shieldReuseSeconds: 0
+  owlBonusCoefficient: 0
   signatureName: "\uCC9C\uB465\uC758 \uBB34\uAC8C"
   signatureDescription: "\uC5F0\uC18D \uC815\uC9C0 \uAE30\uBCF8 \uACF5\uACA9 \uC138
     \uBC88\uC9F8\uC5D0 \uC791\uC740 \uCDA9\uACA9\uD30C. \uC774\uB3D9\uD558\uBA74
@@ -117,6 +125,10 @@ MonoBehaviour:
   star5ThunderCoefficient: 0.5
   star3MarkDuration: -1
   star5MarkSlow: -1
+  star3WindFirstCoefficient: -1
+  star5WindFollowCoefficient: -1
+  star3ShieldPrepareSeconds: -1
+  star5OwlBonusCoefficient: -1
   star3GuardianCoefficient: -1
   star5GuardianTargets: -1
   exclusiveActive: {fileID: 11400000, guid: ae7ea1f6473c34f9caaceab24033a86b, type: 2}

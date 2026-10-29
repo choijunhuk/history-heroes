@@ -240,6 +240,10 @@ MonoBehaviour:
   twinSpeed: 2.6
   knifeSpeed: 6
   knifeDamage: 0.7
+  twoFormTrial: 0
+  trialForm: {fileID: 0}
+  twinOpeningRing: {fileID: 0}
+  trialRecover: 1.8
 --- !u!1 &1728122534331786716
 GameObject:
   m_ObjectHideFlags: 0

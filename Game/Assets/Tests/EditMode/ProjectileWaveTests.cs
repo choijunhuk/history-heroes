@@ -37,7 +37,8 @@ namespace HistoryHeroes.Tests
             Projectile projectile = go.AddComponent<Projectile>();
             var damage = new DamageInfo { Amount = 10f, Kind = DamageKind.Active, AttackerTeam = Team.Player };
             projectile.Launch(Vector2.right, 10f, damage, 1 << TestLayer, 0, pierce, 0,
-                shot => shot.gameObject.SetActive(false), maxDistance: 3f, hitOncePerTarget: oncePerTarget);
+                shot => shot.gameObject.SetActive(false), pierceFalloff: oncePerTarget ? 0f : 0.2f, // 실제 바람 베기처럼 (LaunchSkillProjectile은 감쇠 0)
+                maxDistance: 3f, hitOncePerTarget: oncePerTarget);
             Physics2D.SyncTransforms();
             return projectile;
         }

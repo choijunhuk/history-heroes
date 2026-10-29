@@ -1,0 +1,139 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ebc6196135fc4408657c8ea9d0378e, type: 3}
+  m_Name: Hero_athena
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Heroes.HeroData
+  id: athena
+  displayName: "\uC544\uD14C\uB098"
+  heroClass: 1
+  playStyle: "\uBA48\uCDB0 \uC801 \uD0C4 \uD55C \uBC1C\uC744 \uC77D\uACE0 \uB9C9\uC740
+    \uB4A4 \uC9E7\uC740 \uCC3D \uCC0C\uB974\uAE30\uB85C \uBC18\uACA9\uD55C\uB2E4"
+  maxHp: 1250
+  attack: 108
+  attackSpeed: 0.9
+  moveSpeed: 5
+  range: 2.5
+  critRate: 0.05
+  critDamage: 1.5
+  attackKind: 2
+  projectilePrefab: {fileID: 7247207584216633866, guid: c1d6973a4a4834844b792592d739d694, type: 3}
+  projectileSpeed: 14
+  meleeArcDegrees: 120
+  meleeWaveCoefficient: 0.4
+  windFirstArc: 0
+  windFirstCoefficient: 0
+  windFollowArc: 0
+  windFollowCoefficient: 0
+  spearWidth: 0.6
+  shieldPrepareSeconds: 1
+  shieldReuseSeconds: 8
+  owlBonusCoefficient: 0.2
+  signatureName: "\uD310\uB2E8\uC758 \uBC29\uD328"
+  signatureDescription: "1\uCD08 \uC815\uC9C0\uD558\uBA74 \uB2E4\uC74C \uC801 \uD0C4
+    \uD55C \uBC1C \uCC28\uB2E8. \uC774\uB3D9\uD558\uBA74 \uC900\uBE44 \uCDE8\uC18C,
+    \uC131\uACF5\uBD80\uD130 8\uCD08 \uC7AC\uC0AC\uC6A9"
+  firstShotDelay: 0.2
+  firstShotBonus: 0
+  damageReduction: 0
+  lowHpThreshold: 0.5
+  lowHpAttackBonus: 0
+  cannonEvery: 0
+  cannonCoefficient: 0.8
+  cannonRadius: 1.2
+  knockback: 0
+  chainBounces: 0
+  chainRadius: 3
+  chainFalloff: 0.3
+  stopGuard: 0
+  stopGuardStore: 0.5
+  stopGuardCap: 2
+  stopGuardDecay: 2
+  chargeShot: 0
+  chargeTimes: {x: 0.4, y: 0.9, z: 1.5}
+  chargeMidMultiplier: 1.4
+  chargeFullMultiplier: 2.5
+  fanShots: 1
+  fanSpread: 20
+  fanCoefficient: 1
+  windRadius: 0
+  windSlow: 0.4
+  workbench: 0
+  partEvery: 1
+  partsPerMachine: 3
+  maxMachines: 2
+  machineLife: 20
+  machineDamage: 0.35
+  machineFireRate: 1
+  helperModel: {fileID: 0}
+  bannerDeploySeconds: 0
+  bannerRadius: 0
+  bannerDuration: 0
+  bannerAttackBonus: 0
+  bannerDamageReduction: 0
+  observationSeconds: 0
+  observationAttackBonus: 0
+  reclaimStopSeconds: 0
+  reclaimCooldown: 0
+  reclaimKnockback: 0
+  reclaimBossScale: 0
+  thunderEvery: 0
+  thunderRadius: 0
+  thunderCoefficient: 0
+  godShardUnlock: 1
+  markHits: 0
+  markSlow: 0
+  markDuration: 0
+  markCooldown: 0
+  markBossScale: 0.3
+  guardianAttacks: 0
+  guardianCoefficient: 0
+  guardianNearbyRadius: 0
+  star3FirstShotBonus: -1
+  star5FirstShotBonus: -1
+  star5FirstShotPierce: 0
+  star3DamageReduction: -1
+  star5LowHpAttackBonus: -1
+  star3CannonRadiusScale: -1
+  star5CannonEvery: -1
+  star3ExtraBounces: 0
+  star5NoFalloff: 0
+  star3StopGuard: -1
+  star5StopGuardCap: -1
+  star3ChargeFull: -1
+  star5ChargeFullTime: -1
+  star3MachineDamage: -1
+  star5MaxMachines: -1
+  star3WindRadius: -1
+  star5WindSlow: -1
+  star3BannerDuration: -1
+  star5BannerAttackBonus: -1
+  star3ObservationAttackBonus: -1
+  star5ObservationAttackBonus: -1
+  star3ReclaimKnockback: -1
+  star5ReclaimAttackBonus: -1
+  star3ThunderRadius: -1
+  star5ThunderCoefficient: -1
+  star3MarkDuration: -1
+  star5MarkSlow: -1
+  star3WindFirstCoefficient: -1
+  star5WindFollowCoefficient: -1
+  star3ShieldPrepareSeconds: 0.8
+  star5OwlBonusCoefficient: 0.25
+  star3GuardianCoefficient: -1
+  star5GuardianTargets: -1
+  exclusiveActive: {fileID: 11400000, guid: fe25338f6117f4e5594926f5466d95fd, type: 2}
+  unlockAfterBossChapter: 0
+  gemsOnly: 0
+  unlockGems: 0
+  color: {r: 0.78, g: 0.69, b: 0.47, a: 1}
+  model3D: {fileID: 6769558400110859353, guid: eb4fd038d114d433eb4ad4d80240fff6, type: 3}
+  modelHeight: 2.1

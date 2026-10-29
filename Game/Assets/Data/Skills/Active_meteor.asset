@@ -41,4 +41,8 @@ MonoBehaviour:
   slowBossScale: 0.3
   waveRadius: 0
   returnImpactCoefficient: 0
+  waveLength: 0
+  waveSpeed: 0
+  waveInterval: 0
+  pushDistance: 0
   behaviourPrefab: {fileID: 6135950185287038502, guid: 5024a8593135cdb41b1ca0daa3cf249f, type: 3}

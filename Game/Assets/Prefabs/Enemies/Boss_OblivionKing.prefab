@@ -381,6 +381,8 @@ MonoBehaviour:
   maxMinions: 5
   minionHpScale: 0.5
   minionAttackScale: 0.55
+  athenaTrial: 0
+  trialRecover: 1.8
 --- !u!1 &6927754222033269095
 GameObject:
   m_ObjectHideFlags: 0

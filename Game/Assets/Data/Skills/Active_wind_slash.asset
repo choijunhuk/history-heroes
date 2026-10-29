@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_wind_slash
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: wind_slash
+  displayName: "\uBC14\uB78C \uBCA0\uAE30"
+  description: "7\uCD08\uB9C8\uB2E4 \uC55E\uCABD \uC9C1\uC120 \uAC80\uAE30 \uD55C
+    \uC904, \uD53C\uD574 75%\uC640 \uC791\uC740 \uBC00\uCE68\n\uB808\uBCA8\uB9C8\uB2E4
+    \uD53C\uD574 +10%"
+  warriorDescription: 
+  icon: {fileID: 21300000, guid: c7261cd9d4eda6449a75dd3261df2bba, type: 3}
+  rarity: 1
+  tags: 268
+  role: 1
+  maxLevel: 5
+  saveCostFirstLevel: 3
+  saveCostPerLevel: 3
+  recordable: 1
+  heroOnlyId: susanoo
+  cooldown: 7
+  damageFirstLevel: 0.75
+  damagePerLevel: 0.1
+  countFirstLevel: 1
+  countPerLevel: 0
+  radius: 0
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  slowFirstLevel: 0
+  slowPerLevel: 0
+  slowBossScale: 0.3
+  waveRadius: 0
+  returnImpactCoefficient: 0
+  waveLength: 5.5
+  waveSpeed: 11
+  waveInterval: 0.22
+  pushDistance: 0.35
+  behaviourPrefab: {fileID: 2946903659126433549, guid: dd0a144708d04409c8847e8ab8a2f2e2, type: 3}

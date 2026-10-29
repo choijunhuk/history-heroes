@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3bc6d1f39a0264c963774252ca5201, type: 3}
+  m_Name: Boss_athena_trial
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Modes.BossData
+  id: athena_trial
+  displayName: "\uC544\uD14C\uB098"
+  chapter: 5
+  tests: "\uCC3D \uB3CC\uC9C4\xB7\uC18C\uD658\xB7\uD0C4\uB9C9\uC744 \uB2E8\uACC4\uB9C8\uB2E4
+    \uC11E\uC74C \u2192 \uACF5\uACA9 \uB4A4 \uBC18\uACA9"
+  recommend: "\uB2E8\uC77C\xB7\uAD11\uC5ED\xB7\uBC29\uC5B4\uAC00 \uACE0\uB978 \uBE4C\uB4DC"
+  recommendedRole: 0
+  prefab: {fileID: 6883612902590424622, guid: 5bb5e11863de04c8c99a26c2a7ac0e05, type: 3}
+  hpMultiplier: 1000
+  attackMultiplier: 2.6
+  star2MaxHits: 0
