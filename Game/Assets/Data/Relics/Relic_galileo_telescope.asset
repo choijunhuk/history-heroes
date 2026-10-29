@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: galileo_telescope
   displayName: "\uAC08\uB9B4\uB808\uC774\uC758 \uB9DD\uC6D0\uACBD"
+  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
   set: 0
   fact: "\uAC08\uB9B4\uB808\uC774\uB294 \uB9DD\uC6D0\uACBD\uC73C\uB85C \uBAA9\uC131\uC758
     \uC704\uC131\uC744 \uAD00\uCC30\uD588\uB2E4"
+  story: 
   source: 3
   sourceChapter: 0
   sourceValue: two_heroes

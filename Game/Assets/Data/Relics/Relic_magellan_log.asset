@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: magellan_log
   displayName: "\uB9C8\uC824\uB780\uC758 \uD56D\uD574 \uC77C\uC9C0"
+  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
   set: 2
   fact: "\uC138\uACC4 \uC77C\uC8FC \uD56D\uD574\uC758 \uAE30\uB85D"
+  story: 
   source: 2
   sourceChapter: 3
   sourceValue: 

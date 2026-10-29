@@ -33,15 +33,20 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e5fb1898872b32b4486272d8e1c82f14, type: 2}
   - {fileID: 11400000, guid: 8c7152afec4942b49b1ba24bbd884a12, type: 2}
   - {fileID: 11400000, guid: 2395b66250025eb42a725ad0d8250786, type: 2}
+  - {fileID: 11400000, guid: b479c454843d5417784086041e075343, type: 2}
+  - {fileID: 11400000, guid: b90c27e95d422426fb5c5fe961b83a5a, type: 2}
+  - {fileID: 11400000, guid: 73e22d2ccd34c45ef873a7a2514ef974, type: 2}
+  - {fileID: 11400000, guid: cda6408b7d3d6416c9b4f794ff98d220, type: 2}
   setNames:
   - "\uBC1C\uBA85\uC758 \uC2DC\uB300"
   - "\uAE30\uB85D\uACFC \uBB38\uC790"
   - "\uBC14\uB2E4\uC640 \uD56D\uD574"
   - "\uC7A5\uC218\uC758 \uC720\uD488"
   - "\uD558\uB298\uACFC \uC2DC\uAC04"
-  perStar: 0.001
-  setBonus: 0.008
-  setDamageReduction: 0.008
+  - "\uC900\uBE44\uC758 \uD754\uC801"
+  perStar: 0.0008333333
+  setBonus: 0.0066666664
+  setDamageReduction: 0.0066666664
   starCosts: 1e00000050000000
   exchangeCost: 120
   bossRepeatShards: 5

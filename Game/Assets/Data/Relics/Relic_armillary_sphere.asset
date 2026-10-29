@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: armillary_sphere
   displayName: "\uD63C\uCC9C\uC758"
+  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
   set: 4
   fact: "\uD558\uB298\uC758 \uC6C0\uC9C1\uC784\uC744 \uB098\uD0C0\uB0B8 \uCC9C\uBB38
     \uAE30\uAD6C"
+  story: 
   source: 2
   sourceChapter: 4
   sourceValue: 

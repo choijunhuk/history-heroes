@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: tesla_notes
   displayName: "\uD14C\uC2AC\uB77C\uC758 \uC5F0\uAD6C \uB178\uD2B8"
+  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
   set: 0
   fact: "\uD14C\uC2AC\uB77C\uB294 \uAD50\uB958 \uC804\uAE30\uC640 \uBB34\uC120 \uC1A1\uC804\uC744
     \uC5F0\uAD6C\uD588\uB2E4"
+  story: 
   source: 0
   sourceChapter: 0
   sourceValue: tesla

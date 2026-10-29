@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: sundial
   displayName: "\uC559\uBD80\uC77C\uAD6C"
+  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
   set: 4
   fact: "\uADF8\uB9BC\uC790\uB85C \uC2DC\uAC01\uC744 \uC54C\uB824\uC900 \uC870\uC120\uC758
     \uD574\uC2DC\uACC4"
+  story: 
   source: 3
   sourceChapter: 0
   sourceValue: survive5
