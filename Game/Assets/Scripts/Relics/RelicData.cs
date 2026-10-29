@@ -13,7 +13,7 @@ namespace HistoryHeroes.Relics
     }
 
     /// <summary>
-    /// 유물 하나 (Relics 3장, 출시 20개 = 세트 5 × 4). 끼우는 게 아니라 모으면 바로 적용되는 컬렉션.
+    /// 유물 하나 (Relics 3장, 출시 24개 = 세트 6 × 4). 끼우는 게 아니라 모으면 바로 적용되는 컬렉션.
     /// 사실 글은 Heroes.md의 사실/전승/각색 표시 규칙을 따른다.
     /// </summary>
     [CreateAssetMenu(menuName = "History Heroes/Relic", fileName = "Relic_")]
@@ -22,9 +22,12 @@ namespace HistoryHeroes.Relics
         [Tooltip("저장용 ID. 한 번 정하면 바꾸지 않는다")]
         public string id;
         public string displayName;
-        [Tooltip("세트 번호 0~4")]
+        public Sprite icon;
+        [Tooltip("세트 번호 0~5")]
         public int set;
         [TextArea] public string fact;
+        [Tooltip("게임 각색 한 줄. 실제 인물의 발언이 아님")]
+        [TextArea] public string story;
         public RelicSource source;
         public int sourceChapter;
         public string sourceValue;

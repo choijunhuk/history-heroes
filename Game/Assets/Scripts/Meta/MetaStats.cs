@@ -80,7 +80,7 @@ namespace HistoryHeroes.Meta
                 }
             }
 
-            // 유물 컬렉션: ★ 합 × 0.1% + 완성 세트 × 0.8% (공격력·체력), 세트마다 피해 감소 0.8%
+            // 유물 컬렉션: 표의 별·세트 보너스를 쓴다. 총예산은 공격력·체력 +10%, 피해 감소 +4%
             if (table.relics != null && snap.relics != null && snap.relics.Count > 0)
             {
                 Relics.RelicService.Bonus relic = Relics.RelicService.Calculate(snap.relics, table.relics);
