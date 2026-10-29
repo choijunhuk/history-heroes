@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: davinci_gears
   displayName: "\uB2E4\uBE48\uCE58\uC758 \uD1B1\uB2C8\uBC14\uD034 \uB3C4\uBA74"
-  icon: {fileID: 21300000, guid: 78576181a2a97de4b925c9300eeae3e6, type: 3}
+  icon: {fileID: 21300000, guid: 9414695a8b16a4b7b96978a84cf6e73d, type: 3}
   set: 5
   fact: "\uC0AC\uC2E4: \uB2E4\uBE48\uCE58\uC758 \uD544\uC0AC\uBCF8\uC5D0\uB294 \uD1B1\uB2C8\uBC14\uD034\uC640
     \uAE30\uACC4 \uC7A5\uCE58 \uADF8\uB9BC\uC774 \uB0A8\uC544 \uC788\uB2E4. \uAC01\uC0C9:

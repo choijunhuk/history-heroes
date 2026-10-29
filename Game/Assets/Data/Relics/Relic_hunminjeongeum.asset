@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: hunminjeongeum
   displayName: "\uD6C8\uBBFC\uC815\uC74C \uD574\uB840\uBCF8"
-  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
+  icon: {fileID: 21300000, guid: bba2b2500cb004f54a215103754b13ea, type: 3}
   set: 1
   fact: "\uD55C\uAE00\uC744 \uB9CC\uB4E0 \uC6D0\uB9AC\uC640 \uC4F0\uC784\uC744 \uC124\uBA85\uD55C
     \uCC45"

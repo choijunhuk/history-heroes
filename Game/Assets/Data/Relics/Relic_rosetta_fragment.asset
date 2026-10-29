@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: rosetta_fragment
   displayName: "\uB85C\uC81C\uD0C0\uC11D \uC870\uAC01"
-  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
+  icon: {fileID: 21300000, guid: b25aa26fef00844d99d1c99e91b0c407, type: 3}
   set: 1
   fact: "\uAC19\uC740 \uB0B4\uC6A9\uC774 \uC138 \uAC00\uC9C0 \uBB38\uC790\uB85C \uC0C8\uACA8\uC838
     \uC774\uC9D1\uD2B8 \uBB38\uC790 \uD574\uB3C5\uC758 \uC5F4\uC1E0\uAC00 \uB418\uC5C8\uB2E4"

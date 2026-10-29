@@ -57,7 +57,9 @@ namespace HistoryHeroes.EditorTools
 
             // 기존 에셋에도 새 24개 목록과 예산을 적용한다. 테스트는 같은 목록을 메모리에서 만든다.
             var relics = AssetUtil.LoadOrCreate<HistoryHeroes.Relics.RelicTable>($"{DataDir}/Relics/RelicTable.asset");
-            ConfigureRelics(relics, id => AssetUtil.LoadOrCreate<HistoryHeroes.Relics.RelicData>($"{DataDir}/Relics/Relic_{id}.asset"), Icon);
+            ImportUiSprites("Assets/Art/UI/Relics", false); // 유물 그림 24장 → 스프라이트
+            ConfigureRelics(relics, id => AssetUtil.LoadOrCreate<HistoryHeroes.Relics.RelicData>($"{DataDir}/Relics/Relic_{id}.asset"),
+                key => key.StartsWith("relic_") ? AssetDatabase.LoadAssetAtPath<UnityEngine.Sprite>($"Assets/Art/UI/Relics/{key}.png") : Icon(key));
             foreach (HistoryHeroes.Relics.RelicData relic in relics.relics) EditorUtility.SetDirty(relic);
             EditorUtility.SetDirty(relics);
 

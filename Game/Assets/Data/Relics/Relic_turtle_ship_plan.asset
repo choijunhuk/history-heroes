@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: turtle_ship_plan
   displayName: "\uAC70\uBD81\uC120 \uC124\uACC4\uB3C4"
-  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
+  icon: {fileID: 21300000, guid: d36a94263f5a44d61b4ae0ee969614de, type: 3}
   set: 2
   fact: "\uC870\uC120 \uC218\uAD70\uC758 \uCCA0\uAC11 \uC9C0\uBD95\uC744 \uC5B9\uC740
     \uC804\uC120 (\uC124\uACC4\uB3C4\uB294 \uAC8C\uC784 \uAC01\uC0C9)"

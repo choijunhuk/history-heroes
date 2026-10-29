@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: yiseonggye_bow
   displayName: "\uC774\uC131\uACC4\uC758 \uD65C"
-  icon: {fileID: 21300000, guid: 6fa1ce5ebbf2f56468103c95757b880c, type: 3}
+  icon: {fileID: 21300000, guid: 3bd69533cc79742718e9abe0be590a1d, type: 3}
   set: 5
   fact: "\uC0AC\uC2E4: \uC774\uC131\uACC4\uC758 \uB6F0\uC5B4\uB09C \uD65C\uC19C\uC528\uAC00
     \uAE30\uB85D\uC5D0 \uB0A8\uC544 \uC788\uB2E4. \uAC01\uC0C9: \uC774 \uD65C\uC758

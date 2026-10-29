@@ -74,7 +74,9 @@ namespace HistoryHeroes.EditorTools
                 relic.set = set;
                 relic.fact = fact;
                 relic.story = story;
-                relic.icon = loadIcon(iconKey);
+                // 유물마다 제 그림 (2026-10-29 이미지 생성, Art/UI/Relics/relic_id.png) → 없으면 공용 아이콘
+                Sprite own = loadIcon("relic_" + id);
+                relic.icon = own != null ? own : loadIcon(iconKey);
                 relic.source = source;
                 relic.sourceChapter = chapter;
                 relic.sourceValue = value;

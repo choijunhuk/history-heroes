@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: viking_sunstone
   displayName: "\uBC14\uC774\uD0B9\uC758 \uD0DC\uC591\uC11D"
-  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
+  icon: {fileID: 21300000, guid: 2fd1a08ea54f8440eb9731251734c1b2, type: 3}
   set: 2
   fact: "\uD750\uB9B0 \uB0A0 \uD574\uC758 \uC704\uCE58\uB97C \uCC3E\uC558\uB2E4\uACE0
     \uC804\uD574\uC9C0\uB294 \uAD11\uBB3C (\uC804\uC2B9)"

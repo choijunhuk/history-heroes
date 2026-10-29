@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: yisunsin_diary
   displayName: "\uB09C\uC911\uC77C\uAE30"
-  icon: {fileID: 21300000, guid: 6438f915b68e2824b8bcb51c50bf8575, type: 3}
+  icon: {fileID: 21300000, guid: 037f886b3bccd44adb44173d193e6951, type: 3}
   set: 5
   fact: "\uC0AC\uC2E4: \uC774\uC21C\uC2E0\uC774 \uC804\uC7C1 \uC911 \uC9C1\uC811
     \uC4F4 \uC77C\uAE30\uB2E4. \uAC01\uC0C9: \uAC8C\uC784 \uC18D \uC77C\uAE30 \uD55C

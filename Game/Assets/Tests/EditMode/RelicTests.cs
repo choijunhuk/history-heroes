@@ -189,7 +189,8 @@ namespace HistoryHeroes.Tests
             StringAssert.Contains("각색:", relic.fact);
             Assert.IsNotEmpty(relic.story);
             Assert.AreSame(_icon, relic.icon);
-            Assert.AreEqual(iconKey, _iconKeys[relicId]);
+            // 2026-10-29: 유물마다 제 그림(relic_id)을 먼저 찾는다. 테스트 로더가 그림을 주므로 공용 아이콘(iconKey)까지 내려가지 않는다
+            Assert.AreEqual("relic_" + relicId, _iconKeys[relicId], $"제 그림 먼저 (없으면 {iconKey})");
 
             float[] expected = { 0.0008333333f, 0.0016666667f, 0.0025f };
             var save = new SaveData { unlockedChapter = 3 };

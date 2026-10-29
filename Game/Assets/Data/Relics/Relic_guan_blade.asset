@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: guan_blade
   displayName: "\uCCAD\uB8E1\uC5B8\uC6D4\uB3C4 \uC870\uAC01"
-  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
+  icon: {fileID: 21300000, guid: d33535f8091304cb1a89163c0520de18, type: 3}
   set: 3
   fact: "\u300E\uC0BC\uAD6D\uC9C0\uC5F0\uC758\u300F \uC18D \uAD00\uC6B0\uC758 \uBB34\uAE30
     (\uC804\uC2B9)"

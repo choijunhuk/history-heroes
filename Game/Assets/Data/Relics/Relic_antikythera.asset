@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: antikythera
   displayName: "\uC548\uD2F0\uD0A4\uD14C\uB77C \uAE30\uACC4"
-  icon: {fileID: 21300000, guid: e9af2e39414e99d40824cb6c9ea5acdf, type: 3}
+  icon: {fileID: 21300000, guid: a22c20a6a3d6342e4950034894174f44, type: 3}
   set: 0
   fact: "\uACE0\uB300 \uADF8\uB9AC\uC2A4\uC758 \uCC9C\uCCB4 \uACC4\uC0B0 \uC7A5\uCE58.
     \uD1B1\uB2C8\uBC14\uD034\uB85C \uC774\uB8E8\uC5B4\uC84C\uB2E4"

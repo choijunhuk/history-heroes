@@ -61,3 +61,4 @@
 | 2026-10-29 | 유물 뽑기 합침 (테스트 356개 통과, 상점 "유물 뽑기" 탭 · 결과 카드 화면 확인). 남은 것: 유물 그림 24장 (Codex 이미지 생성 중) → `RelicData` 아이콘으로 |
 | 2026-10-29 | 장비 6칸: Codex 구현 중 (`../history-heroes-gear`, 가지 `feature/gear-six`) |
 | 2026-10-29 | 잔 다르크 조립에 고칠 곳 (`Editor/Art3DCharacters.cs`): ① `ExtractHead()`가 `Superhero_Male_FullBody` · 메시 `SuperHero_Male` 고정 → 몸 파일 · 메시 이름 · 저장 경로를 받게 (여자: `Superhero_Female_FullBody` · `Superhero_Female` · `Head_Female.asset`) ② `Look`에 `female` → 머리 붙이기(약 501줄 `Attach(...)`)와 피부 그림 `T_Superhero_Male_Dark/Normal`을 여자용으로 (UBC 묶음 Textures에서 `T_Superhero_Female_*` 가져오기) ③ 팔 재질 판별 `Contains("Regular_Male")` → `Regular_Female`도 ④ 눈썹 `Eyebrows` → `Eyebrows_Female` ⑤ Look: `body = "Female_Ranger"`, 레인저 옷 은빛·청색 tint, 머리 `Hair_BuzzedFemale` (짧은 머리), 검 소품. 여자 FBX 6개는 `Art/3D/Models`에 있음 |
+| 2026-10-29 | 유물 그림 24장 (이미지 생성, 보상 그림과 같은 화풍) → 유물마다 제 아이콘 (`relic_id`, 없으면 공용). 유물 뽑기 결과 · 유물 화면에 보인다 |
