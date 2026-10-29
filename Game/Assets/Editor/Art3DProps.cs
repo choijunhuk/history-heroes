@@ -32,6 +32,7 @@ namespace HistoryHeroes.EditorTools
             ["Boudica_Sword"] = "hand_r", // 부디카 켈트 잎 모양 검
             ["Thor_Hammer"] = "hand_r", // 토르 (신의 시련 1 · 플레이 토르)
             ["Cleopatra_Crown"] = "Head", ["Cleopatra_Collar"] = "spine_03", // 클레오파트라 머리장식 · 넓은 목걸이 (여자 몸 기준)
+            ["Anubis_Mask"] = "Head", // 아누비스 자칼 가면 (사람 머리를 숨기고 대신 씀)
             ["Enemy_TowerShield"] = "hand_l", // 방패병의 큰 나무 방패 (앞을 막는다)
             // 그래픽 재평가 6번 "적을 실루엣으로 구분": 무리 적마다 머리 · 등 · 손 장식 (블렌더 notes_enemies.txt)
             ["Enemy_HornHelm"] = "Head", ["Enemy_Hood"] = "Head", ["Enemy_ShortBow"] = "hand_l", ["Enemy_BombPack"] = "spine_03",

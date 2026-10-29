@@ -1,9 +1,11 @@
-# 영웅 손·등·머리 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치, 클레오파트라 머리장식·목걸이). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
+# 영웅 손·등·머리 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치, 클레오파트라 머리장식·목걸이, 아누비스 자칼 가면). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py [-- 이름...] 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
 # 손 hand_r 머리 (0.706, -0.065, 1.456), 날은 +Y (얼굴 쪽, 관우 언월도와 같은 방향). 얼굴 = +Y, 등 = -Y (칭기즈 칸 화살통이 -Y).
 import bpy, bmesh, math
 from mathutils import Vector, Matrix
 
-import os
+import os, sys
+# 이름을 주면 그것만 내보낸다 (안 바뀐 FBX가 시각만 달라져 커밋에 섞이지 않게): Blender -b -P hero_props.py -- Anubis_Mask
+ONLY = set(sys.argv[sys.argv.index("--") + 1:]) if "--" in sys.argv else set()
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Game", "Assets", "Art", "3D", "Props")  # 이 저장소 기준 (어느 컴퓨터든)
 HX, HY, HZ = 0.80, -0.065, 1.42  # 손 쥔 자리 (언월도 자루 중심과 같은 X·Z)
 
@@ -78,6 +80,9 @@ def export(name, objs):
     joined.name = name
     joined.data.name = name
     bpy.ops.object.shade_flat()
+    if ONLY and name not in ONLY:
+        bpy.data.objects.remove(joined, do_unlink=True)
+        return
     bpy.ops.export_scene.fbx(filepath=f"{OUT}/{name}.fbx", use_selection=True, object_types={'MESH'},
                              apply_scale_options='FBX_SCALE_ALL', bake_space_transform=True, use_mesh_modifiers=True,
                              add_leaf_bones=False, bake_anim=False)
@@ -203,4 +208,46 @@ objs = [
     arc_band("outer", NC, 0.14, 0.155, 1.456, 0.012, "Gold"),
 ]
 export("Cleopatra_Collar", objs)
+reset()
+
+# 6) 아누비스 자칼 가면 (신의 시련 2 · 플레이 아누비스, GodsVsHumanity 3-3). 남자 기본 몸 Head (0, -0.017, 1.6), 머리 꼭대기 1.81, 얼굴 = +Y
+#    사람 머리를 숨기고 이 가면이 머리를 대신한다: 검은 머리 + 앞으로 긴 주둥이 + 뾰족 귀, 금 눈 · 띠 (동물 몸 · 새 뼈대 없음)
+def ellipsoid(name, center, radii, material):
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=14, v_segments=8, radius=1.0)
+    bmesh.ops.scale(bm, vec=Vector(radii), verts=bm.verts)
+    bmesh.ops.translate(bm, vec=Vector(center), verts=bm.verts)
+    return new_obj(name, bm, material)
+
+def snout(name, y0, y1, z, w0, h0, w1, h1, material):
+    bm = bmesh.new()
+    a = [bm.verts.new((sx * w0, y0, z + sz * h0)) for sx, sz in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    b = [bm.verts.new((sx * w1, y1, z - h0 * 0.4 + sz * h1)) for sx, sz in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    bm.faces.new(list(reversed(a)))
+    bm.faces.new(b)
+    for k in range(4):
+        bm.faces.new((a[k], a[(k + 1) % 4], b[(k + 1) % 4], b[k]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return new_obj(name, bm, material)
+
+def ear(name, x, material):
+    bm = bmesh.new()
+    base = [bm.verts.new((x + dx, -0.03 + dy, 1.79)) for dx, dy in ((-0.03, -0.012), (0.03, -0.012), (0.03, 0.012), (-0.03, 0.012))]
+    tip = bm.verts.new((x * 1.15, -0.03, 1.99))
+    bm.faces.new(list(reversed(base)))
+    for k in range(4):
+        bm.faces.new((base[k], base[(k + 1) % 4], tip))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return new_obj(name, bm, material)
+
+objs = [
+    ellipsoid("skull", (0.0, -0.005, 1.71), (0.115, 0.125, 0.12), "Black"),
+    snout("muzzle", 0.07, 0.27, 1.68, 0.055, 0.045, 0.02, 0.018, "Black"),
+    ear("ear_l", -0.065, "Black"),
+    ear("ear_r", 0.065, "Black"),
+    box("eye_l", (-0.042, 0.105, 1.725), (0.03, 0.012, 0.012), "Gold"),
+    box("eye_r", (0.042, 0.105, 1.725), (0.03, 0.012, 0.012), "Gold"),
+    box("band", (0.0, 0.0, 1.785), (0.2, 0.2, 0.02), "Gold"),
+]
+export("Anubis_Mask", objs)
 print("DONE")
