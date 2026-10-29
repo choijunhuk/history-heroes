@@ -21,6 +21,7 @@
 
 <color=#FFD966><b>아이콘</b></color>
 
+• 보상 · 재화 컬러 그림 10장 (Game/Assets/Art/UI/Rewards: 금화 · 보석 · 영웅 조각 · 장비 조각 · 고대 파편 · 소환권 · 하트 · 경험치 · 일반/고급 상자): <b>AI 이미지 생성</b> (OpenAI 이미지 생성, Codex CLI로 2026-10-29). 생성물은 만든 사람이 쓸 수 있다 (OpenAI 이용약관). 글 속 아이콘 묶음 RewardIcons.asset은 이 그림으로 빌더가 만든다
 • 스킬 · 메뉴 · 재화 아이콘 85개 (Game/Assets/Art/UI/Icons): <b>game-icons.net</b>, CC BY 3.0. 흰색으로 칠하고 크기만 맞췄다.
 • 만든 이: Lorc, Delapouite, Sbed, Guard13007, Skoll, Zeromancer, Heavenly Dog, DarkZaitzev, Caro Asercion, AussieSim, Badges. 아이콘마다 만든 이와 주소: Game/Assets/Art/UI/Icons/CREDITS.txt
 • 버튼 · 창 · 테두리 · 리본 · 막대 같은 UI 부품 그림: 이 게임을 만들면서 직접 코드로 그림 (Tools/ui_kit.py).
@@ -36,8 +37,8 @@
 • 나폴레옹 군복 무늬 T_Ranger_Navy_BaseColor: Quaternius Ranger 옷 무늬(CC0)의 초록을 파랗게 바꾼 사본.
 
   이름   ·   쓰는 곳   ·   라이선스   ·   출처
-  Modular Character Outfits - Fantasy (Ranger · Peasant 옷)   ·   영웅 · 사람 적의 몸과 옷   ·   CC0   ·   Quaternius — https://quaternius.com/packs/modularcharacteroutfitsfantasy.html
-  Universal Base Characters (머리 · 눈 · 머리카락 · 수염)   ·   영웅 · 사람 적의 머리 (기본 몸에서 떼어 붙임)   ·   CC0   ·   Quaternius — https://quaternius.com/packs/universalbasecharacters.html
+  Modular Character Outfits - Fantasy (Ranger · Peasant 옷, 2026-10-29: v2.0 여자 옷 Female_Ranger · Female_Peasant 추가)   ·   영웅 · 사람 적의 몸과 옷   ·   CC0   ·   Quaternius — https://quaternius.com/packs/modularcharacteroutfitsfantasy.html
+  Universal Base Characters (머리 · 눈 · 머리카락 · 수염, 2026-10-29: 여자 몸 Superhero_Female_FullBody · Eyebrows_Female · Hair_Buns · Hair_BuzzedFemale 추가)   ·   영웅 · 사람 적의 머리 (기본 몸에서 떼어 붙임)   ·   CC0   ·   Quaternius — https://quaternius.com/packs/universalbasecharacters.html
   Bestiary - Dungeon Monsters Kit (Imp · Puglin)   ·   괴물 적 · 보스   ·   CC0   ·   Quaternius — https://quaternius.com/packs/bestiarydungeonmonsterskit.html
   Universal Animation Library 1 · 2 (동작 28개)   ·   모든 캐릭터의 동작   ·   CC0   ·   Quaternius — https://quaternius.com/packs/universalanimationlibrary.html
 • 그래픽 방향 비교용 샘플 (게임 빌드에는 안 들어감, 비교): Kenney *Tiny Dungeon* (CC0, https://kenney.nl/assets/tiny-dungeon) · Quaternius *Modular Character Outfits - Fantasy* · *Bestiary - Dungeon Monsters* · *Universal Animation Library 1·2* (모두 CC0, https://quaternius.com)
