@@ -43,10 +43,10 @@ namespace HistoryHeroes.Tests
             return projectile;
         }
 
-        private static void Step(Projectile projectile)
+        private static void Step(Projectile projectile, float dt = 0.15f)
         {
             Assert.IsNotNull(StepMethod);
-            StepMethod.Invoke(projectile, new object[] { 0.15f });
+            StepMethod.Invoke(projectile, new object[] { dt });
         }
 
         [Test]
@@ -62,6 +62,20 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void DenseWaveHitsEveryEnemyAndTravelsFullRangeInOneStep()
+        {
+            var enemies = new Health[6];
+            for (int i = 0; i < enemies.Length; i++) enemies[i] = Enemy("Enemy" + i, 0.8f + i * 0.2f);
+
+            Projectile wave = Shoot(true, int.MaxValue);
+            Step(wave, 0.3f); // 한 프레임에 최대 사거리 3을 모두 이동한다.
+
+            foreach (Health enemy in enemies) Assert.AreEqual(90f, enemy.Current, 0.0001f);
+            Assert.AreEqual(3f, wave.transform.position.x, 0.0001f);
+            Assert.IsFalse(wave.gameObject.activeSelf);
+        }
+
+        [Test]
         public void OrdinaryNonPiercingProjectileStillStopsAtFirstTarget()
         {
             Health first = Enemy("First", 1f);
@@ -70,6 +84,23 @@ namespace HistoryHeroes.Tests
             Step(shot);
             Assert.AreEqual(90f, first.Current, 0.0001f);
             Assert.AreEqual(100f, second.Current, 0.0001f);
+            Assert.IsFalse(shot.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void OrdinaryPiercingProjectileStillHitsOnlyOneTargetPerStep()
+        {
+            Health first = Enemy("First", 1f);
+            Health second = Enemy("Second", 1.25f);
+            Projectile shot = Shoot(false, 1);
+
+            Step(shot, 0.3f);
+            Assert.AreEqual(90f, first.Current, 0.0001f);
+            Assert.AreEqual(100f, second.Current, 0.0001f);
+            Assert.IsTrue(shot.gameObject.activeSelf);
+
+            Step(shot);
+            Assert.AreEqual(92f, second.Current, 0.0001f);
             Assert.IsFalse(shot.gameObject.activeSelf);
         }
     }

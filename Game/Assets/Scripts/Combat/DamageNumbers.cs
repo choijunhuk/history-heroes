@@ -50,11 +50,11 @@ namespace HistoryHeroes.Combat
         /// <summary>지금 떠 있는 숫자 수 (QA용)</summary>
         public int ActiveCount => _active.Count;
 
-        private void OnEnable() => Health.AnyDamaged += OnAnyDamaged;
+        private void OnEnable() => Health.AnyVisualDamaged += OnAnyDamaged;
 
         private void OnDisable()
         {
-            Health.AnyDamaged -= OnAnyDamaged;
+            Health.AnyVisualDamaged -= OnAnyDamaged;
             for (int i = _active.Count - 1; i >= 0; i--) Recycle(i);
         }
 

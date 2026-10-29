@@ -156,6 +156,7 @@ namespace HistoryHeroes.EditorTools
                 twinBody.gravityScale = 0f;
                 twinBody.freezeRotation = true;
                 twin.gameObject.AddComponent<HistoryHeroes.Combat.Health>();
+                using (var flash = new Props(twin.gameObject.AddComponent<HistoryHeroes.Combat.HitFlash>())) flash.Ref("target", twin);
                 var form = twin.gameObject.AddComponent<ShadowTrialForm>();
                 using (var formProps = new Props(form)) formProps.Ref("data", b.Susanoo).Mask("playerMask", Mask(PlayerLayer));
                 GameObject ghost = Art3DCharacters.SusanooGhostModel();

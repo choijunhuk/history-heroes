@@ -226,13 +226,16 @@ namespace HistoryHeroes.Enemy
             // 두 번째 형상에 붙은 표식을 한 번만 적용하고, 닫힌 첫 형상의 표식은 이 피해에 섞지 않는다.
             if (trialForm.Health.IncomingModifier != null) hit = trialForm.Health.IncomingModifier(hit);
             System.Func<DamageInfo, DamageInfo> mainModifier = health.IncomingModifier;
+            Health previousDisplayTarget = health.DamageDisplayTarget;
             health.IncomingModifier = null;
+            health.DamageDisplayTarget = trialForm.Health;
             _incomingSecond = true;
             try { return health.TryTakeDamage(hit, out dealt); }
             finally
             {
                 _incomingSecond = false;
                 health.IncomingModifier = mainModifier;
+                health.DamageDisplayTarget = previousDisplayTarget;
             }
         }
 

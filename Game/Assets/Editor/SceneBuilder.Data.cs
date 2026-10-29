@@ -310,7 +310,7 @@ namespace HistoryHeroes.EditorTools
             PassiveSkillData pierce = Passive("pierce", "관통", Rarity.Rare, SkillTag.Projectile, 1, 2,
                 "기본 공격이 적을 뚫고 지나감\n(뚫을 때마다 피해 -20%)");
             pierce.attack = new List<PassiveSkillData.AttackEntry> { new PassiveSkillData.AttackEntry { kind = AttackModifierKind.Pierce, firstLevel = 1, perLevel = 0 } };
-            pierce.warriorDescription = "베기 각도\n120° → 160°";
+            pierce.warriorDescription = "베기 각도 +40°\n아테나: 찌르기 길이 +40%";
             d.Pool.Add(pierce);
             PassiveSkillData ricochet = Passive("ricochet", "벽 튕김", Rarity.Rare, SkillTag.Projectile, 2, 2,
                 "기본 공격이 벽에 2번 튕김\n(레벨마다 +1번)");

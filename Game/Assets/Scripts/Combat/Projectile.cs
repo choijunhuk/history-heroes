@@ -110,80 +110,89 @@ namespace HistoryHeroes.Combat
                 Release();
                 return;
             }
-            Vector2 position = transform.position;
             var filter = new ContactFilter2D { useLayerMask = true, layerMask = _hitMask | _wallMask, useTriggers = true };
             RaycastHit2D[] hits = _hitOncePerTarget ? _waveHits : _hits;
-            int count = Physics2D.CircleCast(position, radius, _direction, filter, hits, distance);
-
-            RaycastHit2D hit = default;
-            float nearest = float.MaxValue;
-            for (int i = 0; i < count; i++)
+            while (true)
             {
-                if (hits[i].collider == _lastHit || (_hitOncePerTarget && _hitTargets.Contains(hits[i].collider))
-                    || hits[i].distance >= nearest) continue;
-                nearest = hits[i].distance;
-                hit = hits[i];
-            }
+                Vector2 position = transform.position;
+                int count = Physics2D.CircleCast(position, radius, _direction, filter, hits, distance);
 
-            if (hit.collider == null)
-            {
-                transform.position = position + _direction * distance;
-                _travelled += distance;
+                RaycastHit2D hit = default;
+                float nearest = float.MaxValue;
+                for (int i = 0; i < count; i++)
+                {
+                    if (hits[i].collider == _lastHit || (_hitOncePerTarget && _hitTargets.Contains(hits[i].collider))
+                        || hits[i].distance >= nearest) continue;
+                    nearest = hits[i].distance;
+                    hit = hits[i];
+                }
+
+                if (hit.collider == null)
+                {
+                    transform.position = position + _direction * distance;
+                    _travelled += distance;
+                    if (_travelled >= _maxDistance) Release();
+                    return;
+                }
+
+                _travelled += hit.distance;
+
+                if (((1 << hit.collider.gameObject.layer) & _wallMask) != 0)
+                {
+                    if (hit.collider.TryGetComponent(out Dungeon.IShotTarget target))
+                    {
+                        target.Hit(); // 부서지는 장애물·폭약 통·레버: 튕기지 않고 맞기만 (Modes 2-3, 확장 1차 2장)
+                        Release();
+                        return;
+                    }
+
+                    if (_ricochetLeft <= 0)
+                    {
+                        Release();
+                        return;
+                    }
+
+                    _ricochetLeft--;
+                    _direction = Vector2.Reflect(_direction, hit.normal).normalized;
+                    transform.position = hit.centroid + hit.normal * 0.01f;
+                    transform.right = _direction;
+                    _lastHit = null;
+                    return;
+                }
+
+                transform.position = hit.centroid;
+                _lastHit = hit.collider;
+                if (_hitOncePerTarget) _hitTargets.Add(hit.collider);
+
+                _damage.Direction = _direction;
+                _damage.HasDirection = true;
+                _damage.Piercing = _piercing;
+                _damage.IsProjectile = true;
+                if (hit.collider.TryGetComponent(out Health health) && health.TryTakeDamage(_damage, out float dealt))
+                {
+                    _onHit?.Invoke(_damage, dealt);
+                    if (!_notifyFirstTargetOnly || !_targetNotified)
+                    {
+                        _onHitTarget?.Invoke(health, hit.centroid);
+                        _targetNotified = true;
+                    }
+                }
+
+                if (_pierceLeft <= 0)
+                {
+                    Release();
+                    return;
+                }
+
+                _pierceLeft--;
+                _damage.Amount *= 1f - _pierceFalloff;
+                if (!_hitOncePerTarget) return;
+
+                // 검기만 같은 프레임의 남은 거리를 사용한다. 일반 투사체는 기존처럼 한 번만 충돌한다.
+                distance -= hit.distance;
                 if (_travelled >= _maxDistance) Release();
-                return;
+                if (distance <= 0f || _travelled >= _maxDistance) return;
             }
-
-            _travelled += hit.distance;
-
-            if (((1 << hit.collider.gameObject.layer) & _wallMask) != 0)
-            {
-                if (hit.collider.TryGetComponent(out Dungeon.IShotTarget target))
-                {
-                    target.Hit(); // 부서지는 장애물·폭약 통·레버: 튕기지 않고 맞기만 (Modes 2-3, 확장 1차 2장)
-                    Release();
-                    return;
-                }
-
-                if (_ricochetLeft <= 0)
-                {
-                    Release();
-                    return;
-                }
-
-                _ricochetLeft--;
-                _direction = Vector2.Reflect(_direction, hit.normal).normalized;
-                transform.position = hit.centroid + hit.normal * 0.01f;
-                transform.right = _direction;
-                _lastHit = null;
-                return;
-            }
-
-            transform.position = hit.centroid;
-            _lastHit = hit.collider;
-            if (_hitOncePerTarget) _hitTargets.Add(hit.collider);
-
-            _damage.Direction = _direction;
-            _damage.HasDirection = true;
-            _damage.Piercing = _piercing;
-            _damage.IsProjectile = true;
-            if (hit.collider.TryGetComponent(out Health health) && health.TryTakeDamage(_damage, out float dealt))
-            {
-                _onHit?.Invoke(_damage, dealt);
-                if (!_notifyFirstTargetOnly || !_targetNotified)
-                {
-                    _onHitTarget?.Invoke(health, hit.centroid);
-                    _targetNotified = true;
-                }
-            }
-
-            if (_pierceLeft <= 0)
-            {
-                Release();
-                return;
-            }
-
-            _pierceLeft--;
-            _damage.Amount *= 1f - _pierceFalloff;
         }
 
         /// <summary>막혔을 때 (강철 회오리 칼날 등) 바로 사라진다.</summary>

@@ -744,7 +744,8 @@ namespace HistoryHeroes.Player
             _searchDelay -= Time.deltaTime;
             if (_searchDelay > 0f) return;
 
-            Health target = _targets.Find(transform.position, Stats.Get(StatType.Range));
+            Health target = _targets.Find(transform.position, BasicAttackRange,
+                requireCenterInRange: hero.attackKind == BasicAttackKind.MeleeThrust);
             if (target == null)
             {
                 _searchDelay = SearchRetryInterval;
@@ -1008,17 +1009,26 @@ namespace HistoryHeroes.Player
             }
         }
 
-        /// <summary>창끝의 직선 안에 있는 적만 맞는다. 부채꼴 공격과 판정을 공유하지 않는다.</summary>
+        /// <summary>관통은 창 폭을 넓히는 대신 뒤의 적까지 닿게 한다. 여러 관통 효과가 있어도 한 번만 늘린다.</summary>
+        public static float SpearReach(float range, int pierce, float pierceReachBonus)
+            => range * (pierce > 0 ? 1f + pierceReachBonus : 1f);
+
+        private float BasicAttackRange => hero.attackKind == BasicAttackKind.MeleeThrust
+            ? SpearReach(Stats.Get(StatType.Range), Attack.Get(AttackModifierKind.Pierce), hero.spearPierceReachBonus)
+            : Stats.Get(StatType.Range);
+
+        /// <summary>표적을 고를 때와 같은 중심 거리로, 창끝의 직선 안에 있는 적만 맞는다.</summary>
         public static bool InSpearPath(Vector2 origin, Vector2 aim, Vector2 point, float reach, float width)
         {
             Vector2 to = point - origin;
             float along = Vector2.Dot(aim, to);
-            return along >= 0f && along <= reach && Mathf.Abs(aim.x * to.y - aim.y * to.x) <= width * 0.5f;
+            return TargetSelector.IsWithinRange(origin, point, reach)
+                && along >= 0f && along <= reach && Mathf.Abs(aim.x * to.y - aim.y * to.x) <= width * 0.5f;
         }
 
         private void ThrustOnce(Vector2 origin, Vector2 aim, float coefficient)
         {
-            float reach = Stats.Get(StatType.Range);
+            float reach = BasicAttackRange;
             AttackFx.Line(origin, origin + aim * reach, hero.spearWidth, slashColor, 0.16f);
             PlayAttack(aim);
 

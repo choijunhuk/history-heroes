@@ -75,6 +75,64 @@ namespace HistoryHeroes.Tests
             Assert.IsFalse(PlayerController.InSpearPath(origin, aim, new Vector2(-1f, 0f), 2.5f, 0.6f));
         }
 
+        [TestCase(0, 2.5f)]
+        [TestCase(1, 3.5f)]
+        [TestCase(3, 3.5f)]
+        public void PierceExtendsSpearReachOnlyOnce(int pierce, float expected)
+        {
+            Assert.AreEqual(expected, PlayerController.SpearReach(2.5f, pierce, 0.4f), 0.0001f);
+        }
+
+        [Test]
+        public void PierceReachesRearEnemyWithoutWideningSpear()
+        {
+            Vector2 origin = Vector2.zero;
+            Vector2 aim = Vector2.right;
+            float reach = PlayerController.SpearReach(2.5f, 1, 0.4f);
+            Assert.IsFalse(PlayerController.InSpearPath(origin, aim, new Vector2(3f, 0f), 2.5f, 0.6f));
+            Assert.IsTrue(PlayerController.InSpearPath(origin, aim, new Vector2(3f, 0f), reach, 0.6f));
+            Assert.IsFalse(PlayerController.InSpearPath(origin, aim, new Vector2(3f, 0.4f), reach, 0.6f));
+            Assert.IsFalse(PlayerController.InSpearPath(origin, aim, new Vector2(3.6f, 0f), reach, 0.6f));
+        }
+
+        [TestCase(2.5f, 0f, true)]
+        [TestCase(2.5001f, 0f, false)]
+        [TestCase(2.5f, 0.2f, false)]
+        [TestCase(2.4f, 0.2f, true)]
+        public void SpearAndTargetSelectionUseTheSameCenterRange(float x, float y, bool expected)
+        {
+            Vector2 origin = new Vector2(1f, -2f);
+            Vector2 point = origin + new Vector2(x, y);
+            Assert.AreEqual(expected, TargetSelector.IsWithinRange(origin, point, 2.5f));
+            Assert.AreEqual(expected, PlayerController.InSpearPath(origin, Vector2.right, point, 2.5f, 0.6f));
+        }
+
+        [Test]
+        public void SpearSkipsOutOfRangeCenterWhileProjectileStillTargetsColliderEdge()
+        {
+            const int TestLayer = 29;
+            var enemyObject = new GameObject("SpearRangeEdge") { layer = TestLayer };
+            try
+            {
+                enemyObject.transform.position = new Vector3(2.75f, 0f, 0f);
+                enemyObject.AddComponent<CircleCollider2D>().radius = 0.5f;
+                Health enemy = enemyObject.AddComponent<Health>();
+                enemy.Init(Team.Enemy, 100f);
+                Physics2D.SyncTransforms();
+
+                var selector = new TargetSelector(1 << TestLayer, 0);
+                Assert.AreSame(enemy, selector.Find(Vector2.zero, 2.5f));
+                Assert.IsNull(selector.Find(Vector2.zero, 2.5f, requireCenterInRange: true),
+                    "창은 충돌체 끝만 닿은 적을 계속 겨냥하지 않는다");
+                Assert.AreSame(enemy, selector.Find(Vector2.zero, 3.5f, requireCenterInRange: true),
+                    "관통으로 늘어난 사거리에서는 같은 적을 고를 수 있다");
+            }
+            finally
+            {
+                Object.DestroyImmediate(enemyObject);
+            }
+        }
+
         [Test]
         public void OwlMarksExpireOnPooledLifeAndOnlyBasicAttacksGainBonus()
         {
@@ -122,6 +180,7 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(1250f, hero.maxHp);
             Assert.AreEqual(108f, hero.attack);
             Assert.AreEqual(2.5f, hero.range);
+            Assert.AreEqual(3.5f, PlayerController.SpearReach(hero.range, 1, hero.spearPierceReachBonus), 0.0001f);
             Assert.IsTrue(hero.godShardUnlock);
             Assert.AreEqual(1f, HeroSignature.For(hero, 1).ShieldPrepareSeconds, 0.0001f);
             Assert.AreEqual(0.8f, HeroSignature.For(hero, 3).ShieldPrepareSeconds, 0.0001f);

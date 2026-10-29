@@ -26,6 +26,7 @@ namespace HistoryHeroes.EditorTools
             hero.signatureName = "판단의 방패";
             hero.signatureDescription = "1초 정지하면 다음 적 탄 한 발 차단. 이동하면 준비 취소, 성공부터 8초 재사용";
             hero.spearWidth = 0.6f;
+            hero.spearPierceReachBonus = 0.4f;
             hero.shieldPrepareSeconds = 1f;
             hero.shieldReuseSeconds = 8f;
             hero.owlBonusCoefficient = 0.2f;
