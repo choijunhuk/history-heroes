@@ -418,7 +418,8 @@ namespace HistoryHeroes.Records
             data.godTrials ??= new GodTrialSave();
             data.godTrials.cleared ??= new List<string>();
             data.godTrials.cleared.RemoveAll(id => Modes.GodTrialRules.Find(id) == null);
-            if (Modes.GodTrialRules.Find(data.godTrials.goalTrialId)?.HeroId == null)
+            // 알 수 없는 목표만 정리한다. 목표 신을 해금해서 비운 경우(null)는 그 주 잠금을 지킨다 — 다시 불러오면 다른 신으로 바꿀 수 있었다 (Codex 리뷰)
+            if (!string.IsNullOrEmpty(data.godTrials.goalTrialId) && Modes.GodTrialRules.Find(data.godTrials.goalTrialId)?.HeroId == null)
             {
                 data.godTrials.goalTrialId = null;
                 data.godTrials.firstRecordId = null;

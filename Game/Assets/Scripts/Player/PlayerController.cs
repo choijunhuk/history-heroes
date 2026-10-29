@@ -826,8 +826,9 @@ namespace HistoryHeroes.Player
         private void OnMarkProjectileHitTarget(Health target, Vector2 point)
         {
             OnProjectileHitTarget(target, point);
-            if (target.IsDead || !target.TryGetComponent(out EnemyBase enemy)) return;
-            if (!_mark.RecordHit(target, target.Life, Time.time, true, _sig.MarkHits, _sig.MarkCooldown)) return;
+            // 죽인 명중도 표식 대상은 바꾼다 (예전엔 건너뛰어서: A에 3회 → B를 처치 → A 다시 맞히면 바로 둔화, Codex 리뷰). 둔화만 산 적에게
+            bool fire = _mark.RecordHit(target, target.Life, Time.time, true, _sig.MarkHits, _sig.MarkCooldown);
+            if (!fire || target.IsDead || !target.TryGetComponent(out EnemyBase enemy)) return;
             float slow = AnubisMarkState.EffectiveSlow(_sig, hero.markBossScale, enemy is IPhasedBoss);
             enemy.Status.ApplySlow(slow, AnubisMarkState.EffectiveDuration(_sig), _mark);
             AttackFx.Burst(point, 0.45f, new Color(0.82f, 0.67f, 0.34f, 0.5f), 0.12f);

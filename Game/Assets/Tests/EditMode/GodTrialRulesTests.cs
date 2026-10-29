@@ -248,6 +248,31 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void GoalLock_SurvivesReload_AfterGoalGodUnlocked()
+        {
+            // 목표 신을 해금하면 goalTrialId가 비워진다. 다시 불러와도 그 주 잠금은 남아야 한다 (다른 신으로 바꾸기 막기)
+            string folder = Path.Combine(Path.GetTempPath(), "hh-goal-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var store = new SaveStore(folder);
+                var save = UnlockedSave();
+                save.godTrials.weekKey = "2027-W01";
+                save.godTrials.goalTrialId = null;
+                save.godTrials.goalLocked = true;
+                save.godTrials.firstRecordId = "first";
+                Directory.CreateDirectory(folder);
+                File.WriteAllText(store.MainPath, SaveStore.Sign(JsonUtility.ToJson(save, true)));
+                SaveData loaded = store.Load();
+                Assert.IsTrue(loaded.godTrials.goalLocked);
+                Assert.AreEqual("first", loaded.godTrials.firstRecordId);
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        [Test]
         public void SchemaEightLoadsWithEmptyTrialAndPreservedProgress()
         {
             string folder = Path.Combine(Path.GetTempPath(), "hh-thor-" + Guid.NewGuid().ToString("N"));
