@@ -27,7 +27,11 @@ namespace HistoryHeroes.Player
             _filter = new ContactFilter2D { useLayerMask = true, layerMask = _enemyMask, useTriggers = true };
         }
 
-        public Health Find(Vector2 origin, float range)
+        /// <summary>찌르기는 표적 탐색과 명중에 같은 중심 거리를 쓴다.</summary>
+        public static bool IsWithinRange(Vector2 origin, Vector2 point, float range)
+            => (point - origin).sqrMagnitude <= range * range;
+
+        public Health Find(Vector2 origin, float range, bool requireCenterInRange = false)
         {
             _buffer.Clear();
             Physics2D.OverlapCircle(origin, range, _filter, _buffer);
@@ -41,6 +45,7 @@ namespace HistoryHeroes.Player
                 if (!_buffer[i].TryGetComponent(out Health health) || health.IsDead) continue;
 
                 Vector2 to = (Vector2)health.transform.position - origin;
+                if (requireCenterInRange && !IsWithinRange(origin, health.transform.position, range)) continue;
                 if (Physics2D.Raycast(origin, to.normalized, to.magnitude, _wallMask).collider != null) continue;
 
                 float sqr = to.sqrMagnitude;

@@ -30,12 +30,12 @@ namespace HistoryHeroes.Combat
         private void OnEnable()
         {
             _instance = this;
-            Health.AnyDamaged += OnAnyDamaged;
+            Health.AnyVisualDamaged += OnAnyDamaged;
         }
 
         private void OnDisable()
         {
-            Health.AnyDamaged -= OnAnyDamaged;
+            Health.AnyVisualDamaged -= OnAnyDamaged;
             if (_instance == this) _instance = null;
         }
 

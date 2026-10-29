@@ -80,7 +80,7 @@ namespace HistoryHeroes.Combat
             if (tintSource != null) _tintBase = tintSource.color;
             if (_health != null)
             {
-                _health.Damaged += OnDamaged;
+                _health.VisualDamaged += OnDamaged;
                 _health.Died += OnDied;
             }
         }
@@ -89,7 +89,7 @@ namespace HistoryHeroes.Combat
         {
             if (_health != null)
             {
-                _health.Damaged -= OnDamaged;
+                _health.VisualDamaged -= OnDamaged;
                 _health.Died -= OnDied;
             }
         }

@@ -34,18 +34,29 @@ namespace HistoryHeroes.Combat
         public delegate bool DamageReceiver(DamageInfo info, out float dealt);
         public DamageReceiver DamageRedirect { get; set; }
 
-        /// <summary>실제로 깎인 양과 함께 알린다.</summary>
+        /// <summary>체력은 이 몸에서 깎되, 피해 숫자와 피격 연출은 실제로 맞은 몸에 표시한다.</summary>
+        public Health DamageDisplayTarget { get; set; }
+
+        /// <summary>실제로 깎인 양을 체력·단계·처치 상태에 알린다.</summary>
         public event Action<DamageInfo, float> Damaged;
+        /// <summary>실제로 맞은 몸의 피격 연출에만 알린다.</summary>
+        public event Action<DamageInfo, float> VisualDamaged;
         public event Action<Health> Died;
 
-        /// <summary>누군가 피해를 받았을 때 (피해 숫자·화면 흔들림, 조사 A9). 장면마다 듣는 쪽이 붙고 뗀다</summary>
+        /// <summary>누군가 피해를 받았을 때. 처치·기믹은 실제 체력이 깎인 몸체를 받는다.</summary>
         public static event Action<Health, DamageInfo, float> AnyDamaged;
+        /// <summary>피해 숫자·타격 불꽃은 실제로 맞은 몸체를 받는다.</summary>
+        public static event Action<Health, DamageInfo, float> AnyVisualDamaged;
 
         /// <summary>적이 받는 피해를 고친다 (엘리트 "지키는" 속성: 둘레 적 -30%). 없으면 그대로</summary>
         public static Func<Health, DamageInfo, DamageInfo> EnemyIncoming;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => AnyDamaged = null;
+        private static void ResetStatics()
+        {
+            AnyDamaged = null;
+            AnyVisualDamaged = null;
+        }
 
         /// <param name="stats">피해 감소·회피를 읽을 능력치. 적은 null이어도 된다.</param>
         /// <param name="invulnerableDuration">맞은 뒤 무적 시간. 플레이어 0.5초.</param>
@@ -56,6 +67,7 @@ namespace HistoryHeroes.Combat
             _invulnerableDuration = invulnerableDuration;
             _invulnerableUntil = 0f;
             DamageRedirect = null;
+            DamageDisplayTarget = null;
             FinalDamage = null;
             Max = maxHp;
             Current = maxHp;
@@ -126,7 +138,7 @@ namespace HistoryHeroes.Combat
                 // 불굴: 죽지 않았다 (체력은 PreventDeath가 정함)
                 if (_invulnerableDuration > 0f) _invulnerableUntil = Time.time + _invulnerableDuration;
                 Damaged?.Invoke(info, dealt);
-                AnyDamaged?.Invoke(this, info, dealt);
+                ReportVisualDamage(info, dealt);
                 return true;
             }
 
@@ -135,9 +147,17 @@ namespace HistoryHeroes.Combat
 
             if (team == Team.Enemy) DamageLog.Record(info, dealt);
             Damaged?.Invoke(info, dealt);
-            AnyDamaged?.Invoke(this, info, dealt);
+            ReportVisualDamage(info, dealt);
             if (IsDead) Died?.Invoke(this);
             return true;
+        }
+
+        private void ReportVisualDamage(DamageInfo info, float dealt)
+        {
+            Health target = DamageDisplayTarget != null ? DamageDisplayTarget : this;
+            target.VisualDamaged?.Invoke(info, dealt);
+            AnyDamaged?.Invoke(this, info, dealt);
+            AnyVisualDamaged?.Invoke(target, info, dealt);
         }
 
         /// <summary>켜면 어떤 피해도 받지 않는다 (판이 끝난 뒤 남은 탄환 등)</summary>

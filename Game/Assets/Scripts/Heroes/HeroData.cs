@@ -64,6 +64,8 @@ namespace HistoryHeroes.Heroes
 
         [Header("아테나 판단의 방패·올빼미의 눈")]
         public float spearWidth;
+        [Tooltip("관통이 있으면 찌르기 길이를 이 비율만큼 늘린다 (0.4 = +40%)")]
+        public float spearPierceReachBonus = 0.4f;
         public float shieldPrepareSeconds;
         public float shieldReuseSeconds;
         public float owlBonusCoefficient;
