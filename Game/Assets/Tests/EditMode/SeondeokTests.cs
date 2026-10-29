@@ -29,11 +29,11 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void RosterContainsExactlyTenHeroesAndMissionOrderMatches()
+        public void RosterContainsExactlyElevenHeroesAndMissionOrderMatches()
         {
             HeroRoster roster = Roster();
             Assert.IsNotNull(roster);
-            string[] ids = { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok" };
+            string[] ids = { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica" };
             CollectionAssert.AreEqual(ids, roster.heroes.ConvertAll(hero => hero.id));
             var missions = ScriptableObject.CreateInstance<MissionTable>();
             try { CollectionAssert.AreEqual(ids, missions.heroOrder); }
@@ -89,7 +89,7 @@ namespace HistoryHeroes.Tests
             save.dungeonRuns = 10;
             Assert.IsTrue(HeroUnlock.TryClaimFree(save, hero));
             Assert.IsTrue(HeroUnlock.IsUnlocked(save, hero));
-            foreach (string id in new[] { "davinci", "zhuge", "jeanne", "seondeok" })
+            foreach (string id in new[] { "davinci", "zhuge", "jeanne", "seondeok", "boudica" })
                 Assert.IsFalse(HeroUnlock.CanClaimFree(save, Roster().Find(id)), id);
 
             var alreadyPicked = new SaveData { dungeonRuns = 100, freeHeroClaimed = true };

@@ -8,6 +8,7 @@ namespace HistoryHeroes.Player
     /// - 이순신 철갑: 쌓인 피해 막대 (주황, 가득 차면 두근)
     /// - 이성계 백발백중: 점 3개가 흰색 → 파랑 → 금색으로 차오른다
     /// - 다빈치 작업대: 부품 점 3개 (구리색, 비행 기계가 가득이면 흐리게)
+    /// - 선덕여왕 관측·부디카 되찾는 자리: 준비되면 점 1개가 켜진다
     /// - 제갈량 동남풍: 멈춰 있는 동안 발밑에 느려지는 범위 원 (청록)
     /// 머리 위 것은 카메라를 본다. 발밑 원은 바닥에 눕는다 (위 = -Z)
     /// </summary>
@@ -21,6 +22,7 @@ namespace HistoryHeroes.Player
         private static readonly Color Iron = new Color(1f, 0.55f, 0.15f, 0.95f);
         private static readonly Color Part = new Color(0.95f, 0.68f, 0.35f, 1f);
         private static readonly Color Star = new Color(0.9f, 0.74f, 1f, 1f);
+        private static readonly Color Reclaim = new Color(0.72f, 0.82f, 0.4f, 1f);
         private static readonly Color Wind = new Color(0.45f, 0.95f, 1f, 0.32f); // 화면 점검 2차: 벽 밖까지 보이는 원이 헷갈리지 않게 옅게
         private static readonly Color[] Stage = { new Color(1f, 1f, 1f, 0.95f), new Color(0.45f, 0.85f, 1f, 1f), new Color(1f, 0.82f, 0.25f, 1f) };
 
@@ -109,10 +111,11 @@ namespace HistoryHeroes.Player
             }
             else if (_pips[0].enabled)
             {
-                // 관측 점은 단독으로 별빛을 뜻한다. 부품 그림을 붙이면 작업대처럼 보인다.
-                sprite = art != null && _player.Hero.observationSeconds <= 0f
+                // 관측·되찾기 점은 대표 효과만 뜻한다. 부품 그림을 붙이면 작업대처럼 보인다.
+                sprite = art != null && _player.Hero.observationSeconds <= 0f && _player.Hero.reclaimStopSeconds <= 0f
                     ? (_player.Hero.chargeShot ? art.hudCharge : art.hudParts) : null;
-                int total = _player.Hero.chargeShot ? 3 : _player.Hero.observationSeconds > 0f ? 1 : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
+                int total = _player.Hero.chargeShot ? 3 : _player.Hero.observationSeconds > 0f || _player.Hero.reclaimStopSeconds > 0f
+                    ? 1 : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
                 left = -(total - 1) * 0.5f * PipGap - 0.42f;
             }
 
@@ -144,6 +147,7 @@ namespace HistoryHeroes.Player
             Color on = Part;
             bool charge = _player.Hero.chargeShot;
             bool observation = _player.Hero.observationSeconds > 0f;
+            bool reclaim = _player.Hero.reclaimStopSeconds > 0f;
             if (charge)
             {
                 filled = _player.ChargeStage;
@@ -161,8 +165,14 @@ namespace HistoryHeroes.Player
                 total = 1;
                 on = Star;
             }
+            else if (reclaim)
+            {
+                filled = _player.ReclaimReady ? 1 : 0;
+                total = 1;
+                on = Reclaim;
+            }
 
-            bool show = alive && total > 0 && (stopped || filled > 0);
+            bool show = alive && total > 0 && (stopped || filled > 0 || reclaim && _player.ReclaimCooldownRemaining > 0f);
             if (filled > _lastFilled) _pop = 1f; // 새 칸이 켜졌다
             _lastFilled = filled;
             _pop = Mathf.MoveTowards(_pop, 0f, Time.deltaTime * 5f);
@@ -178,7 +188,13 @@ namespace HistoryHeroes.Player
                 bool lit = i < filled;
                 Color c = lit ? (charge ? Stage[i] : on) : Empty;
                 if (observation && !lit) c = new Color(Star.r, Star.g, Star.b, 0.2f + 0.45f * _player.ObservationProgress);
-                if (!lit && i == filled && stopped && !observation) c.a = 0.25f + 0.2f * Mathf.PingPong(Time.time * 3f, 1f); // 다음 칸이 차오르는 중
+                if (reclaim && !lit)
+                {
+                    float progress = _player.ReclaimProgress;
+                    float cooldown = _player.ReclaimCooldownRemaining;
+                    c = new Color(Reclaim.r, Reclaim.g, Reclaim.b, cooldown > 0f ? 0.18f : 0.2f + 0.45f * progress);
+                }
+                if (!lit && i == filled && stopped && !observation && !reclaim) c.a = 0.25f + 0.2f * Mathf.PingPong(Time.time * 3f, 1f); // 다음 칸이 차오르는 중
                 pip.color = c;
                 float pop = lit && i == filled - 1 ? 1f + 0.6f * _pop : 1f; // 방금 켜진 칸은 톡 커졌다 돌아온다
                 pip.transform.localScale = Vector3.one * (lit && charge && i == 2 ? PipSize * 1.3f : PipSize) * pop; // 3단은 크게

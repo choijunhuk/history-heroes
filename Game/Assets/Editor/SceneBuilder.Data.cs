@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok, Boudica;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -205,6 +205,12 @@ namespace HistoryHeroes.EditorTools
             d.Seondeok.star5ObservationAttackBonus = 0.3f;
             d.Seondeok.gemsOnly = true;
             d.Seondeok.unlockGems = 2000;
+
+            // 부디카: 멈춰 만든 빈틈은 다음 실제 기본 공격 한 번에만 쓰인다.
+            d.Boudica = AssetUtil.LoadOrCreate<HeroData>($"{DataDir}/Heroes/Hero_boudica.asset");
+            BoudicaDefinition.ConfigureHero(d.Boudica);
+            d.Boudica.model3D = Art3DCharacters.HeroModel("boudica");
+            d.Boudica.modelHeight = HeroModelHeight;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -466,6 +472,11 @@ namespace HistoryHeroes.EditorTools
             d.SeondeokStarlight.heroOnlyId = "seondeok";
             d.Pool.Add(d.SeondeokStarlight);
             d.Seondeok.exclusiveActive = d.SeondeokStarlight;
+            d.BoudicaRally = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_boudica_rally.asset");
+            BoudicaDefinition.ConfigureRally(d.BoudicaRally);
+            d.BoudicaRally.icon = Icon("sword");
+            d.Pool.Add(d.BoudicaRally);
+            d.Boudica.exclusiveActive = d.BoudicaRally;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -514,7 +525,10 @@ namespace HistoryHeroes.EditorTools
                 cooldown: 8f, damage: 0.9f, damagePerLevel: 0.225f, count: 3, countPerLevel: 0, radius: 1.4f, saveCostFirst: 12);
             d.SeondeokConstellation.icon = Icon("star");
             d.SeondeokConstellation.heroOnlyId = "seondeok";
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation }) UnityEditor.EditorUtility.SetDirty(s);
+            d.BoudicaUprising = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_boudica_uprising.asset");
+            BoudicaDefinition.ConfigureUprising(d.BoudicaUprising);
+            d.BoudicaUprising.icon = Icon("sword");
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -531,9 +545,13 @@ namespace HistoryHeroes.EditorTools
             AddHeroRecipe(d, "ysg_shingung", FusionType.Evolution, d.YsgPyeonjeon, 5, (PassiveSkillData)d.Pool.Find(s => s.id == "crit_dmg"), 1, d.YsgShingung, "yiseonggye");
             AddHeroRecipe(d, "jeanne_orleans", FusionType.Evolution, d.JeanneWave, 5, d.DefUp, 1, d.JeanneOrleans, "jeanne");
             AddHeroRecipe(d, "seondeok_constellation", FusionType.Evolution, d.SeondeokStarlight, 5, d.Pool.Find(s => s.id == "pierce"), 1, d.SeondeokConstellation, "seondeok");
+            SkillData boudicaAttack = d.Pool.Find(s => s.id == "atk_up");
+            FusionRecipe boudicaRecipe = AddHeroRecipe(d, "boudica_uprising", FusionType.Evolution, d.BoudicaRally, 5, boudicaAttack, 1, d.BoudicaUprising, "boudica");
+            BoudicaDefinition.ConfigureRecipe(boudicaRecipe, d.BoudicaRally, boudicaAttack, d.BoudicaUprising);
+            UnityEditor.EditorUtility.SetDirty(boudicaRecipe);
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok, d.Boudica };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -542,7 +560,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -590,6 +608,7 @@ namespace HistoryHeroes.EditorTools
             ["zhuge_sevenstar"] = SkillRole.Area,
             ["jeanne_wave"] = SkillRole.Area, ["jeanne_orleans"] = SkillRole.Area,
             ["seondeok_starlight"] = SkillRole.Area, ["seondeok_constellation"] = SkillRole.Area,
+            ["boudica_rally"] = SkillRole.Area, ["boudica_uprising"] = SkillRole.Area,
             ["ysg_pyeonjeon"] = SkillRole.Single, ["ysg_shingung"] = SkillRole.Single,
             ["zhuge_gate"] = SkillRole.Defense,
             // 방어: 버티기·막기
@@ -639,13 +658,14 @@ namespace HistoryHeroes.EditorTools
             return h;
         }
 
-        private static void AddHeroRecipe(Data d, string id, FusionType type, ActiveSkillData a, int levelA, SkillData b, int levelB,
+        private static FusionRecipe AddHeroRecipe(Data d, string id, FusionType type, ActiveSkillData a, int levelA, SkillData b, int levelB,
             ActiveSkillData result, string heroId)
         {
             FusionRecipe r = Recipe(id, type, a, levelA, b, levelB, result);
             r.heroOnlyId = heroId;
             UnityEditor.EditorUtility.SetDirty(r);
             d.Recipes.Add(r);
+            return r;
         }
 
         private static EnemyData Enemy(string id, string name, float speed, float telegraph, float recover, Color color)
@@ -754,6 +774,9 @@ namespace HistoryHeroes.EditorTools
             d.Seondeok.projectilePrefab = p.Starlight;
             d.SeondeokStarlight.behaviourPrefab = p.SeondeokStarlight;
             d.SeondeokConstellation.behaviourPrefab = p.SeondeokConstellation;
+            d.Boudica.projectilePrefab = p.SwordWave;
+            d.BoudicaRally.behaviourPrefab = p.BoudicaRally;
+            d.BoudicaUprising.behaviourPrefab = p.BoudicaUprising;
             d.KhanVolley.behaviourPrefab = p.KhanVolley;
             d.KhanStorm.behaviourPrefab = p.KhanStorm;
             d.GuanSpin.behaviourPrefab = p.GuanSpin;

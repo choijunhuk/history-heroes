@@ -175,6 +175,7 @@ namespace HistoryHeroes.EditorTools
             public bool female;
             public string[] hide = new string[0];
             public string[] metalParts = new string[0];
+            public Color metalColor = new Color(0.78f, 0.83f, 0.91f);
             public string[] goldParts = new string[0];
             public string[] hair = new string[0];
             public string hairTex = "T_Hair_1";
@@ -217,6 +218,8 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "Jeanne", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = Color.white, hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, hair = new[] { "Hair_BuzzedFemale", "Eyebrows_Female" }, hairColor = new Color(0.34f, 0.22f, 0.14f), attack = "Sword_Regular_A" },
             // 선덕여왕: 기존 농민 옷의 몸통을 금색, 나머지를 보라색으로 나눠 왕실 색을 낸다. 관식은 별도 제작 전까지 쓰지 않는다.
             new Look { name = "Seondeok", female = true, body = "Female_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.66f, 0.38f, 0.82f), goldParts = new[] { "Female_Peasant_Body" }, hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.09f, 0.065f, 0.09f), props = new[] { "Davinci_Scroll" } },
+            // 부디카: 녹색 옷과 갈색 가죽 위에 청동 보호대. 새 검을 만들기 전까지 손은 비워 둔다.
+            new Look { name = "Boudica", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.88f, 0.92f, 0.78f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.67f, 0.43f, 0.24f), hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.48f, 0.21f, 0.11f), attack = "Sword_Regular_A" },
         };
 
         public sealed class EnemyLook
@@ -494,7 +497,7 @@ namespace HistoryHeroes.EditorTools
             Material metal = null;
             if (look.metalParts.Length > 0)
             {
-                metal = Lit(look.name + "_Steel", null, null, new Color(0.78f, 0.83f, 0.91f));
+                metal = Lit(look.name + "_Steel", null, null, look.metalColor);
                 metal.SetFloat("_Metallic", 0.75f);
                 metal.SetFloat("_Smoothness", 0.6f);
                 EditorUtility.SetDirty(metal);

@@ -145,6 +145,15 @@ namespace HistoryHeroes.Heroes
         [Tooltip("준비한 기본 공격 한 번의 피해 보너스")]
         public float observationAttackBonus;
 
+        [Header("부디카 되찾는 자리")]
+        [Tooltip("연속 정지로 밀침 공격을 준비하는 시간. 0이면 사용하지 않는다")]
+        public float reclaimStopSeconds;
+        [Tooltip("준비한 기본 공격을 시작한 뒤 재사용까지 걸리는 시간")]
+        public float reclaimCooldown;
+        public float reclaimKnockback;
+        [Tooltip("보스 밀침 거리 비율. 일반 밀침 면역과 별도로 적용한다")]
+        public float reclaimBossScale;
+
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
         public float star3FirstShotBonus = -1f;
@@ -188,6 +197,10 @@ namespace HistoryHeroes.Heroes
         public float star3ObservationAttackBonus = -1f;
         [Tooltip("★5 준비한 기본 공격 피해 보너스 (선덕여왕 30%)")]
         public float star5ObservationAttackBonus = -1f;
+        [Tooltip("★3 준비 공격 밀침 거리 (부디카 0.9)")]
+        public float star3ReclaimKnockback = -1f;
+        [Tooltip("★5 준비 공격 피해 보너스 (부디카 20%)")]
+        public float star5ReclaimAttackBonus = -1f;
 
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]

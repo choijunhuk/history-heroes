@@ -182,6 +182,7 @@ namespace HistoryHeroes.Player
         {
             ClearBanner();
             _observation.Reset();
+            _reclaim.Reset();
             Stats.Changed -= OnStatsChanged;
             if (_sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone();
         }
@@ -194,6 +195,7 @@ namespace HistoryHeroes.Player
         {
             ClearBanner();
             _observation.Reset();
+            _reclaim.Reset();
             Stats.RemoveAllFrom(_ironOwner);
             _ironOn = false;
             _ironStore = 0f;
@@ -243,6 +245,7 @@ namespace HistoryHeroes.Player
         {
             ClearBanner();
             _observation.Reset();
+            _reclaim.Reset();
             _body.position = position;
             _body.linearVelocity = Vector2.zero;
             transform.position = position;
@@ -255,6 +258,7 @@ namespace HistoryHeroes.Player
             {
                 if (Health.IsDead) ClearBanner();
                 if (Health.IsDead) _observation.Reset();
+                if (Health.IsDead) _reclaim.Reset();
                 if (Health.IsDead && _sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone(); // 동남풍은 살아 있을 때만
                 return;
             }
@@ -262,6 +266,7 @@ namespace HistoryHeroes.Player
             float dt = Time.deltaTime;
             Stop.Tick(ReadInput(), dt);
             _observation.Tick(dt, Stop.IsStopped, hero);
+            _reclaim.Tick(dt, Stop.IsStopped, hero);
 
             // 쿨다운은 이동 중에도 흐른다 → 멈췄다 움직이기를 반복해도 공격속도보다 빨리 쏠 수 없다.
             _attackCooldown -= dt;
@@ -459,6 +464,7 @@ namespace HistoryHeroes.Player
         {
             ClearBanner();
             _observation.Reset();
+            _reclaim.Reset();
         }
 
         // ---------------------------------------------------------------- 선덕여왕 별자리 관측
@@ -466,6 +472,13 @@ namespace HistoryHeroes.Player
         private readonly SeondeokObservationState _observation = new SeondeokObservationState();
         public float ObservationProgress => _observation.Progress;
         public bool ObservationReady => _observation.IsReady;
+
+        // ---------------------------------------------------------------- 부디카 되찾는 자리
+
+        private readonly BoudicaReclaimState _reclaim = new BoudicaReclaimState();
+        public float ReclaimProgress => _reclaim.Progress;
+        public bool ReclaimReady => _reclaim.IsReady;
+        public float ReclaimCooldownRemaining => _reclaim.CooldownRemaining;
 
         // ---------------------------------------------------------------- 다빈치 작업대
 
@@ -789,10 +802,12 @@ namespace HistoryHeroes.Player
             float coefficient = NextShotCoefficient(extra);
             float arc = hero.meleeArcDegrees + (Attack.Get(AttackModifierKind.Pierce) > 0 ? 40f : 0f);
             int waveBounces = Attack.Get(AttackModifierKind.Ricochet);
-            StartCoroutine(Swings(target, 1 + extra, coefficient, arc, waveBounces));
+            // 표적을 찾은 실제 공격만 준비를 쓴다. 연속 베기와 검기에 효과를 복제하지 않는다.
+            bool reclaimed = _reclaim.TryConsume(hero);
+            StartCoroutine(Swings(target, 1 + extra, coefficient, arc, waveBounces, reclaimed));
         }
 
-        private IEnumerator Swings(Health target, int swings, float coefficient, float arc, int waveBounces)
+        private IEnumerator Swings(Health target, int swings, float coefficient, float arc, int waveBounces, bool reclaimed)
         {
             for (int s = 0; s < swings; s++)
             {
@@ -803,13 +818,15 @@ namespace HistoryHeroes.Player
                 if (aim.sqrMagnitude < 0.0001f) aim = Vector2.up;
                 aim.Normalize();
 
-                SlashOnce(origin, aim, coefficient, arc);
+                bool reclaim = reclaimed && s == 0;
+                float swingCoefficient = coefficient * (reclaim ? 1f + _sig.ReclaimAttackBonus : 1f);
+                SlashOnce(origin, aim, swingCoefficient, arc, reclaim);
                 if (waveBounces > 0) FireWave(origin, aim, waveBounces);
                 if (s < swings - 1) yield return new WaitForSeconds(swingInterval);
             }
         }
 
-        private void SlashOnce(Vector2 origin, Vector2 aim, float coefficient, float arc)
+        private void SlashOnce(Vector2 origin, Vector2 aim, float coefficient, float arc, bool reclaim)
         {
             float reach = Stats.Get(StatType.Range) + 0.4f;
             AttackFx.Arc(origin, aim, reach, arc, slashColor);
@@ -828,7 +845,11 @@ namespace HistoryHeroes.Player
                 DamageInfo damage = DamageCalculator.Roll(Stats, coefficient, DamageKind.BasicAttack);
                 damage.Direction = to.sqrMagnitude > 0.0001f ? to.normalized : aim;
                 damage.HasDirection = true;
-                if (h.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
+                if (h.TryTakeDamage(damage, out float dealt))
+                {
+                    OnBasicAttackHit(damage, dealt);
+                    if (reclaim) ReclaimSpace(h, damage.Direction);
+                }
             }
 
             // 부서지는 장애물 (Modes 2-3): 근접도 깎는다
@@ -841,6 +862,26 @@ namespace HistoryHeroes.Player
                 if (to.sqrMagnitude > 0.5f && Vector2.Angle(aim, to) > half) continue;
                 b.Hit();
             }
+        }
+
+        private void ReclaimSpace(Health target, Vector2 direction)
+        {
+            if (target.IsDead || !target.TryGetComponent(out EnemyBase enemy)) return;
+            // 기존 보스 밀침 면역은 다른 공격에 남겨 두고, 이 대표 효과만 30%로 적용한다.
+            bool isBoss = enemy is IPhasedBoss;
+            if (!isBoss && !enemy.CanBeKnockedBack) return;
+            if (!target.TryGetComponent(out Rigidbody2D body)) return;
+            float distance = BoudicaReclaimState.KnockbackDistance(hero, _sig, isBoss);
+            if (distance <= 0f) return;
+
+            // 큰 보스도 몸 전체가 벽 안에 남도록 이동 경로를 확인한다.
+            float radius = 0.4f;
+            if (target.TryGetComponent(out Collider2D shape))
+                radius = Mathf.Max(shape.bounds.extents.x, shape.bounds.extents.y);
+            Vector2 aim = direction.normalized;
+            RaycastHit2D wall = Physics2D.CircleCast(body.position, radius, aim, distance, wallMask);
+            if (wall.collider != null) distance = Mathf.Max(0f, wall.distance - 0.02f);
+            body.MovePosition(body.position + aim * distance);
         }
 
         /// <summary>근접 + 벽 튕김: 검기 (공격력 40%) 한 발이 날아가 벽에 튕긴다</summary>
