@@ -87,6 +87,12 @@ namespace HistoryHeroes.EditorTools
             Button skip = Btn("Skip", panel, "저장 안 함", new Vector2(340f, -470f), new Vector2(300f, 110f), ButtonGray, out TMP_Text skipLabel);
             TMP_Text help = Label("Help", panel, "레벨을 일부만 남길 수 있어요. 진화는 통째로, 합체는 레벨을 낮춰서 남길 수 있어요.", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.55f));
             Place(help.rectTransform, Center, Center, new Vector2(0f, -580f), new Vector2(1000f, 80f));
+            // 저장되는 빌드 미리 보기: 단추 아래 늘 비어 있던 자리 (줄이 8개여도 겹치지 않는다)
+            TMP_Text preview = Label("Preview", panel, "", 30, TextAlignmentOptions.Top, new Color(1f, 1f, 1f, 0.9f));
+            Place(preview.rectTransform, Center, Center, new Vector2(0f, -790f), new Vector2(1000f, 320f));
+            preview.enableAutoSizing = true;
+            preview.fontSizeMin = 22f;
+            preview.fontSizeMax = 30f;
 
             // 칸 고르기 (빈 칸이 없을 때)
             RectTransform slotPanel = Rect("SlotPanel", holder, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
@@ -111,7 +117,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("subtitleLabel", subtitle)
-                    .Ref("capacityLabel", capacity).Ref("capacityFill", capacityFill)
+                    .Ref("capacityLabel", capacity).Ref("capacityFill", capacityFill).Ref("previewLabel", preview)
                     .Ref("autoFitButton", autoFit).Ref("saveButton", save).Ref("saveLabel", saveLabel)
                     .Ref("skipButton", skip).Ref("skipLabel", skipLabel)
                     .Ref("slotPanel", slotPanel.gameObject).Refs("slotButtons", slotButtons).Refs("slotLabels", slotLabels).Ref("slotCancel", slotCancel)

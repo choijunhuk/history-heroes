@@ -34,6 +34,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text titleLabel;
         [SerializeField] private TMP_Text subtitleLabel;
         [SerializeField] private TMP_Text capacityLabel;
+        [SerializeField] private TMP_Text previewLabel; // 저장되는 빌드 미리 보기 (전체 UI 검토 "저장 뒤 어떤 빌드가 되는지")
         [SerializeField] private Image capacityFill;
         [SerializeField] private Row[] rows;
         [SerializeField] private Button autoFitButton;
@@ -169,11 +170,11 @@ namespace HistoryHeroes.UI
                 row.nameLabel.text = e.IsEvolution ? $"{e.Skill.displayName} (진화)" : e.IsMerge ? $"{e.Skill.displayName} (합체)" : e.Skill.displayName;
                 if (e.Pinned) row.nameLabel.text = "<color=#FFD966>[고정]</color> " + row.nameLabel.text; // 이름을 누르면 고정 · 풀기
 
-                if (e.IsEvolution) row.levelLabel.text = e.Kept ? "남김" : "뺌";
-                else row.levelLabel.text = e.Kept ? $"Lv {e.Level} / {e.OwnedLevel}" : "뺌";
+                if (e.IsEvolution) row.levelLabel.text = e.Kept ? "남김" : "안 남김";
+                else row.levelLabel.text = e.Kept ? $"Lv {e.Level} / {e.OwnedLevel}" : "안 남김";
                 row.levelLabel.color = e.Kept ? Color.white : new Color(1f, 1f, 1f, 0.4f);
 
-                row.costLabel.text = $"{_draft.CostOf(e)}pt";
+                row.costLabel.text = e.Kept ? $"{_draft.CostOf(e)}pt" : string.Empty; // 안 남기면 0pt를 굳이 보이지 않는다
                 row.noteLabel.text = Note(e);
                 // 누를 수 없는 버튼은 아예 숨긴다 (흐린 버튼은 폰에서 구분이 잘 안 된다)
                 row.minus.gameObject.SetActive(e.Kept);
@@ -190,6 +191,12 @@ namespace HistoryHeroes.UI
             bool canSave = fits && _draft.HasAnything;
             saveButton.interactable = canSave;
             saveLabel.text = !fits ? "용량 초과" : !_draft.HasAnything ? "남길 스킬 없음" : "저장";
+            if (previewLabel != null)
+            {
+                previewLabel.text = _draft.HasAnything && _makeRecord != null
+                    ? "<color=#FFD966>저장되는 빌드</color>\n" + RecordFormat.Details(_makeRecord(_draft), database)
+                    : string.Empty;
+            }
         }
 
         private string Note(RecordDraft.Entry e)
