@@ -22,9 +22,12 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text recommendLabel;
         [SerializeField] private Button normalTab;
         [SerializeField] private Button trialTab;
+        [SerializeField] private Button[] trialButtons;
+        [SerializeField] private TMP_Text[] trialLabels;
         [SerializeField] private Button weeklyGoalButton;
         [SerializeField] private TMP_Text weeklyGoalLabel;
         [SerializeField] private BossData thorTrial;
+        [SerializeField] private BossData[] godTrials;
         [SerializeField] private OpeningPanel opening;
 
         [Header("기록 칸")]
@@ -76,6 +79,12 @@ namespace HistoryHeroes.UI
             if (practiceButton != null) practiceButton.onClick.AddListener(StartPractice);
             if (normalTab != null) normalTab.onClick.AddListener(() => SwitchTab(false));
             if (trialTab != null) trialTab.onClick.AddListener(() => SwitchTab(true));
+            if (trialButtons != null)
+                for (int i = 0; i < trialButtons.Length; i++)
+                {
+                    int index = i;
+                    trialButtons[i].onClick.AddListener(() => SelectTrial(index));
+                }
             if (weeklyGoalButton != null) weeklyGoalButton.onClick.AddListener(ChooseWeeklyGoal);
             backButton.onClick.AddListener(() => root.SetActive(false));
         }
@@ -100,10 +109,25 @@ namespace HistoryHeroes.UI
 
         private void SwitchTab(bool trial)
         {
-            if (trial && thorTrial == null) return;
+            if (trial && TrialBoss(GodTrialRules.ThorTrialId) == null) return;
             _trial = trial;
             if (trial && GodTrialRules.EnsureWeek(SaveSystem.Data, Clock.Now())) SaveSystem.Save();
-            ShowBoss(trial ? thorTrial : _normalBoss);
+            ShowBoss(trial ? TrialBoss(GodTrialRules.ThorTrialId) : _normalBoss);
+        }
+
+        private BossData TrialBoss(string trialId)
+        {
+            if (godTrials != null)
+                foreach (BossData trial in godTrials)
+                    if (trial != null && trial.id == trialId) return trial;
+            return thorTrial != null && thorTrial.id == trialId ? thorTrial : null;
+        }
+
+        private void SelectTrial(int index)
+        {
+            if (!_trial || index < 0 || index >= GodTrialRules.Trials.Count) return;
+            BossData trial = TrialBoss(GodTrialRules.Trials[index].Id);
+            if (trial != null) ShowBoss(trial);
         }
 
         private void ShowBoss(BossData boss)
@@ -111,8 +135,11 @@ namespace HistoryHeroes.UI
             if (boss == null) return;
             _boss = boss;
             titleLabel.text = boss.displayName + (_trial && SaveSystem.Data.godTrials.cleared.Contains(boss.id) ? "  <color=#7CE38B>✔ 첫 격파</color>" : string.Empty);
-            bool trialLocked = _trial && !GodTrialRules.IsUnlocked(SaveSystem.Data, GodTrialRules.ThorTrialId);
-            testsLabel.text = trialLocked ? "망각의 왕을 본인 기록으로 처음 격파하면 열려요"
+            bool trialLocked = _trial && !GodTrialRules.IsUnlocked(SaveSystem.Data, boss.id);
+            GodTrialDefinition definition = _trial ? GodTrialRules.Find(boss.id) : null;
+            string condition = definition == null || definition.Order == 1 ? "망각의 왕"
+                : GodTrialRules.Trials[definition.Order - 2].DisplayName + " 시련";
+            testsLabel.text = trialLocked ? $"{condition}을 본인 기록으로 처음 격파하면 열려요"
                 : "시험하는 것: " + boss.tests;
             string hint = boss.prefab != null ? Enemy.BossGimmicks.HintFor(Enemy.BossGimmicks.For(boss.prefab)) : string.Empty;
             if (!trialLocked && !string.IsNullOrEmpty(hint)) testsLabel.text += $"\n<color=#C9A8FF>기믹: {hint}</color>";
@@ -139,8 +166,16 @@ namespace HistoryHeroes.UI
 
         private void ChooseWeeklyGoal()
         {
+            SaveData data = SaveSystem.Data;
+            var candidates = new List<GodTrialDefinition>();
+            foreach (GodTrialDefinition trial in GodTrialRules.Trials)
+                if (trial.HeroId != null && GodTrialRules.IsUnlocked(data, trial.Id)
+                    && !GodTrialRules.IsHeroUnlocked(data, trial.HeroId)) candidates.Add(trial);
+            if (candidates.Count == 0) return;
+            int current = candidates.FindIndex(t => t.Id == data.godTrials.goalTrialId);
+            string nextId = candidates[(current + 1) % candidates.Count].Id;
             SaveSystem.CommitResult result = SaveSystem.Commit(() =>
-                GodTrialRules.TryChooseGoal(SaveSystem.Data, GodTrialRules.ThorTrialId, Clock.Now()));
+                GodTrialRules.TryChooseGoal(SaveSystem.Data, nextId, Clock.Now()));
             if (result == SaveSystem.CommitResult.SaveFailed) weeklyGoalLabel.text = SaveSystem.SaveFailedText;
             else Render();
         }
@@ -160,21 +195,46 @@ namespace HistoryHeroes.UI
         private void Render()
         {
             SaveData data = SaveSystem.Data;
-            bool trialUnlocked = !_trial || GodTrialRules.IsUnlocked(data, GodTrialRules.ThorTrialId);
+            bool trialUnlocked = !_trial || GodTrialRules.IsUnlocked(data, _boss.id);
             if (normalTab != null) normalTab.GetComponent<Image>().color = _trial ? Normal : Selected;
             if (trialTab != null) trialTab.GetComponent<Image>().color = _trial ? Selected : Normal;
+            if (trialButtons != null)
+                for (int i = 0; i < trialButtons.Length && i < GodTrialRules.Trials.Count; i++)
+                {
+                    GodTrialDefinition definition = GodTrialRules.Trials[i];
+                    trialButtons[i].gameObject.SetActive(_trial);
+                    trialButtons[i].interactable = TrialBoss(definition.Id) != null;
+                    trialButtons[i].image.color = _boss.id == definition.Id ? Selected : Normal;
+                    if (trialLabels != null && i < trialLabels.Length && trialLabels[i] != null)
+                    {
+                        string clearText = data.godTrials.cleared.Contains(definition.Id) ? " ✔" : string.Empty;
+                        if (GodTrialRules.IsUnlocked(data, definition.Id))
+                            trialLabels[i].text = definition.DisplayName + clearText;
+                        else
+                        {
+                            string predecessor = definition.Order == 1 ? "망각의 왕"
+                                : GodTrialRules.Trials[definition.Order - 2].DisplayName + " 시련";
+                            trialLabels[i].text = $"{definition.DisplayName} 🔒\n<size=65%>{predecessor} 첫 승리</size>";
+                        }
+                    }
+                }
             if (weeklyGoalButton != null)
             {
-                bool showGoal = _trial && trialUnlocked && !GodTrialRules.IsHeroUnlocked(data, GodTrialRules.ThorHeroId);
+                var candidates = new List<GodTrialDefinition>();
+                foreach (GodTrialDefinition definition in GodTrialRules.Trials)
+                    if (definition.HeroId != null && GodTrialRules.IsUnlocked(data, definition.Id)
+                        && !GodTrialRules.IsHeroUnlocked(data, definition.HeroId)) candidates.Add(definition);
+                bool showGoal = _trial && candidates.Count > 0;
                 weeklyGoalButton.gameObject.SetActive(showGoal);
                 if (showGoal)
                 {
                     var goal = data.godTrials;
-                    bool selectedGoal = goal.goalTrialId == GodTrialRules.ThorTrialId;
-                    weeklyGoalButton.interactable = !selectedGoal && !goal.goalLocked && goal.weeklyShards < 5;
-                    weeklyGoalLabel.text = goal.weeklyShards >= 5 ? "이번 주 토르 조각 5개 받음"
-                        : !selectedGoal ? "주간 목표: 토르 선택 · 서로 다른 본인 기록 2개"
-                        : $"주간 목표: 토르 {(string.IsNullOrEmpty(goal.firstRecordId) ? 0 : 1)}/2 기록 · {(goal.goalLocked ? "이번 주 고정" : "첫 승리 전 변경 가능")}";
+                    GodTrialDefinition selectedGoal = GodTrialRules.Find(goal.goalTrialId);
+                    weeklyGoalButton.interactable = !goal.goalLocked && goal.weeklyShards < GodTrialRules.WeeklyShards
+                        && (selectedGoal == null || candidates.Count > 1);
+                    weeklyGoalLabel.text = goal.weeklyShards >= GodTrialRules.WeeklyShards ? "이번 주 신 조각 5개 받음"
+                        : selectedGoal == null ? "주간 목표 선택 · 열린 신의 시련"
+                        : $"주간 목표: {selectedGoal.DisplayName} {(string.IsNullOrEmpty(goal.firstRecordId) ? 0 : 1)}/2 기록 · {(goal.goalLocked ? "이번 주 고정" : candidates.Count > 1 ? "눌러서 목표 변경" : "선택 완료")}";
                 }
             }
             for (int i = 0; i < slotButtons.Length; i++)
@@ -225,7 +285,7 @@ namespace HistoryHeroes.UI
 
             if (_trial)
             {
-                if (opening != null) opening.Open(Story.GodTrialIntro.Scenes, Story.GodTrialIntro.Tints, "도전", StartTrialNow);
+                if (opening != null) opening.Open(Story.GodTrialIntro.For(_boss.id), Story.GodTrialIntro.TintsFor(_boss.id), "도전", StartTrialNow);
                 else StartTrialNow();
                 return;
             }
@@ -234,7 +294,7 @@ namespace HistoryHeroes.UI
 
         private void StartTrialNow()
         {
-            if (!GameSession.TryStartGodTrial(GodTrialRules.ThorTrialId, _selectedRecordId) && hearts != null) hearts.Open(Render);
+            if (!GameSession.TryStartGodTrial(_boss.id, _selectedRecordId) && hearts != null) hearts.Open(Render);
         }
 
         /// <summary>하트 없이, 보상 없이 (Economy 3-4)</summary>
@@ -242,7 +302,7 @@ namespace HistoryHeroes.UI
         {
             RunRecord record = SaveSystem.Data.FindRecord(_selectedRecordId);
             if (record == null || RecordValidator.Validate(record, database).OverCapacity) return;
-            if (_trial) GameSession.StartGodTrialPractice(GodTrialRules.ThorTrialId, record.id);
+            if (_trial) GameSession.StartGodTrialPractice(_boss.id, record.id);
             else GameSession.StartBossPractice(_chapter, record.id);
         }
 
@@ -255,7 +315,7 @@ namespace HistoryHeroes.UI
         }
 
         private bool RecordHasWon(RunRecord record, SaveData save) => _trial
-            ? save.godTrials.weeklyWins.Exists(win => win.recordId == record.id)
+            ? save.godTrials.goalTrialId == _boss.id && save.godTrials.weeklyWins.Exists(win => win.recordId == record.id)
             : record.bossesDefeated.Contains(_boss.id);
 
         private RecordDraft DraftFrom(RunRecord record, RecordValidator.Result build)

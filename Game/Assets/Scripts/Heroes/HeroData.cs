@@ -162,6 +162,15 @@ namespace HistoryHeroes.Heroes
         [Tooltip("해금 전 30조각이 필요한 신 영웅")]
         public bool godShardUnlock;
 
+        [Header("아누비스 저울의 표식")]
+        [Tooltip("같은 적에게 필요한 기본 공격 명중 횟수. 다음 기본 공격에 둔화를 건다")]
+        public int markHits;
+        [Range(0f, 1f)] public float markSlow;
+        public float markDuration;
+        public float markCooldown;
+        [Tooltip("보스에게 주는 둔화 세기 비율")]
+        public float markBossScale = 0.3f;
+
         [Header("클레오파트라 기록의 수호상")]
         [Tooltip("수호상을 준비하는 연속 정지 기본 공격 횟수. 0이면 사용하지 않는다")]
         public int guardianAttacks;
@@ -220,6 +229,10 @@ namespace HistoryHeroes.Heroes
         public float star3ThunderRadius = -1f;
         [Tooltip("★5 토르 충격파 피해 배수")]
         public float star5ThunderCoefficient = -1f;
+        [Tooltip("★3 표식 둔화 지속 시간")]
+        public float star3MarkDuration = -1f;
+        [Tooltip("★5 표식 둔화 세기")]
+        public float star5MarkSlow = -1f;
         [Tooltip("★3 수호상 한 타격의 공격력 배수")]
         public float star3GuardianCoefficient = -1f;
         [Tooltip("★5 수호상 한 번이 공격할 최대 적 수 (원래 표적 포함)")]

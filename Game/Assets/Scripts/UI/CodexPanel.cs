@@ -116,6 +116,12 @@ namespace HistoryHeroes.UI
             sb.AppendLine("천둥의 무게 · 귀환 망치 · 천둥의 귀환은 게임 각색 기술입니다.");
             sb.AppendLine("<color=#C8D6E5>‘실패를 지우지 않고 다시 지키려는 인간의 선택을 보았기에, 나도 기록을 지키겠다.’</color>\n");
 
+            sb.AppendLine("<b>아누비스 · 고대 이집트 신화</b>  <color=#9FD8FF>신화 · 각색</color>");
+            sb.AppendLine("장례와 죽은 자를 지키는 신으로 전해집니다. 저울의 표식·모래 수호상·모래의 문과 기억의 수호병은 게임 각색입니다.");
+            sb.AppendLine("<color=#C8D6E5>실패를 지우지 않고 서로를 돌본 기록을 보고, 봉인 대신 인류와 기억을 지키기로 했다.</color>\n");
+            sb.AppendLine("<b>제우스 · 그리스 신화</b>  <color=#9FD8FF>신화 · 각색</color>");
+            sb.AppendLine("하늘과 번개의 신으로 전해집니다. 기록을 시험하는 탄막은 게임 각색이며, 이번에는 시련의 형상으로만 등장합니다.\n");
+
             sb.AppendLine("<b>클레오파트라 · 프톨레마이오스 왕조</b>  <color=#9FD8FF>사실 · 후대 기록 · 각색</color>");
             sb.AppendLine("이집트의 여왕이었습니다. 언어 능력에 관한 설명은 후대 저술의 기록이며, 기록의 수호상·파로스의 빛·알렉산드리아의 서고는 게임 각색입니다.\n");
 

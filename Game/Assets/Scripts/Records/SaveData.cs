@@ -16,7 +16,7 @@ namespace HistoryHeroes.Records
         /// <summary>6: 카드 빼기 이력·남은 횟수와 목표 레시피 (옛 저장은 빼기 2회부터)</summary>
         /// <summary>7: 유물 뽑기 횟수·무료 날짜·중복 진행. 옛 저장의 빈 값은 모두 0/없음이 맞다.</summary>
         /// <summary>8: 장비 6칸. 앞의 무기·갑옷·장신구 번호는 그대로 두고 새 칸을 뒤에 붙인다.</summary>
-        /// <summary>9: 토르 시련의 첫 격파와 주간 목표를 별도로 보관한다.</summary>
+        /// <summary>9: 신의 시련 첫 격파와 주간 목표를 별도로 보관한다.</summary>
         public const int CurrentSchemaVersion = 9;
 
         public int schemaVersion = CurrentSchemaVersion;
@@ -151,9 +151,13 @@ namespace HistoryHeroes.Records
         public void AddItem(string itemId, int amount)
         {
             if (amount == 0 || string.IsNullOrEmpty(itemId)) return;
-            if (amount > 0 && itemId == "hero_shard_thor" && (unlockedHeroes == null || !unlockedHeroes.Contains("thor")))
+            const string shardPrefix = "hero_shard_";
+            string heroId = itemId.StartsWith(shardPrefix, StringComparison.Ordinal)
+                ? itemId.Substring(shardPrefix.Length) : null;
+            if (amount > 0 && Modes.GodTrialRules.IsGod(heroId)
+                && (unlockedHeroes == null || !unlockedHeroes.Contains(heroId)))
             {
-                // 해금 전 토르 조각은 시련과 주간 목표를 합쳐 30개까지만 보관한다.
+                // 신 해금 전 조각은 시련과 주간 목표를 합쳐 영웅별 30개까지만 보관한다.
                 amount = Math.Min(amount, Math.Max(0, Modes.GodTrialRules.UnlockShards - ItemCount(itemId)));
                 if (amount == 0) return;
             }

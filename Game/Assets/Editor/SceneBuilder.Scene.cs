@@ -156,7 +156,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(experience)) props.Ref("player", player).Ref("gemPrefab", p.Gem);
 
             var enemyProjectiles = systems.AddComponent<EnemyProjectiles>();
-            using (var props = new Props(enemyProjectiles)) props.Ref("prefab", p.EnemyArrow).Mask("wallMask", Mask(WallLayer));
+            using (var props = new Props(enemyProjectiles)) props.Ref("prefab", p.EnemyArrow).Ref("lightningPrefab", p.ZeusLightning).Mask("wallMask", Mask(WallLayer));
 
             var skills = systems.AddComponent<SkillManager>();
             using (var props = new Props(skills))
@@ -200,7 +200,7 @@ namespace HistoryHeroes.EditorTools
             var bossRun = bossRunObject.AddComponent<BossRun>();
             using (var props = new Props(bossRun))
             {
-                props.Refs("bosses", AllBosses(d.RiftWarden)).Ref("thorTrial", LoadThorTrial()).Ref("database", d.Database).Ref("player", player).Ref("skills", skills)
+                props.Refs("bosses", AllBosses(d.RiftWarden)).Ref("thorTrial", LoadThorTrial()).Refs("godTrials", LoadGodTrials()).Ref("database", d.Database).Ref("player", player).Ref("skills", skills)
                     .Ref("playerStart", bossStart).Ref("bossSpawn", bossSpawn)
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("bossHud", ui.BossHud).Ref("result", ui.Result);
             }

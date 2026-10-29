@@ -224,6 +224,8 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "Thor", body = "Male_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.48f, 0.44f, 0.43f), hide = new[] { "Male_Ranger_Head_Hood" }, metalParts = new[] { "Male_Ranger_Acc_Pauldron", "Male_Ranger_Arms_Bracer" }, metalColor = new Color(0.66f, 0.38f, 0.24f), hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.75f, 0.37f, 0.17f), attack = "Sword_Regular_A", props = new[] { "Thor_Hammer" } },
             // 기존 옷의 밝은 부분은 상아색으로, 별도 다리 조각은 청록색으로 구분한다. 몸통의 금색과 관식은 유지한다.
             new Look { name = "Cleopatra", female = true, body = "Female_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.98f, 0.94f, 0.82f), metalParts = new[] { "Female_Peasant_Legs" }, metalColor = new Color(0.12f, 0.55f, 0.53f), goldParts = new[] { "Female_Peasant_Body" }, hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.035f, 0.03f, 0.035f), props = new[] { "Cleopatra_Crown", "Cleopatra_Collar", "Davinci_Scroll" } },
+            // 사람 머리·눈을 붙이지 않아 자칼 가면만 보인다. Enemy_Staff는 Imp 손 기준이라 손에는 달지 않는다.
+            new Look { name = "Anubis", body = "Male_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.27f, 0.23f, 0.19f), head = false, hide = new[] { "Male_Ranger_Head_Hood" }, metalParts = new[] { "Male_Ranger_Acc_Pauldron", "Male_Ranger_Arms_Bracer" }, metalColor = new Color(0.8f, 0.64f, 0.27f), props = new[] { "Anubis_Mask" } },
         };
 
         public sealed class EnemyLook
@@ -283,6 +285,7 @@ namespace HistoryHeroes.EditorTools
             new EnemyLook { ids = new[] { "archer" }, height = 1.49f, look = Dress(Puglin("E_Archer", 2, new Color(0.9f, 0.8f, 1f), "Spell_Simple_Shoot", false, light: true), "Enemy_Hood", "Enemy_ShortBow", hide: "Puglin_Stick") },
             new EnemyLook { ids = new[] { "bomber" }, height = 1.49f, look = Dress(Puglin("E_Bomber", 3, new Color(1f, 0.88f, 0.7f), "OverhandThrow", false, light: true), "Enemy_BombPack", "Enemy_HandBomb", hide: "Puglin_Stick") },
             new EnemyLook { ids = new[] { "minion" }, height = 1.32f, look = Dress(Puglin("E_Minion", 3, new Color(0.7f, 0.66f, 0.8f), "Zombie_Scratch", false, light: true), "Enemy_Cap", "Enemy_Dagger", hide: "Puglin_Stick") },
+            new EnemyLook { ids = new[] { "memory_guardian" }, height = 1.32f, look = Dress(Puglin("E_MemoryGuardian", 3, new Color(0.82f, 0.7f, 0.44f), "Zombie_Scratch", false, light: true), "Enemy_Cap", "Enemy_Dagger", hide: "Puglin_Stick") },
             new EnemyLook { ids = new[] { "shield" }, height = 1.78f, look = Soldier("E_Shield", "Male_Peasant", "T_Peasant_BaseColor", new Color(0.75f, 0.8f, 0.9f), "Melee_Hook", false, props: new[] { "Enemy_TowerShield" }) }, // 방패를 앞에 세우고 밀어붙인다 (Shield_Dash는 방패가 눕는다 — 화면 점검 2차)
             new EnemyLook { ids = new[] { "splitter", "splitter_small" }, height = 1.55f, look = Dress(Imp("E_Splitter", 1, new Color(0.75f, 1f, 0.78f), "Punch_Jab", false, light: true), "Enemy_BackSpikes") },
             new EnemyLook { ids = new[] { "summoner" }, height = 1.61f, look = Dress(Imp("E_Summoner", 2, new Color(0.9f, 0.78f, 1f), "Spell_Simple_Shoot", false, glow: true, light: true), "Enemy_Staff", "Enemy_SkullMask", hide: "Imp_Mace") },
@@ -297,6 +300,8 @@ namespace HistoryHeroes.EditorTools
             new EnemyLook { ids = new[] { "boss_colossus" }, height = 1.67f, look = Puglin("B_Colossus", 2, new Color(0.75f, 0.78f, 0.85f), "Punch_Cross", true) },
             new EnemyLook { ids = new[] { "boss_twins" }, height = 1.72f, look = Soldier("B_Twins", "Male_Ranger", "T_Ranger_BaseColor", new Color(0.35f, 0.32f, 0.48f), "Sword_Regular_A", true) },
             new EnemyLook { ids = new[] { "boss_king" }, height = 1.72f, look = Imp("B_King", 2, new Color(0.8f, 0.6f, 1f), "Spell_Simple_Shoot", true, glow: true) },
+            // 긴 흰 머리·수염과 청동 장식으로 구별하고, 전격은 보스 탄막 효과를 쓴다.
+            new EnemyLook { ids = new[] { "zeus_trial" }, height = 1.78f, look = new Look { name = "B_Zeus", body = "Male_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.95f, 0.95f, 0.91f), metalParts = new[] { "Male_Peasant_Feet" }, metalColor = new Color(0.72f, 0.52f, 0.24f), hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.92f, 0.91f, 0.86f) } },
             new EnemyLook { ids = new[] { "rift_warden" }, height = 1.72f, look = Imp("B_Warden", 1, new Color(0.7f, 0.8f, 1f), "Melee_Hook", true) },
         };
 
@@ -318,6 +323,11 @@ namespace HistoryHeroes.EditorTools
             {
                 height = 1.72f;
                 return HeroModel("thor");
+            }
+            if (id == "anubis_trial")
+            {
+                height = 1.72f;
+                return HeroModel("anubis");
             }
             foreach (EnemyLook e in Enemies)
             {
@@ -559,6 +569,15 @@ namespace HistoryHeroes.EditorTools
 
             float bodyHeight = MeasureHeight(go); // 모자·무기를 붙이기 전 키 (소품 때문에 몸이 작아지지 않게)
             foreach (string prop in look.props) notes.Add(Art3DProps.Attach(go, prop, look.shadows));
+            if (look.name == "B_Zeus")
+            {
+                foreach (Transform bone in go.GetComponentsInChildren<Transform>(true))
+                {
+                    if (bone.name != "hand_r") continue;
+                    SceneBuilder.AttachZeusHandLightning(bone);
+                    break;
+                }
+            }
 
             // Unity 객체는 ?? 로 "없음"을 못 가린다 (가짜 null) → 직접 확인. 복사 아바타 모델(Female_Peasant)엔 Animator가 없다
             Animator animator = go.GetComponent<Animator>();

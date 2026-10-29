@@ -251,8 +251,8 @@ namespace HistoryHeroes.UI
                 Records.HeroProgress fp = d.Hero(focus.id);
                 string state = !focusUnlocked ? "<color=#FFB347>잠김</color>" : focus == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"<color=#9FD8FF>Lv {fp.level}</color> <color=#FFD966>{new string('★', fp.stars)}{new string('☆', 5 - fp.stars)}</color>";
                 if (detailName != null) detailName.text = $"{focus.displayName}  <size=55%>{focus.ClassLabel} · {state}</size>";
-                string lockText = focusUnlocked ? string.Empty : focus.id == GodTrialRules.ThorHeroId
-                    ? $"\n<color=#FFB347>토르 조각 {Meta.HeroGrowth.Shards(d, focus.id)}/30 · 신의 시련에서 획득</color>"
+                string lockText = focusUnlocked ? string.Empty : GodTrialRules.IsGod(focus.id)
+                    ? $"\n<color=#FFB347>{focus.displayName} 조각 {Meta.HeroGrowth.Shards(d, focus.id)}/{GodTrialRules.UnlockShards} · 신의 시련에서 획득</color>"
                     : $"\n<color=#FFB347>{HeroUnlock.LockText(focus)}</color>";
                 detailBody.text =
                     $"<color=#FFD966><b>{focus.signatureName}</b></color>  {focus.signatureDescription}\n" +
@@ -312,11 +312,12 @@ namespace HistoryHeroes.UI
             }
 
             unlockButton.gameObject.SetActive(!focusUnlocked);
-            if (focus.id == GodTrialRules.ThorHeroId)
+            if (GodTrialRules.IsGod(focus.id))
             {
                 int godShards = Meta.HeroGrowth.Shards(d, focus.id);
-                unlockButton.interactable = godShards >= 30;
-                unlockLabel.text = $"토르 조각으로 해금\n<size=80%>{godShards}/30 · Lv1 ★1</size>";
+                unlockButton.interactable = godShards >= GodTrialRules.UnlockShards
+                    && GodTrialRules.IsUnlocked(d, GodTrialRules.ForHero(focus.id).Id);
+                unlockLabel.text = $"{focus.displayName} 조각으로 해금\n<size=80%>{godShards}/{GodTrialRules.UnlockShards} · Lv1 ★1</size>";
                 return;
             }
             bool free = HeroUnlock.CanClaimFree(d, focus);
@@ -340,7 +341,7 @@ namespace HistoryHeroes.UI
         private void UnlockFocused()
         {
             HeroData focus = roster.heroes[_focus];
-            if (focus.id == GodTrialRules.ThorHeroId)
+            if (GodTrialRules.IsGod(focus.id))
             {
                 SaveSystem.CommitResult result = SaveSystem.Commit(() =>
                 {

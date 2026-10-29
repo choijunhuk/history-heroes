@@ -14,13 +14,13 @@ namespace HistoryHeroes.EditorTools
             public Projectile PlayerArrow, EnemyArrow;
             public ExperienceGem Gem;
             public EnemyBase Charger, Archer, Bomber;
-            public EnemyBase Shield, Splitter, SplitterSmall, Summoner, Minion;
+            public EnemyBase Shield, Splitter, SplitterSmall, Summoner, Minion, MemoryGuardian;
             // 중간 보스 (Modes 2-8) · 보스맵 보스 (Content 3장)
             public EnemyBase MidBison, MidTorch, MidGolem, MidHunter, MidExecutor;
             public EnemyBase WraithLord, SteelColossus, ShadowTwins, OblivionKing;
             public EnemyBase RiftWarden;
-            public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust, Starlight;
-            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary;
+            public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust, Starlight, SandOrb, ZeusLightning;
+            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate;
             public Projectile IceShardProjectile;
             public ActiveSkillBehaviour IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillBehaviour FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -43,6 +43,8 @@ namespace HistoryHeroes.EditorTools
                 BigArrow = ProjectilePrefab("Arrow_Yiseonggye", new Color(0.95f, 0.9f, 0.75f), new Vector2(0.6f, 0.2f), 0.14f, 3f, fx: Fx.BigArrow), // 이성계 큰 화살
                 Cannonball = ProjectilePrefab("Cannonball_Yi", new Color(0.3f, 0.3f, 0.33f), new Vector2(0.4f, 0.4f), 0.2f, 3f, _circle, Fx.Cannonball), // 이순신 총통 포탄
                 SwordWave = ProjectilePrefab("SwordWave_Guan", new Color(0.85f, 1f, 0.9f, 0.85f), new Vector2(0.2f, 0.8f), 0.3f, 1.2f, fx: Fx.Wave),
+                SandOrb = ProjectilePrefab("Orb_Anubis", new Color(0.9f, 0.75f, 0.42f), new Vector2(0.32f, 0.32f), 0.16f, 3f, _circle, Fx.SandOrb),
+                ZeusLightning = ProjectilePrefab("Bolt_Zeus", new Color(1f, 0.48f, 0.72f), new Vector2(0.4f, 0.2f), 0.16f, 4f, fx: Fx.ZeusLightning),
             };
 
             Material line = AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
@@ -66,6 +68,7 @@ namespace HistoryHeroes.EditorTools
             p.SplitterSmall = EnemyPrefab<SplitterEnemy>("Enemy_SplitterSmall", d.SplitterSmall, _circle, line, withBlastMarker: false);
             p.Splitter = EnemyPrefab<SplitterEnemy>("Enemy_Splitter", d.Splitter, _circle, line, withBlastMarker: false, extra: (go, props) => props.Ref("smallPrefab", p.SplitterSmall));
             p.Minion = EnemyPrefab<ChargerEnemy>("Enemy_Minion", d.Minion, _circle, line, withBlastMarker: false);
+            p.MemoryGuardian = EnemyPrefab<ChargerEnemy>("Enemy_MemoryGuardian", _bosses.MemoryGuardian, _circle, line, withBlastMarker: false);
             p.Summoner = EnemyPrefab<SummonerEnemy>("Enemy_Summoner", d.Summoner, _square, line, withBlastMarker: false, extra: (go, props) => props.Ref("minion", p.Minion));
             CreateBossPrefabs(p, line);
             p.RiftWarden = EnemyPrefab<RiftWardenBoss>("Boss_RiftWarden", d.WardenEnemy, _circle, line, withBlastMarker: false, extra: (go, props) =>
@@ -139,6 +142,8 @@ namespace HistoryHeroes.EditorTools
             GameObject hammer = AssetDatabase.LoadAssetAtPath<GameObject>($"{Art3DProps.Folder}/Thor_Hammer.fbx");
             p.ThorHammer = Behaviour<ThorHammerBehaviour>("Skill_ThorHammer", props => props.Ref("hammerModel", hammer));
             p.ThorReturn = Behaviour<ThorHammerBehaviour>("Skill_ThorReturn", props => props.Ref("hammerModel", hammer));
+            p.SandStatue = Behaviour<SandStatueBehaviour>("Skill_SandStatue", props => props.Ref("stoneModel", stone).Color("tint", new Color(0.82f, 0.69f, 0.35f, 0.7f)));
+            p.SandGate = Behaviour<SandStatueBehaviour>("Skill_SandGate", props => props.Ref("stoneModel", stone).Color("tint", new Color(0.93f, 0.75f, 0.3f, 0.75f)));
             GameObject tank = Art3DStage.Prefab("Fx_ArmoredTank");
             p.DavTank = Behaviour<ArmoredTankBehaviour>("Skill_DavTank", props => props.Ref("tankModel", tank));
             p.DavSpiral = Behaviour<ArmoredTankBehaviour>("Skill_DavSpiral", props => props.Ref("tankModel", tank).Bool("spiral", true));

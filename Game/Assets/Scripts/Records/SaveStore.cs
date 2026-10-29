@@ -393,7 +393,7 @@ namespace HistoryHeroes.Records
 
             if (data.schemaVersion < 9)
             {
-                // 8 → 9: 기존 보스 격파·기록은 그대로 두고 시련의 주간 목표만 빈 상태로 연다.
+                // 8 → 9: 기존 보스 격파·기록은 그대로 두고 신의 시련 목표만 빈 상태로 연다.
                 data.godTrials = new GodTrialSave();
             }
 
@@ -417,7 +417,15 @@ namespace HistoryHeroes.Records
             data.unlockedHeroes ??= new List<string>();
             data.godTrials ??= new GodTrialSave();
             data.godTrials.cleared ??= new List<string>();
-            data.godTrials.cleared.RemoveAll(string.IsNullOrEmpty);
+            data.godTrials.cleared.RemoveAll(id => Modes.GodTrialRules.Find(id) == null);
+            if (Modes.GodTrialRules.Find(data.godTrials.goalTrialId)?.HeroId == null)
+            {
+                data.godTrials.goalTrialId = null;
+                data.godTrials.firstRecordId = null;
+                data.godTrials.goalLocked = false;
+                data.godTrials.firstActives?.Clear();
+                data.godTrials.weeklyWins?.Clear();
+            }
             data.godTrials.firstActives ??= new List<string>();
             data.godTrials.firstActives.RemoveAll(string.IsNullOrEmpty);
             data.godTrials.weeklyWins ??= new List<GodTrialWin>();
@@ -429,8 +437,13 @@ namespace HistoryHeroes.Records
             }
             data.godTrials.weeklyShards = Math.Clamp(data.godTrials.weeklyShards, 0, 5);
             if (string.IsNullOrEmpty(data.godTrials.firstRecordId)) data.godTrials.goalLocked = false;
-            if (data.ItemCount(Economy.Wallet.HeroShard("thor")) > 30 && !data.unlockedHeroes.Contains("thor"))
-                data.AddItem(Economy.Wallet.HeroShard("thor"), 30 - data.ItemCount(Economy.Wallet.HeroShard("thor")));
+            foreach (Modes.GodTrialDefinition trial in Modes.GodTrialRules.Trials)
+            {
+                if (trial.HeroId == null || data.unlockedHeroes.Contains(trial.HeroId)) continue;
+                string shardId = Economy.Wallet.HeroShard(trial.HeroId);
+                int excess = data.ItemCount(shardId) - Modes.GodTrialRules.UnlockShards;
+                if (excess > 0) data.AddItem(shardId, -excess);
+            }
             data.settings ??= new GameSettings();
             data.settings.shake = Math.Clamp(data.settings.shake, 0, 2);
 

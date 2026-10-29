@@ -9,10 +9,12 @@ namespace HistoryHeroes.Enemy
     public sealed class EnemyProjectiles : MonoBehaviour
     {
         [SerializeField] private Projectile prefab;
+        [SerializeField] private Projectile lightningPrefab;
         [SerializeField] private LayerMask wallMask;
 
         private static EnemyProjectiles _instance;
         private ComponentPool<Projectile> _pool;
+        private ComponentPool<Projectile> _lightningPool;
         private readonly List<Projectile> _active = new List<Projectile>();
 
         private static readonly List<Projectile> Empty = new List<Projectile>();
@@ -29,6 +31,7 @@ namespace HistoryHeroes.Enemy
             SpeedScale = 1f;
             _slowRadius = 0f;
             _pool = new ComponentPool<Projectile>(prefab, transform, prewarm: 32);
+            if (lightningPrefab != null) _lightningPool = new ComponentPool<Projectile>(lightningPrefab, transform, prewarm: 32);
         }
 
         /// <param name="owner">쏜 적 (마렝고 Lv5가 되돌려 보낼 곳)</param>
@@ -46,8 +49,11 @@ namespace HistoryHeroes.Enemy
                 _volleying = false;
             }
 
-            Projectile p = _instance._pool.Get(origin, Quaternion.identity);
-            p.Launch(direction, speed * SpeedScale, damage, playerMask, _instance.wallMask, pierce: 0, ricochet: 0, _instance.OnReleased);
+            // 모양만 달리하고 막기·둔화·되돌리기는 같은 활성 목록과 판정을 쓴다.
+            bool lightning = owner is SteelColossusBoss boss && boss.LightningBarrage && _instance._lightningPool != null;
+            Projectile p = (lightning ? _instance._lightningPool : _instance._pool).Get(origin, Quaternion.identity);
+            p.Launch(direction, speed * SpeedScale, damage, playerMask, _instance.wallMask, pierce: 0, ricochet: 0,
+                lightning ? _instance.OnLightningReleased : _instance.OnReleased);
             p.Owner = owner;
             _instance._active.Add(p);
             if (owner is EnemyBase enemy && enemy.Visual != null) enemy.Visual.Attack(direction); // 쏘는 동작 (탄막은 0.2초에 한 번, 탄마다 찾지 않는다)
@@ -101,6 +107,12 @@ namespace HistoryHeroes.Enemy
         {
             _active.Remove(p);
             _pool.Release(p);
+        }
+
+        private void OnLightningReleased(Projectile p)
+        {
+            _active.Remove(p);
+            _lightningPool.Release(p);
         }
     }
 }

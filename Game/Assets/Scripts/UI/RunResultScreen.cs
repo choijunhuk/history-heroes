@@ -90,7 +90,7 @@ namespace HistoryHeroes.UI
             if (s.FirstClear)
             {
                 sb.AppendLine();
-                sb.AppendLine(s.IsGodTrial ? "첫 시련을 통과했어요. 토르가 기록을 인정했어요." : $"처음 격파! {s.UnlockedChapter}구간이 열렸어요");
+                sb.AppendLine(s.IsGodTrial ? $"첫 시련을 통과했어요. {KoreanText.Josa(s.BossName, "이", "가")} 기록을 인정했어요." : $"처음 격파! {s.UnlockedChapter}구간이 열렸어요");
             }
 
             AppendRewards(sb, s.RewardLines);

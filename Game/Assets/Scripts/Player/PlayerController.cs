@@ -187,6 +187,7 @@ namespace HistoryHeroes.Player
             _observation.Reset();
             _reclaim.Reset();
             _thunder.Moved();
+            _mark.Reset();
             ResetGuardian();
             Stats.Changed -= OnStatsChanged;
             if (_sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone();
@@ -202,6 +203,7 @@ namespace HistoryHeroes.Player
             _observation.Reset();
             _reclaim.Reset();
             _thunder.Moved();
+            _mark.Reset();
             ResetGuardian();
             Stats.RemoveAllFrom(_ironOwner);
             _ironOn = false;
@@ -254,6 +256,7 @@ namespace HistoryHeroes.Player
             _observation.Reset();
             _reclaim.Reset();
             _thunder.Moved();
+            _mark.Reset();
             ResetGuardian();
             _body.position = position;
             _body.linearVelocity = Vector2.zero;
@@ -269,6 +272,7 @@ namespace HistoryHeroes.Player
                 if (Health.IsDead) _observation.Reset();
                 if (Health.IsDead) _reclaim.Reset();
                 if (Health.IsDead) _thunder.Moved();
+                if (Health.IsDead) _mark.Reset();
                 if (Health.IsDead) ResetGuardian();
                 if (Health.IsDead && _sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone(); // 동남풍은 살아 있을 때만
                 return;
@@ -478,6 +482,7 @@ namespace HistoryHeroes.Player
             _observation.Reset();
             _reclaim.Reset();
             _thunder.Moved();
+            _mark.Reset();
             ResetGuardian();
         }
 
@@ -496,6 +501,9 @@ namespace HistoryHeroes.Player
 
         private readonly ThorThunderState _thunder = new ThorThunderState();
         public int ThunderCount => _thunder.Count;
+        private readonly AnubisMarkState _mark = new AnubisMarkState();
+        public int MarkCount => _mark.Hits;
+        public bool MarkReady => _mark.IsReady(Time.time, _sig.MarkHits);
 
         // ---------------------------------------------------------------- 클레오파트라 기록의 수호상
 
@@ -798,7 +806,9 @@ namespace HistoryHeroes.Player
                     + (observedShot ? 1 : 0); // 관측은 멀티샷 묶음 하나의 기본 공격에 적용한다.
                 p.Launch(direction, hero.projectileSpeed, damage, enemyMask, wallMask,
                     pierce, Attack.Get(AttackModifierKind.Ricochet),
-                    _projectiles.Release, OnBasicAttackHit, onHitTarget: needsTarget ? OnProjectileHitTarget : null);
+                    _projectiles.Release, OnBasicAttackHit,
+                    onHitTarget: i == 0 && _sig.MarkHits > 0 ? OnMarkProjectileHitTarget : needsTarget ? OnProjectileHitTarget : null,
+                    notifyFirstTargetOnly: i == 0 && _sig.MarkHits > 0);
             }
 
             // 모든 탄을 먼저 보낸 뒤 같은 표적에 동반 타격한다. 표적을 쓰러뜨려도 멀티샷 수는 바뀌지 않는다.
@@ -821,6 +831,16 @@ namespace HistoryHeroes.Player
         {
             if (hero.knockback > 0f) Knockback(target, (Vector2)target.transform.position - (Vector2)transform.position, hero.knockback);
             if (_sig.ChainBounces > 0) Chain(target, _lastShotCoefficient);
+        }
+
+        private void OnMarkProjectileHitTarget(Health target, Vector2 point)
+        {
+            OnProjectileHitTarget(target, point);
+            if (target.IsDead || !target.TryGetComponent(out EnemyBase enemy)) return;
+            if (!_mark.RecordHit(target, target.Life, Time.time, true, _sig.MarkHits, _sig.MarkCooldown)) return;
+            float slow = AnubisMarkState.EffectiveSlow(_sig, hero.markBossScale, enemy is IPhasedBoss);
+            enemy.Status.ApplySlow(slow, AnubisMarkState.EffectiveDuration(_sig), _mark);
+            AttackFx.Burst(point, 0.45f, new Color(0.82f, 0.67f, 0.34f, 0.5f), 0.12f);
         }
 
         private static void Knockback(Health target, Vector2 direction, float distance)

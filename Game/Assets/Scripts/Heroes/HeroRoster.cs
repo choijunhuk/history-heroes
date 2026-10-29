@@ -46,7 +46,7 @@ namespace HistoryHeroes.Heroes
         /// <summary>"1구간 보스를 깨면 열려요" 같은 안내</summary>
         public static string Condition(HeroData hero)
         {
-            if (Modes.GodTrialRules.IsGod(hero.id)) return "토르의 시련에서 조각 30개를 모으면 열려요";
+            if (Modes.GodTrialRules.IsGod(hero.id)) return $"{hero.displayName}의 시련에서 조각 {Modes.GodTrialRules.UnlockShards}개를 모으면 열려요";
             if (hero.gemsOnly) return $"보석 {Wallet.Format(hero.unlockGems)}개로 열려요 (던전 {FreePickRuns}판 하면 보석 영웅 한 명은 무료)";
             return hero.unlockAfterBossChapter <= 0 ? "처음부터" : $"{hero.unlockAfterBossChapter}구간 보스를 깨면 열려요";
         }

@@ -14,6 +14,10 @@ namespace HistoryHeroes.Enemy
     {
         [SerializeField] private float bulletSpeed = 4.2f;
         [SerializeField] private float bulletDamage = 0.55f;
+        [SerializeField] private float barrageRecover = 1.6f;
+        [SerializeField] private bool lightningBarrage;
+
+        public bool LightningBarrage => lightningBarrage;
 
         private int _step;
 
@@ -57,7 +61,7 @@ namespace HistoryHeroes.Enemy
                         yield return Wait(0.22f);
                     }
 
-                    yield return Open(1.6f);
+                    yield return Open(barrageRecover);
                     break;
                 }
 
@@ -65,7 +69,7 @@ namespace HistoryHeroes.Enemy
                     yield return Glow(0.9f * Tele, new Color(1f, 0.5f, 0.2f, 0.45f));
                     Ring(16, bulletSpeed * 0.9f, bulletDamage, "boss_colossus_ring");
                     if (phase >= 2) yield return CircleStrike(PlayerPos, 1.5f, 1f * Tele, 1.3f, "boss_colossus_shell");
-                    yield return Open(1.6f);
+                    yield return Open(barrageRecover);
                     break;
             }
         }

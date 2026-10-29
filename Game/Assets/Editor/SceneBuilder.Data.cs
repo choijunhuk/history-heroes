@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok, Boudica, Thor, Cleopatra;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok, Boudica, Thor, Cleopatra, Anubis;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -222,6 +222,11 @@ namespace HistoryHeroes.EditorTools
             d.Cleopatra.model3D = Art3DCharacters.HeroModel("cleopatra");
             d.Cleopatra.modelHeight = HeroModelHeight;
             d.Cleopatra.helperModel = Art3DStage.Prefab("Fx_StoneSentinel");
+
+            d.Anubis = AssetUtil.LoadOrCreate<HeroData>($"{DataDir}/Heroes/Hero_anubis.asset");
+            AnubisDefinition.ConfigureHero(d.Anubis);
+            d.Anubis.model3D = Art3DCharacters.HeroModel("anubis");
+            d.Anubis.modelHeight = HeroModelHeight;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -498,6 +503,11 @@ namespace HistoryHeroes.EditorTools
             d.ThorHammer.icon = Icon("lightning");
             d.Pool.Add(d.ThorHammer);
             d.Thor.exclusiveActive = d.ThorHammer;
+            d.SandStatue = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_sand_statue.asset");
+            AnubisDefinition.ConfigureStatue(d.SandStatue);
+            d.SandStatue.icon = Icon("shield");
+            d.Pool.Add(d.SandStatue);
+            d.Anubis.exclusiveActive = d.SandStatue;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -552,10 +562,13 @@ namespace HistoryHeroes.EditorTools
             d.ThorReturn = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_thor_return.asset");
             ThorDefinition.ConfigureReturn(d.ThorReturn);
             d.ThorReturn.icon = Icon("lightning");
+            d.SandGate = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_sand_gate.asset");
+            AnubisDefinition.ConfigureGate(d.SandGate);
+            d.SandGate.icon = Icon("shield");
             d.CleopatraLibrary = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_cleopatra_library.asset");
             CleopatraDefinition.ConfigureLibrary(d.CleopatraLibrary);
             d.CleopatraLibrary.icon = Icon("star");
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary }) UnityEditor.EditorUtility.SetDirty(s);
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -579,13 +592,17 @@ namespace HistoryHeroes.EditorTools
             FusionRecipe thorRecipe = AddHeroRecipe(d, "thor_return", FusionType.Evolution, d.ThorHammer, 5, aspd, 1, d.ThorReturn, "thor");
             ThorDefinition.ConfigureRecipe(thorRecipe, d.ThorHammer, aspd, d.ThorReturn);
             UnityEditor.EditorUtility.SetDirty(thorRecipe);
+            SkillData health = d.Pool.Find(s => s.id == "hp_up");
+            FusionRecipe sandRecipe = AddHeroRecipe(d, "sand_gate", FusionType.Evolution, d.SandStatue, 5, health, 1, d.SandGate, "anubis");
+            AnubisDefinition.ConfigureRecipe(sandRecipe, d.SandStatue, health, d.SandGate);
+            UnityEditor.EditorUtility.SetDirty(sandRecipe);
             SkillData activeDamage = d.Pool.Find(s => s.id == "active_dmg");
             FusionRecipe cleopatraRecipe = AddHeroRecipe(d, "cleopatra_library", FusionType.Evolution, d.CleopatraPharos, 5, activeDamage, 1, d.CleopatraLibrary, "cleopatra");
             CleopatraDefinition.ConfigureRecipe(cleopatraRecipe, d.CleopatraPharos, activeDamage, d.CleopatraLibrary);
             UnityEditor.EditorUtility.SetDirty(cleopatraRecipe);
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok, d.Boudica, d.Thor, d.Cleopatra };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok, d.Boudica, d.Thor, d.Cleopatra, d.Anubis };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -594,7 +611,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -644,6 +661,7 @@ namespace HistoryHeroes.EditorTools
             ["seondeok_starlight"] = SkillRole.Area, ["seondeok_constellation"] = SkillRole.Area,
             ["boudica_rally"] = SkillRole.Area, ["boudica_uprising"] = SkillRole.Area,
             ["thor_hammer"] = SkillRole.Single, ["thor_return"] = SkillRole.Single,
+            ["sand_statue"] = SkillRole.Defense, ["sand_gate"] = SkillRole.Defense,
             ["cleopatra_pharos"] = SkillRole.Area, ["cleopatra_library"] = SkillRole.Area,
             ["ysg_pyeonjeon"] = SkillRole.Single, ["ysg_shingung"] = SkillRole.Single,
             ["zhuge_gate"] = SkillRole.Defense,
@@ -816,6 +834,9 @@ namespace HistoryHeroes.EditorTools
             d.Thor.projectilePrefab = p.SwordWave;
             d.ThorHammer.behaviourPrefab = p.ThorHammer;
             d.ThorReturn.behaviourPrefab = p.ThorReturn;
+            d.Anubis.projectilePrefab = p.SandOrb;
+            d.SandStatue.behaviourPrefab = p.SandStatue;
+            d.SandGate.behaviourPrefab = p.SandGate;
             d.Cleopatra.projectilePrefab = p.Starlight;
             d.CleopatraPharos.behaviourPrefab = p.CleopatraPharos;
             d.CleopatraLibrary.behaviourPrefab = p.CleopatraLibrary;

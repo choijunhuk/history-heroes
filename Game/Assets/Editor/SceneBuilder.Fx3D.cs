@@ -26,6 +26,8 @@ namespace HistoryHeroes.EditorTools
             Cannonball,
             BigArrow,
             Gust,
+            SandOrb,
+            ZeusLightning,
         }
 
         /// <summary>투사체가 뜨는 높이 (가슴께)</summary>
@@ -131,6 +133,17 @@ namespace HistoryHeroes.EditorTools
                 case Fx.Orb:
                     FxPart(root, Stage3D.Shape.Rock, FxMat("Orb", new Color(0.5f, 0.88f, 1f), 2.2f), Vector3.zero, Quaternion.identity, Vector3.one * 0.34f);
                     break;
+                case Fx.SandOrb:
+                    FxPart(root, Stage3D.Shape.Rock, FxMat("SandOrb", new Color(0.88f, 0.71f, 0.36f), 1.1f), Vector3.zero, Quaternion.identity, Vector3.one * 0.32f);
+                    break;
+                case Fx.ZeusLightning:
+                {
+                    Material bolt = FxMat("ZeusLightning", new Color(1f, 0.45f, 0.7f), 1.9f);
+                    FxPart(root, Stage3D.Shape.Box, bolt, new Vector3(-0.18f, 0.08f, 0f), Quaternion.Euler(0f, 0f, -32f), new Vector3(0.31f, 0.055f, 0.055f));
+                    FxPart(root, Stage3D.Shape.Box, bolt, Vector3.zero, Quaternion.Euler(0f, 0f, 28f), new Vector3(0.29f, 0.055f, 0.055f));
+                    FxPart(root, Stage3D.Shape.Box, bolt, new Vector3(0.18f, -0.07f, 0f), Quaternion.Euler(0f, 0f, -32f), new Vector3(0.3f, 0.055f, 0.055f));
+                    break;
+                }
                 case Fx.Starlight:
                 {
                     // 3D 구체는 스프라이트 색을 쓰지 않으므로 별빛의 보라·금색을 따로 정한다.
@@ -190,6 +203,8 @@ namespace HistoryHeroes.EditorTools
                 case Fx.EnemyArrow: AddTrail(root.gameObject, new Color(1f, 0.3f, 0.6f), 0.16f, 0.16f); break;
                 case Fx.Bullet: AddTrail(root.gameObject, new Color(1f, 0.8f, 0.35f), 0.14f, 0.1f); break;
                 case Fx.Orb: AddTrail(root.gameObject, new Color(0.45f, 0.85f, 1f), 0.3f, 0.2f); break;
+                case Fx.SandOrb: AddTrail(root.gameObject, new Color(0.91f, 0.72f, 0.36f), 0.2f, 0.14f); break;
+                case Fx.ZeusLightning: AddTrail(root.gameObject, new Color(1f, 0.4f, 0.67f), 0.17f, 0.13f); break;
                 case Fx.Starlight: AddTrail(root.gameObject, new Color(0.85f, 0.65f, 1f), 0.24f, 0.16f); break;
                 case Fx.Cannonball: AddTrail(root.gameObject, new Color(1f, 0.6f, 0.25f), 0.26f, 0.18f); break;
                 case Fx.BigArrow: AddTrail(root.gameObject, new Color(1f, 0.9f, 0.6f), 0.18f, 0.16f); break;
@@ -200,6 +215,19 @@ namespace HistoryHeroes.EditorTools
 
             var sr = go.GetComponent<SpriteRenderer>();
             if (sr != null) sr.enabled = false;
+        }
+
+        /// <summary>기존 번개 탄의 재질·형태를 손에도 작게 써서 시련 형상을 구별한다.</summary>
+        public static void AttachZeusHandLightning(Transform hand)
+        {
+            if (hand == null) return;
+            var root = new GameObject("HandLightning").transform;
+            root.SetParent(hand, false);
+            root.localPosition = new Vector3(0f, 0.11f, 0f);
+            Material bolt = FxMat("ZeusLightning", new Color(1f, 0.45f, 0.7f), 1.9f);
+            FxPart(root, Stage3D.Shape.Box, bolt, new Vector3(-0.08f, 0.04f, 0f), Quaternion.Euler(0f, 0f, -32f), new Vector3(0.14f, 0.025f, 0.025f));
+            FxPart(root, Stage3D.Shape.Box, bolt, new Vector3(0.03f, -0.02f, 0f), Quaternion.Euler(0f, 0f, 28f), new Vector3(0.14f, 0.025f, 0.025f));
+            FxPart(root, Stage3D.Shape.Box, bolt, new Vector3(0.13f, -0.07f, 0f), Quaternion.Euler(0f, 0f, -32f), new Vector3(0.14f, 0.025f, 0.025f));
         }
 
         /// <summary>경험치 보석: 2D 원은 숨기고 빛나는 팔면체 보석이 땅 위에서 돌며 오르내린다 (3D 화면 점검 4번)</summary>

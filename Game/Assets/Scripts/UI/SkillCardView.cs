@@ -188,6 +188,7 @@ namespace HistoryHeroes.UI
                 Add("개수", a.CountAt(from).ToString(), a.CountAt(to).ToString());
                 Add(DamageName(a), Percent(DamageValue(a, from)), Percent(DamageValue(a, to)));
                 Add("지속", $"{a.DurationAt(from):0.#}초", $"{a.DurationAt(to):0.#}초");
+                Add("둔화", Percent(a.SlowAt(from)), Percent(a.SlowAt(to)));
                 if (a.radius > 0f) Add("범위", Percent(a.RadiusAt(from) / a.radius), Percent(a.RadiusAt(to) / a.radius));
             }
             else if (skill is PassiveSkillData p)

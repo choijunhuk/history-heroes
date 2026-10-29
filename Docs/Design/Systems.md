@@ -35,7 +35,7 @@
 | 방 레이아웃·장애물·함정 | v0.1 | ✅ | [Modes](Modes.md) |
 | 구간별 별 ★1~3 + 별 보상 | v0.2 | ✅ | [Modes](Modes.md) |
 | 보스맵 (구간별 보스 5) | v0.2 | ✅ | [Content 3](Content.md#3-구간-챕터--출시-때-5개) |
-| 신 vs 인류 (신의 시련·플레이 신·인간 영웅 확장) | 후속 확장, 단계 도입 | 토르 1차 코드·검사 작성, Unity 확인 전. 나머지 📝 | [GodsVsHumanity](GodsVsHumanity.md) |
+| 신 vs 인류 (신의 시련·플레이 신·인간 영웅 확장) | 후속 확장, 단계 도입 | 시련 1~3·플레이 토르/아누비스 코드·검사 작성, Unity 확인 전. 스사노오·아테나 📝 | [GodsVsHumanity](GodsVsHumanity.md) |
 | 서바이벌 모드 | v0.5 | ✅ | [GameDesign 8](../GameDesign.md#8-서바이벌-모드-뱀서-모드) |
 | 무한 모드 | v0.5 | ✅ | [Modes](Modes.md) |
 | 일일 도전 | v0.5 | ✅ | [Modes](Modes.md) |

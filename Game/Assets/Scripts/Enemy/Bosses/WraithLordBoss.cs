@@ -24,6 +24,8 @@ namespace HistoryHeroes.Enemy
         [Tooltip("살아 있는 졸개 1마리마다 받는 피해 감소")]
         [SerializeField] private float wardPerMinion = 0.15f;
         [SerializeField] private float wardMax = 0.9f;
+        [SerializeField] private float summonRecover = 1.8f;
+        [SerializeField] private float attackRecover = 1.5f;
 
         private static readonly Color WardColor = new Color(0.55f, 0.45f, 1f, 0.3f); // 푸른 막 (위험 예고와 다른 색)
         private SpriteRenderer _ward;
@@ -77,7 +79,7 @@ namespace HistoryHeroes.Enemy
                 if (want > 0) yield return Summon(minion, want, 2.4f, 1f * Tele, minionHpScale, _minions);
 
                 Blink(Random.insideUnitCircle * 2.4f);
-                yield return Open(1.8f);
+                yield return Open(summonRecover);
                 yield break;
             }
 
@@ -95,7 +97,7 @@ namespace HistoryHeroes.Enemy
                 yield return CircleStrike(PlayerPos, 1.3f, 0.7f * Tele, 1.2f, "boss_wraith_drain");
             }
 
-            yield return Open(1.5f);
+            yield return Open(attackRecover);
         }
     }
 }
