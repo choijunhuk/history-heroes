@@ -30,6 +30,13 @@ namespace HistoryHeroes.Enemy
         public EnemyData Data => data;
         public Health Health => health;
         public EnemyStatus Status => status;
+
+        /// <summary>밀침은 이걸로 (흡인과 겹쳐도 사라지지 않게 EnemyStatus가 한 걸음에 합친다)</summary>
+        public void Push(Vector2 offset)
+        {
+            if (status != null) status.Push(offset);
+            else if (TryGetComponent(out Rigidbody2D rb)) rb.MovePosition(rb.position + offset);
+        }
         public bool IsElite { get; private set; }
         public float Damage => data.damage * attackMultiplier;
 

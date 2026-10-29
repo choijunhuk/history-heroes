@@ -736,7 +736,7 @@ namespace HistoryHeroes.Player
         private static void Knockback(Health target, Vector2 direction, float distance)
         {
             if (!target.TryGetComponent(out EnemyBase enemy) || !enemy.CanBeKnockedBack) return;
-            if (target.TryGetComponent(out Rigidbody2D rb)) rb.MovePosition(rb.position + direction.normalized * distance);
+            enemy.Push(direction.normalized * distance);
         }
 
         /// <summary>테슬라 교류: 맞은 적에서 가장 가까운 다른 적에게 튕긴다 (튕길 때마다 피해 -30%)</summary>
@@ -881,7 +881,7 @@ namespace HistoryHeroes.Player
             Vector2 aim = direction.normalized;
             RaycastHit2D wall = Physics2D.CircleCast(body.position, radius, aim, distance, wallMask);
             if (wall.collider != null) distance = Mathf.Max(0f, wall.distance - 0.02f);
-            body.MovePosition(body.position + aim * distance);
+            enemy.Push(aim * distance);
         }
 
         /// <summary>근접 + 벽 튕김: 검기 (공격력 40%) 한 발이 날아가 벽에 튕긴다</summary>

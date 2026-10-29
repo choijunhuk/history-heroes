@@ -130,7 +130,7 @@ namespace HistoryHeroes.Skills
                     if (_confused.TryGetValue(e, out int life) && life == e.Health.Life) continue;
                     _confused[e] = e.Health.Life;
                     e.Status.ApplySlow(0.7f, confuseSeconds);
-                    if (e.CanBeKnockedBack && e.TryGetComponent(out Rigidbody2D rb)) rb.MovePosition(rb.position + Random.insideUnitCircle * 0.6f);
+                    if (e.CanBeKnockedBack) e.Push(Random.insideUnitCircle * 0.6f);
                     FxBursts.Puff((Vector3)(Vector2)e.transform.position + Vector3.back * 1.1f, new Color(1f, 0.95f, 0.6f), 0.6f);
                 }
 

@@ -332,7 +332,7 @@ namespace HistoryHeroes.Pets
                 _lastRam[enemy] = Time.time;
                 _ramTokens -= 1f;
                 enemy.Health.TryTakeDamage(_pet.Damage(RamCoefficient, "pet_redhare"));
-                if (enemy.CanBeKnockedBack && enemy.TryGetComponent(out Rigidbody2D rb)) rb.MovePosition(rb.position + dir * RamPush);
+                if (enemy.CanBeKnockedBack) enemy.Push(dir * RamPush);
                 AttackFx.Burst(enemy.transform.position, 0.35f, new Color(0.9f, 0.35f, 0.2f, 0.7f), 0.12f);
             }
         }

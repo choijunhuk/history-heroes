@@ -42,7 +42,7 @@ namespace HistoryHeroes.Skills
                     Vector2 direction = (body.position - center).normalized;
                     RaycastHit2D wall = Physics2D.Raycast(body.position, direction, pushDistance + 0.4f, player.WallMask);
                     float distance = wall.collider != null ? Mathf.Max(0f, wall.distance - 0.4f) : pushDistance;
-                    body.MovePosition(body.position + direction * distance);
+                    enemy.Push(direction * distance);
                 }
 
                 if (i < count - 1) yield return new WaitForSeconds(waveInterval);

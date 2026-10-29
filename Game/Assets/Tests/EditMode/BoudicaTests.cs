@@ -71,7 +71,7 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void BoudicaUsesFemaleRangerLongHairBronzeBracersAndEmptyHands()
+        public void BoudicaUsesFemaleRangerLongHairBronzeBracersAndCelticSword()
         {
             Art3DCharacters.Look look = System.Array.Find(Art3DCharacters.Heroes, item => item.name == "Boudica");
             Assert.IsNotNull(look);

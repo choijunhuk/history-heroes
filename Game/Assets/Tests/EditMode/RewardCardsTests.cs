@@ -46,6 +46,24 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void GermanDeviceLocale_StillBecomesCard()
+        {
+            // 기기 언어가 독일어면 "N0"이 "2.000"이 되어 카드로 못 읽었다 (Codex 리뷰) → Wallet.Format은 언어와 상관없이 "2,000"
+            var before = System.Threading.Thread.CurrentThread.CurrentCulture;
+            try
+            {
+                System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
+                Assert.AreEqual("2,000", Wallet.Format(2000));
+                List<RewardCards.Card> cards = RewardCards.Split(new List<string> { new Reward { Gold = 2000 }.ToString() }, out _);
+                Assert.AreEqual(2000, cards[0].Amount);
+            }
+            finally
+            {
+                System.Threading.Thread.CurrentThread.CurrentCulture = before;
+            }
+        }
+
+        [Test]
         public void Null_IsEmpty()
         {
             Assert.AreEqual(0, RewardCards.Split(null, out List<string> rest).Count);

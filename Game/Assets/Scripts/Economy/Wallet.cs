@@ -54,7 +54,7 @@ namespace HistoryHeroes.Economy
         }
 
         /// <summary>"1,234" 형태</summary>
-        public static string Format(int amount) => amount.ToString("N0");
+        public static string Format(int amount) => amount.ToString("N0", System.Globalization.CultureInfo.InvariantCulture); // 기기 언어와 상관없이 "1,234" (보상 카드가 이 모양을 읽는다)
     }
 
     /// <summary>보상 묶음 (골드, 보석, 보조 재료)</summary>

@@ -3,7 +3,8 @@
 import bpy, bmesh, math
 from mathutils import Vector, Matrix
 
-OUT = "/Users/choi/Documents/history-heroes/Game/Assets/Art/3D/Props"
+import os
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Game", "Assets", "Art", "3D", "Props")  # 이 저장소 기준 (어느 컴퓨터든)
 HX, HY, HZ = 0.80, -0.065, 1.42  # 손 쥔 자리 (언월도 자루 중심과 같은 X·Z)
 
 def mat(name):

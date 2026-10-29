@@ -47,6 +47,7 @@ namespace HistoryHeroes.Enemy
         private Vector2 _pullCenter;
         private float _pullSpeed;
         private float _pullUntil;
+        private Vector2 _push; // 흡인 중에 들어온 밀침 (다음 물리 걸음에 흡인과 함께)
 
         public bool IsFrozen => Time.time < _freezeUntil;
         public float SpeedMultiplier => (Time.time < _slowUntil ? 1f - _slowFraction : 1f) * Haste;
@@ -146,6 +147,17 @@ namespace HistoryHeroes.Enemy
             _poison.Clear();
         }
 
+        /// <summary>
+        /// 밀침 (모든 밀침이 여기로 온다): 흡인 중이면 흡인과 같은 물리 걸음에 더한다.
+        /// MovePosition은 한 물리 걸음에 마지막 호출만 남아서, 따로 부르면 흡인이 밀침을 덮었다 (2026-10-29 Codex 리뷰).
+        /// </summary>
+        public void Push(Vector2 offset)
+        {
+            if (_body == null) return;
+            if (IsPulled) _push += offset;
+            else _body.MovePosition(_body.position + offset);
+        }
+
         public void Pull(Vector2 center, float speed, float duration)
         {
             if (IsBoss) speed *= 0.3f;
@@ -202,10 +214,16 @@ namespace HistoryHeroes.Enemy
 
         private void FixedUpdate()
         {
-            if (GamePause.IsPaused || !IsPulled || _body == null) return;
-            Vector2 to = _pullCenter - _body.position;
-            if (to.sqrMagnitude < 0.04f) return;
-            _body.MovePosition(_body.position + to.normalized * Mathf.Min(_pullSpeed * Time.fixedDeltaTime, to.magnitude));
+            if (GamePause.IsPaused || _body == null) return;
+            Vector2 step = _push;
+            _push = Vector2.zero;
+            if (IsPulled)
+            {
+                Vector2 to = _pullCenter - _body.position;
+                if (to.sqrMagnitude >= 0.04f) step += to.normalized * Mathf.Min(_pullSpeed * Time.fixedDeltaTime, to.magnitude);
+            }
+
+            if (step != Vector2.zero) _body.MovePosition(_body.position + step);
         }
 
         /// <summary>맞았을 때 번쩍이는 중이면 색을 건드리지 않는다 (HitFlash가 원래 색으로 돌려놓는다)</summary>

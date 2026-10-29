@@ -114,7 +114,7 @@ namespace HistoryHeroes.Skills
                 {
                     if (!hit.Add(e)) continue;
                     e.Health.TryTakeDamage(RollDamage(coefficient));
-                    if (e.CanBeKnockedBack && e.TryGetComponent(out Rigidbody2D rb)) rb.MovePosition(rb.position + dir * knockback);
+                    if (e.CanBeKnockedBack) e.Push(dir * knockback);
                     FxBursts.Puff((Vector3)(Vector2)e.transform.position + Vector3.back * 0.5f, new Color(1f, 0.7f, 0.35f), 0.8f);
                 }
 
