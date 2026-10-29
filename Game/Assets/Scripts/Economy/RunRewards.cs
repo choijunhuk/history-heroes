@@ -18,8 +18,14 @@ namespace HistoryHeroes.Economy
         {
             int full = 400 + Math.Max(1, chapter) * 100;
             float ratio = cleared ? 1f : roomCount <= 0 ? 0f : Mathf.Clamp01((float)roomsCleared / roomCount);
-            return new Reward { Gold = Mathf.FloorToInt(full * ratio) };
+            return new Reward { Gold = Mathf.FloorToInt(full * ratio) + (cleared ? ClearBonus(chapter) : 0) };
         }
+
+        /// <summary>
+        /// 던전 완주 보너스 (2026-10-29 전체 기획 검토 9번): 순찰 골드를 줄인 만큼(하루 수입의 40% → 25%) 직접 끝낸 판으로 옮긴다.
+        /// 30분 유저(2구간 · 하루 약 1.6판) 기준 하루 총수입은 그대로 (Economy 4-2)
+        /// </summary>
+        public static int ClearBonus(int chapter) => 900 + Math.Max(1, chapter) * 100;
 
         public static Reward BossFirstClear(string heroId)
         {

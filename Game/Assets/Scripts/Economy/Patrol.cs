@@ -16,7 +16,8 @@ namespace HistoryHeroes.Economy
         public static bool Unlocked(SaveData s) => s.unlockedChapter >= 2;
 
         /// <summary>깬 구간 = 열린 구간 - 1 (보스를 깨면 다음 구간이 열린다)</summary>
-        public static int GoldPerHour(SaveData s) => 150 + 20 * Mathf.Clamp(s.unlockedChapter - 1, 0, 5);
+        // 2026-10-29 전체 기획 검토 9번: 하루 수입의 40% → 25% (×0.6). 줄인 몫은 던전 완주 보너스로 (RunRewards.ClearBonus)
+        public static int GoldPerHour(SaveData s) => 90 + 12 * Mathf.Clamp(s.unlockedChapter - 1, 0, 5);
 
         /// <summary>열렸으면 시계를 건다. 시계가 거꾸로 갔으면 지금으로 (그 구간은 0)</summary>
         public static bool Ensure(SaveData s, long now)

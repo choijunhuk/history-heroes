@@ -192,11 +192,11 @@ namespace HistoryHeroes.Tests
             var s = new SaveData { unlockedChapter = 2 }; // 1구간 보스 격파
             const long t0 = 1_800_000_000;
             Assert.IsTrue(Patrol.Ensure(s, t0));
-            Assert.AreEqual(170, Patrol.GoldPerHour(s));
-            Assert.AreEqual(170, Patrol.Pending(s, t0 + 3600));
-            Assert.AreEqual(170 * 12, Patrol.Pending(s, t0 + 3600 * 30), "12시간까지만");
+            Assert.AreEqual(102, Patrol.GoldPerHour(s)); // 90 + 12 (2026-10-29: 하루 수입의 25%)
+            Assert.AreEqual(102, Patrol.Pending(s, t0 + 3600));
+            Assert.AreEqual(102 * 12, Patrol.Pending(s, t0 + 3600 * 30), "12시간까지만");
             Assert.IsTrue(Patrol.Full(s, t0 + 3600 * 12));
-            Assert.AreEqual(170 * 12, Patrol.Claim(s, t0 + 3600 * 30));
+            Assert.AreEqual(102 * 12, Patrol.Claim(s, t0 + 3600 * 30));
             Assert.AreEqual(0, Patrol.Pending(s, t0 + 3600 * 30), "받으면 다시 0부터");
         }
 
@@ -209,10 +209,10 @@ namespace HistoryHeroes.Tests
 
             s.unlockedChapter = 6; // 5구간까지 깸
             Patrol.Ensure(s, 100_000);
-            Assert.AreEqual(250, Patrol.GoldPerHour(s));
+            Assert.AreEqual(150, Patrol.GoldPerHour(s));
             Assert.IsTrue(Patrol.Ensure(s, 50_000), "시계를 되돌리면 그 자리부터 다시");
             Assert.AreEqual(0, Patrol.Pending(s, 50_000));
-            Assert.AreEqual(250, Patrol.Pending(s, 53_600));
+            Assert.AreEqual(150, Patrol.Pending(s, 53_600)); // 1시간 = 6구간 시간당 150
         }
 
         // ---------------------------------------------------------------- 로컬 알림 (LiveOps 9장)
