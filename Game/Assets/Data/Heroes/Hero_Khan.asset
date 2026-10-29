@@ -80,6 +80,9 @@ MonoBehaviour:
   thunderRadius: 0
   thunderCoefficient: 0
   godShardUnlock: 0
+  guardianAttacks: 0
+  guardianCoefficient: 0
+  guardianNearbyRadius: 0
   star3FirstShotBonus: 0.75
   star5FirstShotBonus: 1
   star5FirstShotPierce: 1
@@ -105,6 +108,8 @@ MonoBehaviour:
   star5ReclaimAttackBonus: -1
   star3ThunderRadius: -1
   star5ThunderCoefficient: -1
+  star3GuardianCoefficient: -1
+  star5GuardianTargets: -1
   exclusiveActive: {fileID: 11400000, guid: b74edf6d9a1c89047b621fbec9c88907, type: 2}
   unlockAfterBossChapter: 0
   gemsOnly: 0

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c31a02d6e300bb54b80ef1a7d7f3d480, type: 3}
+  m_Name: Fusion_cleopatra_library
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.FusionRecipe
+  id: cleopatra_library
+  type: 0
+  materialA: {fileID: 11400000, guid: d5255910b9ac44ae69a2c7b1f05a4026, type: 2}
+  materialB: {fileID: 11400000, guid: 6f3ef37bf5250b343b52c3f5e0def787, type: 2}
+  requiredLevelA: 5
+  requiredLevelB: 1
+  result: {fileID: 11400000, guid: df1eec9ee98064a85aaabdaa03d30a76, type: 2}
+  heroOnlyId: cleopatra

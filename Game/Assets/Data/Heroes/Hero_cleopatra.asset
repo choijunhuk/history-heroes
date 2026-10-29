@@ -1,0 +1,121 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ebc6196135fc4408657c8ea9d0378e, type: 3}
+  m_Name: Hero_cleopatra
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Heroes.HeroData
+  id: cleopatra
+  displayName: "\uD074\uB808\uC624\uD30C\uD2B8\uB77C"
+  heroClass: 4
+  playStyle: "\uBA48\uCDB0 \uC218\uD638\uC0C1\uC744 \uC900\uBE44\uD558\uACE0 \uB2E4\uC74C
+    \uACF5\uACA9\uC744 \uD568\uAED8 \uC3D8\uB294 \uC18C\uD658\uC0AC"
+  maxHp: 900
+  attack: 80
+  attackSpeed: 1
+  moveSpeed: 5
+  range: 5
+  critRate: 0.05
+  critDamage: 1.5
+  attackKind: 0
+  projectilePrefab: {fileID: 3511007186945668359, guid: c9d0a5cdfc9e949368e9295deb6131f8, type: 3}
+  projectileSpeed: 15
+  meleeArcDegrees: 120
+  meleeWaveCoefficient: 0.4
+  signatureName: "\uAE30\uB85D\uC758 \uC218\uD638\uC0C1"
+  signatureDescription: "\uC815\uC9C0 \uAE30\uBCF8 \uACF5\uACA9 3\uD68C\uB85C \uC218\uD638\uC0C1\uC744
+    \uC900\uBE44\uD55C\uB2E4. \uB2E4\uC74C \uC815\uC9C0 \uACF5\uACA9\uC5D0 \uAC19\uC740
+    \uC801\uC744 \uD55C \uBC88 \uB354 \uACF5\uACA9 (60%). \uC774\uB3D9\uD558\uBA74
+    \uC900\uBE44 \uCDE8\uC18C"
+  firstShotDelay: 0.2
+  firstShotBonus: 0
+  damageReduction: 0
+  lowHpThreshold: 0.5
+  lowHpAttackBonus: 0
+  cannonEvery: 0
+  cannonCoefficient: 0.8
+  cannonRadius: 1.2
+  knockback: 0
+  chainBounces: 0
+  chainRadius: 3
+  chainFalloff: 0.3
+  stopGuard: 0
+  stopGuardStore: 0.5
+  stopGuardCap: 2
+  stopGuardDecay: 2
+  chargeShot: 0
+  chargeTimes: {x: 0.4, y: 0.9, z: 1.5}
+  chargeMidMultiplier: 1.4
+  chargeFullMultiplier: 2.5
+  fanShots: 1
+  fanSpread: 20
+  fanCoefficient: 1
+  windRadius: 0
+  windSlow: 0.4
+  workbench: 0
+  partEvery: 1
+  partsPerMachine: 3
+  maxMachines: 2
+  machineLife: 20
+  machineDamage: 0.35
+  machineFireRate: 1
+  helperModel: {fileID: 8503033573803343841, guid: a07895faa7f3a2d4a9d7eaa3f554f4a7, type: 3}
+  bannerDeploySeconds: 0
+  bannerRadius: 0
+  bannerDuration: 0
+  bannerAttackBonus: 0
+  bannerDamageReduction: 0
+  observationSeconds: 0
+  observationAttackBonus: 0
+  reclaimStopSeconds: 0
+  reclaimCooldown: 0
+  reclaimKnockback: 0
+  reclaimBossScale: 0
+  thunderEvery: 0
+  thunderRadius: 0
+  thunderCoefficient: 0
+  godShardUnlock: 0
+  guardianAttacks: 3
+  guardianCoefficient: 0.6
+  guardianNearbyRadius: 2
+  star3FirstShotBonus: -1
+  star5FirstShotBonus: -1
+  star5FirstShotPierce: 0
+  star3DamageReduction: -1
+  star5LowHpAttackBonus: -1
+  star3CannonRadiusScale: -1
+  star5CannonEvery: -1
+  star3ExtraBounces: 0
+  star5NoFalloff: 0
+  star3StopGuard: -1
+  star5StopGuardCap: -1
+  star3ChargeFull: -1
+  star5ChargeFullTime: -1
+  star3MachineDamage: -1
+  star5MaxMachines: -1
+  star3WindRadius: -1
+  star5WindSlow: -1
+  star3BannerDuration: -1
+  star5BannerAttackBonus: -1
+  star3ObservationAttackBonus: -1
+  star5ObservationAttackBonus: -1
+  star3ReclaimKnockback: -1
+  star5ReclaimAttackBonus: -1
+  star3ThunderRadius: -1
+  star5ThunderCoefficient: -1
+  star3GuardianCoefficient: 0.9
+  star5GuardianTargets: 2
+  exclusiveActive: {fileID: 11400000, guid: d5255910b9ac44ae69a2c7b1f05a4026, type: 2}
+  unlockAfterBossChapter: 0
+  gemsOnly: 1
+  unlockGems: 2000
+  color: {r: 0.25, g: 0.72, b: 0.68, a: 1}
+  model3D: {fileID: 7328389917774077436, guid: 2e0cd004055994e9a89c80b07f76a5c0, type: 3}
+  modelHeight: 2.1
