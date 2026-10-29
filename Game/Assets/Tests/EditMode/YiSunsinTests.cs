@@ -100,7 +100,7 @@ namespace HistoryHeroes.Tests
         public void GemsOnlyHeroes_StayLockedUntilBought()
         {
             var roster = UnityEditor.AssetDatabase.LoadAssetAtPath<HeroRoster>("Assets/Data/Heroes/HeroRoster.asset");
-            foreach (string id in new[] { "davinci", "zhuge" })
+            foreach (string id in new[] { "davinci", "zhuge", "jeanne" })
             {
                 HeroData h = roster.Find(id);
                 Assert.AreEqual(id, h.id);
@@ -122,13 +122,15 @@ namespace HistoryHeroes.Tests
 
             // 던전 10판 기념: 보석 영웅 가운데 한 명만 무료 (전체 검토 8번)
             var runs = new SaveData { dungeonRuns = 9 };
-            HeroData davinci = roster.Find("davinci"), zhuge = roster.Find("zhuge");
+            HeroData davinci = roster.Find("davinci"), zhuge = roster.Find("zhuge"), jeanne = roster.Find("jeanne");
             Assert.IsFalse(HeroUnlock.CanClaimFree(runs, davinci), "9판은 아직");
             runs.dungeonRuns = 10;
             Assert.IsFalse(HeroUnlock.CanClaimFree(runs, roster.Find("guan")), "보석 영웅만");
+            Assert.IsTrue(HeroUnlock.CanClaimFree(runs, jeanne), "잔 다르크도 무료 선택 후보");
             Assert.IsTrue(HeroUnlock.TryClaimFree(runs, zhuge));
             Assert.IsTrue(HeroUnlock.IsUnlocked(runs, zhuge));
             Assert.IsFalse(HeroUnlock.CanClaimFree(runs, davinci), "한 명만");
+            Assert.IsFalse(HeroUnlock.CanClaimFree(runs, jeanne), "이미 다른 보석 영웅을 골랐다");
             StringAssert.Contains("(또는 보석", HeroUnlock.LockText(roster.Find("guan")));
         }
 

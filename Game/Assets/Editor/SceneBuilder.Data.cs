@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -176,6 +176,23 @@ namespace HistoryHeroes.EditorTools
             d.Zhuge.unlockGems = 2000;
             d.Zhuge.star3WindRadius = 4f;
             d.Zhuge.star5WindSlow = 0.55f;
+
+            // ----- 잔 다르크 (Heroes 6-5): 멈춰 세운 깃발 안에서 검을 휘두르는 수호 전사 -----
+            d.Jeanne = Hero("jeanne", "잔 다르크", HeroClass.Warrior, BasicAttackKind.MeleeArc, 1200f, 105f, 0.9f, 5f, 2.2f, new Color(0.65f, 0.78f, 1f));
+            d.Jeanne.playStyle = "깃발 곁에서 검을 휘두르다가 피하고, 돌아와 다시 멈추는 수호 전사";
+            d.Jeanne.signatureName = "성녀의 깃발";
+            d.Jeanne.signatureDescription = "1초 멈추면 깃발을 6초 세운다. 깃발 안에 멈추면 기본 공격력 +20%, 받는 피해 -10%";
+            d.Jeanne.meleeArcDegrees = 120f;
+            d.Jeanne.meleeWaveCoefficient = 0.4f;
+            d.Jeanne.bannerDeploySeconds = 1f;
+            d.Jeanne.bannerRadius = 2.5f;
+            d.Jeanne.bannerDuration = 6f;
+            d.Jeanne.bannerAttackBonus = 0.2f;
+            d.Jeanne.bannerDamageReduction = 0.1f;
+            d.Jeanne.star3BannerDuration = 8f;
+            d.Jeanne.star5BannerAttackBonus = 0.3f;
+            d.Jeanne.gemsOnly = true;
+            d.Jeanne.unlockGems = 2000;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -423,6 +440,13 @@ namespace HistoryHeroes.EditorTools
             d.ZhugeGate.heroOnlyId = "zhuge";
             d.Pool.Add(d.ZhugeGate);
             d.Zhuge.exclusiveActive = d.ZhugeGate;
+            d.JeanneWave = Active("jeanne_wave", "깃발의 파동", Rarity.Rare, SkillTag.Melee | SkillTag.Defense, 5, 3,
+                "8초마다 깃발 자리에서 빛의 파동\n(범위 피해 120%, 밀어냄)\n레벨마다 피해 +20%",
+                cooldown: 8f, damage: 1.2f, damagePerLevel: 0.2f, count: 1, countPerLevel: 0, radius: 3f);
+            d.JeanneWave.icon = Icon("sword");
+            d.JeanneWave.heroOnlyId = "jeanne";
+            d.Pool.Add(d.JeanneWave);
+            d.Jeanne.exclusiveActive = d.JeanneWave;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -461,7 +485,12 @@ namespace HistoryHeroes.EditorTools
                 "팔진도 안에 회오리 3개 (5초)\n적을 가운데로 모으고 초당 40%\nLv2 +25%, Lv3 +50%",
                 cooldown: 10f, damage: 1f, damagePerLevel: 0.25f, count: 8, countPerLevel: 0, radius: 2.6f, duration: 5f, saveCostFirst: 18);
             d.ZhugeSevenStar.heroOnlyId = "zhuge";
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar }) UnityEditor.EditorUtility.SetDirty(s);
+            d.JeanneOrleans = Active("jeanne_orleans", "오를레앙의 빛", Rarity.Rare, SkillTag.Melee | SkillTag.Defense, 3, 4,
+                "8초마다 깃발 자리에서 빛의 파동 3번\n(각 90%, 0.4초 간격, 밀어냄)\n레벨마다 피해 +15%",
+                cooldown: 8f, damage: 0.9f, damagePerLevel: 0.15f, count: 3, countPerLevel: 0, radius: 3.5f, saveCostFirst: 12);
+            d.JeanneOrleans.icon = Icon("shield");
+            d.JeanneOrleans.heroOnlyId = "jeanne";
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -476,9 +505,10 @@ namespace HistoryHeroes.EditorTools
             AddHeroRecipe(d, "zhuge_sevenstar", FusionType.Merge, d.ZhugeGate, 3, d.Whirlwind, 3, d.ZhugeSevenStar, "zhuge");
             AddHeroRecipe(d, "dav_spiral", FusionType.Merge, d.DavTank, 3, d.Whirlwind, 3, d.DavSpiral, "davinci");
             AddHeroRecipe(d, "ysg_shingung", FusionType.Evolution, d.YsgPyeonjeon, 5, (PassiveSkillData)d.Pool.Find(s => s.id == "crit_dmg"), 1, d.YsgShingung, "yiseonggye");
+            AddHeroRecipe(d, "jeanne_orleans", FusionType.Evolution, d.JeanneWave, 5, d.DefUp, 1, d.JeanneOrleans, "jeanne");
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -487,7 +517,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -533,6 +563,7 @@ namespace HistoryHeroes.EditorTools
             // 새 영웅 전용 (전체 검토 12번: 역할 표에서 빠져 기록 추천에 안 들어가던 것)
             ["yi_turtle"] = SkillRole.Area, ["yi_hakikjin"] = SkillRole.Area, ["dav_tank"] = SkillRole.Area, ["dav_spiral"] = SkillRole.Area,
             ["zhuge_sevenstar"] = SkillRole.Area,
+            ["jeanne_wave"] = SkillRole.Area, ["jeanne_orleans"] = SkillRole.Area,
             ["ysg_pyeonjeon"] = SkillRole.Single, ["ysg_shingung"] = SkillRole.Single,
             ["zhuge_gate"] = SkillRole.Defense,
             // 방어: 버티기·막기
@@ -691,6 +722,9 @@ namespace HistoryHeroes.EditorTools
             d.Zhuge.projectilePrefab = p.Gust;
             d.ZhugeGate.behaviourPrefab = p.ZhugeGate;
             d.ZhugeSevenStar.behaviourPrefab = p.ZhugeSevenStar;
+            d.Jeanne.projectilePrefab = p.SwordWave;
+            d.JeanneWave.behaviourPrefab = p.JeanneWave;
+            d.JeanneOrleans.behaviourPrefab = p.JeanneOrleans;
             d.KhanVolley.behaviourPrefab = p.KhanVolley;
             d.KhanStorm.behaviourPrefab = p.KhanStorm;
             d.GuanSpin.behaviourPrefab = p.GuanSpin;

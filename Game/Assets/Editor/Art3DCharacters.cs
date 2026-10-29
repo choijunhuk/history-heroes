@@ -9,7 +9,7 @@ namespace HistoryHeroes.EditorTools
 {
     /// <summary>
     /// 3D 캐릭터 조립 (Art3D-Plan 2·5번). 메뉴 **History Heroes → 3D 캐릭터 다시 만들기** = <see cref="BuildAll"/>.
-    /// 무료판 옷(Ranger · Peasant)에는 머리가 없다 → 무료 기본 몸(Superhero_Male_FullBody)에서 **머리·목만** 떼어(뼈 무게로 고른 삼각형)
+    /// 무료판 옷(Ranger · Peasant)에는 머리가 없다 → 기본 몸(Superhero_Male/Female_FullBody)에서 **머리·목만** 떼어(뼈 무게로 고른 삼각형)
     /// 옷 모델의 뼈에 이름으로 붙인다 (모두 같은 65뼈 Quaternius 휴머노이드). 눈 · 눈썹 · 머리카락 · 수염도 같은 방법으로 붙인다.
     /// 괴물(Imp · Puglin)은 제 몸 그대로 재질만 바꾼다.
     /// - 다시 만들어도 에셋을 지우지 않고 **그 자리에서 고친다** (GUID가 그대로라 프리팹·컨트롤러 연결이 안 끊긴다 — Codex 3D 리뷰 10번)
@@ -21,6 +21,7 @@ namespace HistoryHeroes.EditorTools
         private const string Models = Art3DAssets.Models;
         private const string Meshes = Art3DAssets.Root + "/Meshes";
         public const string HeadMesh = Meshes + "/Head_Male.asset";
+        public const string FemaleHeadMesh = Meshes + "/Head_Female.asset";
         private const string Materials = Art3DAssets.Root + "/Materials";
         public const string Characters = Art3DAssets.Root + "/Characters";
         public const string EnemyCharacters = Characters + "/Enemies";
@@ -33,10 +34,10 @@ namespace HistoryHeroes.EditorTools
         [MenuItem("History Heroes/3D 캐릭터 다시 만들기")]
         private static void BuildAllMenu() => Debug.Log(BuildAll());
 
-        /// <summary>머리 메시 · 공용 동작 컨트롤러 · 영웅 4명 · 적 17종</summary>
+        /// <summary>남녀 머리 메시 · 공용 동작 컨트롤러 · 영웅 · 적</summary>
         public static string BuildAll()
         {
-            var log = new List<string> { ExtractHead() };
+            var log = new List<string> { ExtractHead(), ExtractHead("Superhero_Female_FullBody", "Superhero_Female", FemaleHeadMesh) };
             Art3DProps.Import();
             AnimatorController baseController = BaseController();
             foreach (Look look in Heroes) log.Add(Compose(look, Override(look.name, baseController, look.attack), Characters));
@@ -52,17 +53,17 @@ namespace HistoryHeroes.EditorTools
 
         // ── 머리 떼기 ──
 
-        public static string ExtractHead()
+        public static string ExtractHead(string sourceFbx = "Superhero_Male_FullBody", string rendererName = "SuperHero_Male", string outputPath = HeadMesh)
         {
-            var source = AssetDatabase.LoadAssetAtPath<GameObject>($"{Models}/Superhero_Male_FullBody.fbx");
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>($"{Models}/{sourceFbx}.fbx");
             if (source == null) return "기본 몸 없음";
             SkinnedMeshRenderer body = null;
             foreach (var r in source.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
-                if (r.name == "SuperHero_Male") body = r;
+                if (r.name == rendererName) body = r;
             }
 
-            if (body == null) return "SuperHero_Male 메시 없음";
+            if (body == null) return $"{rendererName} 메시 없음";
             Mesh mesh = body.sharedMesh;
 
             // 머리 뼈와 그 자손
@@ -108,6 +109,8 @@ namespace HistoryHeroes.EditorTools
                 }
             }
 
+            if (keep.Count == 0) return $"{rendererName}: 머리 삼각형 없음";
+
             var order = new int[remap.Count];
             foreach (KeyValuePair<int, int> pair in remap) order[pair.Value] = pair.Key;
             Vector3[] pos = mesh.vertices, nor = mesh.normals;
@@ -115,11 +118,11 @@ namespace HistoryHeroes.EditorTools
             Vector2[] uv = mesh.uv;
 
             Directory.CreateDirectory(Meshes);
-            var head = AssetDatabase.LoadAssetAtPath<Mesh>(HeadMesh);
+            var head = AssetDatabase.LoadAssetAtPath<Mesh>(outputPath);
             bool created = head == null;
             if (created) head = new Mesh();
             head.Clear();
-            head.name = "Head_Male";
+            head.name = Path.GetFileNameWithoutExtension(outputPath);
             head.vertices = Pick(pos, order);
             if (nor.Length > 0) head.normals = Pick(nor, order);
             if (tan.Length > 0) head.tangents = Pick(tan, order);
@@ -128,7 +131,7 @@ namespace HistoryHeroes.EditorTools
             head.bindposes = mesh.bindposes;
             head.triangles = keep.ToArray();
             head.RecalculateBounds();
-            if (created) AssetDatabase.CreateAsset(head, HeadMesh);
+            if (created) AssetDatabase.CreateAsset(head, outputPath);
             else EditorUtility.SetDirty(head);
             AssetDatabase.SaveAssets();
             return $"머리 메시: 꼭짓점 {head.vertexCount} / {mesh.vertexCount}, 삼각형 {keep.Count / 3}, 열린 가장자리 {OpenEdges(keep)}";
@@ -169,7 +172,9 @@ namespace HistoryHeroes.EditorTools
             public string emissive;
             public Color tint = Color.white;
             public bool head = true;
+            public bool female;
             public string[] hide = new string[0];
+            public string[] metalParts = new string[0];
             public string[] hair = new string[0];
             public string hairTex = "T_Hair_1";
             public Color hairColor = new Color(0.1f, 0.075f, 0.06f); // 머리카락 텍스처는 회색 → 색을 곱한다
@@ -207,6 +212,8 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "Davinci", body = "Male_Peasant", bodyTex = "T_Peasant_BaseColor", tint = new Color(0.95f, 0.82f, 0.68f), hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.62f, 0.6f, 0.57f), attack = "Pistol_Shoot", props = new[] { "Davinci_Beret", "Davinci_Scroll", "Davinci_Crossbow" } },
             // 제갈량: 흰·남색 학창의 (T_Peasant_2를 밝기 따라 남색→흰색으로 다시 칠한 그림) + 긴 머리·수염 + 윤건 · 오른손 깃털 부채 (주문 쏘기)
             new Look { name = "Zhuge", body = "Male_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.05f, 0.045f, 0.045f), props = new[] { "Zhuge_Fan", "Zhuge_Hat" } },
+            // 잔 다르크: 짧은 머리, 후드 없는 레인저와 어깨 갑옷. 남색·은빛 옷으로 구별한다.
+            new Look { name = "Jeanne", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = Color.white, hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, hair = new[] { "Hair_BuzzedFemale", "Eyebrows_Female" }, hairColor = new Color(0.34f, 0.22f, 0.14f), attack = "Sword_Regular_A" },
         };
 
         public sealed class EnemyLook
@@ -322,7 +329,7 @@ namespace HistoryHeroes.EditorTools
                 AssetDatabase.CreateAsset(mat, path);
             }
 
-            mat.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{Textures}/{baseTex}.png"));
+            mat.SetTexture("_BaseMap", baseTex != null ? AssetDatabase.LoadAssetAtPath<Texture2D>($"{Textures}/{baseTex}.png") : null);
             mat.SetColor("_BaseColor", tint);
             Texture2D normal = normalTex != null ? AssetDatabase.LoadAssetAtPath<Texture2D>($"{Textures}/{normalTex}.png") : null;
             mat.SetTexture("_BumpMap", normal);
@@ -478,7 +485,17 @@ namespace HistoryHeroes.EditorTools
 
             string normal = look.normalTex ?? (look.body.Contains("Ranger") ? "T_Ranger_Normal" : "T_Peasant_Normal");
             Material outfit = Lit(look.name + "_Outfit", look.bodyTex, normal, look.tint, emissive: look.emissive, alpha: look.Alpha);
-            Material arms = Lit("Skin_Regular" + look.MatSuffix, "T_Regular_Male_Dark_BaseColor", "T_Regular_Male_Normal", look.ghost > 0f ? look.tint : Color.white, alpha: look.Alpha);
+            Material arms = look.female
+                ? Lit("Skin_Regular_Female" + look.MatSuffix, "T_Superhero_Female_Light_BaseColor", "T_Superhero_Female_Normal", look.ghost > 0f ? look.tint : Color.white, alpha: look.Alpha)
+                : Lit("Skin_Regular" + look.MatSuffix, "T_Regular_Male_Dark_BaseColor", "T_Regular_Male_Normal", look.ghost > 0f ? look.tint : Color.white, alpha: look.Alpha);
+            Material metal = null;
+            if (look.metalParts.Length > 0)
+            {
+                metal = Lit(look.name + "_Steel", null, null, new Color(0.78f, 0.83f, 0.91f));
+                metal.SetFloat("_Metallic", 0.75f);
+                metal.SetFloat("_Smoothness", 0.6f);
+                EditorUtility.SetDirty(metal);
+            }
 
             foreach (var r in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
@@ -489,17 +506,26 @@ namespace HistoryHeroes.EditorTools
                 }
 
                 Material[] slots = r.sharedMaterials;
-                for (int i = 0; i < slots.Length; i++) slots[i] = !look.Monster && slots[i] != null && slots[i].name.Contains("Regular_Male") ? arms : outfit;
+                bool steelPart = metal != null && System.Array.IndexOf(look.metalParts, r.name) >= 0;
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    if (steelPart) slots[i] = metal;
+                    else slots[i] = !look.Monster && slots[i] != null && (slots[i].name.Contains("Regular_Male") || look.female && slots[i].name.Contains("Regular_Female")) ? arms : outfit;
+                }
                 r.sharedMaterials = slots;
             }
 
             if (look.head && !look.Monster)
             {
                 Color skin = look.ghost > 0f ? look.tint : Color.white;
-                Material headSkin = Lit("Skin_Head" + look.MatSuffix, "T_Superhero_Male_Dark", "T_Superhero_Male_Normal", skin, alpha: look.Alpha);
+                Material headSkin = look.female
+                    ? Lit("Skin_Head_Female" + look.MatSuffix, "T_Superhero_Female_Light_BaseColor", "T_Superhero_Female_Normal", skin, alpha: look.Alpha)
+                    : Lit("Skin_Head" + look.MatSuffix, "T_Superhero_Male_Dark", "T_Superhero_Male_Normal", skin, alpha: look.Alpha);
                 Material eyes = Lit("Eyes" + look.MatSuffix, "T_Eye_Brown", null, skin, alpha: look.Alpha);
-                notes.Add(Attach(go, "Superhero_Male_FullBody", "SuperHero_Male", AssetDatabase.LoadAssetAtPath<Mesh>(HeadMesh), headSkin));
-                notes.Add(Attach(go, "Superhero_Male_FullBody", "Eyes", null, eyes));
+                string headSource = look.female ? "Superhero_Female_FullBody" : "Superhero_Male_FullBody";
+                string headRenderer = look.female ? "Superhero_Female" : "SuperHero_Male";
+                notes.Add(Attach(go, headSource, headRenderer, AssetDatabase.LoadAssetAtPath<Mesh>(look.female ? FemaleHeadMesh : HeadMesh), headSkin));
+                notes.Add(Attach(go, headSource, "Eyes", null, eyes));
             }
 
             if (look.hair.Length > 0)
