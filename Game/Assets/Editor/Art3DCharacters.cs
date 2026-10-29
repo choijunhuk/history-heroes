@@ -231,6 +231,12 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "Susanoo", body = "Male_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = new Color(0.48f, 0.88f, 0.84f), hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_Long", "Eyebrows" }, hairColor = new Color(0.08f, 0.12f, 0.17f), attack = "Sword_Regular_A", props = new[] { "Susanoo_Sword" } },
             // 투구는 여자 몸에 맞춘 소품이다. 방패는 소품별 크기 조절을 지원하기 전까지 생략한다.
             new Look { name = "Athena", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = new Color(0.95f, 0.91f, 0.78f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.67f, 0.45f, 0.24f), hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.18f, 0.12f, 0.08f), attack = "Sword_Regular_A", props = new[] { "Athena_Spear", "Athena_Helmet" } },
+            // 토모에는 군기문학의 궁수 모습에서 영감을 받은 각색이다. 말이나 장병기는 쓰지 않는다.
+            new Look { name = "Tomoe", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.86f, 0.47f, 0.4f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.48f, 0.3f, 0.2f), hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.04f, 0.035f, 0.04f), props = new[] { "Yi_Bow", "Khan_Quiver", "Tomoe_Sode_L", "Tomoe_Sode_R" } },
+            // 무측천의 관식은 별도 소품을 쓰고, 긴 황제 예복은 만들지 않는다.
+            new Look { name = "Wuzetian", female = true, body = "Female_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.54f, 0.2f, 0.22f), goldParts = new[] { "Female_Peasant_Body" }, hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.035f, 0.03f, 0.035f), props = new[] { "WuZetian_Crown", "Davinci_Scroll" } },
+            // 퀴리의 병은 게임 속 상징 소품이다. 빛나는 물질 표현은 쓰지 않는다.
+            new Look { name = "Curie", female = true, body = "Female_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.28f, 0.35f, 0.55f), hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.09f, 0.08f, 0.085f), props = new[] { "Curie_Flask" } },
         };
 
         public sealed class EnemyLook

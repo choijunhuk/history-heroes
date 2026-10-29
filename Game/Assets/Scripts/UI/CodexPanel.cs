@@ -133,6 +133,15 @@ namespace HistoryHeroes.UI
             sb.AppendLine("<b>클레오파트라 · 프톨레마이오스 왕조</b>  <color=#9FD8FF>사실 · 후대 기록 · 각색</color>");
             sb.AppendLine("이집트의 여왕이었습니다. 언어 능력에 관한 설명은 후대 저술의 기록이며, 기록의 수호상·파로스의 빛·알렉산드리아의 서고는 게임 각색입니다.\n");
 
+            sb.AppendLine("<b>토모에 고젠 · 『헤이케 이야기』</b>  <color=#9FD8FF>사실 · 전승 · 각색</color>");
+            sb.AppendLine("겐페이 전쟁을 다룬 군기문학에 전하는 인물입니다. 실존과 전투 일화는 확정하지 않습니다. 교차 사격·겹시위·교차하는 바람과 차림새는 게임 각색입니다.\n");
+
+            sb.AppendLine("<b>무측천 · 중국의 주 왕조</b>  <color=#9FD8FF>사실 · 후대 기록 · 각색</color>");
+            sb.AppendLine("690년부터 705년까지 황제로 재위했습니다. 후대의 평가와 일화를 사실로 단정하지 않습니다. 질서의 인장·기록의 칙령·정연한 서책은 게임 각색입니다.\n");
+
+            sb.AppendLine("<b>마리 퀴리 · 관측과 연구</b>  <color=#9FD8FF>사실 · 전승 구분 · 각색</color>");
+            sb.AppendLine("1903년 물리학상과 1911년 화학상 수상자입니다. 관측 표식·분광의 빛·관측의 스펙트럼은 게임 창작이며, 방사선을 안전하거나 치유하는 빛으로 나타내지 않습니다.\n");
+
             // 스킬별 조합 수 (조사 A3): 미발견 조합은 결과·짝 대신 개수만
             sb.AppendLine("<b>스킬별 조합</b>");
             foreach (SkillData s in database.skills)

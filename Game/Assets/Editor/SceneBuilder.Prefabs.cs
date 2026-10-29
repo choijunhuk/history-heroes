@@ -20,7 +20,7 @@ namespace HistoryHeroes.EditorTools
             public EnemyBase WraithLord, SteelColossus, ShadowTwins, OblivionKing;
             public EnemyBase RiftWarden;
             public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust, Starlight, SandOrb, ZeusLightning, WindWave;
-            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate, WindSlash, StormPath, OwlEye, GuardianGaze;
+            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate, WindSlash, StormPath, OwlEye, GuardianGaze, TomoeVolley, TomoeCrosswind, WuzetianDecree, WuzetianOrder, CuriePrism, CurieSpectrum;
             public Projectile IceShardProjectile;
             public ActiveSkillBehaviour IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillBehaviour FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -134,6 +134,16 @@ namespace HistoryHeroes.EditorTools
             p.CleopatraPharos = Behaviour<PharosBehaviour>("Skill_CleopatraPharos", props => props.Ref("stoneModel", stone));
             p.CleopatraLibrary = Behaviour<PharosBehaviour>("Skill_CleopatraLibrary", props => props.Ref("stoneModel", stone)
                 .Color("lightColor", new Color(0.95f, 0.85f, 0.5f, 0.7f)));
+            p.TomoeVolley = Behaviour<VolleyBehaviour>("Skill_TomoeVolley", props => props.Float("fanDegrees", 26f).Float("arrowSpeed", 16f));
+            p.TomoeCrosswind = Behaviour<VolleyBehaviour>("Skill_TomoeCrosswind", props => props.Float("fanDegrees", 40f).Float("arrowSpeed", 16f).Int("bursts", 2));
+            p.WuzetianDecree = Behaviour<ConstellationBehaviour>("Skill_WuzetianDecree", props => props.Float("starSpacing", 0f)
+                .Color("starColor", new Color(0.75f, 0.28f, 0.21f, 0.35f)).Color("lineColor", new Color(0.95f, 0.74f, 0.35f, 0.5f)));
+            p.WuzetianOrder = Behaviour<ConstellationBehaviour>("Skill_WuzetianOrder", props => props.Float("starSpacing", 0f)
+                .Color("starColor", new Color(0.8f, 0.38f, 0.23f, 0.4f)).Color("lineColor", new Color(0.96f, 0.78f, 0.4f, 0.55f)));
+            p.CuriePrism = Behaviour<ConstellationBehaviour>("Skill_CuriePrism", props => props.Float("starSpacing", 1f)
+                .Color("starColor", new Color(0.73f, 0.82f, 0.94f, 0.34f)).Color("lineColor", new Color(0.7f, 0.8f, 0.95f, 0.5f)));
+            p.CurieSpectrum = Behaviour<ConstellationBehaviour>("Skill_CurieSpectrum", props => props.Float("starSpacing", 1f)
+                .Color("starColor", new Color(0.82f, 0.87f, 0.97f, 0.4f)).Color("lineColor", new Color(0.78f, 0.87f, 0.98f, 0.55f)));
             p.JeanneWave = Behaviour<BannerWaveBehaviour>("Skill_JeanneWave", null);
             p.JeanneOrleans = Behaviour<BannerWaveBehaviour>("Skill_JeanneOrleans", null);
             p.SeondeokStarlight = Behaviour<ConstellationBehaviour>("Skill_SeondeokStarlight", null);

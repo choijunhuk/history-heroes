@@ -52,22 +52,22 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void MissionOrderContainsSixteenUniqueHeroesWithAthenaLast()
+        public void MissionOrderContainsNineteenUniqueHeroesWithCurieLast()
         {
             MissionTable missions = Create<MissionTable>();
-            string[] ids = { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena" };
+            string[] ids = { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena", "tomoe", "wuzetian", "curie" };
             CollectionAssert.AreEqual(ids, missions.heroOrder);
-            Assert.AreEqual(16, new HashSet<string>(missions.heroOrder).Count);
+            Assert.AreEqual(19, new HashSet<string>(missions.heroOrder).Count);
         }
 
         [Test]
-        public void CharacterDefinitionsContainSixteenHeroesAndFiveWomen()
+        public void CharacterDefinitionsContainNineteenHeroesAndEightWomen()
         {
             CollectionAssert.AreEqual(new[]
             {
-                "Khan", "Guan", "Napoleon", "Tesla", "YiSunsin", "YiSeonggye", "Davinci", "Zhuge", "Jeanne", "Seondeok", "Boudica", "Thor", "Cleopatra", "Anubis", "Susanoo", "Athena"
+                "Khan", "Guan", "Napoleon", "Tesla", "YiSunsin", "YiSeonggye", "Davinci", "Zhuge", "Jeanne", "Seondeok", "Boudica", "Thor", "Cleopatra", "Anubis", "Susanoo", "Athena", "Tomoe", "Wuzetian", "Curie"
             }, System.Array.ConvertAll(Art3DCharacters.Heroes, look => look.name));
-            Assert.AreEqual(5, System.Array.FindAll(Art3DCharacters.Heroes, look => look.female).Length);
+            Assert.AreEqual(8, System.Array.FindAll(Art3DCharacters.Heroes, look => look.female).Length);
         }
 
         [Test]

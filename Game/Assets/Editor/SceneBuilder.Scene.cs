@@ -330,6 +330,30 @@ namespace HistoryHeroes.EditorTools
                 {
                     ((SkillData)d.CleopatraLibrary, 1, true), (Find("active_dmg"), 1, false), (Find("aspd_up"), 4, false), (Find("atk_up"), 4, false),
                 }),
+                ("토모에 교차 사격형 (겹시위 5 · 공속 4 · 공격력 4)", new[]
+                {
+                    ((SkillData)d.TomoeVolley, 5, false), (Find("aspd_up"), 4, false), (Find("atk_up"), 4, false),
+                }),
+                ("토모에 교차하는 바람형 (교차하는 바람 · 공속 4 · 공격력 4)", new[]
+                {
+                    ((SkillData)d.TomoeCrosswind, 1, true), (Find("aspd_up"), 4, false), (Find("atk_up"), 4, false),
+                }),
+                ("무측천 질서의 인장형 (기록의 칙령 5 · 방어력 1 · 공속 4)", new[]
+                {
+                    ((SkillData)d.WuzetianDecree, 5, false), (Find("def_up"), 1, false), (Find("aspd_up"), 4, false),
+                }),
+                ("무측천 정연한 서책형 (정연한 서책 · 방어력 1 · 공속 4)", new[]
+                {
+                    ((SkillData)d.WuzetianOrder, 1, true), (Find("def_up"), 1, false), (Find("aspd_up"), 4, false),
+                }),
+                ("마리 퀴리 관측 표식형 (분광의 빛 5 · 기술 숙련 1 · 공속 4)", new[]
+                {
+                    ((SkillData)d.CuriePrism, 5, false), (Find("active_dmg"), 1, false), (Find("aspd_up"), 4, false),
+                }),
+                ("마리 퀴리 관측의 스펙트럼형 (관측의 스펙트럼 · 기술 숙련 1 · 공속 4)", new[]
+                {
+                    ((SkillData)d.CurieSpectrum, 1, true), (Find("active_dmg"), 1, false), (Find("aspd_up"), 4, false),
+                }),
             };
 
             var so = new SerializedObject(cheats);

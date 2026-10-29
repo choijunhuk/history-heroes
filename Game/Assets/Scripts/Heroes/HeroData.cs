@@ -194,6 +194,23 @@ namespace HistoryHeroes.Heroes
         [Tooltip("★5 수호상이 함께 공격할 다른 적을 찾는 반경")]
         public float guardianNearbyRadius;
 
+        [Header("토모에 고젠 교차 사격")]
+        public int crossShotEvery;
+        public float crossShotHalfAngle;
+        public float crossShotCoefficient;
+
+        [Header("무측천 질서의 인장")]
+        public int sealHits;
+        public float sealRadius;
+        public float sealRootDuration;
+        [Range(0f, 1f)] public float sealBossSlow;
+        public float sealCooldown;
+
+        [Header("마리 퀴리 관측 표식")]
+        public bool observationMark;
+        public float observationWaveRadius;
+        public float observationWaveCoefficient;
+
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
         public float star3FirstShotBonus = -1f;
@@ -261,6 +278,12 @@ namespace HistoryHeroes.Heroes
         public float star3GuardianCoefficient = -1f;
         [Tooltip("★5 수호상 한 번이 공격할 최대 적 수 (원래 표적 포함)")]
         public int star5GuardianTargets = -1;
+        public float star3CrossShotCoefficient = -1f;
+        public float star5CrossShotCoefficient = -1f;
+        public float star3SealRootDuration = -1f;
+        public float star5SealRadius = -1f;
+        public float star3ObservationWaveCoefficient = -1f;
+        public float star5ObservationWaveRadius = -1f;
 
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]
