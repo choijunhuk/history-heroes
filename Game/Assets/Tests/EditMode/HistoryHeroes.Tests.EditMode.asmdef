@@ -3,6 +3,7 @@
     "rootNamespace": "HistoryHeroes.Tests",
     "references": [
         "HistoryHeroes.Runtime",
+        "HistoryHeroes.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

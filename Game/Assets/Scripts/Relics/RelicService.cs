@@ -37,7 +37,7 @@ namespace HistoryHeroes.Relics
             public int CompletedSets;
         }
 
-        /// <summary>★ 합 × 0.1% + 완성 세트 × 0.8% (공격력·체력), 피해 감소 = 완성 세트 × 0.8%</summary>
+        /// <summary>★ 합 × 표의 별 보너스 + 완성 세트 × 표의 세트 보너스. 피해 감소는 완성 세트에서만</summary>
         public static Bonus Calculate(IReadOnlyList<RelicStar> owned, RelicTable table)
         {
             var bonus = new Bonus();

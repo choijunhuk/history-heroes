@@ -281,7 +281,11 @@ namespace HistoryHeroes.EditorTools
             Place(summary.rectTransform, Center, Center, new Vector2(0f, 760f), new Vector2(1000f, 100f));
             ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 90f), new Vector2(1000f, 1180f), 100f, 27f);
             TMP_Text detail = Label("Detail", panel, "", 26, TextAlignmentOptions.Center);
-            Place(detail.rectTransform, Center, Center, new Vector2(0f, -575f), new Vector2(1000f, 110f));
+            Place(detail.rectTransform, Center, Center, new Vector2(65f, -575f), new Vector2(850f, 110f));
+            Image detailIcon = Rect("DetailIcon", panel, Center, Center, Center, new Vector2(-440f, -575f), new Vector2(90f, 90f)).gameObject.AddComponent<Image>();
+            detailIcon.preserveAspect = true;
+            detailIcon.raycastTarget = false;
+            detailIcon.gameObject.SetActive(false);
             Button action = Btn("RelicAction", panel, "★ 올리기", new Vector2(-220f, -720f), new Vector2(400f, 110f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text actionLabel);
             actionLabel.fontSize = 28;
             Button back = Btn("Back", panel, "뒤로", new Vector2(220f, -720f), new Vector2(400f, 110f), ButtonGray, out _);
@@ -289,7 +293,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("table", relics).Ref("summaryLabel", summary).Ref("list", list)
-                    .Ref("detailLabel", detail).Ref("actionButton", action).Ref("actionLabel", actionLabel).Ref("backButton", back);
+                    .Ref("detailLabel", detail).Ref("detailIcon", detailIcon).Ref("actionButton", action).Ref("actionLabel", actionLabel).Ref("backButton", back);
             }
 
             return screen;

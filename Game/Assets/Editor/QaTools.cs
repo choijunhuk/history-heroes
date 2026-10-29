@@ -291,7 +291,7 @@ namespace HistoryHeroes.EditorTools
 
         /// <summary>
         /// 판 밖 성장 스냅샷 예시: "none" 판 밖 0 / "week" 무과금 1주 (Stats 4장 ×1.2 근처: 영웅 Lv8, 1구간 보스 희귀 무기 Lv10, 일반 갑옷 Lv5)
-        /// / "month" 1개월 (×1.4 근처) / "max" 전부 최대 (영웅 Lv30 ★5, 전설 3칸 Lv40, 수련 최대, 유물 20개 ★3)
+        /// / "month" 1개월 (×1.4 근처) / "max" 전부 최대 (영웅 Lv30 ★5, 전설 3칸 Lv40, 수련 최대, 유물 24개 ★3)
         /// </summary>
         public static Records.MetaSnapshot MetaPreset(string name)
         {
