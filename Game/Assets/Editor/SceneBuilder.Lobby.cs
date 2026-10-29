@@ -203,12 +203,13 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>패널 공통: 컴포넌트를 단 부모(늘 켜짐) + 덮는 판(root, 끄고 켬)</summary>
-        private static RectTransform Overlay(Transform parent, string name, out GameObject holder)
+        /// <param name="color">바탕색. 반투명(알파 0.95 미만)이면 무늬 배경 없이 뒤 화면이 어둡게 비친다</param>
+        private static RectTransform Overlay(Transform parent, string name, out GameObject holder, Color? color = null)
         {
             RectTransform h = Rect(name, parent, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             holder = h.gameObject;
             RectTransform panel = Rect("Panel", h, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
-            Img(panel, PanelColor, null).raycastTarget = true;
+            Img(panel, color ?? PanelColor, null).raycastTarget = true;
             return panel;
         }
 

@@ -40,22 +40,17 @@ namespace HistoryHeroes.UI
             Open();
             titleLabel.text = s.Victory ? "클리어!" : "쓰러졌다…";
 
+            // 도달 방 · 받은 것 · 기록 용량을 먼저, 자세한 숫자는 아래 작게 (전체 UI 검토: "목표 40%" 같은 개발용 글은 뺀다)
             var sb = new StringBuilder();
-            sb.AppendLine($"시간  {Clock(s.Seconds)}");
-            sb.AppendLine($"도달한 방  {s.RoomReached} / {s.RoomCount}");
-            sb.AppendLine($"처치  {s.Kills}");
-            sb.AppendLine($"레벨  {s.Level}");
-            sb.AppendLine($"기본 공격 피해 비중  {Mathf.RoundToInt(s.BasicAttackShare * 100f)}%  (목표 40% 이상)");
-            if (!string.IsNullOrEmpty(s.TopDamage)) sb.AppendLine($"<size=85%>피해  {s.TopDamage}</size>");
-            sb.AppendLine();
-            sb.AppendLine("만든 조합");
-            sb.AppendLine(s.Fusions.Count > 0 ? "  " + string.Join(", ", s.Fusions) : "  없음");
-            sb.AppendLine();
-            sb.AppendLine("스킬");
-            sb.AppendLine("  " + (s.Skills.Count > 0 ? string.Join(" · ", s.Skills) : "없음"));
-            sb.AppendLine();
-            sb.AppendLine(s.Capacity > 0 ? $"남길 수 있는 기록 용량  {s.Capacity}pt" : "너무 일찍 쓰러져서 남길 수 있는 기록이 없어요");
+            sb.AppendLine($"<size=120%>도달한 방  <b>{s.RoomReached} / {s.RoomCount}</b></size>");
             AppendRewards(sb, s.RewardLines);
+            sb.AppendLine();
+            sb.AppendLine(s.Capacity > 0 ? $"남길 수 있는 기록 용량  <b>{s.Capacity}pt</b>" : "너무 일찍 쓰러져서 남길 수 있는 기록이 없어요");
+            sb.AppendLine();
+            sb.AppendLine($"<size=85%>시간 {Clock(s.Seconds)} · 처치 {s.Kills} · 레벨 {s.Level}");
+            if (!string.IsNullOrEmpty(s.TopDamage)) sb.AppendLine($"피해  {s.TopDamage}");
+            sb.AppendLine($"만든 조합  {(s.Fusions.Count > 0 ? string.Join(", ", s.Fusions) : "없음")}");
+            sb.AppendLine($"스킬  {(s.Skills.Count > 0 ? string.Join(" · ", s.Skills) : "없음")}</size>");
             bodyLabel.text = sb.ToString();
 
             if (saveRecord != null) SetButtons("기록 남기기", saveRecord, "로비로", GameSession.ToLobby);
@@ -72,7 +67,6 @@ namespace HistoryHeroes.UI
             if (s.Victory) sb.AppendLine($"시간  {Clock(s.Seconds)}");
             string star2 = s.Star2MaxHits > 0 ? $"  (★2: {s.Star2MaxHits}번 이하)" : string.Empty;
             sb.AppendLine($"맞은 횟수  {s.HitsTaken}{star2}");
-            sb.AppendLine($"기본 공격 피해 비중  {Mathf.RoundToInt(s.BasicAttackShare * 100f)}%");
             sb.AppendLine();
             sb.AppendLine("쓴 기록");
             sb.AppendLine("  " + s.RecordLabel);
@@ -108,7 +102,6 @@ namespace HistoryHeroes.UI
             sb.AppendLine($"버틴 시간  {Clock(s.Seconds)}" + (s.NewBest ? "  <color=#FFD966>최고 기록!</color>" : $"  (최고 {Clock(s.BestSeconds)})"));
             sb.AppendLine($"처치  {s.Kills}");
             sb.AppendLine($"레벨  {s.Level}");
-            sb.AppendLine($"기본 공격 피해 비중  {Mathf.RoundToInt(s.BasicAttackShare * 100f)}%  (서바이벌 목표 약 30%)");
             if (!string.IsNullOrEmpty(s.TopDamage)) sb.AppendLine($"<size=85%>피해  {s.TopDamage}</size>");
             sb.AppendLine();
             sb.AppendLine("만든 조합");

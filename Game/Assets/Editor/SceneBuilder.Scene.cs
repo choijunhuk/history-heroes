@@ -501,9 +501,9 @@ namespace HistoryHeroes.EditorTools
             ui.RecordSave = BuildRecordSave(root, null);
             ui.RewardRoom = BuildRewardRoomPanel(root);
             SettingsPanel settings = BuildSettingsPanel(root);
+            ui.Guide = BuildTutorialGuide(root); // 일시정지보다 먼저 = 아래 (안내 띠가 일시정지 제목을 가리지 않게)
             ui.Pause = BuildPauseMenu(root, hudRect, settings);
             settings.transform.SetAsLastSibling(); // 설정이 일시정지 판 위에
-            ui.Guide = BuildTutorialGuide(root);
             ui.Voice = BuildHeroVoice(root);
             BuildHypeFx(hudRect, root);
             return ui;
@@ -563,7 +563,8 @@ namespace HistoryHeroes.EditorTools
             openRect.pivot = new Vector2(0f, 1f);
             openRect.anchoredPosition = new Vector2(40f, -110f);
 
-            RectTransform panel = Overlay(root, "PauseMenu", out GameObject holder);
+            // 일시정지는 어두워진 전투 위 창 (전체 UI 검토: 배경을 통째로 바꾸면 전투 맥락이 끊긴다)
+            RectTransform panel = Overlay(root, "PauseMenu", out GameObject holder, new Color(0.02f, 0.03f, 0.06f, 0.72f));
             var menu = holder.AddComponent<PauseMenu>();
             TMP_Text title = Label("Title", panel, "일시정지", 72, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 520f), new Vector2(900f, 110f));

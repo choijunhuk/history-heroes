@@ -49,6 +49,9 @@ namespace HistoryHeroes.UI
             _confirmUntil = -1f;
             giveUpLabel.text = "판 포기";
             infoLabel.text = GiveUpText();
+            // 튜토리얼은 쓰러지지 않아서(체력이 돌아온다) 포기가 아무 일도 안 했다 → 단추를 숨긴다
+            giveUpButton.gameObject.SetActive(!GameSession.Tutorial);
+            SetGuideVisible(false);
         }
 
         public void Close()
@@ -57,6 +60,17 @@ namespace HistoryHeroes.UI
             if (settings != null && settings.IsOpen) settings.Close();
             root.SetActive(false);
             GamePause.Resume(this);
+            SetGuideVisible(true);
+        }
+
+        /// <summary>튜토리얼 안내 띠는 일시정지 창이 떠 있는 동안만 숨긴다 (제목과 겹치지 않게). 레벨업 카드 때는 그대로 보인다</summary>
+        private static void SetGuideVisible(bool visible)
+        {
+            TutorialGuide guide = FindAnyObjectByType<TutorialGuide>();
+            if (guide == null) return;
+            CanvasGroup group = guide.GetComponent<CanvasGroup>();
+            if (group == null) group = guide.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = visible ? 1f : 0f;
         }
 
         private void GiveUp()
@@ -92,6 +106,7 @@ namespace HistoryHeroes.UI
         /// <summary>포기하면 어떻게 되나 (모드마다)</summary>
         private static string GiveUpText()
         {
+            if (GameSession.Tutorial) return "튜토리얼은 지지 않아요. 끝까지 가 봐요!";
             if (GameSession.IsHeroTrial) return "포기하면 체험이 끝나요 (보상·기록 없음)";
             switch (GameSession.Mode)
             {
