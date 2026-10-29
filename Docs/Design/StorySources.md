@@ -12,3 +12,12 @@
 | 전출사표 사본 | 후대에 출사표를 베끼고 새긴 탁본이 전한다. 게임 사본을 제갈량의 친필이라고 하지 않는다 | [국립역사박물관 소장품: 출사표 탁본](https://collections.culture.tw/Object?RNO=MzcxMDg%3D&SYSUID=14) |
 
 - 제갈량 유물은 **전출사표**로 특정한다. 후출사표는 저자에 논쟁이 있어 이번 사실 설명에 쓰지 않는다 ([중국 공공기관의 설명](https://study.bjwomen.gov.cn/thought/knowledge/2022/05/20/3994.shtml)).
+
+## 잔 다르크 (2026-10-29)
+
+| 내용 | 구분과 출처 |
+|---|---|
+| 1429년 오를레앙 참여, 갑옷·깃발, 자신이 목소리를 들었다는 진술 | [오를레앙 시 역사 안내서](https://www.orleans-metropole.fr/fileadmin/orleans/MEDIA/kiosque/ville_art_histoire/vdh_jeannedarc.pdf) 4·6쪽. 목소리는 본인의 진술이며 신의 개입을 확정하지 않는다 |
+| 짧은 머리 모습 | [오를레앙 미술관 교육 자료](https://www.orleans-metropole.fr/fileadmin/orleans/MEDIA/document/culture/musees/offre_pedagogique/2022/mba/dossier/Une_Heroine_orleanaise_MAIL.pdf) 9쪽. 후대 조각의 역사적 묘사 설명이며 머리 모양의 실물 증거로 삼지 않는다 |
+
+성녀의 깃발·깃발의 파동·오를레앙의 빛과 게임 대사는 각색이다. 특정 종교·국가를 적으로 설정하지 않는다.

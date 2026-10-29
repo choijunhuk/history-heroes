@@ -129,6 +129,16 @@ namespace HistoryHeroes.Heroes
         [Tooltip("비행 기계 모델 (블렌더 Fx_FlyingMachine)")]
         public GameObject helperModel;
 
+        [Header("잔 다르크 성녀의 깃발")]
+        [Tooltip("연속으로 멈춰 깃발을 세울 시간. 0이면 깃발을 쓰지 않는다")]
+        public float bannerDeploySeconds;
+        public float bannerRadius;
+        public float bannerDuration;
+        [Tooltip("깃발 안에 멈춰 있을 때 기본 공격력 보너스")]
+        public float bannerAttackBonus;
+        [Tooltip("깃발 안에 멈춰 있을 때 받는 피해 감소")]
+        public float bannerDamageReduction;
+
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
         public float star3FirstShotBonus = -1f;
@@ -164,6 +174,10 @@ namespace HistoryHeroes.Heroes
         public float star3WindRadius = -1f;
         [Tooltip("★5 동남풍 느려짐 (제갈량 55%)")]
         public float star5WindSlow = -1f;
+        [Tooltip("★3 깃발 지속 시간 (잔 다르크 8초)")]
+        public float star3BannerDuration = -1f;
+        [Tooltip("★5 깃발 안 기본 공격력 보너스 (잔 다르크 30%)")]
+        public float star5BannerAttackBonus = -1f;
 
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]
@@ -172,7 +186,7 @@ namespace HistoryHeroes.Heroes
         [Header("해금 (Heroes.md 2장)")]
         [Tooltip("이 구간 보스를 처음 깨면 무료 해금. 0이면 처음부터")]
         public int unlockAfterBossChapter = 0;
-        [Tooltip("보석으로만 연다 (구간 보스 해금 없음, 다빈치·제갈량). 켜면 unlockAfterBossChapter는 안 본다")]
+        [Tooltip("보석 또는 10판 기념 무료 선택으로 연다. 켜면 구간 보스 해금은 쓰지 않는다")]
         public bool gemsOnly;
         [Tooltip("바로 해금하는 보석 값")]
         public int unlockGems = 1500;

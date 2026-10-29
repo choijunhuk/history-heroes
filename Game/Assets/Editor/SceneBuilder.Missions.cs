@@ -19,6 +19,9 @@ namespace HistoryHeroes.EditorTools
             var t = AssetUtil.LoadOrCreate<MissionTable>($"{DataDir}/Missions/MissionTable.asset");
             const MissionDays all = MissionDays.All;
 
+            // 기존 미션 표 에셋도 다시 만들 때 새 영웅 순서를 받게 한다.
+            t.heroOrder = new System.Collections.Generic.List<string> { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne" };
+
             t.dailyFixed.Clear();
             t.dailyFixed.Add(M("login", "게임 접속", MissionEvents.Login, 1, 10));
             t.dailyFixed.Add(M("run2", "아무 모드나 {0}판 플레이 (져도 인정)", MissionEvents.Run, 2, 20));

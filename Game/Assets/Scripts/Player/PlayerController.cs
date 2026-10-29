@@ -180,6 +180,7 @@ namespace HistoryHeroes.Player
 
         private void OnDestroy()
         {
+            ClearBanner();
             Stats.Changed -= OnStatsChanged;
             if (_sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone();
         }
@@ -190,6 +191,7 @@ namespace HistoryHeroes.Player
         /// </summary>
         private void ClearSignatureState()
         {
+            ClearBanner();
             Stats.RemoveAllFrom(_ironOwner);
             _ironOn = false;
             _ironStore = 0f;
@@ -237,6 +239,7 @@ namespace HistoryHeroes.Player
         /// <summary>방을 옮길 때 시작 위치로 (물리 위치까지 같이 옮겨야 다음 프레임에 되돌아가지 않는다).</summary>
         public void Teleport(Vector2 position)
         {
+            ClearBanner();
             _body.position = position;
             _body.linearVelocity = Vector2.zero;
             transform.position = position;
@@ -247,6 +250,7 @@ namespace HistoryHeroes.Player
             // 카드 화면 등으로 멈춘 동안에는 쏘지도, 쿨다운이 돌지도 않는다
             if (Health.IsDead || GamePause.IsPaused)
             {
+                if (Health.IsDead) ClearBanner();
                 if (Health.IsDead && _sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone(); // 동남풍은 살아 있을 때만
                 return;
             }
@@ -266,6 +270,7 @@ namespace HistoryHeroes.Player
             UpdateIronclad(dt);
             UpdateCharge(dt);
             UpdateWorkbench(dt);
+            UpdateBanner(dt);
             // 제갈량 동남풍: 멈춰 있는 동안 둘레 적 탄이 느려진다
             if (_sig.WindRadius > 0f)
             {
@@ -403,6 +408,49 @@ namespace HistoryHeroes.Player
             AttackFx.Burst(transform.position, 0.9f, new Color(1f, 0.6f, 0.2f, 0.8f), 0.12f);
             return store;
         }
+
+        // ---------------------------------------------------------------- 잔 다르크 성녀의 깃발
+
+        private readonly JeanneBannerState _banner = new JeanneBannerState();
+        private readonly object _bannerOwner = new object();
+        private bool _bannerBuffActive;
+        private JeanneBannerView _bannerView;
+
+        public bool HasBanner => _banner.IsPlanted;
+        public Vector2 BannerCenter => _banner.Center;
+        public bool BannerBuffActive => _bannerBuffActive;
+
+        private void UpdateBanner(float dt)
+        {
+            if (hero.bannerDeploySeconds <= 0f) return;
+            bool active = _banner.Tick(dt, Stop.IsStopped, transform.position, hero, _sig);
+            if (active != _bannerBuffActive)
+            {
+                _bannerBuffActive = active;
+                Stats.RemoveAllFrom(_bannerOwner);
+                if (active)
+                {
+                    // 공격력 전체를 올리면 이동 중 액티브까지 강해지므로 기본 공격으로 한정한다.
+                    Stats.Add(new StatModifier(StatType.Attack, ModifierKind.Percent, _sig.BannerAttackBonus,
+                        ModifierSource.Hero, _bannerOwner, StatTarget.BasicAttack));
+                    Stats.Add(new StatModifier(StatType.DamageReduction, ModifierKind.Flat, hero.bannerDamageReduction,
+                        ModifierSource.Hero, _bannerOwner));
+                }
+            }
+
+            if (_banner.IsPlanted && _bannerView == null) _bannerView = JeanneBannerView.Create(this);
+            if (_bannerView != null) _bannerView.gameObject.SetActive(_banner.IsPlanted);
+        }
+
+        private void ClearBanner()
+        {
+            _banner.Reset();
+            _bannerBuffActive = false;
+            Stats.RemoveAllFrom(_bannerOwner);
+            if (_bannerView != null) _bannerView.gameObject.SetActive(false);
+        }
+
+        private void OnDisable() => ClearBanner();
 
         // ---------------------------------------------------------------- 다빈치 작업대
 
