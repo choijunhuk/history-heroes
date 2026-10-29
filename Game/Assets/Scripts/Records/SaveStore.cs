@@ -374,6 +374,23 @@ namespace HistoryHeroes.Records
             }
 
             // 6 → 7: 뽑기 횟수·날짜·중복 진행은 0/빈 값이 맞다. Normalize에서 빠진 묶음만 채우며 기존 별은 보존한다.
+            if (data.schemaVersion < 8)
+            {
+                // 7 → 8: 저장 번호 0·1·2는 그대로다. 장신구가 목걸이가 되고 새 세 칸만 열린다.
+                data.equipment ??= new EquipmentSave();
+                data.equipment.slotLevels ??= new List<int>();
+                while (data.equipment.slotLevels.Count < Equipment.EquipmentInventory.SlotCount)
+                    data.equipment.slotLevels.Add(1);
+                data.equipment.loadouts ??= new List<HeroLoadout>();
+                foreach (HeroLoadout loadout in data.equipment.loadouts)
+                {
+                    if (loadout == null) continue;
+                    loadout.uids ??= new List<string>();
+                    while (loadout.uids.Count < Equipment.EquipmentInventory.SlotCount)
+                        loadout.uids.Add("");
+                }
+            }
+
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -400,14 +417,20 @@ namespace HistoryHeroes.Records
             data.equipment.items ??= new List<EquipmentItem>();
             data.equipment.items.RemoveAll(i => i == null || string.IsNullOrEmpty(i.uid) || string.IsNullOrEmpty(i.dataId));
             data.equipment.slotLevels ??= new List<int>();
-            while (data.equipment.slotLevels.Count < 3) data.equipment.slotLevels.Add(0);
+            while (data.equipment.slotLevels.Count < Equipment.EquipmentInventory.SlotCount) data.equipment.slotLevels.Add(1);
+            if (data.equipment.slotLevels.Count > Equipment.EquipmentInventory.SlotCount)
+                data.equipment.slotLevels.RemoveRange(Equipment.EquipmentInventory.SlotCount,
+                    data.equipment.slotLevels.Count - Equipment.EquipmentInventory.SlotCount);
             for (int i = 0; i < data.equipment.slotLevels.Count; i++) data.equipment.slotLevels[i] = Math.Clamp(data.equipment.slotLevels[i], 0, 40);
             data.equipment.loadouts ??= new List<HeroLoadout>();
             data.equipment.loadouts.RemoveAll(l => l == null || string.IsNullOrEmpty(l.heroId));
             foreach (HeroLoadout l in data.equipment.loadouts)
             {
                 l.uids ??= new List<string>();
-                while (l.uids.Count < 3) l.uids.Add("");
+                while (l.uids.Count < Equipment.EquipmentInventory.SlotCount) l.uids.Add("");
+                if (l.uids.Count > Equipment.EquipmentInventory.SlotCount)
+                    l.uids.RemoveRange(Equipment.EquipmentInventory.SlotCount,
+                        l.uids.Count - Equipment.EquipmentInventory.SlotCount);
                 for (int i = 0; i < l.uids.Count; i++) l.uids[i] ??= "";
             }
 

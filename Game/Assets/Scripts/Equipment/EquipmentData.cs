@@ -8,7 +8,10 @@ namespace HistoryHeroes.Equipment
     {
         Weapon = 0,    // 🗡️ 무기: 공격력 %
         Armor = 1,     // 🛡️ 갑옷: 최대체력 %
-        Accessory = 2, // 💍 장신구: 공격속도 %
+        Necklace = 2, // 목걸이: 옛 장신구 번호·공격속도를 잇는다
+        Gloves = 3,   // 장갑: 공격력 %
+        Belt = 4,     // 허리띠: 최대체력 %
+        Boots = 5,    // 신발: 최대체력 %
     }
 
     /// <summary>장비 등급 (판 안 스킬 등급과 따로). 일반 ⚪ · 고급 🟢 · 희귀 🔵 · 전설 🟡</summary>
@@ -21,7 +24,7 @@ namespace HistoryHeroes.Equipment
     }
 
     /// <summary>
-    /// 장비 하나의 정의 (Equipment 7장, 출시 21종). 주 능력치 크기는 등급이 정한다 (EquipmentTable),
+    /// 장비 하나의 정의 (Equipment 7장, 출시 42종). 주 능력치는 등급과 슬롯 몫이 정한다 (EquipmentTable),
     /// 같은 등급 두 장비는 **고정 부가 능력치**만 다르다. 무작위 옵션·고유 효과는 없다.
     /// </summary>
     [CreateAssetMenu(menuName = "History Heroes/Equipment", fileName = "Equip_")]
@@ -41,7 +44,7 @@ namespace HistoryHeroes.Equipment
         public float secondaryValue;
 
         /// <summary>"치명타 피해 +5%" (부가 능력치가 없으면 빈 문자열)</summary>
-        public string SecondaryText => hasSecondary ? $"{EquipmentText.StatName(secondaryStat)} +{secondaryValue * 100f:0.#}%" : string.Empty;
+        public string SecondaryText => hasSecondary ? $"{EquipmentText.StatName(secondaryStat)} +{secondaryValue * 100f:0.###}%" : string.Empty;
     }
 
     /// <summary>장비 화면 글자 (능력치·등급 이름)</summary>
@@ -88,7 +91,10 @@ namespace HistoryHeroes.Equipment
             switch (slot)
             {
                 case EquipSlot.Armor: return "갑옷";
-                case EquipSlot.Accessory: return "장신구";
+                case EquipSlot.Necklace: return "목걸이";
+                case EquipSlot.Gloves: return "장갑";
+                case EquipSlot.Belt: return "허리띠";
+                case EquipSlot.Boots: return "신발";
                 default: return "무기";
             }
         }

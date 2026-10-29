@@ -1,4 +1,5 @@
 using HistoryHeroes.Modes;
+using HistoryHeroes.Equipment;
 using HistoryHeroes.Skills;
 using HistoryHeroes.UI;
 using TMPro;
@@ -407,16 +408,16 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(panel.gameObject.AddComponent<HeroPortraits>())) props.Ref("roster", roster).Refs("images", portraits).Int("textureSize", 480);
 
             // ----- 탕탕특공대식 영웅 화면 (2026-10-29 개발자) -----
-            // 양옆 칸 6개: 왼쪽 무기 · 장신구 · 룬, 오른쪽 갑옷 · 펫 · 유물. 칸 아래 글 = 지금 낀 것
+            // 양옆 장비 여섯 칸은 저장 번호 순서로 연결하고, 화면에서는 공격·체력 줄로 나눈다.
             Vector2 slotSize = new Vector2(200f, 170f);
-            var gearSlots = new Button[3];
-            var gearLabels = new TMP_Text[3];
-            gearSlots[0] = IconButton("GearWeapon", panel, "sword", "", new Vector2(-405f, 660f), slotSize, ButtonBlue, out gearLabels[0]);
-            gearSlots[1] = IconButton("GearArmor", panel, "shield", "", new Vector2(405f, 660f), slotSize, ButtonBlue, out gearLabels[1]);
-            gearSlots[2] = IconButton("GearAccessory", panel, "gem", "", new Vector2(-405f, 470f), slotSize, ButtonBlue, out gearLabels[2]);
-            Button petButton = IconButton("HeroPet", panel, "pet", "", new Vector2(405f, 470f), slotSize, ButtonBlue, out TMP_Text petLabel);
-            Button runeButton = IconButton("HeroRunes", panel, "rune", "", new Vector2(-405f, 280f), slotSize, ButtonBlue, out TMP_Text runeLabel);
-            Button relicButton = IconButton("HeroRelics", panel, "relic", "", new Vector2(405f, 280f), slotSize, ButtonBlue, out TMP_Text relicLabel);
+            var gearSlots = new Button[EquipmentInventory.SlotCount];
+            var gearLabels = new TMP_Text[EquipmentInventory.SlotCount];
+            gearSlots[(int)EquipSlot.Weapon] = IconButton("GearWeapon", panel, "sword", "", new Vector2(-405f, 660f), slotSize, ButtonBlue, out gearLabels[(int)EquipSlot.Weapon]);
+            gearSlots[(int)EquipSlot.Necklace] = IconButton("GearNecklace", panel, "gem", "", new Vector2(-405f, 470f), slotSize, ButtonBlue, out gearLabels[(int)EquipSlot.Necklace]);
+            gearSlots[(int)EquipSlot.Gloves] = IconButton("GearGloves", panel, "atk_up", "", new Vector2(-405f, 280f), slotSize, ButtonBlue, out gearLabels[(int)EquipSlot.Gloves]);
+            gearSlots[(int)EquipSlot.Armor] = IconButton("GearArmor", panel, "shield", "", new Vector2(405f, 660f), slotSize, ButtonBlue, out gearLabels[(int)EquipSlot.Armor]);
+            gearSlots[(int)EquipSlot.Belt] = IconButton("GearBelt", panel, "def_up", "", new Vector2(405f, 470f), slotSize, ButtonBlue, out gearLabels[(int)EquipSlot.Belt]);
+            gearSlots[(int)EquipSlot.Boots] = IconButton("GearBoots", panel, "boot", "", new Vector2(405f, 280f), slotSize, ButtonBlue, out gearLabels[(int)EquipSlot.Boots]);
 
             // 공격력 · 체력 (크게)
             TMP_Text power = Label("Power", panel, "", 44, TextAlignmentOptions.Center, Color.white);
@@ -425,22 +426,33 @@ namespace HistoryHeroes.EditorTools
             power.fontSizeMin = 30f;
             power.fontSizeMax = 44f;
 
+            // 장비와 분리해 펫·룬·유물을 한 줄에서 연다.
+            Vector2 extraSize = new Vector2(300f, 66f);
+            Button petButton = Btn("HeroPet", panel, "펫", new Vector2(-340f, -175f), extraSize, ButtonBlue, out TMP_Text petLabel);
+            Button runeButton = Btn("HeroRunes", panel, "룬", new Vector2(0f, -175f), extraSize, ButtonBlue, out TMP_Text runeLabel);
+            Button relicButton = Btn("HeroRelics", panel, "유물", new Vector2(340f, -175f), extraSize, ButtonBlue, out TMP_Text relicLabel);
+            petLabel.fontSize = 25f;
+            runeLabel.fontSize = 25f;
+            relicLabel.fontSize = 25f;
+            petLabel.enableAutoSizing = runeLabel.enableAutoSizing = relicLabel.enableAutoSizing = true;
+            petLabel.fontSizeMin = runeLabel.fontSizeMin = relicLabel.fontSizeMin = 19f;
+
             // 레벨업 = 주 행동 (크게) · 각성 = 보조. 잠긴 영웅이면 같은 자리에 3분 체험 · 해금
-            Button level = Btn("HeroLevelUp", panel, "레벨업", new Vector2(-200f, -220f), new Vector2(580f, 130f), ButtonGreen, out TMP_Text levelLabel);
+            Button level = Btn("HeroLevelUp", panel, "레벨업", new Vector2(-200f, -285f), new Vector2(580f, 120f), ButtonGreen, out TMP_Text levelLabel);
             levelLabel.fontSize = 34;
-            Button awaken = Btn("HeroAwaken", panel, "각성", new Vector2(300f, -220f), new Vector2(380f, 130f), ButtonBlue, out TMP_Text awakenLabel);
+            Button awaken = Btn("HeroAwaken", panel, "각성", new Vector2(300f, -285f), new Vector2(380f, 120f), ButtonBlue, out TMP_Text awakenLabel);
             awakenLabel.fontSize = 28;
-            Button trial = Btn("HeroTrial", panel, "3분 체험", new Vector2(-200f, -220f), new Vector2(580f, 130f), ButtonBlue, out _);
+            Button trial = Btn("HeroTrial", panel, "3분 체험", new Vector2(-200f, -285f), new Vector2(580f, 120f), ButtonBlue, out _);
             trial.gameObject.SetActive(false);
-            Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(300f, -220f), new Vector2(380f, 130f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
+            Button unlock = Btn("UnlockHero", panel, "해금", new Vector2(300f, -285f), new Vector2(380f, 120f), new Color(0.38f, 0.25f, 0.45f), out TMP_Text unlockLabel);
             unlockLabel.fontSize = 26;
             // 둘째 줄: 수련 (모든 영웅 공용) · 이 영웅으로 하기
-            Button trainingButton = Btn("Training", panel, "수련 (모든 영웅)", new Vector2(-250f, -355f), new Vector2(480f, 100f), ButtonBlue, out TMP_Text trainingLabel);
+            Button trainingButton = Btn("Training", panel, "수련 (모든 영웅)", new Vector2(-250f, -405f), new Vector2(480f, 88f), ButtonBlue, out TMP_Text trainingLabel);
             trainingLabel.fontSize = 26;
-            Button select = Btn("SelectHero", panel, "고르기", new Vector2(250f, -355f), new Vector2(480f, 100f), ButtonGreen, out TMP_Text selectLabel);
+            Button select = Btn("SelectHero", panel, "고르기", new Vector2(250f, -405f), new Vector2(480f, 88f), ButtonGreen, out TMP_Text selectLabel);
             TMP_Text heroMessage = Label("HeroMessage", panel, "", 26, TextAlignmentOptions.Center);
             Place(heroMessage.rectTransform, Center, Center, new Vector2(0f, -690f), new Vector2(900f, 50f));
-            // 예전 "장비" 단추는 칸 3개로 바뀌었다 (필드는 남겨 두고 숨긴다)
+            // 예전 "장비" 단추는 장비 칸으로 바뀌었다 (필드는 남겨 두고 숨긴다)
             Button equip = Btn("HeroEquipment", panel, "장비", new Vector2(0f, -2400f), new Vector2(10f, 10f), ButtonBlue, out TMP_Text equipLabel);
             equip.gameObject.SetActive(false);
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -790f), new Vector2(400f, 110f), ButtonGray, out _);

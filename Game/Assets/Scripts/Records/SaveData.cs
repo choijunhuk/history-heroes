@@ -15,7 +15,8 @@ namespace HistoryHeroes.Records
         /// <summary>4 (v0.5): 서바이벌·펫·미션 — 빈 상태로 시작 (Normalize가 채운다). 옛 빌드는 더 새 파일을 읽지 않고 멈춘다</summary>
         /// <summary>6: 카드 빼기 이력·남은 횟수와 목표 레시피 (옛 저장은 빼기 2회부터)</summary>
         /// <summary>7: 유물 뽑기 횟수·무료 날짜·중복 진행. 옛 저장의 빈 값은 모두 0/없음이 맞다.</summary>
-        public const int CurrentSchemaVersion = 7;
+        /// <summary>8: 장비 6칸. 앞의 무기·갑옷·장신구 번호는 그대로 두고 새 칸을 뒤에 붙인다.</summary>
+        public const int CurrentSchemaVersion = 8;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -290,8 +291,8 @@ namespace HistoryHeroes.Records
     public sealed class EquipmentSave
     {
         public List<EquipmentItem> items = new List<EquipmentItem>();
-        /// <summary>칸 강화 (무기·갑옷·장신구, 계정 공용). 0 = 강화 안 함, 최대 40</summary>
-        public List<int> slotLevels = new List<int> { 0, 0, 0 };
+        /// <summary>칸 강화 (무기·갑옷·목걸이·장갑·허리띠·신발, 계정 공용). 새 칸은 Lv1, 옛 Lv0도 보존한다.</summary>
+        public List<int> slotLevels = new List<int> { 1, 1, 1, 1, 1, 1 };
         public List<HeroLoadout> loadouts = new List<HeroLoadout>();
         public int nextUid = 1;
         /// <summary>희귀·전설 중복을 얻자마자 조각으로 (Equipment 9장 기본값 켜짐)</summary>
@@ -310,12 +311,12 @@ namespace HistoryHeroes.Records
         public bool locked;
     }
 
-    /// <summary>영웅마다 3칸 (장비 uid, 빈 칸은 빈 문자열). 같은 장비를 여러 영웅이 동시에 낄 수 있다</summary>
+    /// <summary>영웅마다 6칸 (장비 uid, 빈 칸은 빈 문자열). 같은 장비를 여러 영웅이 동시에 낄 수 있다</summary>
     [Serializable]
     public sealed class HeroLoadout
     {
         public string heroId;
-        public List<string> uids = new List<string> { "", "", "" };
+        public List<string> uids = new List<string> { "", "", "", "", "", "" };
     }
 
     // ---------------------------------------------------------------- v0.4 영웅 성장 (Stats 4·6)

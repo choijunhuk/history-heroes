@@ -1,3 +1,4 @@
+using System;
 using HistoryHeroes.Equipment;
 using HistoryHeroes.Meta;
 using HistoryHeroes.Stats;
@@ -5,40 +6,14 @@ using UnityEditor;
 
 namespace HistoryHeroes.EditorTools
 {
-    /// <summary>v0.4 판 밖 성장 데이터: 장비 21종 (Equipment 7장) + 장비 표 + 판 밖 성장 표</summary>
+    /// <summary>v0.4 판 밖 성장 데이터: 장비 42종 (Equipment 7장) + 장비 표 + 판 밖 성장 표</summary>
     public static partial class SceneBuilder
     {
         private static MetaTable CreateMetaData()
         {
             var table = AssetUtil.LoadOrCreate<EquipmentTable>($"{DataDir}/Equipment/EquipmentTable.asset");
-            table.items.Clear();
-
-            // 🗡️ 무기: 공격력 % (부가: 치명타 피해 / 쿨다운 감소 / 치명타 확률)
-            table.items.Add(Equip("weapon_recruit_c", "수습병의 무기", EquipSlot.Weapon, EquipRarity.Common));
-            table.items.Add(Equip("weapon_elite_u", "정예병의 무기", EquipSlot.Weapon, EquipRarity.Uncommon, StatType.CritDamage, 0.05f));
-            table.items.Add(Equip("weapon_scout_u", "척후병의 무기", EquipSlot.Weapon, EquipRarity.Uncommon, StatType.CooldownReduction, 0.01f));
-            table.items.Add(Equip("weapon_general_r", "장군의 무기", EquipSlot.Weapon, EquipRarity.Rare, StatType.CritDamage, 0.10f));
-            table.items.Add(Equip("weapon_strategist_r", "책사의 무기", EquipSlot.Weapon, EquipRarity.Rare, StatType.CooldownReduction, 0.02f));
-            table.items.Add(Equip("weapon_timeguard_l", "시간 수호자의 무기", EquipSlot.Weapon, EquipRarity.Legendary, StatType.CritRate, 0.03f));
-            table.items.Add(Equip("weapon_conqueror_l", "정복자의 무기", EquipSlot.Weapon, EquipRarity.Legendary, StatType.CritDamage, 0.20f));
-
-            // 🛡️ 갑옷: 최대체력 % (부가: 피해 감소 / 이동속도)
-            table.items.Add(Equip("armor_recruit_c", "수습병의 갑옷", EquipSlot.Armor, EquipRarity.Common));
-            table.items.Add(Equip("armor_elite_u", "정예병의 갑옷", EquipSlot.Armor, EquipRarity.Uncommon, StatType.DamageReduction, 0.01f));
-            table.items.Add(Equip("armor_pilgrim_u", "순례자의 외투", EquipSlot.Armor, EquipRarity.Uncommon, StatType.MoveSpeed, 0.01f, ModifierKind.Percent));
-            table.items.Add(Equip("armor_general_r", "장군의 갑옷", EquipSlot.Armor, EquipRarity.Rare, StatType.DamageReduction, 0.03f));
-            table.items.Add(Equip("armor_explorer_r", "탐험가의 외투", EquipSlot.Armor, EquipRarity.Rare, StatType.MoveSpeed, 0.015f, ModifierKind.Percent));
-            table.items.Add(Equip("armor_timeguard_l", "시간 수호자의 갑옷", EquipSlot.Armor, EquipRarity.Legendary, StatType.DamageReduction, 0.06f));
-            table.items.Add(Equip("armor_unyielding_l", "불굴의 망토", EquipSlot.Armor, EquipRarity.Legendary, StatType.MoveSpeed, 0.02f, ModifierKind.Percent));
-
-            // 💍 장신구: 공격속도 % (부가: 치명타 확률 / 이동속도 / 쿨다운 감소). "부적"은 행운 장식으로 그린다
-            table.items.Add(Equip("acc_charm_c", "낡은 부적", EquipSlot.Accessory, EquipRarity.Common));
-            table.items.Add(Equip("acc_feather_u", "매의 깃털 장식", EquipSlot.Accessory, EquipRarity.Uncommon, StatType.CritRate, 0.01f));
-            table.items.Add(Equip("acc_compass_u", "여행자의 나침반", EquipSlot.Accessory, EquipRarity.Uncommon, StatType.MoveSpeed, 0.02f, ModifierKind.Percent));
-            table.items.Add(Equip("acc_signet_r", "황금 인장 반지", EquipSlot.Accessory, EquipRarity.Rare, StatType.CritRate, 0.015f));
-            table.items.Add(Equip("acc_watch_r", "학자의 회중시계", EquipSlot.Accessory, EquipRarity.Rare, StatType.CooldownReduction, 0.02f));
-            table.items.Add(Equip("acc_hourglass_l", "시간의 모래시계", EquipSlot.Accessory, EquipRarity.Legendary, StatType.CritRate, 0.02f));
-            table.items.Add(Equip("acc_stirrup_l", "바람의 등자", EquipSlot.Accessory, EquipRarity.Legendary, StatType.MoveSpeed, 0.03f, ModifierKind.Percent));
+            ConfigureEquipment(table, id => AssetUtil.LoadOrCreate<EquipmentData>($"{DataDir}/Equipment/Equip_{id}.asset"));
+            foreach (EquipmentData item in table.items) EditorUtility.SetDirty(item);
             EditorUtility.SetDirty(table);
 
             // 룬 7종 (Runes 3장)
@@ -144,10 +119,76 @@ namespace HistoryHeroes.EditorTools
             return r;
         }
 
-        private static EquipmentData Equip(string id, string name, EquipSlot slot, EquipRarity rarity,
+        /// <summary>42종 정의를 빌더와 테스트가 함께 쓴다. 생성 함수를 바꿔 테스트에서는 에셋에 쓰지 않는다.</summary>
+        public static void ConfigureEquipment(EquipmentTable table, Func<string, EquipmentData> createEquipment)
+        {
+            // 기존 에셋을 다시 만들 때도 3칸 때의 비용·배분이 남지 않게 덮어쓴다.
+            table.weaponBase = new[] { 0.03f, 0.06f, 0.10f, 0.15f };
+            table.armorBase = new[] { 0.03f, 0.06f, 0.10f, 0.15f };
+            table.accessoryBase = new[] { 0.015f, 0.03f, 0.045f, 0.06f };
+            table.mainShares = new[] { 0.6f, 0.5f, 1f, 0.4f, 0.3f, 0.2f };
+            table.enhanceCap = new[] { 10, 20, 30, 40 };
+            table.weaponPerLevel = table.armorPerLevel = 0.0025f;
+            table.accessoryPerLevel = 0.0005f;
+            table.enhanceCostPerLevel = 50;
+            table.items.Clear();
+
+            // 🗡️ 무기: 공격력 % (부가: 치명타 피해 / 쿨다운 감소 / 치명타 확률)
+            table.items.Add(Equip(createEquipment, "weapon_recruit_c", "수습병의 무기", EquipSlot.Weapon, EquipRarity.Common));
+            table.items.Add(Equip(createEquipment, "weapon_elite_u", "정예병의 무기", EquipSlot.Weapon, EquipRarity.Uncommon, StatType.CritDamage, 0.03f));
+            table.items.Add(Equip(createEquipment, "weapon_scout_u", "척후병의 무기", EquipSlot.Weapon, EquipRarity.Uncommon, StatType.CooldownReduction, 0.006f));
+            table.items.Add(Equip(createEquipment, "weapon_general_r", "장군의 무기", EquipSlot.Weapon, EquipRarity.Rare, StatType.CritDamage, 0.06f));
+            table.items.Add(Equip(createEquipment, "weapon_strategist_r", "책사의 무기", EquipSlot.Weapon, EquipRarity.Rare, StatType.CooldownReduction, 0.012f));
+            table.items.Add(Equip(createEquipment, "weapon_timeguard_l", "시간 수호자의 무기", EquipSlot.Weapon, EquipRarity.Legendary, StatType.CritRate, 0.018f));
+            table.items.Add(Equip(createEquipment, "weapon_conqueror_l", "정복자의 무기", EquipSlot.Weapon, EquipRarity.Legendary, StatType.CritDamage, 0.12f));
+
+            // 🛡️ 갑옷: 최대체력 % (부가: 피해 감소 / 이동속도)
+            table.items.Add(Equip(createEquipment, "armor_recruit_c", "수습병의 갑옷", EquipSlot.Armor, EquipRarity.Common));
+            table.items.Add(Equip(createEquipment, "armor_elite_u", "정예병의 갑옷", EquipSlot.Armor, EquipRarity.Uncommon, StatType.DamageReduction, 0.005f));
+            table.items.Add(Equip(createEquipment, "armor_pilgrim_u", "순례자의 외투", EquipSlot.Armor, EquipRarity.Uncommon, StatType.MoveSpeed, 0.005f, ModifierKind.Percent));
+            table.items.Add(Equip(createEquipment, "armor_general_r", "장군의 갑옷", EquipSlot.Armor, EquipRarity.Rare, StatType.DamageReduction, 0.015f));
+            table.items.Add(Equip(createEquipment, "armor_explorer_r", "탐험가의 외투", EquipSlot.Armor, EquipRarity.Rare, StatType.MoveSpeed, 0.0075f, ModifierKind.Percent));
+            table.items.Add(Equip(createEquipment, "armor_timeguard_l", "시간 수호자의 갑옷", EquipSlot.Armor, EquipRarity.Legendary, StatType.DamageReduction, 0.03f));
+            table.items.Add(Equip(createEquipment, "armor_unyielding_l", "불굴의 망토", EquipSlot.Armor, EquipRarity.Legendary, StatType.MoveSpeed, 0.01f, ModifierKind.Percent));
+
+            // 💍 목걸이: 공격속도 % (부가: 치명타 확률 / 이동속도 / 쿨다운 감소). "부적"은 행운 장식으로 그린다
+            table.items.Add(Equip(createEquipment, "acc_charm_c", "낡은 부적", EquipSlot.Necklace, EquipRarity.Common));
+            table.items.Add(Equip(createEquipment, "acc_feather_u", "매의 깃털 장식", EquipSlot.Necklace, EquipRarity.Uncommon, StatType.CritRate, 0.01f));
+            table.items.Add(Equip(createEquipment, "acc_compass_u", "여행자의 나침반", EquipSlot.Necklace, EquipRarity.Uncommon, StatType.MoveSpeed, 0.02f, ModifierKind.Percent));
+            table.items.Add(Equip(createEquipment, "acc_signet_r", "황금 인장 반지", EquipSlot.Necklace, EquipRarity.Rare, StatType.CritRate, 0.015f));
+            table.items.Add(Equip(createEquipment, "acc_watch_r", "학자의 회중시계", EquipSlot.Necklace, EquipRarity.Rare, StatType.CooldownReduction, 0.02f));
+            table.items.Add(Equip(createEquipment, "acc_hourglass_l", "시간의 모래시계", EquipSlot.Necklace, EquipRarity.Legendary, StatType.CritRate, 0.02f));
+            table.items.Add(Equip(createEquipment, "acc_stirrup_l", "바람의 등자", EquipSlot.Necklace, EquipRarity.Legendary, StatType.MoveSpeed, 0.03f, ModifierKind.Percent));
+
+            table.items.Add(Equip(createEquipment, "gloves_recruit_c", "수습병의 장갑", EquipSlot.Gloves, EquipRarity.Common));
+            table.items.Add(Equip(createEquipment, "gloves_elite_u", "정예병의 장갑", EquipSlot.Gloves, EquipRarity.Uncommon, StatType.CritDamage, 0.02f));
+            table.items.Add(Equip(createEquipment, "gloves_scout_u", "척후병의 장갑", EquipSlot.Gloves, EquipRarity.Uncommon, StatType.CooldownReduction, 0.004f));
+            table.items.Add(Equip(createEquipment, "gloves_general_r", "장군의 장갑", EquipSlot.Gloves, EquipRarity.Rare, StatType.CritDamage, 0.04f));
+            table.items.Add(Equip(createEquipment, "gloves_strategist_r", "책사의 장갑", EquipSlot.Gloves, EquipRarity.Rare, StatType.CooldownReduction, 0.008f));
+            table.items.Add(Equip(createEquipment, "gloves_timeguard_l", "시간 수호자의 장갑", EquipSlot.Gloves, EquipRarity.Legendary, StatType.CritRate, 0.012f));
+            table.items.Add(Equip(createEquipment, "gloves_conqueror_l", "정복자의 장갑", EquipSlot.Gloves, EquipRarity.Legendary, StatType.CritDamage, 0.08f));
+
+            table.items.Add(Equip(createEquipment, "belt_recruit_c", "수습병의 허리띠", EquipSlot.Belt, EquipRarity.Common));
+            table.items.Add(Equip(createEquipment, "belt_elite_u", "정예병의 허리띠", EquipSlot.Belt, EquipRarity.Uncommon, StatType.DamageReduction, 0.003f));
+            table.items.Add(Equip(createEquipment, "belt_pilgrim_u", "순례자의 허리띠", EquipSlot.Belt, EquipRarity.Uncommon, StatType.MoveSpeed, 0.003f, ModifierKind.Percent));
+            table.items.Add(Equip(createEquipment, "belt_general_r", "장군의 허리띠", EquipSlot.Belt, EquipRarity.Rare, StatType.DamageReduction, 0.009f));
+            table.items.Add(Equip(createEquipment, "belt_explorer_r", "탐험가의 허리띠", EquipSlot.Belt, EquipRarity.Rare, StatType.MoveSpeed, 0.0045f, ModifierKind.Percent));
+            table.items.Add(Equip(createEquipment, "belt_timeguard_l", "시간 수호자의 허리띠", EquipSlot.Belt, EquipRarity.Legendary, StatType.DamageReduction, 0.018f));
+            table.items.Add(Equip(createEquipment, "belt_unyielding_l", "불굴의 허리띠", EquipSlot.Belt, EquipRarity.Legendary, StatType.MoveSpeed, 0.006f, ModifierKind.Percent));
+
+            table.items.Add(Equip(createEquipment, "boots_recruit_c", "수습병의 신발", EquipSlot.Boots, EquipRarity.Common));
+            table.items.Add(Equip(createEquipment, "boots_elite_u", "정예병의 군화", EquipSlot.Boots, EquipRarity.Uncommon, StatType.DamageReduction, 0.002f));
+            table.items.Add(Equip(createEquipment, "boots_pilgrim_u", "순례자의 신발", EquipSlot.Boots, EquipRarity.Uncommon, StatType.MoveSpeed, 0.002f, ModifierKind.Percent));
+            table.items.Add(Equip(createEquipment, "boots_general_r", "장군의 군화", EquipSlot.Boots, EquipRarity.Rare, StatType.DamageReduction, 0.006f));
+            table.items.Add(Equip(createEquipment, "boots_explorer_r", "탐험가의 신발", EquipSlot.Boots, EquipRarity.Rare, StatType.MoveSpeed, 0.003f, ModifierKind.Percent));
+            table.items.Add(Equip(createEquipment, "boots_timeguard_l", "시간 수호자의 군화", EquipSlot.Boots, EquipRarity.Legendary, StatType.DamageReduction, 0.012f));
+            table.items.Add(Equip(createEquipment, "boots_wind_l", "바람의 신발", EquipSlot.Boots, EquipRarity.Legendary, StatType.MoveSpeed, 0.004f, ModifierKind.Percent));
+        }
+
+        private static EquipmentData Equip(Func<string, EquipmentData> createEquipment, string id, string name, EquipSlot slot, EquipRarity rarity,
             StatType? secondary = null, float value = 0f, ModifierKind kind = ModifierKind.Flat)
         {
-            var e = AssetUtil.LoadOrCreate<EquipmentData>($"{DataDir}/Equipment/Equip_{id}.asset");
+            EquipmentData e = createEquipment(id);
             e.id = id;
             e.displayName = name;
             e.slot = slot;
@@ -156,7 +197,6 @@ namespace HistoryHeroes.EditorTools
             e.secondaryStat = secondary ?? StatType.Attack;
             e.secondaryKind = kind;
             e.secondaryValue = value;
-            EditorUtility.SetDirty(e);
             return e;
         }
     }

@@ -181,6 +181,7 @@ namespace HistoryHeroes.Equipment
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"<b>{box.displayName}</b>");
+            sb.AppendLine("무기 · 목걸이 · 장갑 / 갑옷 · 허리띠 · 신발 (같은 등급 장비 균등)");
             for (int r = 0; r < box.rarity.Length; r++)
             {
                 if (box.rarity[r] <= 0f) continue;
@@ -192,6 +193,20 @@ namespace HistoryHeroes.Equipment
                 }
 
                 sb.AppendLine($"<color={EquipmentText.RarityColor(rarity)}>{EquipmentText.RarityName(rarity)} {box.rarity[r] * 100f:0.##}%</color>  (장비마다 {box.rarity[r] * 100f / Math.Max(1, pool.Count):0.###}%)");
+                foreach (EquipmentData data in pool)
+                {
+                    float rate = box.rarity[r] * 100f / Math.Max(1, pool.Count);
+                    sb.Append($"  {EquipmentText.SlotName(data.slot)} · {data.displayName}: {rate:0.######}%");
+                    if (box.pity > 0 && data.rarity >= EquipRarity.Rare)
+                    {
+                        float tenRate = table.tenPullGuarantee[r] * 100f / Math.Max(1, pool.Count);
+                        sb.Append($" (10연 보장 {tenRate:0.######}%");
+                        if (data.rarity == EquipRarity.Legendary) sb.Append($", 천장 {100f / Math.Max(1, pool.Count):0.######}%");
+                        sb.Append(")");
+                    }
+
+                    sb.AppendLine();
+                }
             }
 
             if (box.pity > 0)

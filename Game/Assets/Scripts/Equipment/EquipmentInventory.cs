@@ -9,12 +9,14 @@ namespace HistoryHeroes.Equipment
     /// 장비 규칙 (Equipment 4·5·9·10장). 저장 데이터만 바꾸고, 저장(SaveSystem.Save)은 부르는 쪽이 한 번에 한다
     /// → 합성처럼 "재료 제거 + 결과 추가 + 골드 차감"이 한 저장에 같이 들어간다 (중간에 꺼져도 재료만 사라지지 않게).
     /// - 강화는 **칸**에 붙는다 (계정 공용). 장비를 바꿔 끼워도 강화가 남는다
-    /// - 장착은 영웅마다 3칸, 같은 장비를 여러 영웅이 동시에 낄 수 있다 (참조)
+    /// - 장착은 영웅마다 6칸, 같은 장비를 여러 영웅이 동시에 낄 수 있다 (참조)
     /// - 합성: 같은 칸·같은 등급 3개 → 다음 등급 중 **고른 것** (희귀까지, 전설은 합성 불가)
     /// </summary>
     public static class EquipmentInventory
     {
-        public const int SlotCount = 3;
+        public const int SlotCount = 6;
+
+        private static bool ValidSlot(EquipSlot slot) => (int)slot >= 0 && (int)slot < SlotCount;
 
         /// <summary>1구간 보스 최초 격파 후 열린다 (Systems 3장)</summary>
         public static bool Unlocked(SaveData save) => save.unlockedChapter >= 2 || save.defeatedBosses.Count > 0;
@@ -92,9 +94,10 @@ namespace HistoryHeroes.Equipment
         /// <summary>그 영웅이 그 칸에 낀 장비 (없으면 null)</summary>
         public static EquipmentItem Equipped(SaveData save, string heroId, EquipSlot slot)
         {
+            if (!ValidSlot(slot)) return null;
             foreach (HeroLoadout l in save.equipment.loadouts)
             {
-                if (l.heroId == heroId) return Find(save, l.uids[(int)slot]);
+                if (l.heroId == heroId) return l.uids != null && (int)slot < l.uids.Count ? Find(save, l.uids[(int)slot]) : null;
             }
 
             return null;
@@ -104,12 +107,29 @@ namespace HistoryHeroes.Equipment
         {
             EquipmentItem item = Find(save, uid);
             EquipmentData data = item != null ? table.Find(item.dataId) : null;
-            if (data == null || string.IsNullOrEmpty(heroId)) return false;
-            LoadoutOf(save, heroId).uids[(int)data.slot] = uid;
+            if (data == null || !ValidSlot(data.slot)) return false;
+            return Equip(save, table, heroId, data.slot, uid);
+        }
+
+        /// <summary>고른 칸에 맞는 장비만 낀다. 잘못된 칸 요청은 장착 상태를 바꾸지 않는다.</summary>
+        public static bool Equip(SaveData save, EquipmentTable table, string heroId, EquipSlot slot, string uid)
+        {
+            if (!ValidSlot(slot) || string.IsNullOrEmpty(heroId)) return false;
+            EquipmentItem item = Find(save, uid);
+            EquipmentData data = item != null ? table.Find(item.dataId) : null;
+            if (data == null || data.slot != slot) return false;
+            HeroLoadout loadout = LoadoutOf(save, heroId);
+            if (loadout.uids == null || loadout.uids.Count <= (int)slot) return false;
+            loadout.uids[(int)slot] = uid;
             return true;
         }
 
-        public static void Unequip(SaveData save, string heroId, EquipSlot slot) => LoadoutOf(save, heroId).uids[(int)slot] = "";
+        public static void Unequip(SaveData save, string heroId, EquipSlot slot)
+        {
+            if (!ValidSlot(slot)) return;
+            HeroLoadout loadout = LoadoutOf(save, heroId);
+            if (loadout.uids != null && (int)slot < loadout.uids.Count) loadout.uids[(int)slot] = "";
+        }
 
         /// <summary>누군가 끼고 있는가 (합성 재료·분해에서 뺀다)</summary>
         public static bool IsEquipped(SaveData save, string uid)
@@ -131,7 +151,8 @@ namespace HistoryHeroes.Equipment
 
         // ---------------------------------------------------------------- 칸 강화
 
-        public static int SlotLevel(SaveData save, EquipSlot slot) => save.equipment.slotLevels[(int)slot];
+        public static int SlotLevel(SaveData save, EquipSlot slot) => ValidSlot(slot) && save.equipment.slotLevels != null
+            && (int)slot < save.equipment.slotLevels.Count ? save.equipment.slotLevels[(int)slot] : 0;
 
         /// <summary>
         /// 이 영웅이 지금 낀 장비 기준으로 칸을 한 번 더 올릴 수 있는가: 장비가 있어야 하고, 그 등급 상한 아래여야 한다
@@ -139,6 +160,11 @@ namespace HistoryHeroes.Equipment
         /// </summary>
         public static bool CanEnhance(SaveData save, EquipmentTable table, string heroId, EquipSlot slot, out int cost)
         {
+            if (!ValidSlot(slot) || save.equipment.slotLevels == null || (int)slot >= save.equipment.slotLevels.Count)
+            {
+                cost = 0;
+                return false;
+            }
             cost = table.EnhanceCost(SlotLevel(save, slot));
             EquipmentItem item = Equipped(save, heroId, slot);
             EquipmentData data = item != null ? table.Find(item.dataId) : null;
