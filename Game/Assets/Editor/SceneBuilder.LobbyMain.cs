@@ -333,7 +333,7 @@ namespace HistoryHeroes.EditorTools
             ui.Newcomer = IconButton("Newcomer", main, "gift7", "7일 미션", new Vector2(-455f, 690f), new Vector2(150f, 140f), new Color(1f, 0.55f, 0.25f), out ui.NewcomerLabel);
             ui.Codex = IconButton("Codex", main, "codex", "조합 도감", new Vector2(-455f, 535f), new Vector2(150f, 140f), new Color(0.6f, 0.4f, 0.9f), out ui.CodexLabel);
             ui.Settings = IconButton("Settings", main, "settings", "설정", new Vector2(455f, 690f), new Vector2(150f, 140f), side, out _);
-            ui.Patrol = IconButton("Patrol", main, "patrol", "순찰", new Vector2(455f, 535f), new Vector2(150f, 140f), new Color(0.35f, 0.75f, 0.4f), out ui.PatrolLabel);
+            ui.Patrol = IconButton("Patrol", main, "patrol", "순찰", new Vector2(455f, 535f), new Vector2(150f, 140f), side, out ui.PatrolLabel); // 부가 메뉴는 차분하게 (전체 UI 검토 7번: 던전 시작 단추와 다투지 않게)
 
             // ----- 가운데: 섬 무대 위 영웅 이름표 -----
             RectTransform plate = Rect("HeroPlate", main, Center, Center, Center, Vector2.zero, new Vector2(420f, 60f));
@@ -395,9 +395,11 @@ namespace HistoryHeroes.EditorTools
             ui.Rift = ModeCard("Rift", main, "rift", "무한의 균열", Vector2.zero, new Vector2(480f, 120f), new Color(0.5f, 0.32f, 0.9f), out ui.RiftLabel);
             Bottom(ui.Rift, -250f, 262f);
             ui.RiftLabel.fontSizeMax = 34f;
+            ui.RiftLabel.textWrappingMode = TextWrappingModes.NoWrap; // 둘째 줄이 길면 접지 말고 줄여서 (접히면 제목이 단추 위로 넘친다)
             ui.Daily = ModeCard("Daily", main, "daily", "일일 도전", Vector2.zero, new Vector2(480f, 120f), new Color(0.2f, 0.7f, 0.75f), out ui.DailyLabel);
             Bottom(ui.Daily, 250f, 262f);
             ui.DailyLabel.fontSizeMax = 34f;
+            ui.DailyLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
             // ----- 아래 탭 5개: 상점 · 영웅 · [전투] · 미션 · 기록 -----
             RectTransform bar = Rect("TabBar", main, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 170f));
@@ -413,6 +415,7 @@ namespace HistoryHeroes.EditorTools
             ui.Shop = IconButton("Shop", main, "shop", "상점", new Vector2(-424f, tabY), new Vector2(196f, 150f), tab, out _);
             ui.Hero = IconButton("Hero", main, "hero", "영웅", new Vector2(-212f, tabY), new Vector2(196f, 150f), tab, out _);
             Button home = IconButton("HomeTab", main, "sword", "전투", new Vector2(0f, tabY + 22f), new Vector2(210f, 180f), LobbyYellow, out _);
+            home.image.color = Vivid(LobbyYellow); // 지금 고른 탭 = 노랑 (단추 역할이 아니라 "고름" 상태 색이라 세 가지 규칙에서 뺀다)
             home.interactable = false; // 지금 화면 (고른 탭은 높고 노랗게)
             ColorBlock homeColors = home.colors;
             homeColors.disabledColor = Color.white;
