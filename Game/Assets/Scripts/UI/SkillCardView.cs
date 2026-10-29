@@ -186,7 +186,10 @@ namespace HistoryHeroes.UI
             if (skill is ActiveSkillData a)
             {
                 Add("개수", a.CountAt(from).ToString(), a.CountAt(to).ToString());
-                Add(DamageName(a), Percent(DamageValue(a, from)), Percent(DamageValue(a, to)));
+                if (a.healFractionFirstLevel > 0f)
+                    Add("회당 회복(최대체력)", Percent(a.HealFractionAt(from)), Percent(a.HealFractionAt(to)));
+                else
+                    Add(DamageName(a), Percent(DamageValue(a, from)), Percent(DamageValue(a, to)));
                 Add("지속", $"{a.DurationAt(from):0.#}초", $"{a.DurationAt(to):0.#}초");
                 Add("둔화", Percent(a.SlowAt(from)), Percent(a.SlowAt(to)));
                 if (a.id == "owl_eye") Add("표적 거리", $"{a.RadiusAt(from):0.#}", $"{a.RadiusAt(to):0.#}");

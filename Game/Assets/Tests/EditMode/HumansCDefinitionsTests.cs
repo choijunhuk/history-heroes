@@ -69,16 +69,16 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void MissionOrderContainsTheOldSixteenThenThreeDistinctHumans()
+        public void MissionOrderContainsTheOldSixteenThenThreeHumansAndBuddhaAdam()
         {
             MissionTable table = Create<MissionTable>();
             CollectionAssert.AreEqual(new[]
             {
                 "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge",
                 "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena",
-                "tomoe", "wuzetian", "curie",
+                "tomoe", "wuzetian", "curie", "buddha", "adam",
             }, table.heroOrder);
-            Assert.AreEqual(19, table.heroOrder.Distinct().Count());
+            Assert.AreEqual(21, table.heroOrder.Distinct().Count());
         }
 
         [TestCase(0, "tomoe", "토모에 고젠", HeroClass.Archer, 950f, 100f, 6f, 16f)]

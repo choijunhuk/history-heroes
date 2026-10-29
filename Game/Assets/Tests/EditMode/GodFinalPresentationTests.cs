@@ -60,9 +60,9 @@ namespace HistoryHeroes.Tests
                 CollectionAssert.AreEqual(new[]
                 {
                     "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge",
-                    "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena", "tomoe", "wuzetian", "curie",
+                    "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena", "tomoe", "wuzetian", "curie", "buddha", "adam",
                 }, table.heroOrder);
-                Assert.AreEqual(19, table.heroOrder.Distinct().Count());
+                Assert.AreEqual(21, table.heroOrder.Distinct().Count());
             }
             finally { Object.DestroyImmediate(table); }
         }

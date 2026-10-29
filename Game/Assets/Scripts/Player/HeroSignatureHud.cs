@@ -28,6 +28,8 @@ namespace HistoryHeroes.Player
         private static readonly Color Sand = new Color(0.95f, 0.78f, 0.4f, 1f);
         private static readonly Color Susanoo = new Color(0.43f, 0.88f, 0.8f, 1f);
         private static readonly Color Athena = new Color(0.93f, 0.77f, 0.46f, 1f);
+        private static readonly Color Buddha = new Color(0.85f, 0.64f, 0.35f, 0.9f);
+        private static readonly Color Adam = new Color(0.74f, 0.62f, 0.44f, 0.9f);
         private static readonly Color Wind = new Color(0.45f, 0.95f, 1f, 0.32f); // 화면 점검 2차: 벽 밖까지 보이는 원이 헷갈리지 않게 옅게
         private static readonly Color[] Stage = { new Color(1f, 1f, 1f, 0.95f), new Color(0.45f, 0.85f, 1f, 1f), new Color(1f, 0.82f, 0.25f, 1f) };
 
@@ -119,12 +121,15 @@ namespace HistoryHeroes.Player
                 // 관측·되찾기 점은 대표 효과만 뜻한다. 부품 그림을 붙이면 작업대처럼 보인다.
                 sprite = art != null && _player.Hero.observationSeconds <= 0f && _player.Hero.reclaimStopSeconds <= 0f && _player.Hero.thunderEvery <= 0 && _player.Hero.guardianAttacks <= 0 && _player.Hero.markHits <= 0 && _player.Hero.windFirstArc <= 0f && _player.Hero.shieldPrepareSeconds <= 0f
                     && _player.Hero.crossShotEvery <= 0 && _player.Hero.sealHits <= 0 && !_player.Hero.observationMark
+                    && _player.Hero.breathAttacks <= 0 && _player.Hero.footstepMoveSeconds <= 0f
                     ? (_player.Hero.chargeShot ? art.hudCharge : art.hudParts) : null;
                 int total = _player.Hero.chargeShot ? 3 : _player.Hero.observationSeconds > 0f || _player.Hero.reclaimStopSeconds > 0f
                     ? 1 : _player.Hero.thunderEvery > 0 ? 2 : _player.Hero.guardianAttacks > 0
                     ? Mathf.Clamp(_player.Hero.guardianAttacks, 1, _pips.Length) : _player.Hero.markHits > 0
                     ? Mathf.Clamp(_player.Hero.markHits, 1, _pips.Length) : _player.Hero.windFirstArc > 0f ? 2
-                    : _player.Hero.shieldPrepareSeconds > 0f ? 1 : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
+                    : _player.Hero.shieldPrepareSeconds > 0f ? 1 : _player.Hero.breathAttacks > 0
+                    ? Mathf.Clamp(_player.Hero.breathAttacks, 1, _pips.Length) : _player.Hero.footstepMoveSeconds > 0f ? 1
+                    : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
                 left = -(total - 1) * 0.5f * PipGap - 0.42f;
             }
 
@@ -229,9 +234,22 @@ namespace HistoryHeroes.Player
                 total = 1;
                 on = new Color(0.72f, 0.82f, 0.95f);
             }
+            else if (_player.Hero.breathAttacks > 0)
+            {
+                filled = _player.BuddhaShieldActive ? _player.Hero.breathAttacks : _player.BreathCount;
+                total = Mathf.Clamp(_player.Hero.breathAttacks, 1, _pips.Length);
+                on = Buddha;
+            }
+            else if (_player.Hero.footstepMoveSeconds > 0f)
+            {
+                filled = _player.FootstepReady || _player.FootstepBonusActive ? 1 : 0;
+                total = 1;
+                on = Adam;
+            }
 
             bool show = alive && total > 0 && (stopped || filled > 0 || reclaim && _player.ReclaimCooldownRemaining > 0f
-                || _player.Hero.shieldPrepareSeconds > 0f && _player.AthenaShieldCooldownRemaining > 0f);
+                || _player.Hero.shieldPrepareSeconds > 0f && _player.AthenaShieldCooldownRemaining > 0f
+                || _player.Hero.footstepMoveSeconds > 0f && _player.FootstepProgress > 0f);
             if (filled > _lastFilled) _pop = 1f; // 새 칸이 켜졌다
             _lastFilled = filled;
             _pop = Mathf.MoveTowards(_pop, 0f, Time.deltaTime * 5f);
@@ -257,6 +275,11 @@ namespace HistoryHeroes.Player
                 {
                     float cooldown = _player.AthenaShieldCooldownRemaining;
                     c = new Color(Athena.r, Athena.g, Athena.b, cooldown > 0f ? 0.18f : 0.2f + 0.45f * _player.AthenaShieldProgress / _player.Hero.shieldPrepareSeconds);
+                }
+                if (_player.Hero.footstepMoveSeconds > 0f && !lit)
+                {
+                    float progress = _player.FootstepProgress / _player.Hero.footstepMoveSeconds;
+                    c = new Color(Adam.r, Adam.g, Adam.b, _player.FootstepCooldownRemaining > 0f ? 0.18f : 0.2f + 0.45f * Mathf.Clamp01(progress));
                 }
                 if (!lit && i == filled && stopped && !observation && !reclaim && _player.Hero.shieldPrepareSeconds <= 0f)
                     c.a = 0.25f + 0.2f * Mathf.PingPong(Time.time * 3f, 1f); // 다음 칸이 차오르는 중

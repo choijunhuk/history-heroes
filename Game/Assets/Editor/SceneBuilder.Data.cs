@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok, Boudica, Thor, Cleopatra, Anubis, Susanoo, Athena, Tomoe, Wuzetian, Curie;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok, Boudica, Thor, Cleopatra, Anubis, Susanoo, Athena, Tomoe, Wuzetian, Curie, Buddha, Adam;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate, WindSlash, StormPath, OwlEye, GuardianGaze, TomoeVolley, TomoeCrosswind, WuzetianDecree, WuzetianOrder, CuriePrism, CurieSpectrum;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate, WindSlash, StormPath, OwlEye, GuardianGaze, TomoeVolley, TomoeCrosswind, WuzetianDecree, WuzetianOrder, CuriePrism, CurieSpectrum, BuddhaRest, BuddhaBreath, AdamPath, AdamWay;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -252,6 +252,16 @@ namespace HistoryHeroes.EditorTools
             CurieDefinition.ConfigureHero(d.Curie);
             d.Curie.model3D = Art3DCharacters.HeroModel("curie");
             d.Curie.modelHeight = HeroModelHeight;
+
+            d.Buddha = AssetUtil.LoadOrCreate<HeroData>($"{DataDir}/Heroes/Hero_buddha.asset");
+            BuddhaDefinition.ConfigureHero(d.Buddha);
+            d.Buddha.model3D = Art3DCharacters.HeroModel("buddha");
+            d.Buddha.modelHeight = HeroModelHeight;
+
+            d.Adam = AssetUtil.LoadOrCreate<HeroData>($"{DataDir}/Heroes/Hero_adam.asset");
+            AdamDefinition.ConfigureHero(d.Adam);
+            d.Adam.model3D = Art3DCharacters.HeroModel("adam");
+            d.Adam.modelHeight = HeroModelHeight;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -558,6 +568,16 @@ namespace HistoryHeroes.EditorTools
             d.CuriePrism.icon = Icon("star");
             d.Pool.Add(d.CuriePrism);
             d.Curie.exclusiveActive = d.CuriePrism;
+            d.BuddhaRest = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_buddha_rest.asset");
+            BuddhaDefinition.ConfigureRest(d.BuddhaRest);
+            d.BuddhaRest.icon = Icon("shield");
+            d.Pool.Add(d.BuddhaRest);
+            d.Buddha.exclusiveActive = d.BuddhaRest;
+            d.AdamPath = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_adam_path.asset");
+            AdamDefinition.ConfigurePath(d.AdamPath);
+            d.AdamPath.icon = Icon("sword");
+            d.Pool.Add(d.AdamPath);
+            d.Adam.exclusiveActive = d.AdamPath;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -633,7 +653,13 @@ namespace HistoryHeroes.EditorTools
             d.CurieSpectrum = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_curie_spectrum.asset");
             CurieDefinition.ConfigureSpectrum(d.CurieSpectrum);
             d.CurieSpectrum.icon = Icon("star");
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate, d.StormPath, d.GuardianGaze, d.TomoeCrosswind, d.WuzetianOrder, d.CurieSpectrum }) UnityEditor.EditorUtility.SetDirty(s);
+            d.BuddhaBreath = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_buddha_breath.asset");
+            BuddhaDefinition.ConfigureBreath(d.BuddhaBreath);
+            d.BuddhaBreath.icon = Icon("shield");
+            d.AdamWay = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_adam_way.asset");
+            AdamDefinition.ConfigureWay(d.AdamWay);
+            d.AdamWay.icon = Icon("sword");
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate, d.StormPath, d.GuardianGaze, d.TomoeCrosswind, d.WuzetianOrder, d.CurieSpectrum, d.BuddhaBreath, d.AdamWay }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -680,9 +706,16 @@ namespace HistoryHeroes.EditorTools
             FusionRecipe curieRecipe = AddHeroRecipe(d, "curie_spectrum", FusionType.Evolution, d.CuriePrism, 5, activeDamage, 1, d.CurieSpectrum, "curie");
             CurieDefinition.ConfigureRecipe(curieRecipe, d.CuriePrism, activeDamage, d.CurieSpectrum);
             UnityEditor.EditorUtility.SetDirty(curieRecipe);
+            FusionRecipe buddhaRecipe = AddHeroRecipe(d, "buddha_breath", FusionType.Evolution, d.BuddhaRest, 5, regen, 1, d.BuddhaBreath, "buddha");
+            BuddhaDefinition.ConfigureRecipe(buddhaRecipe, d.BuddhaRest, regen, d.BuddhaBreath);
+            UnityEditor.EditorUtility.SetDirty(buddhaRecipe);
+            SkillData dodge = d.Pool.Find(s => s.id == "dodge");
+            FusionRecipe adamRecipe = AddHeroRecipe(d, "adam_way", FusionType.Evolution, d.AdamPath, 5, dodge, 1, d.AdamWay, "adam");
+            AdamDefinition.ConfigureRecipe(adamRecipe, d.AdamPath, dodge, d.AdamWay);
+            UnityEditor.EditorUtility.SetDirty(adamRecipe);
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok, d.Boudica, d.Thor, d.Cleopatra, d.Anubis, d.Susanoo, d.Athena, d.Tomoe, d.Wuzetian, d.Curie };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok, d.Boudica, d.Thor, d.Cleopatra, d.Anubis, d.Susanoo, d.Athena, d.Tomoe, d.Wuzetian, d.Curie, d.Buddha, d.Adam };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -691,7 +724,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate, d.StormPath, d.GuardianGaze, d.TomoeCrosswind, d.WuzetianOrder, d.CurieSpectrum,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn, d.CleopatraLibrary, d.SandGate, d.StormPath, d.GuardianGaze, d.TomoeCrosswind, d.WuzetianOrder, d.CurieSpectrum, d.BuddhaBreath, d.AdamWay,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -714,7 +747,7 @@ namespace HistoryHeroes.EditorTools
             d.RiftWarden.attackMultiplier = 1.5f; // Stats.md 8장 (패턴 배수는 보스 쪽)
             d.RiftWarden.star2MaxHits = 8;
             CreateBossData(); // v0.6 중간 보스 5 · 보스맵 보스 4 (SceneBuilder.Bosses)
-            d.Meta = CreateMetaData();
+            d.Meta = CreateMetaData(d.Roster);
             return d;
         }
 
@@ -748,6 +781,8 @@ namespace HistoryHeroes.EditorTools
             ["tomoe_volley"] = SkillRole.Area, ["tomoe_crosswind"] = SkillRole.Area,
             ["wuzetian_decree"] = SkillRole.Area, ["wuzetian_order"] = SkillRole.Area,
             ["curie_prism"] = SkillRole.Area, ["curie_spectrum"] = SkillRole.Area,
+            ["buddha_rest"] = SkillRole.Defense, ["buddha_breath"] = SkillRole.Defense,
+            ["adam_path"] = SkillRole.Area, ["adam_way"] = SkillRole.Area,
             ["ysg_pyeonjeon"] = SkillRole.Single, ["ysg_shingung"] = SkillRole.Single,
             ["zhuge_gate"] = SkillRole.Defense,
             // 방어: 버티기·막기
@@ -940,6 +975,12 @@ namespace HistoryHeroes.EditorTools
             d.Curie.projectilePrefab = p.Starlight;
             d.CuriePrism.behaviourPrefab = p.CuriePrism;
             d.CurieSpectrum.behaviourPrefab = p.CurieSpectrum;
+            d.Buddha.projectilePrefab = p.Starlight;
+            d.BuddhaRest.behaviourPrefab = p.BuddhaRest;
+            d.BuddhaBreath.behaviourPrefab = p.BuddhaBreath;
+            d.Adam.projectilePrefab = p.SwordWave;
+            d.AdamPath.behaviourPrefab = p.AdamPath;
+            d.AdamWay.behaviourPrefab = p.AdamWay;
             d.KhanVolley.behaviourPrefab = p.KhanVolley;
             d.KhanStorm.behaviourPrefab = p.KhanStorm;
             d.GuanSpin.behaviourPrefab = p.GuanSpin;

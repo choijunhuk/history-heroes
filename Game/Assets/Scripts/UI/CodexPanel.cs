@@ -142,6 +142,16 @@ namespace HistoryHeroes.UI
             sb.AppendLine("<b>마리 퀴리 · 관측과 연구</b>  <color=#9FD8FF>사실 · 전승 구분 · 각색</color>");
             sb.AppendLine("1903년 물리학상과 1911년 화학상 수상자입니다. 관측 표식·분광의 빛·관측의 스펙트럼은 게임 창작이며, 방사선을 안전하거나 치유하는 빛으로 나타내지 않습니다.\n");
 
+            sb.AppendLine("<b>부처(석가모니)</b>  <color=#9FD8FF>사실 · 전승 · 각색</color>");
+            sb.AppendLine("사실: 고대 남아시아에서 활동한 불교의 스승입니다. 생몰년은 확정하지 않습니다.");
+            sb.AppendLine("전승: 출가와 깨달음의 생애 및 기적적 이야기는 후대에 전합니다.");
+            sb.AppendLine("각색: 기억을 지킬 기회를 청하며 동행합니다. 고요한 호흡·쉬어 가는 빛·다시 잇는 숨과 차림새는 게임 창작입니다.\n");
+
+            sb.AppendLine("<b>아담</b>  <color=#9FD8FF>사실 · 전승 · 각색</color>");
+            sb.AppendLine("사실: 『창세기』에 아담의 이야기가 실려 있습니다. 역사적 실존이나 생몰년을 확인된 사실로 다루지 않습니다.");
+            sb.AppendLine("전승: 흙으로 지어진 인간·동산·선택 이후의 삶은 창세기의 이야기입니다.");
+            sb.AppendLine("각색: 다음 세대의 기억을 지키려 동행합니다. 살피는 발걸음·앞길 짚기·이어 가는 길과 목봉은 게임 창작입니다.\n");
+
             // 스킬별 조합 수 (조사 A3): 미발견 조합은 결과·짝 대신 개수만
             sb.AppendLine("<b>스킬별 조합</b>");
             foreach (SkillData s in database.skills)

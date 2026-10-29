@@ -17,7 +17,7 @@ namespace HistoryHeroes.Tests
             CollectionAssert.AreEqual(new[]
             {
                 "Khan", "Guan", "Napoleon", "Tesla", "YiSunsin", "YiSeonggye", "Davinci", "Zhuge",
-                "Jeanne", "Seondeok", "Boudica", "Thor", "Cleopatra", "Anubis", "Susanoo", "Athena", "Tomoe", "Wuzetian", "Curie"
+                "Jeanne", "Seondeok", "Boudica", "Thor", "Cleopatra", "Anubis", "Susanoo", "Athena", "Tomoe", "Wuzetian", "Curie", "Buddha", "Adam"
             }, Art3DCharacters.Heroes.Select(look => look.name).ToArray());
             Assert.AreEqual(8, Art3DCharacters.Heroes.Count(look => look.female));
             Assert.IsFalse(Art3DCharacters.Heroes.Any(look => look.name == "Zeus"));

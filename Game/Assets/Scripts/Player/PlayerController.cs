@@ -59,6 +59,8 @@ namespace HistoryHeroes.Player
 
         private readonly object _heroModifiers = new object();
         private readonly object _lowHpModifier = new object();
+        private readonly object _buddhaShieldOwner = new object();
+        private readonly object _adamDodgeOwner = new object();
         private readonly List<Collider2D> _overlap = new List<Collider2D>(32);
         private readonly HashSet<Health> _chainVisited = new HashSet<Health>();
         private readonly List<EnemyBase> _thunderHits = new List<EnemyBase>(8);
@@ -128,20 +130,15 @@ namespace HistoryHeroes.Player
             Stats.Changed += OnStatsChanged;
 
             _targets = new TargetSelector(enemyMask, wallMask);
+            _lastMovementPosition = _body.position;
             HeroSignatureHud.Create(this); // 머리 위 대표 효과 표시 (새 영웅 화면 점검 2번)
             CreateProjectilePool();
             if (bodyRenderer != null) bodyRenderer.color = hero.color;
             ShowHeroModel();
 
-            Stop.Moved += () => _firstShotPending = true;
-            Stop.Moved += _thunder.Moved;
-            Stop.Moved += _windSlash.Moved;
-            Stop.Moved += _athenaShield.CancelPreparation;
-            Stop.Moved += ResetGuardian;
             Stop.Moved += () => ResetStopSignatures(moved: true);
             Stop.Stopped += () => _momentumUntil = Time.time + MomentumSeconds;
             Health.Damaged += OnDamagedIronclad; // 이순신 철갑
-            Stop.Moved += OnMovedCharge; // 이성계 백발백중: 움직이기 시작하면 모은 화살을 놓는다
             Health.PreventDeath = TryUndying;
             _awake = true;
         }
@@ -247,10 +244,10 @@ namespace HistoryHeroes.Player
         /// <summary>방을 옮길 때 시작 위치로 (물리 위치까지 같이 옮겨야 다음 프레임에 되돌아가지 않는다).</summary>
         public void Teleport(Vector2 position)
         {
-            ResetStopSignatures();
             _body.position = position;
             _body.linearVelocity = Vector2.zero;
             transform.position = position;
+            ResetStopSignatures();
         }
 
         private void Update()
@@ -265,10 +262,10 @@ namespace HistoryHeroes.Player
 
             float dt = Time.deltaTime;
             Stop.Tick(ReadInput(), dt);
+            UpdateAdamDodge(Time.time);
             _observation.Tick(dt, Stop.IsStopped, hero);
             _reclaim.Tick(dt, Stop.IsStopped, hero);
             _athenaShield.Tick(dt, Stop.IsStopped, Time.time, _sig.ShieldPrepareSeconds);
-            if (!Stop.IsStopped) ResetGuardian();
 
             // 쿨다운은 이동 중에도 흐른다 → 멈췄다 움직이기를 반복해도 공격속도보다 빨리 쏠 수 없다.
             _attackCooldown -= dt;
@@ -297,16 +294,27 @@ namespace HistoryHeroes.Player
             if (Health.IsDead)
             {
                 _body.linearVelocity = Vector2.zero;
+                _lastMovementPosition = _body.position;
+                _lastMovementInput = Vector2.zero;
+                _externalDisplacement = Vector2.zero;
                 return;
             }
+            Vector2 displacement = _body.position - _lastMovementPosition;
+            bool actualMovement = Time.time >= _rootedUntil
+                && AdamFootstepState.IsJoystickMovement(_lastMovementInput, displacement, _externalDisplacement);
+            _footstep.RecordMovement(Time.fixedDeltaTime, actualMovement, Time.time, hero.footstepMoveSeconds);
+            _lastMovementPosition = _body.position;
+            _externalDisplacement = Vector2.zero;
 
             if (Time.time < _rootedUntil)
             {
                 _body.linearVelocity = Vector2.zero; // 기절·묶임 (이동 속도 하한 0.5와 상관없이 멈춘다)
+                _lastMovementInput = Vector2.zero;
                 return;
             }
 
-            _body.linearVelocity = ReadInput() * Stats.Get(StatType.MoveSpeed);
+            _lastMovementInput = ReadInput();
+            _body.linearVelocity = _lastMovementInput * Stats.Get(StatType.MoveSpeed);
         }
 
         private float _rootedUntil;
@@ -315,6 +323,9 @@ namespace HistoryHeroes.Player
         public void Root(float seconds) => _rootedUntil = Mathf.Max(_rootedUntil, Time.time + seconds);
 
         public bool IsRooted => Time.time < _rootedUntil;
+
+        /// <summary>방 장치가 직접 민 거리는 조이스틱 이동 준비에 넣지 않는다.</summary>
+        public void NoteExternalDisplacement(Vector2 delta) => _externalDisplacement += delta;
 
         /// <summary>이동과 멈춤 판정이 같은 데드존을 쓴다 (약하게 밀면서 쏘기 방지, Codex 리뷰).</summary>
         private Vector2 ReadInput()
@@ -503,11 +514,24 @@ namespace HistoryHeroes.Player
         private readonly TomoeCrossfireState _crossfire = new TomoeCrossfireState();
         private readonly WuzetianSealState _seal = new WuzetianSealState();
         private readonly CurieObservationState _curie = new CurieObservationState();
+        private readonly BuddhaBreathState _breath = new BuddhaBreathState();
+        private readonly AdamFootstepState _footstep = new AdamFootstepState();
+        private Vector2 _lastMovementPosition;
+        private Vector2 _lastMovementInput;
+        private Vector2 _externalDisplacement;
+        private bool _adamDodgeOn;
         private readonly List<EnemyBase> _observationHits = new List<EnemyBase>(8);
         private int _stopSignatureGeneration;
         public int CrossfireCount => _crossfire.Count;
         public int SealHits => _seal.Hits;
         public bool HasObservationMark => _curie.HasMark;
+        public int BreathCount => _breath.Count;
+        public bool BuddhaShieldActive => Health != null && Health.ShieldFrom(_buddhaShieldOwner, Time.time) > 0f;
+        public bool FootstepReady => _footstep.IsReady;
+        public bool FootstepBonusActive => _footstep.BonusActive(Time.time);
+        public float FootstepProgress => _footstep.MovementProgress;
+        public float FootstepCooldownRemaining => _footstep.CooldownRemaining(Time.time);
+        public int SignatureLifecycleGeneration { get; private set; }
 
         /// <summary>
         /// 멈춤에 묶인 대표 효과 상태를 비운다. 이동 때는 새 영웅의 연속 공격만 지우고 무측천의 제어 제한과 퀴리의 기존 표식은 유지한다.
@@ -518,11 +542,36 @@ namespace HistoryHeroes.Player
         {
             // 이동 전 날아간 탄이 다시 멈춘 뒤 명중해도 이전 준비를 되살리지 않는다.
             _stopSignatureGeneration++;
+            _breath.ResetPreparation();
+            if (Health != null) Health.ClearShieldFrom(_buddhaShieldOwner);
+            if (moved) _footstep.OnMoved();
+            else
+            {
+                _footstep.ResetForRoom();
+                SignatureLifecycleGeneration++;
+            }
+            if (_adamDodgeOn)
+            {
+                Stats.RemoveAllFrom(_adamDodgeOwner);
+                _adamDodgeOn = false;
+            }
+            if (_body != null)
+            {
+                _lastMovementPosition = _body.position;
+                _lastMovementInput = Vector2.zero;
+                _externalDisplacement = Vector2.zero;
+            }
             _crossfire.Reset();
             _seal.Reset(clearControls: !moved);
             if (moved)
             {
+                _firstShotPending = true;
                 _curie.InvalidateAttack();
+                _thunder.Moved();
+                _windSlash.Moved();
+                _athenaShield.CancelPreparation();
+                ResetGuardian();
+                OnMovedCharge();
                 return;
             }
             _curie.Reset();
@@ -535,6 +584,33 @@ namespace HistoryHeroes.Player
             _owlMarks.Clear();
             _mark.Reset();
             ResetGuardian();
+        }
+
+        private void UpdateAdamDodge(float now)
+        {
+            if (!_adamDodgeOn || _footstep.BonusActive(now)) return;
+            Stats.RemoveAllFrom(_adamDodgeOwner);
+            _adamDodgeOn = false;
+        }
+
+        /// <summary>표적을 찾은 실제 기본 공격의 시작에서만 대표 효과를 판정한다.</summary>
+        private void OnBasicAttackStarted()
+        {
+            float now = Time.time;
+            if (hero.breathAttacks > 0 && _breath.RecordAttack(Stop.IsStopped, hero.breathAttacks, now, _sig.BreathCooldown))
+            {
+                Health.SetShieldFrom(_buddhaShieldOwner, Health.Max * _sig.BreathShieldFraction,
+                    _sig.BreathShieldDuration, now);
+                AttackFx.Burst(transform.position, 0.5f, new Color(0.83f, 0.61f, 0.32f, 0.35f), 0.15f);
+            }
+            if (hero.footstepMoveSeconds > 0f && _footstep.TryBeginAttack(Stop.IsStopped, now,
+                    _sig.FootstepCooldown, _sig.FootstepDodgeDuration))
+            {
+                Stats.Add(new StatModifier(StatType.Dodge, ModifierKind.Flat, _sig.FootstepDodgeBonus,
+                    ModifierSource.Hero, _adamDodgeOwner));
+                _adamDodgeOn = true;
+                AttackFx.Burst(transform.position, 0.45f, new Color(0.75f, 0.61f, 0.42f, 0.35f), 0.15f);
+            }
         }
 
         private void ResetGuardian()
@@ -772,6 +848,7 @@ namespace HistoryHeroes.Player
                 return;
             }
 
+            OnBasicAttackStarted();
             if (hero.attackKind == BasicAttackKind.MeleeArc || hero.attackKind == BasicAttackKind.MeleeThrust) Slash(target);
             else Fire(target);
 

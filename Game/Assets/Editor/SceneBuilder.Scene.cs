@@ -354,6 +354,22 @@ namespace HistoryHeroes.EditorTools
                 {
                     ((SkillData)d.CurieSpectrum, 1, true), (Find("active_dmg"), 1, false), (Find("aspd_up"), 4, false),
                 }),
+                ("부처 고요한 호흡형 (쉬어 가는 빛 5 · 재생 1 · 공속 4)", new[]
+                {
+                    ((SkillData)d.BuddhaRest, 5, false), (Find("regen"), 1, false), (Find("aspd_up"), 4, false),
+                }),
+                ("부처 다시 잇는 숨형 (다시 잇는 숨 · 재생 1 · 공속 4)", new[]
+                {
+                    ((SkillData)d.BuddhaBreath, 1, true), (Find("regen"), 1, false), (Find("aspd_up"), 4, false),
+                }),
+                ("아담 살피는 발걸음형 (앞길 짚기 5 · 회피 1 · 공속 4)", new[]
+                {
+                    ((SkillData)d.AdamPath, 5, false), (Find("dodge"), 1, false), (Find("aspd_up"), 4, false),
+                }),
+                ("아담 이어 가는 길형 (이어 가는 길 · 회피 1 · 공속 4)", new[]
+                {
+                    ((SkillData)d.AdamWay, 1, true), (Find("dodge"), 1, false), (Find("aspd_up"), 4, false),
+                }),
             };
 
             var so = new SerializedObject(cheats);
