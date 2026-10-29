@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using HistoryHeroes.Common;
 using HistoryHeroes.Dungeon;
@@ -22,14 +23,29 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button secondaryButton;
         [SerializeField] private TMP_Text secondaryLabel;
 
+        [Header("보상 카드 (그림 + 숫자)")]
+        [SerializeField] private RectTransform cardRow;
+        [Tooltip("꺼 둔 카드 하나 (자식 Icon · Amount). 보상마다 복제한다")]
+        [SerializeField] private GameObject cardTemplate;
+        [Tooltip("reward_키 그림 (Art/UI/Rewards)")]
+        [SerializeField] private Sprite[] rewardSprites;
+        [Tooltip("카드가 있으면 본문을 이만큼 아래에서 시작한다")]
+        [SerializeField] private float cardRowHeight = 190f;
+
         private Action _primary;
         private Action _secondary;
+        private readonly List<GameObject> _cards = new List<GameObject>();
+        private Vector2 _bodyPos;
+        private Vector2 _bodySize;
 
         public bool IsOpen => root.activeSelf;
 
         private void Awake()
         {
             root.SetActive(false);
+            _bodyPos = bodyLabel.rectTransform.anchoredPosition;
+            _bodySize = bodyLabel.rectTransform.sizeDelta;
+            if (cardTemplate != null) cardTemplate.SetActive(false);
             primaryButton.onClick.AddListener(() => _primary?.Invoke());
             secondaryButton.onClick.AddListener(() => _secondary?.Invoke());
         }
@@ -112,12 +128,59 @@ namespace HistoryHeroes.UI
             SetButtons($"다시 도전 (하트 {GameSession.HeartCost})", Retry, "로비로", GameSession.ToLobby);
         }
 
-        private static void AppendRewards(StringBuilder sb, System.Collections.Generic.List<string> lines)
+        /// <summary>그림 + 숫자만 있는 보상은 카드 줄로, 설명이 붙은 보상(별 상자 · 레벨 업 · 장비 …)은 글로</summary>
+        private void AppendRewards(StringBuilder sb, List<string> lines)
         {
-            if (lines == null || lines.Count == 0) return;
+            List<Economy.RewardCards.Card> cards = Economy.RewardCards.Split(lines, out List<string> rest);
+            ShowCards(cards);
+            if (rest.Count == 0) return;
             sb.AppendLine();
-            sb.AppendLine("<color=#FFD966>받은 것</color>");
-            foreach (string line in lines) sb.AppendLine("  " + line);
+            sb.AppendLine(cards.Count > 0 ? "<color=#FFD966>그리고</color>" : "<color=#FFD966>받은 것</color>");
+            foreach (string line in rest) sb.AppendLine("  " + line);
+        }
+
+        private void ShowCards(List<Economy.RewardCards.Card> cards)
+        {
+            foreach (GameObject card in _cards)
+            {
+                card.SetActive(false); // Destroy는 프레임 끝이라 그 전에 줄 배치에서 빠지게
+                Destroy(card);
+            }
+
+            _cards.Clear();
+            bool any = cards != null && cards.Count > 0 && cardRow != null && cardTemplate != null;
+            if (cardRow != null) cardRow.gameObject.SetActive(any);
+
+            // 카드가 있으면 본문을 카드 줄 아래로 (위 끝만 내린다)
+            float drop = any ? cardRowHeight : 0f;
+            bodyLabel.rectTransform.anchoredPosition = _bodyPos - new Vector2(0f, drop * 0.5f);
+            bodyLabel.rectTransform.sizeDelta = _bodySize - new Vector2(0f, drop);
+            if (!any) return;
+
+            for (int i = 0; i < cards.Count; i++)
+            {
+                GameObject card = Instantiate(cardTemplate, cardRow);
+                card.name = "Card_" + cards[i].Key;
+                Image icon = card.transform.Find("Icon")?.GetComponent<Image>();
+                if (icon != null) icon.sprite = SpriteOf(cards[i].Key);
+                TMP_Text amount = card.GetComponentInChildren<TMP_Text>(true);
+                if (amount != null) amount.text = "+" + Economy.Wallet.Format(cards[i].Amount);
+                UiPop pop = card.GetComponent<UiPop>();
+                if (pop != null) pop.Delay = 0.15f + 0.08f * i; // 하나씩 차례로 튀어나오게
+                card.SetActive(true);
+                _cards.Add(card);
+            }
+        }
+
+        private Sprite SpriteOf(string key)
+        {
+            if (rewardSprites == null) return null;
+            foreach (Sprite s in rewardSprites)
+            {
+                if (s != null && s.name == "reward_" + key) return s;
+            }
+
+            return null;
         }
 
         /// <summary>무한의 균열·일일 도전 결과 (기록 저장 없음): 제목 + 본문 + 버튼 2개</summary>
@@ -140,6 +203,7 @@ namespace HistoryHeroes.UI
         {
             GamePause.Pause(this);
             root.SetActive(true);
+            ShowCards(null); // 체험 · 균열 글 결과는 카드 없이
         }
 
         private void SetButtons(string primary, Action onPrimary, string secondary, Action onSecondary)

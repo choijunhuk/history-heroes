@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
 using HistoryHeroes.Dungeon;
@@ -813,13 +814,39 @@ namespace HistoryHeroes.EditorTools
             body.fontSizeMax = 38f;
             Place(body.rectTransform, Center, Center, new Vector2(0f, 20f), new Vector2(880f, 1060f));
 
+            // 보상 카드 줄 (그림 + 숫자, 2026-10-29 "보상에 그림이 너무 없다"): 제목 아래, 카드는 RunResultScreen이 복제
+            RectTransform cardRow = Rect("RewardCards", panel, Center, Center, Center, new Vector2(0f, 470f), new Vector2(900f, 190f));
+            var rowLayout = cardRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.spacing = 16f;
+            rowLayout.childAlignment = TextAnchor.MiddleCenter;
+            rowLayout.childControlWidth = rowLayout.childControlHeight = false;
+            rowLayout.childForceExpandWidth = rowLayout.childForceExpandHeight = false;
+            RectTransform card = Rect("CardTemplate", cardRow, Center, Center, Center, Vector2.zero, new Vector2(150f, 180f));
+            Img(card, new Color(0.14f, 0.16f, 0.22f), null);
+            card.gameObject.AddComponent<CanvasGroup>();
+            card.gameObject.AddComponent<UiPop>();
+            RectTransform cardIcon = Rect("Icon", card, Center, Center, Center, new Vector2(0f, 24f), new Vector2(104f, 104f));
+            Img(cardIcon, Color.white, RewardIcon("gold")).preserveAspect = true;
+            TMP_Text cardAmount = Label("Amount", card, "+0", 30, TextAlignmentOptions.Center, new Color(1f, 0.92f, 0.6f));
+            Place(cardAmount.rectTransform, Center, Center, new Vector2(0f, -58f), new Vector2(146f, 44f));
+            cardAmount.enableAutoSizing = true;
+            cardAmount.fontSizeMin = 20f;
+            cardAmount.fontSizeMax = 30f;
+            var rewardSprites = new List<Sprite>();
+            foreach (string key in RewardKeys)
+            {
+                Sprite sprite = RewardIcon(key);
+                if (sprite != null) rewardSprites.Add(sprite);
+            }
+
             Button primary = Btn("Primary", panel, "기록 남기기", new Vector2(0f, -640f), new Vector2(600f, 140f), new Color(0.2f, 0.55f, 0.32f), out TMP_Text primaryLabel);
             Button secondary = Btn("Secondary", panel, "로비로", new Vector2(0f, -800f), new Vector2(440f, 110f), new Color(0.3f, 0.32f, 0.38f), out TMP_Text secondaryLabel);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("bodyLabel", body)
-                    .Ref("primaryButton", primary).Ref("primaryLabel", primaryLabel).Ref("secondaryButton", secondary).Ref("secondaryLabel", secondaryLabel);
+                    .Ref("primaryButton", primary).Ref("primaryLabel", primaryLabel).Ref("secondaryButton", secondary).Ref("secondaryLabel", secondaryLabel)
+                    .Ref("cardRow", cardRow).Ref("cardTemplate", card.gameObject).Refs("rewardSprites", rewardSprites);
             }
 
             return screen;
