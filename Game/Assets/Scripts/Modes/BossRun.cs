@@ -21,6 +21,7 @@ namespace HistoryHeroes.Modes
     public sealed class BossRun : MonoBehaviour
     {
         [SerializeField] private List<BossData> bosses = new List<BossData>();
+        [SerializeField] private BossData thorTrial;
         [SerializeField] private SkillDatabase database;
         [Tooltip("보스 최초 격파 장비 보상 (v0.4)")]
         [SerializeField] private Meta.MetaTable metaTable;
@@ -63,7 +64,16 @@ namespace HistoryHeroes.Modes
             BossGimmicks.Notice = text => { if (hud != null) hud.ShowNotice(text, 2f); }; // 기믹 알림 (확장 1차 5장)
 
             _info = FindBoss(GameSession.Chapter);
-            _record = SaveSystem.Data.FindRecord(GameSession.BossRecordId) ?? LatestRecord();
+            _record = SaveSystem.Data.FindRecord(GameSession.BossRecordId);
+            if (!GameSession.IsGodTrial) _record ??= LatestRecord();
+            if (GameSession.IsGodTrial && (_info == null || _record == null || !GodTrialRules.IsUnlocked(SaveSystem.Data, GameSession.GodTrialId)))
+            {
+                _finished = true;
+                SaveSystem.Data.run = new RunSnapshot();
+                SaveSystem.Save();
+                result.ShowText("시련을 열 수 없어요", "고른 기록과 시련 정보를 다시 확인해 주세요.", "로비로", GameSession.ToLobby, null, null);
+                return;
+            }
 
             // 판 이어하기: 앱이 꺼지면 같은 기록으로 이 보스를 처음부터 (하트는 이미 썼다). 튜토리얼 보스는 로비가 다시 연다
             if (!GameSession.Tutorial)
@@ -71,7 +81,8 @@ namespace HistoryHeroes.Modes
                 SaveSystem.Data.run = new RunSnapshot
                 {
                     valid = true, mode = (int)BattleMode.Boss, chapter = GameSession.Chapter, practice = GameSession.Practice,
-                    recordId = _record != null ? _record.id : GameSession.BossRecordId, heartSpent = GameSession.HeartSpent, savedAt = Economy.Clock.UnixSeconds,
+                    recordId = _record != null ? _record.id : GameSession.BossRecordId, godTrialId = GameSession.GodTrialId,
+                    heartSpent = GameSession.HeartSpent, savedAt = Economy.Clock.UnixSeconds,
                 };
                 SaveSystem.Save();
             }
@@ -84,7 +95,7 @@ namespace HistoryHeroes.Modes
             skills.ApplyRecord(build.Skills, database);
             _foughtActives = Stars.ActiveIds(build.Skills, database);
 
-            hud.RoomText = (_info != null ? $"보스  {_info.displayName}" : "보스") + (GameSession.Practice ? "  (연습)" : string.Empty);
+            hud.RoomText = (_info != null ? $"{(GameSession.IsGodTrial ? "신의 시련" : "보스")}  {_info.displayName}" : "보스") + (GameSession.Practice ? "  (연습)" : string.Empty);
             hud.SetBossMode();
             player.Teleport(playerStart.position);
             player.Health.Died += _ => Finish(victory: false);
@@ -103,7 +114,7 @@ namespace HistoryHeroes.Modes
             };
             if (_info != null)
             {
-                bool challenge = !GameSession.Practice && !GameSession.Tutorial && !Stars.Has(SaveSystem.Data, _info.chapter, Stars.Boss, 2);
+                bool challenge = !GameSession.IsGodTrial && !GameSession.Practice && !GameSession.Tutorial && !Stars.Has(SaveSystem.Data, _info.chapter, Stars.Boss, 2);
                 hud.SetHitCounter(challenge, () => _hitsTaken, _info.star2MaxHits);
             }
 
@@ -162,7 +173,7 @@ namespace HistoryHeroes.Modes
             long now = Clock.UnixSeconds;
             string today = Clock.Today;
 
-            if (!GameSession.Tutorial) Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null, _info != null ? _info.chapter : GameSession.Chapter); // 연습은 안 센다
+            if (!GameSession.Tutorial && !GameSession.IsGodTrial) Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null, _info != null ? _info.chapter : GameSession.Chapter); // 연습은 안 센다
             if (GameSession.Tutorial)
             {
                 // 튜토리얼 보스 (UX 4장): 별·구간 해금·최초 격파 보상 없이 튜토리얼 끝 → 출석부·7일 미션·펫 칸이 열린다
@@ -172,6 +183,14 @@ namespace HistoryHeroes.Modes
                     if (metaTable != null && metaTable.pets != null) lines.AddRange(Pets.PetService.CheckAll(save, metaTable.pets));
                     GameSession.TutorialJustFinished = true;
                 }
+            }
+            else if (GameSession.IsGodTrial)
+            {
+                GodTrialResult trial = GodTrialRules.Complete(save, GameSession.GodTrialId, _record, _foughtActives,
+                    victory, GameSession.Practice, GameSession.HeartSpent, Clock.Now());
+                firstClear = trial.FirstClear;
+                lines.AddRange(trial.Lines);
+                if (GameSession.Practice) lines.Add("연습이라 보상·진행·신 조각은 없어요");
             }
             else if (GameSession.Practice)
             {
@@ -230,9 +249,10 @@ namespace HistoryHeroes.Modes
                 Seconds = elapsed,
                 BossName = _info != null ? _info.displayName : "보스",
                 HitsTaken = _hitsTaken,
-                Star2MaxHits = _info != null ? _info.star2MaxHits : 0,
+                Star2MaxHits = !GameSession.IsGodTrial && _info != null ? _info.star2MaxHits : 0,
                 FirstClear = firstClear,
-                UnlockedChapter = firstClear ? _info.chapter + 1 : 0,
+                IsGodTrial = GameSession.IsGodTrial,
+                UnlockedChapter = firstClear && !GameSession.IsGodTrial ? _info.chapter + 1 : 0,
                 BasicAttackShare = DamageLog.BasicShare,
                 RecordLabel = _record != null ? RecordFormat.Title(_record, database) : "기록 없음 (기본 공격만)",
                 RewardLines = lines,
@@ -263,6 +283,7 @@ namespace HistoryHeroes.Modes
 
         private BossData FindBoss(int chapter)
         {
+            if (GameSession.IsGodTrial) return thorTrial != null && thorTrial.id == GameSession.GodTrialId ? thorTrial : null;
             foreach (BossData b in bosses)
             {
                 if (b != null && b.chapter == chapter) return b;
@@ -316,6 +337,7 @@ namespace HistoryHeroes.Modes
         public int HitsTaken;
         public int Star2MaxHits;
         public bool FirstClear;
+        public bool IsGodTrial;
         public int UnlockedChapter;
         public float BasicAttackShare;
         public string RecordLabel;

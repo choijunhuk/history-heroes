@@ -30,8 +30,12 @@ namespace HistoryHeroes.Modes
         public static string HeroFor(string dayKey, IReadOnlyList<string> heroOrder)
         {
             if (heroOrder == null || heroOrder.Count == 0) return "khan";
+            var eligible = new List<string>();
+            foreach (string heroId in heroOrder)
+                if (!GodTrialRules.IsGod(heroId)) eligible.Add(heroId);
+            if (eligible.Count == 0) return "khan";
             int n = DayNumber(dayKey) + 1; // 미션 "오늘의 영웅"과 하루 어긋나게
-            return heroOrder[((n % heroOrder.Count) + heroOrder.Count) % heroOrder.Count];
+            return eligible[((n % eligible.Count) + eligible.Count) % eligible.Count];
         }
 
         public static List<RoomPlan> Plan()
@@ -148,7 +152,9 @@ namespace HistoryHeroes.Modes
             save.dailyChallenge.participations++;
             save.dailyChallenge.history.Insert(0, new DailyResult { dayKey = save.dailyChallenge.dayKey, heroId = heroId, score = score, cleared = cleared });
             if (save.dailyChallenge.history.Count > 14) save.dailyChallenge.history.RemoveRange(14, save.dailyChallenge.history.Count - 14);
-            var reward = new Economy.Reward { Gold = RewardGold, HeroShards = RewardHeroShards, HeroId = heroId };
+            var reward = new Economy.Reward { Gold = RewardGold,
+                HeroShards = GodTrialRules.CanReceiveNormalShards(save, heroId) ? RewardHeroShards : 0,
+                HeroId = heroId };
             Economy.Wallet.Grant(save, reward);
             lines.Add(reward.ToString());
             return lines;

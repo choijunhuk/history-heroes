@@ -24,6 +24,8 @@ namespace HistoryHeroes.Skills
         [Tooltip("지속 시간 (장판 등). 0이면 즉발")]
         public float duration = 0f;
         public float durationPerLevel = 0f;
+        [Tooltip("귀환 망치가 돌아올 때 내리는 한 번의 낙뢰 피해 배수. 다른 기술은 0")]
+        public float returnImpactCoefficient;
 
         public ActiveSkillBehaviour behaviourPrefab;
 

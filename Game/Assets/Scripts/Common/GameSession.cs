@@ -29,6 +29,56 @@ namespace HistoryHeroes.Common
         /// <summary>보스전에 쓸 기록 ID</summary>
         public static string BossRecordId { get; private set; }
 
+        /// <summary>신의 시련은 기존 보스 모드·1구간 경기장을 쓰고 진행과 보상만 나눈다.</summary>
+        public static string GodTrialId { get; private set; }
+        public static bool IsGodTrial => !string.IsNullOrEmpty(GodTrialId);
+
+        private static bool CanEnterGodTrial(SaveData data, string trialId, string recordId)
+        {
+            if (data == null || !Modes.GodTrialRules.IsUnlocked(data, trialId)) return false;
+            RunRecord record = data.FindRecord(recordId);
+            return record != null && (!Modes.GodTrialRules.IsGod(record.heroId) || Modes.GodTrialRules.IsHeroUnlocked(data, record.heroId));
+        }
+
+        /// <summary>장면·하트를 건드리지 않고 입장 설정만 만든다. 없는 기록을 다른 기록으로 바꾸지 않는다.</summary>
+        public static bool PrepareGodTrial(SaveData data, string trialId, string recordId, bool practice)
+        {
+            if (!CanEnterGodTrial(data, trialId, recordId)) return false;
+            ClearSpecialRun();
+            GodTrialId = trialId;
+            Mode = BattleMode.Boss;
+            Chapter = 1;
+            BossRecordId = recordId;
+            Practice = practice;
+            HeartSpent = false;
+            return true;
+        }
+
+        public static bool TryStartGodTrial(string trialId, string recordId)
+        {
+            if (!TryPrepareGodTrialAttempt(SaveSystem.Data, trialId, recordId, Clock.Now())) return false;
+            SaveSystem.Save();
+            Load(BattleScene);
+            return true;
+        }
+
+        /// <summary>장면을 열기 전에 실전 시련 비용을 확정한다. 첫날 무료 판과 따로 센다.</summary>
+        public static bool TryPrepareGodTrialAttempt(SaveData data, string trialId, string recordId, System.DateTimeOffset now)
+        {
+            if (!CanEnterGodTrial(data, trialId, recordId)) return false;
+            if (!Hearts.TrySpend(data, 1, now.ToUnixTimeSeconds(), now.ToString("yyyy-MM-dd"), out _, allowFirstDayFree: false)) return false;
+            PrepareGodTrial(data, trialId, recordId, false);
+            HeartSpent = true;
+            return true;
+        }
+
+        public static bool StartGodTrialPractice(string trialId, string recordId)
+        {
+            if (!PrepareGodTrial(SaveSystem.Data, trialId, recordId, true)) return false;
+            Load(BattleScene);
+            return true;
+        }
+
         /// <summary>이번 판에 하트를 실제로 썼는가 (첫날 무료 판이면 false → 보스 패배 환급 대상 아님)</summary>
         public static bool HeartSpent { get; private set; }
 
@@ -114,6 +164,20 @@ namespace HistoryHeroes.Common
             switch ((BattleMode)s.mode)
             {
                 case BattleMode.Boss:
+                    if (!string.IsNullOrEmpty(s.godTrialId))
+                    {
+                        if (!PrepareGodTrial(SaveSystem.Data, s.godTrialId, s.recordId, s.practice))
+                        {
+                            SaveSystem.Data.run = new RunSnapshot();
+                            SaveSystem.Save();
+                            return;
+                        }
+
+                        HeartSpent = !s.practice && s.heartSpent;
+                        Load(BattleScene);
+                        return;
+                    }
+
                     if (s.practice)
                     {
                         StartBossPractice(s.chapter, s.recordId);
@@ -198,6 +262,7 @@ namespace HistoryHeroes.Common
         {
             Resuming = null;
             TrialHeroId = null;
+            GodTrialId = null;
             Tutorial = false;
             RunSeed = 0;
             CustomPlan = null;
@@ -305,6 +370,9 @@ namespace HistoryHeroes.Common
         /// <summary>결과 화면의 "다시 도전": 같은 설정, 그 모드의 하트</summary>
         public static bool TryRetry()
         {
+            if (IsGodTrial)
+                return Practice ? StartGodTrialPractice(GodTrialId, BossRecordId) : TryStartGodTrial(GodTrialId, BossRecordId);
+
             if (Tutorial)
             {
                 if (Mode == BattleMode.Boss) StartTutorialBoss(BossRecordId);

@@ -46,6 +46,7 @@ namespace HistoryHeroes.Enemy
         [SerializeField] private float waveDamage = 0.8f;
         [SerializeField] private float waveRecover = 1.4f;
         [SerializeField] private float secondRingDelay = 0.35f;
+        [SerializeField] private bool straightWave;
 
         [Header("단계·이동")]
         [SerializeField] private float phase3TelegraphScale = 0.8f;
@@ -159,10 +160,13 @@ namespace HistoryHeroes.Enemy
         private static readonly Pattern[] Phase1 = { Pattern.Slam, Pattern.Charge };
         private static readonly Pattern[] Phase2 = { Pattern.Slam, Pattern.Charge, Pattern.Wave };
         private static readonly Pattern[] Phase3 = { Pattern.Slam, Pattern.Wave, Pattern.Charge };
+        private static readonly Pattern[] ThorCycle = { Pattern.Slam, Pattern.Wave };
 
         private Pattern NextPattern()
         {
-            Pattern[] cycle = _phase == 1 ? Phase1 : _phase == 2 ? Phase2 : Phase3;
+            // 토르는 수문장의 공격 부품을 쓰면서도 강타 뒤 직선 파동을 반복한다.
+            Pattern[] cycle = straightWave ? ThorCycle
+                : _phase == 1 ? Phase1 : _phase == 2 ? Phase2 : Phase3;
             Pattern next = cycle[_step % cycle.Length];
             _step++;
             return next;
@@ -174,7 +178,7 @@ namespace HistoryHeroes.Enemy
             switch (pattern)
             {
                 case Pattern.Slam:
-                    _slamsLeft = _phase >= 3 ? 2 : 1;
+                    _slamsLeft = !straightWave && _phase >= 3 ? 2 : 1;
                     BeginSlam();
                     break;
 
@@ -184,6 +188,7 @@ namespace HistoryHeroes.Enemy
                     break;
 
                 case Pattern.Wave:
+                    if (straightWave) _chargeDirection = ToPlayer.normalized;
                     if (waveGlow != null) waveGlow.enabled = true;
                     Enter(State.Telegraph, waveTelegraph * PhaseTelegraph);
                     break;
@@ -235,10 +240,11 @@ namespace HistoryHeroes.Enemy
                     break;
 
                 case Pattern.Wave:
+                    if (straightWave) DrawTelegraphLine(transform.position, ChargeEnd());
                     if (waveGlow != null)
                     {
                         float pulse = 0.35f + 0.25f * Mathf.Sin(Time.time * 18f);
-                        waveGlow.color = new Color(0.75f, 0.45f, 1f, pulse);
+                        waveGlow.color = straightWave ? new Color(0.45f, 0.75f, 1f, pulse) : new Color(0.75f, 0.45f, 1f, pulse);
                     }
 
                     if (stateTimer <= 0f) Wave();
@@ -316,15 +322,25 @@ namespace HistoryHeroes.Enemy
         private void Wave()
         {
             if (waveGlow != null) waveGlow.enabled = false;
-            FireRing(0f);
+            if (straightWave) FireStraightWave();
+            else FireRing(0f);
 
-            if (_phase >= 3)
+            if (!straightWave && _phase >= 3)
             {
                 _secondRingPending = true;
                 _secondRingTimer = secondRingDelay;
             }
 
             Enter(State.Recover, waveRecover);
+        }
+
+        private void FireStraightWave()
+        {
+            Vector2 origin = transform.position;
+            Vector2 side = new Vector2(-_chargeDirection.y, _chargeDirection.x) * 0.32f;
+            for (int i = -1; i <= 1; i++)
+                EnemyProjectiles.Fire(origin + side * i, _chargeDirection, waveSpeed,
+                    DamageCalculator.Enemy(Damage * waveDamage, "boss_wave"), playerMask, this);
         }
 
         private void TickSecondRing()

@@ -220,6 +220,8 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "Seondeok", female = true, body = "Female_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.66f, 0.38f, 0.82f), goldParts = new[] { "Female_Peasant_Body" }, hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.09f, 0.065f, 0.09f), props = new[] { "Davinci_Scroll" } },
             // 부디카: 녹색 옷과 갈색 가죽 위에 청동 보호대. 새 검을 만들기 전까지 손은 비워 둔다.
             new Look { name = "Boudica", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.88f, 0.92f, 0.78f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.67f, 0.43f, 0.24f), hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.48f, 0.21f, 0.11f), attack = "Sword_Regular_A", props = new[] { "Boudica_Sword" } },
+            // 같은 얼굴·망치를 플레이 영웅과 시련 형상이 공유한다. 보스 크기만 전투 프리팹에서 조절한다.
+            new Look { name = "Thor", body = "Male_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.48f, 0.44f, 0.43f), hide = new[] { "Male_Ranger_Head_Hood" }, metalParts = new[] { "Male_Ranger_Acc_Pauldron", "Male_Ranger_Arms_Bracer" }, metalColor = new Color(0.66f, 0.38f, 0.24f), hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.75f, 0.37f, 0.17f), attack = "Sword_Regular_A", props = new[] { "Thor_Hammer" } },
         };
 
         public sealed class EnemyLook
@@ -310,6 +312,11 @@ namespace HistoryHeroes.EditorTools
         /// <summary>적 모델 (id = EnemyData.id) · 키. 없으면 null</summary>
         public static GameObject EnemyModel(string id, out float height)
         {
+            if (id == "thor_trial")
+            {
+                height = 1.72f;
+                return HeroModel("thor");
+            }
             foreach (EnemyLook e in Enemies)
             {
                 if (System.Array.IndexOf(e.ids, id) < 0) continue;

@@ -154,6 +154,14 @@ namespace HistoryHeroes.Heroes
         [Tooltip("보스 밀침 거리 비율. 일반 밀침 면역과 별도로 적용한다")]
         public float reclaimBossScale;
 
+        [Header("토르 천둥의 무게")]
+        [Tooltip("연속으로 멈춰 쓴 기본 공격 몇 회마다 충격파가 나가는가. 0이면 사용하지 않는다")]
+        public int thunderEvery;
+        public float thunderRadius;
+        public float thunderCoefficient;
+        [Tooltip("해금 전 30조각이 필요한 신 영웅")]
+        public bool godShardUnlock;
+
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
         public float star3FirstShotBonus = -1f;
@@ -201,6 +209,10 @@ namespace HistoryHeroes.Heroes
         public float star3ReclaimKnockback = -1f;
         [Tooltip("★5 준비 공격 피해 보너스 (부디카 20%)")]
         public float star5ReclaimAttackBonus = -1f;
+        [Tooltip("★3 토르 충격파 반경")]
+        public float star3ThunderRadius = -1f;
+        [Tooltip("★5 토르 충격파 피해 배수")]
+        public float star5ThunderCoefficient = -1f;
 
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]

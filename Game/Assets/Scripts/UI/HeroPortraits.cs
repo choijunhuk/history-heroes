@@ -189,9 +189,13 @@ namespace HistoryHeroes.UI
                 images[i].texture = texture;
                 images[i].color = Color.white;
                 var slot = new Slot { Index = i, Camera = cam, Model = model, Animator = animator, Texture = texture, Yaw = startYaw };
-                var drag = images[i].GetComponent<PortraitDrag>();
-                if (drag == null) drag = images[i].gameObject.AddComponent<PortraitDrag>();
-                drag.Dragged = dx => Rotate(slot, dx);
+                // 가로 영웅 줄에서는 손가락 끌기를 ScrollRect가 받아야 목록을 넘길 수 있다.
+                if (images[i].GetComponentInParent<ScrollRect>() == null)
+                {
+                    var drag = images[i].GetComponent<PortraitDrag>();
+                    if (drag == null) drag = images[i].gameObject.AddComponent<PortraitDrag>();
+                    drag.Dragged = dx => Rotate(slot, dx);
+                }
                 _slots.Add(slot);
             }
         }

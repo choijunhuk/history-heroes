@@ -108,6 +108,8 @@ namespace HistoryHeroes.UI
         {
             if (GameSession.Tutorial) return "튜토리얼은 지지 않아요. 끝까지 가 봐요!";
             if (GameSession.IsHeroTrial) return "포기하면 체험이 끝나요 (보상·기록 없음)";
+            if (GameSession.IsGodTrial) return GameSession.Practice ? "포기하면 연습이 끝나요 (보상·진행 없음)"
+                : "포기하면 패배로 끝나요. 미격파 시련은 하루 최대 5회 하트를 돌려받아요.";
             switch (GameSession.Mode)
             {
                 case BattleMode.Boss: return GameSession.Practice ? "포기하면 연습이 끝나요" : "포기하면 패배로 끝나요 (하트는 돌아오지 않아요)";

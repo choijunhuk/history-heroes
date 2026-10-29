@@ -15,8 +15,8 @@ namespace HistoryHeroes.EditorTools
         private sealed class BossDataSet
         {
             public EnemyData Bison, Torch, Golem, Hunter, HunterClone, Executor;
-            public EnemyData Wraith, Colossus, Twins, King;
-            public BossData WraithLord, SteelColossus, ShadowTwins, OblivionKing;
+            public EnemyData Wraith, Colossus, Twins, King, Thor;
+            public BossData WraithLord, SteelColossus, ShadowTwins, OblivionKing, ThorTrial;
         }
 
         private static BossDataSet _bosses;
@@ -35,8 +35,9 @@ namespace HistoryHeroes.EditorTools
                 Colossus = Enemy("boss_colossus", "강철 거상", 0.8f, 1f, 1.6f, new Color(0.6f, 0.62f, 0.68f)),
                 Twins = Enemy("boss_twins", "그림자 쌍둥이", 2.2f, 0.85f, 1.4f, new Color(0.22f, 0.2f, 0.32f)),
                 King = Enemy("boss_king", "망각의 왕", 1.6f, 1f, 1.4f, new Color(0.55f, 0.3f, 0.75f)),
+                Thor = Enemy("thor_trial", "토르의 시험 형상", 2.2f, 1.1f, 1.5f, new Color(0.55f, 0.58f, 0.65f)),
             };
-            foreach (EnemyData e in new[] { b.Bison, b.Torch, b.Golem, b.Hunter, b.Executor, b.Wraith, b.Colossus, b.Twins, b.King })
+            foreach (EnemyData e in new[] { b.Bison, b.Torch, b.Golem, b.Hunter, b.Executor, b.Wraith, b.Colossus, b.Twins, b.King, b.Thor })
             {
                 e.experience = 0; // 보스는 경험치 대신 방 클리어로
                 EditorUtility.SetDirty(e);
@@ -50,6 +51,7 @@ namespace HistoryHeroes.EditorTools
             b.SteelColossus = Boss("steel_colossus", "강철 거상", 3, "탄막을 쏟아붓는다 → 칼날 탱커형, 피하기", "칼날 탱커형 (강철 회오리·방어력·최대체력)", SkillRole.Defense, 560f, 2f, 6);
             b.ShadowTwins = Boss("shadow_twins", "그림자 쌍둥이", 4, "둘이 따로 움직이고 한 번에 하나만 맞는다 → 단일 순간 화력", "연사형 (공격속도·멀티샷·공격력)", SkillRole.Single, 680f, 2.3f, 6);
             b.OblivionKing = Boss("oblivion_king", "망각의 왕", 5, "앞 보스의 시험을 전부 섞는다 → 완성된 빌드", "강점이 고른 빌드 (조합 1~2개 + 기본 공격)", SkillRole.None, 900f, 2.7f, 5);
+            b.ThorTrial = Boss("thor_trial", "토르", 5, "망치 내려치기 → 직선 충격파 → 멈춰 쏠 빈틈", "정지 단일 화력 (공격속도·공격력)", SkillRole.Single, 780f, 2.35f, 0);
             _bosses = b;
         }
 
@@ -125,6 +127,16 @@ namespace HistoryHeroes.EditorTools
                 Common(false, 2.3f)(go, props);
                 props.Ref("minion", p.Minion);
             });
+            // 수문장의 예고·빈틈을 그대로 쓰되, 토르는 파동을 전방 한 줄로 낸다.
+            b.ThorTrial.prefab = EnemyPrefab<RiftWardenBoss>("Boss_ThorTrial", b.Thor, _circle, line, false, (go, props) =>
+            {
+                props.Ref("slamMarker", ChildSprite(go, "SlamMarker", _circle, new Color(1f, 0.25f, 0.2f, 0.3f), 1f, -1));
+                props.Ref("openingRing", ChildSprite(go, "OpeningRing", _circle, new Color(1f, 0.9f, 0.25f, 0.35f), 1.6f, -1));
+                props.Ref("waveGlow", ChildSprite(go, "WaveGlow", _circle, new Color(0.6f, 0.8f, 1f, 0.4f), 1.35f, 3));
+                props.Mask("wallMask", Mask(WallLayer)).Bool("straightWave", true)
+                    .Float("bossScale", 2.35f).Float("slamRecover", 1.9f).Float("waveRecover", 1.8f)
+                    .Float("chargeMissRecover", 1.8f).Float("stunTime", 2.4f);
+            });
         }
 
         private static void LinkBosses(Prefabs p)
@@ -134,7 +146,7 @@ namespace HistoryHeroes.EditorTools
             b.SteelColossus.prefab = p.SteelColossus;
             b.ShadowTwins.prefab = p.ShadowTwins;
             b.OblivionKing.prefab = p.OblivionKing;
-            foreach (BossData boss in new[] { b.WraithLord, b.SteelColossus, b.ShadowTwins, b.OblivionKing }) EditorUtility.SetDirty(boss);
+            foreach (BossData boss in new[] { b.WraithLord, b.SteelColossus, b.ShadowTwins, b.OblivionKing, b.ThorTrial }) EditorUtility.SetDirty(boss);
         }
 
         /// <summary>구간 1~5 보스맵 보스 (로비·보스맵이 같이 쓴다)</summary>
@@ -150,5 +162,7 @@ namespace HistoryHeroes.EditorTools
             for (int i = 0; i < ids.Length; i++) list[i] = AssetDatabase.LoadAssetAtPath<BossData>($"{DataDir}/Bosses/Boss_{ids[i]}.asset");
             return list;
         }
+
+        private static BossData LoadThorTrial() => AssetDatabase.LoadAssetAtPath<BossData>($"{DataDir}/Bosses/Boss_thor_trial.asset");
     }
 }

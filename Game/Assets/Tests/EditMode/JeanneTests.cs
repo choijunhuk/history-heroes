@@ -38,13 +38,13 @@ namespace HistoryHeroes.Tests
             UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
 
         [Test]
-        public void RosterContainsElevenHeroesIncludingJeanneSeondeokAndBoudica()
+        public void RosterContainsTwelveHeroesIncludingJeanneSeondeokBoudicaAndThor()
         {
             HeroRoster roster = Roster();
             Assert.IsNotNull(roster, "장면 빌더가 만든 영웅 명단");
             CollectionAssert.AreEqual(new[]
             {
-                "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica"
+                "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica", "thor"
             }, roster.heroes.ConvertAll(hero => hero.id));
             Assert.AreEqual("jeanne", roster.Find("jeanne").id, "없는 ID를 기본 영웅으로 돌려주는 오류도 잡는다");
         }

@@ -16,7 +16,8 @@ namespace HistoryHeroes.Records
         /// <summary>6: 카드 빼기 이력·남은 횟수와 목표 레시피 (옛 저장은 빼기 2회부터)</summary>
         /// <summary>7: 유물 뽑기 횟수·무료 날짜·중복 진행. 옛 저장의 빈 값은 모두 0/없음이 맞다.</summary>
         /// <summary>8: 장비 6칸. 앞의 무기·갑옷·장신구 번호는 그대로 두고 새 칸을 뒤에 붙인다.</summary>
-        public const int CurrentSchemaVersion = 8;
+        /// <summary>9: 토르 시련의 첫 격파와 주간 목표를 별도로 보관한다.</summary>
+        public const int CurrentSchemaVersion = 9;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -134,6 +135,8 @@ namespace HistoryHeroes.Records
         public List<string> unlockedHeroes = new List<string>();
         /// <summary>망각의 왕 첫 격파 뒤 "신의 심판" 예고 장면을 봤다 (GodsVsHumanity 2장, 한 번만)</summary>
         public bool godsTeaserSeen;
+        /// <summary>신의 시련 첫 격파·주간 조각 목표. 기존 보스 별과는 별개다.</summary>
+        public GodTrialSave godTrials = new GodTrialSave();
 
         public int ItemCount(string itemId)
         {
@@ -148,6 +151,12 @@ namespace HistoryHeroes.Records
         public void AddItem(string itemId, int amount)
         {
             if (amount == 0 || string.IsNullOrEmpty(itemId)) return;
+            if (amount > 0 && itemId == "hero_shard_thor" && (unlockedHeroes == null || !unlockedHeroes.Contains("thor")))
+            {
+                // 해금 전 토르 조각은 시련과 주간 목표를 합쳐 30개까지만 보관한다.
+                amount = Math.Min(amount, Math.Max(0, Modes.GodTrialRules.UnlockShards - ItemCount(itemId)));
+                if (amount == 0) return;
+            }
             foreach (ItemCount i in items)
             {
                 if (i.id != itemId) continue;
@@ -383,6 +392,8 @@ namespace HistoryHeroes.Records
         public string weekKey;
         /// <summary>보스: 쓴 기록</summary>
         public string recordId;
+        /// <summary>보스 모드의 신의 시련 ID. 빈 값이면 기존 구간 보스다.</summary>
+        public string godTrialId;
         public int room = 1;
         public string heroId;
         public List<RecordSkill> skills = new List<RecordSkill>();
@@ -752,6 +763,28 @@ namespace HistoryHeroes.Records
     public sealed class BossWin
     {
         public string bossId;
+        public List<string> actives = new List<string>();
+    }
+
+    /// <summary>시련 첫 승리는 영구 저장하고 주간 목표의 기록 구성은 한 주만 남긴다.</summary>
+    [Serializable]
+    public sealed class GodTrialSave
+    {
+        public List<string> cleared = new List<string>();
+        public string weekKey;
+        public string goalTrialId;
+        public string firstRecordId;
+        public List<string> firstActives = new List<string>();
+        /// <summary>이번 주 각 승리 당시 기록 ID와 실제 액티브 구성. 기록을 지워도 비교는 남는다.</summary>
+        public List<GodTrialWin> weeklyWins = new List<GodTrialWin>();
+        public bool goalLocked;
+        public int weeklyShards;
+    }
+
+    [Serializable]
+    public sealed class GodTrialWin
+    {
+        public string recordId;
         public List<string> actives = new List<string>();
     }
 

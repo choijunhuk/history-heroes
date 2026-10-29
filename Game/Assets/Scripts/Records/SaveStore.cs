@@ -391,6 +391,12 @@ namespace HistoryHeroes.Records
                 }
             }
 
+            if (data.schemaVersion < 9)
+            {
+                // 8 → 9: 기존 보스 격파·기록은 그대로 두고 시련의 주간 목표만 빈 상태로 연다.
+                data.godTrials = new GodTrialSave();
+            }
+
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -409,6 +415,22 @@ namespace HistoryHeroes.Records
             data.daily ??= new DailyCounters();
             data.daily.heartRefunds ??= new List<ItemCount>();
             data.unlockedHeroes ??= new List<string>();
+            data.godTrials ??= new GodTrialSave();
+            data.godTrials.cleared ??= new List<string>();
+            data.godTrials.cleared.RemoveAll(string.IsNullOrEmpty);
+            data.godTrials.firstActives ??= new List<string>();
+            data.godTrials.firstActives.RemoveAll(string.IsNullOrEmpty);
+            data.godTrials.weeklyWins ??= new List<GodTrialWin>();
+            data.godTrials.weeklyWins.RemoveAll(w => w == null || string.IsNullOrEmpty(w.recordId));
+            foreach (GodTrialWin win in data.godTrials.weeklyWins)
+            {
+                win.actives ??= new List<string>();
+                win.actives.RemoveAll(string.IsNullOrEmpty);
+            }
+            data.godTrials.weeklyShards = Math.Clamp(data.godTrials.weeklyShards, 0, 5);
+            if (string.IsNullOrEmpty(data.godTrials.firstRecordId)) data.godTrials.goalLocked = false;
+            if (data.ItemCount(Economy.Wallet.HeroShard("thor")) > 30 && !data.unlockedHeroes.Contains("thor"))
+                data.AddItem(Economy.Wallet.HeroShard("thor"), 30 - data.ItemCount(Economy.Wallet.HeroShard("thor")));
             data.settings ??= new GameSettings();
             data.settings.shake = Math.Clamp(data.settings.shake, 0, 2);
 

@@ -54,14 +54,14 @@ namespace HistoryHeroes.Economy
         }
 
         /// <summary>판 시작에 하트를 쓴다. 첫날 처음 3판은 무료. 모자라면 false.</summary>
-        public static bool TrySpend(SaveData d, int amount, long now, string today, out bool wasFree)
+        public static bool TrySpend(SaveData d, int amount, long now, string today, out bool wasFree, bool allowFirstDayFree = true)
         {
             Tick(d, now);
             wasFree = false;
             if (amount <= 0) return true;
 
             if (string.IsNullOrEmpty(d.firstPlayDate)) d.firstPlayDate = today;
-            if (d.firstPlayDate == today && d.freeRunsUsed < FreeRunsFirstDay)
+            if (allowFirstDayFree && d.firstPlayDate == today && d.freeRunsUsed < FreeRunsFirstDay)
             {
                 d.freeRunsUsed++;
                 wasFree = true;

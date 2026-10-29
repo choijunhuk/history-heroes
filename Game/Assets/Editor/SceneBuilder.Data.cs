@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok, Boudica;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok, Boudica, Thor;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -211,6 +211,11 @@ namespace HistoryHeroes.EditorTools
             BoudicaDefinition.ConfigureHero(d.Boudica);
             d.Boudica.model3D = Art3DCharacters.HeroModel("boudica");
             d.Boudica.modelHeight = HeroModelHeight;
+
+            d.Thor = AssetUtil.LoadOrCreate<HeroData>($"{DataDir}/Heroes/Hero_thor.asset");
+            ThorDefinition.ConfigureHero(d.Thor);
+            d.Thor.model3D = Art3DCharacters.HeroModel("thor");
+            d.Thor.modelHeight = HeroModelHeight;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -477,6 +482,11 @@ namespace HistoryHeroes.EditorTools
             d.BoudicaRally.icon = Icon("sword");
             d.Pool.Add(d.BoudicaRally);
             d.Boudica.exclusiveActive = d.BoudicaRally;
+            d.ThorHammer = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_thor_hammer.asset");
+            ThorDefinition.ConfigureHammer(d.ThorHammer);
+            d.ThorHammer.icon = Icon("lightning");
+            d.Pool.Add(d.ThorHammer);
+            d.Thor.exclusiveActive = d.ThorHammer;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -528,7 +538,10 @@ namespace HistoryHeroes.EditorTools
             d.BoudicaUprising = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_boudica_uprising.asset");
             BoudicaDefinition.ConfigureUprising(d.BoudicaUprising);
             d.BoudicaUprising.icon = Icon("sword");
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising }) UnityEditor.EditorUtility.SetDirty(s);
+            d.ThorReturn = AssetUtil.LoadOrCreate<ActiveSkillData>($"{DataDir}/Skills/Active_thor_return.asset");
+            ThorDefinition.ConfigureReturn(d.ThorReturn);
+            d.ThorReturn.icon = Icon("lightning");
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -549,9 +562,12 @@ namespace HistoryHeroes.EditorTools
             FusionRecipe boudicaRecipe = AddHeroRecipe(d, "boudica_uprising", FusionType.Evolution, d.BoudicaRally, 5, boudicaAttack, 1, d.BoudicaUprising, "boudica");
             BoudicaDefinition.ConfigureRecipe(boudicaRecipe, d.BoudicaRally, boudicaAttack, d.BoudicaUprising);
             UnityEditor.EditorUtility.SetDirty(boudicaRecipe);
+            FusionRecipe thorRecipe = AddHeroRecipe(d, "thor_return", FusionType.Evolution, d.ThorHammer, 5, aspd, 1, d.ThorReturn, "thor");
+            ThorDefinition.ConfigureRecipe(thorRecipe, d.ThorHammer, aspd, d.ThorReturn);
+            UnityEditor.EditorUtility.SetDirty(thorRecipe);
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok, d.Boudica };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok, d.Boudica, d.Thor };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -560,7 +576,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation, d.BoudicaUprising, d.ThorReturn,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -609,6 +625,7 @@ namespace HistoryHeroes.EditorTools
             ["jeanne_wave"] = SkillRole.Area, ["jeanne_orleans"] = SkillRole.Area,
             ["seondeok_starlight"] = SkillRole.Area, ["seondeok_constellation"] = SkillRole.Area,
             ["boudica_rally"] = SkillRole.Area, ["boudica_uprising"] = SkillRole.Area,
+            ["thor_hammer"] = SkillRole.Single, ["thor_return"] = SkillRole.Single,
             ["ysg_pyeonjeon"] = SkillRole.Single, ["ysg_shingung"] = SkillRole.Single,
             ["zhuge_gate"] = SkillRole.Defense,
             // 방어: 버티기·막기
@@ -777,6 +794,9 @@ namespace HistoryHeroes.EditorTools
             d.Boudica.projectilePrefab = p.SwordWave;
             d.BoudicaRally.behaviourPrefab = p.BoudicaRally;
             d.BoudicaUprising.behaviourPrefab = p.BoudicaUprising;
+            d.Thor.projectilePrefab = p.SwordWave;
+            d.ThorHammer.behaviourPrefab = p.ThorHammer;
+            d.ThorReturn.behaviourPrefab = p.ThorReturn;
             d.KhanVolley.behaviourPrefab = p.KhanVolley;
             d.KhanStorm.behaviourPrefab = p.KhanStorm;
             d.GuanSpin.behaviourPrefab = p.GuanSpin;

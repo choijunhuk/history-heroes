@@ -52,20 +52,20 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void MissionOrderContainsElevenUniqueHeroesWithBoudicaLast()
+        public void MissionOrderContainsTwelveUniqueHeroesWithThorLast()
         {
             MissionTable missions = Create<MissionTable>();
-            string[] ids = { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica" };
+            string[] ids = { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica", "thor" };
             CollectionAssert.AreEqual(ids, missions.heroOrder);
-            Assert.AreEqual(11, new HashSet<string>(missions.heroOrder).Count);
+            Assert.AreEqual(12, new HashSet<string>(missions.heroOrder).Count);
         }
 
         [Test]
-        public void CharacterDefinitionsContainElevenHeroesAndThreeWomen()
+        public void CharacterDefinitionsContainTwelveHeroesAndThreeWomen()
         {
             CollectionAssert.AreEqual(new[]
             {
-                "Khan", "Guan", "Napoleon", "Tesla", "YiSunsin", "YiSeonggye", "Davinci", "Zhuge", "Jeanne", "Seondeok", "Boudica"
+                "Khan", "Guan", "Napoleon", "Tesla", "YiSunsin", "YiSeonggye", "Davinci", "Zhuge", "Jeanne", "Seondeok", "Boudica", "Thor"
             }, System.Array.ConvertAll(Art3DCharacters.Heroes, look => look.name));
             Assert.AreEqual(3, System.Array.FindAll(Art3DCharacters.Heroes, look => look.female).Length);
         }

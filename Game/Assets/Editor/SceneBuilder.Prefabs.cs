@@ -20,7 +20,7 @@ namespace HistoryHeroes.EditorTools
             public EnemyBase WraithLord, SteelColossus, ShadowTwins, OblivionKing;
             public EnemyBase RiftWarden;
             public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust, Starlight;
-            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising;
+            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn;
             public Projectile IceShardProjectile;
             public ActiveSkillBehaviour IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillBehaviour FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -133,6 +133,9 @@ namespace HistoryHeroes.EditorTools
             p.SeondeokConstellation = Behaviour<ConstellationBehaviour>("Skill_SeondeokConstellation", null);
             p.BoudicaRally = Behaviour<IceniRallyBehaviour>("Skill_BoudicaRally", null);
             p.BoudicaUprising = Behaviour<IceniRallyBehaviour>("Skill_BoudicaUprising", props => props.Float("waveInterval", 0.3f));
+            GameObject hammer = AssetDatabase.LoadAssetAtPath<GameObject>($"{Art3DProps.Folder}/Thor_Hammer.fbx");
+            p.ThorHammer = Behaviour<ThorHammerBehaviour>("Skill_ThorHammer", props => props.Ref("hammerModel", hammer));
+            p.ThorReturn = Behaviour<ThorHammerBehaviour>("Skill_ThorReturn", props => props.Ref("hammerModel", hammer));
             GameObject tank = Art3DStage.Prefab("Fx_ArmoredTank");
             p.DavTank = Behaviour<ArmoredTankBehaviour>("Skill_DavTank", props => props.Ref("tankModel", tank));
             p.DavSpiral = Behaviour<ArmoredTankBehaviour>("Skill_DavSpiral", props => props.Ref("tankModel", tank).Bool("spiral", true));

@@ -76,7 +76,7 @@ namespace HistoryHeroes.UI
         public void ShowBoss(BossSummary s)
         {
             Open();
-            titleLabel.text = s.Victory ? "격파!" : "패배…";
+            titleLabel.text = s.Victory ? (s.IsGodTrial ? "시련 통과!" : "격파!") : "패배…";
 
             var sb = new StringBuilder();
             sb.AppendLine(s.BossName);
@@ -90,7 +90,7 @@ namespace HistoryHeroes.UI
             if (s.FirstClear)
             {
                 sb.AppendLine();
-                sb.AppendLine($"처음 격파! {s.UnlockedChapter}구간이 열렸어요");
+                sb.AppendLine(s.IsGodTrial ? "첫 시련을 통과했어요. 토르가 기록을 인정했어요." : $"처음 격파! {s.UnlockedChapter}구간이 열렸어요");
             }
 
             AppendRewards(sb, s.RewardLines);
