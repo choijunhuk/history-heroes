@@ -4,8 +4,8 @@ using UnityEngine;
 namespace HistoryHeroes.Relics
 {
     /// <summary>
-    /// 유물 숫자 표 (Relics 2·5장): ★ 하나당 공격력·체력 +1/12%, 세트 완성(4개 모두 ★1 이상) 공격력·체력 +2/3% · 피해 감소 +2/3%,
-    /// ★2 🏺30 · ★3 🏺80, 교환소 🏺120. 24개 전부 ★3 + 세트 6개 = 공격력·체력 +10%, 피해 감소 +4% (유물 몫 상한).
+    /// 유물 숫자 표 (Relics 2·5장). 24개 전부 ★3 + 세트 6개 = 공격력·체력 +10%, 피해 감소 +4%.
+    /// 뽑기 화면과 추첨은 이 표의 가격·보장·중복 수치를 함께 읽는다.
     /// </summary>
     [CreateAssetMenu(menuName = "History Heroes/Relic Table", fileName = "RelicTable")]
     public sealed class RelicTable : ScriptableObject
@@ -16,14 +16,22 @@ namespace HistoryHeroes.Relics
         public float perStar = 0.01f / 12f;
         public float setBonus = 0.02f / 3f;
         public float setDamageReduction = 0.02f / 3f;
-        [Tooltip("★1→2, ★2→3 🏺 고대 파편")]
-        public int[] starCosts = { 30, 80 };
-        public int exchangeCost = 120;
+        [Tooltip("한 번 / 열 번 뽑기 가격 (파편, 보석)")]
+        public int pullShardCost = 100;
+        public int tenPullShardCost = 900;
+        public int pullGemCost = 100;
+        public int tenPullGemCost = 900;
+        [Tooltip("새 유물을 못 얻은 연속 횟수 다음에 새 유물 확정")]
+        public int newRelicPity = 20;
+        [Tooltip("★1→2, ★2→3에 필요한 중복 개수")]
+        public int[] duplicateCosts = { 1, 2 };
+        public int overflowShards = 5;
+        public int sourceShards = 20;
         [Tooltip("보스 반복 격파 🏺 (하루 3회 보상 안에서)")]
         public int bossRepeatShards = 5;
 
         public const int MaxStars = 3;
-        public const string AncientShard = "ancient_shard"; // 🏺 고대 파편 (유물 전용, 팔지 않음)
+        public const string AncientShard = "ancient_shard"; // 고대 파편 (유물 뽑기·기록 용량, 직접 팔지 않음)
 
         public RelicData Find(string id)
         {
@@ -36,6 +44,6 @@ namespace HistoryHeroes.Relics
             return null;
         }
 
-        public int StarCost(int stars) => stars >= 1 && stars < MaxStars ? starCosts[stars - 1] : -1;
+        public int DuplicatesNeeded(int stars) => stars >= 1 && stars < MaxStars ? duplicateCosts[stars - 1] : 0;
     }
 }

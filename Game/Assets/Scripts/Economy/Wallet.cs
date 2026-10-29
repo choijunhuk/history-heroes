@@ -35,6 +35,14 @@ namespace HistoryHeroes.Economy
             return true;
         }
 
+        /// <summary>저장 목록에 든 재료를 잔액 확인 후 한 번에 쓴다</summary>
+        public static bool TrySpendItem(SaveData d, string itemId, int amount)
+        {
+            if (amount < 0 || string.IsNullOrEmpty(itemId) || d.ItemCount(itemId) < amount) return false;
+            d.AddItem(itemId, -amount);
+            return true;
+        }
+
         /// <summary>보상 묶음을 한 번에 넣는다</summary>
         public static void Grant(SaveData d, Reward r)
         {

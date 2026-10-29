@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace HistoryHeroes.Relics
 {
-    /// <summary>어떻게 얻나 (Relics 4장). 유물마다 획득처는 딱 하나</summary>
+    /// <summary>첫 클리어·파편 보상의 조건 (Relics 4장). 모든 유물은 뽑기에서도 나온다</summary>
     public enum RelicSource
     {
         HeroFirstClear = 0, // 그 영웅으로 던전 첫 클리어 (sourceValue = 영웅 ID)

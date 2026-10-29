@@ -15,8 +15,12 @@ namespace HistoryHeroes.EditorTools
             relics.perStar = 0.01f / 12f;
             relics.setBonus = 0.02f / 3f;
             relics.setDamageReduction = 0.02f / 3f;
-            relics.starCosts = new[] { 30, 80 };
-            relics.exchangeCost = 120;
+            relics.pullShardCost = relics.pullGemCost = 100;
+            relics.tenPullShardCost = relics.tenPullGemCost = 900;
+            relics.newRelicPity = 20;
+            relics.duplicateCosts = new[] { 1, 2 };
+            relics.overflowShards = 5;
+            relics.sourceShards = 20;
             const HistoryHeroes.Relics.RelicSource Hero = HistoryHeroes.Relics.RelicSource.HeroFirstClear;
             const HistoryHeroes.Relics.RelicSource Boss = HistoryHeroes.Relics.RelicSource.BossFirstClear;
             const HistoryHeroes.Relics.RelicSource StarsSource = HistoryHeroes.Relics.RelicSource.ChapterStars;
@@ -47,7 +51,7 @@ namespace HistoryHeroes.EditorTools
             relics.relics.Add(Relic("armillary_sphere", "혼천의", 4, "하늘의 움직임을 나타낸 천문 기구", StarsSource, 4, null, "4구간 별 6개"));
             relics.relics.Add(Relic("sundial", "앙부일구", 4, "그림자로 시각을 알려준 조선의 해시계", Survival, 0, "survive5", "서바이벌 5분 생존"));
             relics.relics.Add(Relic("astrolabe", "아스트롤라베", 4, "별의 높이를 재던 천문·항해 도구", Survival, 0, "clear10", "서바이벌 10분 클리어"));
-            // 6. 준비의 흔적: 새 영웅으로 던전을 직접 깬 보상. 기존 업적·구간 보상은 옮기지 않는다.
+            // 6. 준비의 흔적: 새 영웅으로 던전을 직접 깬 보상. 뽑기에서도 같은 유물을 얻을 수 있다.
             relics.relics.Add(Relic("yisunsin_diary", "난중일기", 5,
                 "사실: 이순신이 전쟁 중 직접 쓴 일기다. 각색: 게임 속 일기 한 권으로 표현한다", Hero, 0, "yisunsin", "이순신으로 던전 첫 클리어",
                 "오늘 지킨 길을 적어, 내일의 길을 준비한다", "archive"));
@@ -74,7 +78,7 @@ namespace HistoryHeroes.EditorTools
                 relic.source = source;
                 relic.sourceChapter = chapter;
                 relic.sourceValue = value;
-                relic.howToGet = howToGet;
+                relic.howToGet = source == RelicSource.HeroFirstClear ? "유물 뽑기 또는 " + howToGet : "유물 뽑기";
                 return relic;
             }
         }
