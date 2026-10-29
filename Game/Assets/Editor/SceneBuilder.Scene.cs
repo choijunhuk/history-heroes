@@ -322,6 +322,14 @@ namespace HistoryHeroes.EditorTools
                 {
                     ((SkillData)d.BoudicaUprising, 1, true), (Find("atk_up"), 4, false), (Find("hp_up"), 4, false),
                 }),
+                ("클레오파트라 수호상형 (파로스의 빛 5 · 공속 4 · 공격력 4)", new[]
+                {
+                    ((SkillData)d.CleopatraPharos, 5, false), (Find("aspd_up"), 4, false), (Find("atk_up"), 4, false),
+                }),
+                ("클레오파트라 서고형 (알렉산드리아의 서고 · 기술 숙련 1 · 공속 4 · 공격력 4)", new[]
+                {
+                    ((SkillData)d.CleopatraLibrary, 1, true), (Find("active_dmg"), 1, false), (Find("aspd_up"), 4, false), (Find("atk_up"), 4, false),
+                }),
             };
 
             var so = new SerializedObject(cheats);

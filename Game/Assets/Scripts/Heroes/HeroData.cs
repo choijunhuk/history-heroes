@@ -126,7 +126,7 @@ namespace HistoryHeroes.Heroes
         public float machineDamage = 0.35f;
         [Tooltip("비행 기계가 초당 쏘는 횟수")]
         public float machineFireRate = 1f;
-        [Tooltip("비행 기계 모델 (블렌더 Fx_FlyingMachine)")]
+        [Tooltip("대표 효과 소환물 모델 (비행 기계 또는 돌 수호상)")]
         public GameObject helperModel;
 
         [Header("잔 다르크 성녀의 깃발")]
@@ -161,6 +161,13 @@ namespace HistoryHeroes.Heroes
         public float thunderCoefficient;
         [Tooltip("해금 전 30조각이 필요한 신 영웅")]
         public bool godShardUnlock;
+
+        [Header("클레오파트라 기록의 수호상")]
+        [Tooltip("수호상을 준비하는 연속 정지 기본 공격 횟수. 0이면 사용하지 않는다")]
+        public int guardianAttacks;
+        public float guardianCoefficient;
+        [Tooltip("★5 수호상이 함께 공격할 다른 적을 찾는 반경")]
+        public float guardianNearbyRadius;
 
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
@@ -213,6 +220,10 @@ namespace HistoryHeroes.Heroes
         public float star3ThunderRadius = -1f;
         [Tooltip("★5 토르 충격파 피해 배수")]
         public float star5ThunderCoefficient = -1f;
+        [Tooltip("★3 수호상 한 타격의 공격력 배수")]
+        public float star3GuardianCoefficient = -1f;
+        [Tooltip("★5 수호상 한 번이 공격할 최대 적 수 (원래 표적 포함)")]
+        public int star5GuardianTargets = -1;
 
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]

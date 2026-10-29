@@ -133,6 +133,7 @@ namespace HistoryHeroes.Player
 
             Stop.Moved += () => _firstShotPending = true;
             Stop.Moved += _thunder.Moved;
+            Stop.Moved += ResetGuardian;
             Stop.Stopped += () => _momentumUntil = Time.time + MomentumSeconds;
             Health.Damaged += OnDamagedIronclad; // 이순신 철갑
             Stop.Moved += OnMovedCharge; // 이성계 백발백중: 움직이기 시작하면 모은 화살을 놓는다
@@ -186,6 +187,7 @@ namespace HistoryHeroes.Player
             _observation.Reset();
             _reclaim.Reset();
             _thunder.Moved();
+            ResetGuardian();
             Stats.Changed -= OnStatsChanged;
             if (_sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone();
         }
@@ -200,6 +202,7 @@ namespace HistoryHeroes.Player
             _observation.Reset();
             _reclaim.Reset();
             _thunder.Moved();
+            ResetGuardian();
             Stats.RemoveAllFrom(_ironOwner);
             _ironOn = false;
             _ironStore = 0f;
@@ -251,6 +254,7 @@ namespace HistoryHeroes.Player
             _observation.Reset();
             _reclaim.Reset();
             _thunder.Moved();
+            ResetGuardian();
             _body.position = position;
             _body.linearVelocity = Vector2.zero;
             transform.position = position;
@@ -265,6 +269,7 @@ namespace HistoryHeroes.Player
                 if (Health.IsDead) _observation.Reset();
                 if (Health.IsDead) _reclaim.Reset();
                 if (Health.IsDead) _thunder.Moved();
+                if (Health.IsDead) ResetGuardian();
                 if (Health.IsDead && _sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone(); // 동남풍은 살아 있을 때만
                 return;
             }
@@ -273,6 +278,7 @@ namespace HistoryHeroes.Player
             Stop.Tick(ReadInput(), dt);
             _observation.Tick(dt, Stop.IsStopped, hero);
             _reclaim.Tick(dt, Stop.IsStopped, hero);
+            if (!Stop.IsStopped) ResetGuardian();
 
             // 쿨다운은 이동 중에도 흐른다 → 멈췄다 움직이기를 반복해도 공격속도보다 빨리 쏠 수 없다.
             _attackCooldown -= dt;
@@ -472,6 +478,7 @@ namespace HistoryHeroes.Player
             _observation.Reset();
             _reclaim.Reset();
             _thunder.Moved();
+            ResetGuardian();
         }
 
         // ---------------------------------------------------------------- 선덕여왕 별자리 관측
@@ -489,6 +496,76 @@ namespace HistoryHeroes.Player
 
         private readonly ThorThunderState _thunder = new ThorThunderState();
         public int ThunderCount => _thunder.Count;
+
+        // ---------------------------------------------------------------- 클레오파트라 기록의 수호상
+
+        private readonly CleopatraGuardianState _guardian = new CleopatraGuardianState();
+        private GameObject _guardianVisual;
+        public int GuardianCount => _guardian.Count;
+        public bool GuardianReady => _guardian.IsReady;
+
+        private void ResetGuardian()
+        {
+            _guardian.Reset();
+            if (_guardianVisual != null) Destroy(_guardianVisual);
+            _guardianVisual = null;
+        }
+
+        private void ShowGuardian()
+        {
+            if (!_guardian.IsReady || _guardianVisual != null) return;
+            _guardianVisual = new GameObject("RecordGuardian");
+            _guardianVisual.transform.SetParent(transform, false);
+            _guardianVisual.transform.localPosition = new Vector3(0.75f, -0.25f, 0f);
+            if (Skills.SkillArt.Attach(hero.helperModel, _guardianVisual.transform, 0.5f) == null)
+            {
+                var sprite = _guardianVisual.AddComponent<SpriteRenderer>();
+                sprite.sprite = PlaceholderSprites.RimCircle;
+                sprite.color = hero.color;
+                _guardianVisual.transform.localScale = Vector3.one * 0.55f;
+            }
+        }
+
+        /// <summary>표적을 찾은 발사 시작에서 한 번만 부른다. 명중·멀티샷 콜백은 준비 횟수를 늘리지 않는다.</summary>
+        private void JoinGuardianAttack(Health target)
+        {
+            bool joins = _guardian.RecordAttack(Stop.IsStopped, true, hero);
+            if (!joins)
+            {
+                ShowGuardian();
+                return;
+            }
+
+            Vector2 origin = _guardianVisual != null ? _guardianVisual.transform.position : transform.position;
+            ResetGuardian();
+            Health nearby = null;
+            Vector2 center = target.transform.position;
+            if (_sig.GuardianTargets > 1)
+            {
+                float closest = hero.guardianNearbyRadius * hero.guardianNearbyRadius;
+                foreach (EnemyBase enemy in EnemyBase.Alive)
+                {
+                    Health candidate = enemy != null ? enemy.Health : null;
+                    if (candidate == null || candidate == target || candidate.IsDead) continue;
+                    Vector2 to = (Vector2)candidate.transform.position - center;
+                    float distance = to.sqrMagnitude;
+                    if (distance > closest) continue;
+                    if (Physics2D.Raycast(center, to.normalized, to.magnitude, wallMask).collider != null) continue;
+                    nearby = candidate;
+                    closest = distance;
+                }
+            }
+
+            HitWithGuardian(target, origin);
+            if (nearby != null && !nearby.IsDead) HitWithGuardian(nearby, origin);
+        }
+
+        private void HitWithGuardian(Health target, Vector2 origin)
+        {
+            AttackFx.Line(origin, target.transform.position, 0.08f, hero.color, 0.18f);
+            DamageInfo damage = DamageCalculator.Roll(Stats, _sig.GuardianCoefficient, DamageKind.BasicAttack, source: "sig_" + hero.id);
+            if (target.TryTakeDamage(damage, out float dealt)) OnBasicAttackHit(damage, dealt);
+        }
 
         // ---------------------------------------------------------------- 다빈치 작업대
 
@@ -723,6 +800,9 @@ namespace HistoryHeroes.Player
                     pierce, Attack.Get(AttackModifierKind.Ricochet),
                     _projectiles.Release, OnBasicAttackHit, onHitTarget: needsTarget ? OnProjectileHitTarget : null);
             }
+
+            // 모든 탄을 먼저 보낸 뒤 같은 표적에 동반 타격한다. 표적을 쓰러뜨려도 멀티샷 수는 바뀌지 않는다.
+            if (hero.guardianAttacks > 0) JoinGuardianAttack(target);
         }
 
         /// <summary>

@@ -222,6 +222,8 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "Boudica", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.88f, 0.92f, 0.78f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.67f, 0.43f, 0.24f), hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.48f, 0.21f, 0.11f), attack = "Sword_Regular_A", props = new[] { "Boudica_Sword" } },
             // 같은 얼굴·망치를 플레이 영웅과 시련 형상이 공유한다. 보스 크기만 전투 프리팹에서 조절한다.
             new Look { name = "Thor", body = "Male_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.48f, 0.44f, 0.43f), hide = new[] { "Male_Ranger_Head_Hood" }, metalParts = new[] { "Male_Ranger_Acc_Pauldron", "Male_Ranger_Arms_Bracer" }, metalColor = new Color(0.66f, 0.38f, 0.24f), hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.75f, 0.37f, 0.17f), attack = "Sword_Regular_A", props = new[] { "Thor_Hammer" } },
+            // 기존 옷의 밝은 부분은 상아색으로, 별도 다리 조각은 청록색으로 구분한다. 몸통의 금색과 관식은 유지한다.
+            new Look { name = "Cleopatra", female = true, body = "Female_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.98f, 0.94f, 0.82f), metalParts = new[] { "Female_Peasant_Legs" }, metalColor = new Color(0.12f, 0.55f, 0.53f), goldParts = new[] { "Female_Peasant_Body" }, hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.035f, 0.03f, 0.035f), props = new[] { "Cleopatra_Crown", "Cleopatra_Collar", "Davinci_Scroll" } },
         };
 
         public sealed class EnemyLook

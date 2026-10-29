@@ -20,7 +20,7 @@ namespace HistoryHeroes.EditorTools
             public EnemyBase WraithLord, SteelColossus, ShadowTwins, OblivionKing;
             public EnemyBase RiftWarden;
             public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust, Starlight;
-            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn;
+            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary;
             public Projectile IceShardProjectile;
             public ActiveSkillBehaviour IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillBehaviour FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -127,6 +127,9 @@ namespace HistoryHeroes.EditorTools
             GameObject stone = Art3DStage.Prefab("Fx_StoneSentinel");
             p.ZhugeGate = Behaviour<EightGateBehaviour>("Skill_ZhugeGate", props => props.Ref("stoneModel", stone));
             p.ZhugeSevenStar = Behaviour<EightGateBehaviour>("Skill_ZhugeSevenStar", props => props.Ref("stoneModel", stone).Bool("whirlwinds", true));
+            p.CleopatraPharos = Behaviour<PharosBehaviour>("Skill_CleopatraPharos", props => props.Ref("stoneModel", stone));
+            p.CleopatraLibrary = Behaviour<PharosBehaviour>("Skill_CleopatraLibrary", props => props.Ref("stoneModel", stone)
+                .Color("lightColor", new Color(0.95f, 0.85f, 0.5f, 0.7f)));
             p.JeanneWave = Behaviour<BannerWaveBehaviour>("Skill_JeanneWave", null);
             p.JeanneOrleans = Behaviour<BannerWaveBehaviour>("Skill_JeanneOrleans", null);
             p.SeondeokStarlight = Behaviour<ConstellationBehaviour>("Skill_SeondeokStarlight", null);
