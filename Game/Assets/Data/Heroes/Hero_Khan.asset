@@ -70,6 +70,8 @@ MonoBehaviour:
   bannerDuration: 0
   bannerAttackBonus: 0
   bannerDamageReduction: 0
+  observationSeconds: 0
+  observationAttackBonus: 0
   star3FirstShotBonus: 0.75
   star5FirstShotBonus: 1
   star5FirstShotPierce: 1
@@ -89,6 +91,8 @@ MonoBehaviour:
   star5WindSlow: -1
   star3BannerDuration: -1
   star5BannerAttackBonus: -1
+  star3ObservationAttackBonus: -1
+  star5ObservationAttackBonus: -1
   exclusiveActive: {fileID: 11400000, guid: b74edf6d9a1c89047b621fbec9c88907, type: 2}
   unlockAfterBossChapter: 0
   gemsOnly: 0

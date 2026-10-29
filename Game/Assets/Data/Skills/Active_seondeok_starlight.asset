@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_seondeok_starlight
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: seondeok_starlight
+  displayName: "\uCCA8\uC131\uB300 \uBCC4\uBE5B"
+  description: "8\uCD08\uB9C8\uB2E4 \uAC00\uAE4C\uC6B4 \uC801 \uC790\uB9AC\uC5D0
+    \uBCC4\uBE5B\n(\uBC18\uACBD 2, \uD53C\uD574 140%)\n\uB808\uBCA8\uB9C8\uB2E4 \uD53C\uD574
+    +25%"
+  warriorDescription: 
+  icon: {fileID: 21300000, guid: 2007f7bd2e15c024b9fc1fb8d1fc9942, type: 3}
+  rarity: 1
+  tags: 32
+  role: 2
+  maxLevel: 5
+  saveCostFirstLevel: 3
+  saveCostPerLevel: 3
+  recordable: 1
+  heroOnlyId: seondeok
+  cooldown: 8
+  damageFirstLevel: 1.4
+  damagePerLevel: 0.25
+  countFirstLevel: 1
+  countPerLevel: 0
+  radius: 2
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 4898360832533471253, guid: 6724c83c9e2cf4d2a91fcb4ef02b27be, type: 3}

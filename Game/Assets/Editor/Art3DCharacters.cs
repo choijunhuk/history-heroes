@@ -548,7 +548,9 @@ namespace HistoryHeroes.EditorTools
             float bodyHeight = MeasureHeight(go); // 모자·무기를 붙이기 전 키 (소품 때문에 몸이 작아지지 않게)
             foreach (string prop in look.props) notes.Add(Art3DProps.Attach(go, prop, look.shadows));
 
-            var animator = go.GetComponent<Animator>() ?? go.AddComponent<Animator>();
+            // Unity 객체는 ?? 로 "없음"을 못 가린다 (가짜 null) → 직접 확인. 복사 아바타 모델(Female_Peasant)엔 Animator가 없다
+            Animator animator = go.GetComponent<Animator>();
+            if (animator == null) animator = go.AddComponent<Animator>();
             string bodyPath = $"{Models}/{look.body}.fbx";
             // 복사 모드에는 대상 모델의 Avatar가 없으므로 원본을 프리팹에도 직접 연결한다.
             Avatar avatar = look.body == "Female_Peasant"
