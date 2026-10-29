@@ -33,6 +33,7 @@ namespace HistoryHeroes.EditorTools
             ["Thor_Hammer"] = "hand_r", // 토르 (신의 시련 1 · 플레이 토르)
             ["Cleopatra_Crown"] = "Head", ["Cleopatra_Collar"] = "spine_03", // 클레오파트라 머리장식 · 넓은 목걸이 (여자 몸 기준)
             ["Anubis_Mask"] = "Head", // 아누비스 자칼 가면 (사람 머리를 숨기고 대신 씀)
+            ["Susanoo_Sword"] = "hand_r", ["Athena_Spear"] = "hand_r", ["Athena_Helmet"] = "Head", // 신의 시련 4 · 5 (아테나 투구는 여자 몸 기준)
             ["Enemy_TowerShield"] = "hand_l", // 방패병의 큰 나무 방패 (앞을 막는다)
             // 그래픽 재평가 6번 "적을 실루엣으로 구분": 무리 적마다 머리 · 등 · 손 장식 (블렌더 notes_enemies.txt)
             ["Enemy_HornHelm"] = "Head", ["Enemy_Hood"] = "Head", ["Enemy_ShortBow"] = "hand_l", ["Enemy_BombPack"] = "spine_03",
@@ -47,6 +48,7 @@ namespace HistoryHeroes.EditorTools
             ["Enemy_HandBomb"] = "Puglin_LOD", ["Enemy_Cap"] = "Puglin_LOD", ["Enemy_Dagger"] = "Puglin_LOD",
             ["Enemy_BackSpikes"] = "Imp_LOD", ["Enemy_Staff"] = "Imp_LOD", ["Enemy_SkullMask"] = "Imp_LOD",
             ["Cleopatra_Crown"] = "Superhero_Female_FullBody", ["Cleopatra_Collar"] = "Superhero_Female_FullBody",
+            ["Athena_Helmet"] = "Superhero_Female_FullBody",
         };
 
         /// <summary>역할 이름 → 색 (sRGB) · 금속 여부 (블렌더 notes.txt의 색)</summary>

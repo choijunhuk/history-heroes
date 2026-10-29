@@ -1,4 +1,4 @@
-# 영웅 손·등·머리 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치, 클레오파트라 머리장식·목걸이, 아누비스 자칼 가면). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py [-- 이름...] 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
+# 영웅 손·등·머리 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치, 클레오파트라 머리장식·목걸이, 아누비스 자칼 가면, 스사노오 검, 아테나 창·투구). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py [-- 이름...] 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
 # 손 hand_r 머리 (0.706, -0.065, 1.456), 날은 +Y (얼굴 쪽, 관우 언월도와 같은 방향). 얼굴 = +Y, 등 = -Y (칭기즈 칸 화살통이 -Y).
 import bpy, bmesh, math
 from mathutils import Vector, Matrix
@@ -250,4 +250,38 @@ objs = [
     box("band", (0.0, 0.0, 1.785), (0.2, 0.2, 0.02), "Gold"),
 ]
 export("Anubis_Mask", objs)
+reset()
+
+# 7) 스사노오 검 (신의 시련 4): 곧은 양날 고대 검 (츠루기 느낌), 고리 손잡이 끝, 날 0.95
+objs = [
+    cyl_y("grip", (HX, HY - 0.02, HZ), 0.02, 0.2, "Black"),
+    torus("ring", (HX, HY - 0.15, HZ), 0.035, 0.009, "Gold"),
+    box("guard", (HX, HY + 0.09, HZ), (0.11, 0.025, 0.05), "Gold"),
+    blade("blade", HY + 0.1, [(0.0, 0.026), (0.85, 0.024), (0.95, 0.0)], 0.009, "Metal"),
+]
+export("Susanoo_Sword", objs)
+reset()
+
+# 8) 아테나 창 (신의 시련 5): 언월도처럼 앞(+Y)으로 긴 자루, 끝에 청동 잎 모양 창날, 반대쪽 청동 물미
+objs = [
+    cyl_y("shaft", (HX, 0.2, HZ), 0.018, 1.9, "Wood"),
+    blade("head", 1.15, [(0.0, 0.022), (0.08, 0.04), (0.2, 0.03), (0.3, 0.0)], 0.012, "Bronze"),
+    cyl_y("butt", (HX, -0.79, HZ), 0.022, 0.08, "Bronze"),
+]
+export("Athena_Spear", objs)
+reset()
+
+#    아테나 투구 (여자 기본 몸 머리 기준): 청동 반구 + 앞 코 가리개 + 머리 위 붉은 깃 (앞뒤로)
+bm = bmesh.new()
+bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=10, radius=1.0)
+bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -0.15], context='VERTS')
+bmesh.ops.scale(bm, vec=Vector((0.122, 0.135, 0.11)), verts=bm.verts)
+bmesh.ops.translate(bm, vec=Vector((0.0, -0.01, 1.69)), verts=bm.verts)
+objs = [
+    new_obj("dome", bm, "Bronze"),
+    box("nose", (0.0, 0.12, 1.69), (0.025, 0.02, 0.07), "Bronze"),
+    box("crest_base", (0.0, -0.01, 1.795), (0.03, 0.2, 0.02), "Bronze"),
+    box("crest", (0.0, -0.03, 1.84), (0.022, 0.28, 0.08), "Red"),
+]
+export("Athena_Helmet", objs)
 print("DONE")
