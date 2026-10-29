@@ -1,4 +1,4 @@
-# 영웅 손·등·머리 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치, 클레오파트라 머리장식·목걸이, 아누비스 자칼 가면, 스사노오 검, 아테나 창·투구). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py [-- 이름...] 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
+# 영웅 손·등·머리 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치, 클레오파트라 머리장식·목걸이, 아누비스 자칼 가면, 스사노오 검, 아테나 창·투구, 토모에 어깨 덧갑, 무측천 관, 퀴리 실험병). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py [-- 이름...] 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
 # 손 hand_r 머리 (0.706, -0.065, 1.456), 날은 +Y (얼굴 쪽, 관우 언월도와 같은 방향). 얼굴 = +Y, 등 = -Y (칭기즈 칸 화살통이 -Y).
 import bpy, bmesh, math
 from mathutils import Vector, Matrix
@@ -284,4 +284,55 @@ objs = [
     box("crest", (0.0, -0.03, 1.84), (0.022, 0.28, 0.08), "Red"),
 ]
 export("Athena_Helmet", objs)
+reset()
+
+# 9) 토모에 고젠 어깨 덧갑 (여자 기본 몸: upperarm_l/r (±0.152~0.392, -0.054, 1.418), T자세에서 팔은 X로 뻗음)
+#    위팔 위에 얹은 붉은 판 3겹 + 검은 끈 줄 → 팔을 내리면 바깥쪽에 늘어진다 (게임 각색, 갑옷 고증 재현 아님)
+def sode(side):
+    sx = 1 if side == "R" else -1
+    parts = []
+    for k in range(3):
+        z = 1.47 + 0.012 * k
+        width = 0.17 - 0.02 * k
+        parts.append(box(f"plate{k}", (sx * (0.25 + 0.012 * k), -0.055, z), (width, 0.15, 0.014), "Red"))
+        parts.append(box(f"lace{k}", (sx * (0.25 + 0.012 * k), -0.055, z + 0.008), (width * 0.9, 0.012, 0.004), "Black"))
+    parts.append(box("edge", (sx * 0.25, -0.055, 1.462), (0.175, 0.155, 0.008), "Gold"))
+    return parts
+export("Tomoe_Sode_R", sode("R"))
+reset()
+export("Tomoe_Sode_L", sode("L"))
+reset()
+
+# 10) 무측천 관 (여자 기본 몸 머리 기준, 머리 꼭대기 1.767): 검은 관 + 위의 평평한 판 + 앞뒤 구슬 줄 + 금 비녀 (게임 각색)
+objs = [
+    cyl_z("cap", (0.0, -0.01, 1.8), 0.085, 0.08, "Black"),
+    box("board", (0.0, -0.01, 1.85), (0.17, 0.32, 0.016), "Black"),
+    box("board_trim", (0.0, -0.01, 1.84), (0.175, 0.325, 0.006), "Gold"),
+    box("pin", (0.0, -0.01, 1.81), (0.24, 0.016, 0.016), "Gold"),
+]
+for yy in (0.15, -0.17):
+    for i, xx in enumerate((-0.06, -0.03, 0.0, 0.03, 0.06)):
+        for j in range(4):
+            objs.append(sphere(f"bead{yy}_{i}_{j}", (xx, yy, 1.83 - 0.03 * j), 0.008, "Gold" if j % 2 == 0 else "Red"))
+export("WuZetian_Crown", objs)
+reset()
+
+# 11) 마리 퀴리 실험병 (남자 기본 몸 왼손 hand_l (-0.706, -0.065, 1.456) 기준, 다빈치 두루마리처럼):
+#     삼각 플라스크. 팔을 내리면 바로 서도록 T자세에서 목이 몸 쪽(+X)을 향한다. 빛나는 액체 · 방사선 표현은 쓰지 않는다
+def cone_x(name, center, r_out, r_in, depth, material):
+    """X축 원뿔: 바깥(-X) 쪽 반지름 r_out, 몸 쪽(+X) 반지름 r_in"""
+    bm = bmesh.new()
+    bmesh.ops.create_cone(bm, cap_ends=True, segments=14, radius1=r_out, radius2=r_in, depth=depth)
+    bmesh.ops.rotate(bm, cent=Vector((0, 0, 0)), matrix=Matrix.Rotation(math.radians(90), 3, 'Y'), verts=bm.verts)
+    bmesh.ops.translate(bm, vec=Vector(center), verts=bm.verts)
+    return new_obj(name, bm, material)
+
+fx, fy, fz = -0.83, -0.065, 1.42
+objs = [
+    cone_x("glass", (fx, fy, fz), 0.055, 0.018, 0.11, "White"),
+    cone_x("liquid", (fx - 0.03, fy, fz), 0.05, 0.03, 0.045, "Blue"),
+    cone_x("neck", (fx + 0.075, fy, fz), 0.019, 0.019, 0.05, "White"),
+    cone_x("stopper", (fx + 0.11, fy, fz), 0.021, 0.016, 0.025, "Wood"),
+]
+export("Curie_Flask", objs)
 print("DONE")
