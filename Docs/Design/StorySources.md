@@ -40,3 +40,13 @@
 | 길고 적갈색에 가까운 머리 묘사 | **후대 기록:** [British Museum: 전사 여성에 관한 역사 글](https://www.britishmuseum.org/blog/bettany-hughes-warrior-women). 카시우스 디오의 묘사를 전한 것이라고 밝힌다. 당시의 초상이나 확인된 외모로 단정하지 않는다 |
 
 부디카의 말은 주로 로마 쪽 기록을 통해 전해진다. 게임 대사는 실제 발언을 인용하지 않는다. 되찾는 자리·이케니의 함성·되찾은 터전과 녹색 옷은 게임 각색이며, 봉기의 피해를 미화하거나 실제 로마인·이케니인을 적으로 그리지 않는다.
+
+## 클레오파트라 (2026-10-29)
+
+| 내용 | 구분과 출처 |
+|---|---|
+| 클레오파트라 7세가 기원전 51년 이집트 왕위에 오른 프톨레마이오스 왕조의 여왕 | **사실:** [메트로폴리탄 미술관, 『The Year One: Art of the Ancient World East and West』](https://resources.metmuseum.org/resources/metpublications/pdf/The_Year_One_Art_of_the_Ancient_World_East_and_West.pdf)는 즉위 시점을 기원전 51년으로 설명한다. [메트로폴리탄 미술관, 프톨레마이오스 시대](https://www.metmuseum.org/essays/egypt-in-the-ptolemaic-period)는 왕조의 끝을 기원전 30년으로 설명한다 |
+| 여러 언어를 구사했다는 이야기 | **후대 기록:** [플루타르코스, 『안토니우스 전』 27장](https://lexundria.com/plut_ant/27/prr). 클레오파트라 사후에 쓰인 묘사이므로 구체 언어 수·실제 대화를 확인한 당대 기록으로 다루지 않는다 |
+| 파로스 등대와 알렉산드리아의 서고 | **공간 모티브:** [메트로폴리탄 미술관, 프톨레마이오스 시대](https://www.metmuseum.org/essays/egypt-in-the-ptolemaic-period)는 알렉산드리아의 등대와 도서관들을 설명한다. 이 장소를 클레오파트라가 직접 설계하거나 마법에 썼다는 뜻이 아니다 |
+
+검은 머리·왕관·목걸이는 확인된 초상의 복원이 아니다. 돌 수호상·파로스의 빛·알렉산드리아의 서고와 게임 대사는 창작이며, 신·뱀·죽음 장면과 연결하지 않는다. 실제 이집트인이나 종교는 적으로 등장하지 않는다.

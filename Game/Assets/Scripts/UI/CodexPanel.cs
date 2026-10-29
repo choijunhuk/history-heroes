@@ -116,6 +116,9 @@ namespace HistoryHeroes.UI
             sb.AppendLine("천둥의 무게 · 귀환 망치 · 천둥의 귀환은 게임 각색 기술입니다.");
             sb.AppendLine("<color=#C8D6E5>‘실패를 지우지 않고 다시 지키려는 인간의 선택을 보았기에, 나도 기록을 지키겠다.’</color>\n");
 
+            sb.AppendLine("<b>클레오파트라 · 프톨레마이오스 왕조</b>  <color=#9FD8FF>사실 · 후대 기록 · 각색</color>");
+            sb.AppendLine("이집트의 여왕이었습니다. 언어 능력에 관한 설명은 후대 저술의 기록이며, 기록의 수호상·파로스의 빛·알렉산드리아의 서고는 게임 각색입니다.\n");
+
             // 스킬별 조합 수 (조사 A3): 미발견 조합은 결과·짝 대신 개수만
             sb.AppendLine("<b>스킬별 조합</b>");
             foreach (SkillData s in database.skills)
