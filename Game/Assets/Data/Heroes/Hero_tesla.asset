@@ -76,6 +76,10 @@ MonoBehaviour:
   reclaimCooldown: 0
   reclaimKnockback: 0
   reclaimBossScale: 0
+  thunderEvery: 0
+  thunderRadius: 0
+  thunderCoefficient: 0
+  godShardUnlock: 0
   star3FirstShotBonus: -1
   star5FirstShotBonus: -1
   star5FirstShotPierce: 0
@@ -99,6 +103,8 @@ MonoBehaviour:
   star5ObservationAttackBonus: -1
   star3ReclaimKnockback: -1
   star5ReclaimAttackBonus: -1
+  star3ThunderRadius: -1
+  star5ThunderCoefficient: -1
   exclusiveActive: {fileID: 11400000, guid: df0c2be386201e8419ebe3056523bf3a, type: 2}
   unlockAfterBossChapter: 3
   gemsOnly: 0

@@ -434,6 +434,7 @@ MonoBehaviour:
   waveDamage: 0.8
   waveRecover: 1.4
   secondRingDelay: 0.35
+  straightWave: 0
   phase3TelegraphScale: 0.8
   walkTime: 1.2
   keepDistance: 2.5

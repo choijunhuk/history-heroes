@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_thor_hammer
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: thor_hammer
+  displayName: "\uADC0\uD658 \uB9DD\uCE58"
+  description: "8\uCD08\uB9C8\uB2E4 \uC55E\uCABD\uC73C\uB85C \uB9DD\uCE58\uB97C \uBCF4\uB0B4\uACE0
+    \uB418\uB3CC\uB9B0\uB2E4\n\uAC00\uB294 \uAE38\uACFC \uC624\uB294 \uAE38 \uAC01\uAC01
+    \uD53C\uD574 65%\n\uB808\uBCA8\uB9C8\uB2E4 \uD53C\uD574 +10%"
+  warriorDescription: 
+  icon: {fileID: 21300000, guid: 68845fd9c134d074ebc83dc2695c1908, type: 3}
+  rarity: 1
+  tags: 40
+  role: 1
+  maxLevel: 5
+  saveCostFirstLevel: 3
+  saveCostPerLevel: 3
+  recordable: 1
+  heroOnlyId: thor
+  cooldown: 8
+  damageFirstLevel: 0.65
+  damagePerLevel: 0.1
+  countFirstLevel: 1
+  countPerLevel: 0
+  radius: 0.8
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  returnImpactCoefficient: 0
+  behaviourPrefab: {fileID: 1258861829097871359, guid: 4783e766432e44093a64489f0e500f6d, type: 3}

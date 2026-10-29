@@ -54,9 +54,12 @@ namespace HistoryHeroes.UI
         private string _selectedRecordId;
         private float _nextWeekCheck;
 
+        private Color _startColor;
+
         private void Awake()
         {
             root.SetActive(false);
+            _startColor = startButton.image.color;
             for (int i = 0; i < slotButtons.Length; i++)
             {
                 int slot = i;
@@ -200,6 +203,8 @@ namespace HistoryHeroes.UI
 
             RunRecord selected = data.FindRecord(_selectedRecordId);
             startButton.interactable = trialUnlocked && selected != null;
+            // 못 누르는 주 단추는 초록 대신 회색 (어두운 초록은 눌러도 되는 것처럼 보였다)
+            startButton.image.color = startButton.interactable ? _startColor : new Color(0.3f, 0.32f, 0.38f);
             bool over = selected != null && RecordValidator.Validate(selected, database).OverCapacity;
             if (practiceButton != null) practiceButton.interactable = trialUnlocked && selected != null && !over;
             startLabel.text = !trialUnlocked ? "잠긴 시련" : selected == null ? "기록을 고르세요" : over ? "다시 고르고 시작" : "도전";

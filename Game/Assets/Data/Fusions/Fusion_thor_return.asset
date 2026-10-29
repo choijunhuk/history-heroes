@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c31a02d6e300bb54b80ef1a7d7f3d480, type: 3}
+  m_Name: Fusion_thor_return
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.FusionRecipe
+  id: thor_return
+  type: 0
+  materialA: {fileID: 11400000, guid: ae7ea1f6473c34f9caaceab24033a86b, type: 2}
+  materialB: {fileID: 11400000, guid: 4fe706efd00d38442bf20cdf6fbf9e8f, type: 2}
+  requiredLevelA: 5
+  requiredLevelB: 1
+  result: {fileID: 11400000, guid: a1e6d3f5885d04ab282609e77b42192d, type: 2}
+  heroOnlyId: thor

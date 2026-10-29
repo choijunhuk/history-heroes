@@ -91,3 +91,11 @@
 - `Game/Assets/Tests/EditMode/SeondeokTests.cs` — 기존 명단 검사를 보존하며 12명으로 확장.
 - `Game/Assets/Tests/EditMode/ThorCombatTests.cs` — 대표 효과 상태·이동 초기화·별 강화·전용 레시피·대사 검사.
 - `Game/Assets/Tests/EditMode/ThorCombatTests.cs.meta` — 새 자산 식별자, 대응 C# 파일과 함께 보관.
+
+## 리드 확인 결과 (2026-10-29, 맥북)
+
+- Unity 컴파일 ✅ · `Art3DCharacters.BuildAll()` → `SceneBuilder.BuildAll()` ✅ · EditMode **457/457 통과**.
+- 영웅 화면: 토르 (붉은 금발 · 수염 · 구릿빛 어깨 · 손에 `Thor_Hammer`), "토르 조각 0/30 · 신의 시련에서 획득", [토르 조각으로 해금 0/30]. 영웅 줄 가로 스크롤 · 고른 영웅 자동 노출 ✅.
+- 보스 화면 두 탭 ✅. 고친 것: 탭이 생기며 "싸울 기록을 고르세요"가 1번 칸에 가려짐 → 칸을 내림. 잠긴 시련의 [잠긴 시련] 단추가 어두운 초록 → 회색.
+- 시련 연습 전투: 거대 토르 + 망치, 상단 "신의 시련 토르 (연습)" ✅. 밸런스(2~3분 · 근접 1~2타)는 데스크톱 벤치에서.
+- 아직: 정식 도전 보상 · 주간 목표 · 30개 해금의 화면 흐름 (테스트로는 통과), 폰 확인.

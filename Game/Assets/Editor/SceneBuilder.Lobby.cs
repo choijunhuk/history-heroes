@@ -231,14 +231,14 @@ namespace HistoryHeroes.EditorTools
             Button weeklyGoal = Btn("ChooseGodGoal", panel, "주간 목표 선택", new Vector2(0f, 510f), new Vector2(920f, 70f), ButtonBlue, out TMP_Text weeklyLabel);
             weeklyLabel.fontSize = 25;
             TMP_Text pick = Label("Pick", panel, "싸울 기록을 고르세요 (기록은 이겨도 져도 사라지지 않아요)", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(pick.rectTransform, Center, Center, new Vector2(0f, 445f), new Vector2(1000f, 50f));
+            Place(pick.rectTransform, Center, Center, new Vector2(0f, 452f), new Vector2(1000f, 44f)); // 탭이 생긴 뒤 1번 칸에 가려졌다 → 칸을 내림
 
             var buttons = new Button[3];
             var backgrounds = new Image[3];
             var labels = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
             {
-                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 350f - i * 245f), new Vector2(980f, 210f), RowColor, out TMP_Text label);
+                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 328f - i * 240f), new Vector2(980f, 196f), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
                 label.fontSize = 27;
                 label.alignment = TextAlignmentOptions.MidlineLeft;

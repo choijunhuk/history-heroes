@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3bc6d1f39a0264c963774252ca5201, type: 3}
+  m_Name: Boss_thor_trial
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Modes.BossData
+  id: thor_trial
+  displayName: "\uD1A0\uB974"
+  chapter: 5
+  tests: "\uB9DD\uCE58 \uB0B4\uB824\uCE58\uAE30 \u2192 \uC9C1\uC120 \uCDA9\uACA9\uD30C
+    \u2192 \uBA48\uCDB0 \uC3E0 \uBE48\uD2C8"
+  recommend: "\uC815\uC9C0 \uB2E8\uC77C \uD654\uB825 (\uACF5\uACA9\uC18D\uB3C4\xB7\uACF5\uACA9\uB825)"
+  recommendedRole: 1
+  prefab: {fileID: 1861033746477251472, guid: 961c1ab475d1f4fdba015eda65aafb4a, type: 3}
+  hpMultiplier: 780
+  attackMultiplier: 2.35
+  star2MaxHits: 0

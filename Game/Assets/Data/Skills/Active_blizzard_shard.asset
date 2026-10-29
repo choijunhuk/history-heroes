@@ -36,4 +36,5 @@ MonoBehaviour:
   radiusPerLevel: 0
   duration: 0
   durationPerLevel: 0
+  returnImpactCoefficient: 0
   behaviourPrefab: {fileID: 3136045108762988839, guid: bdacec2fc362b4d46890e6fe61a5e3a7, type: 3}
