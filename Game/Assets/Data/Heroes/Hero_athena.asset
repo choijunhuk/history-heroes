@@ -34,6 +34,7 @@ MonoBehaviour:
   windFollowArc: 0
   windFollowCoefficient: 0
   spearWidth: 0.6
+  spearPierceReachBonus: 0.4
   shieldPrepareSeconds: 1
   shieldReuseSeconds: 8
   owlBonusCoefficient: 0.2

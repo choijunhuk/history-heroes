@@ -16,7 +16,8 @@ MonoBehaviour:
   displayName: "\uAD00\uD1B5"
   description: "\uAE30\uBCF8 \uACF5\uACA9\uC774 \uC801\uC744 \uB6AB\uACE0 \uC9C0\uB098\uAC10\n(\uB6AB\uC744
     \uB54C\uB9C8\uB2E4 \uD53C\uD574 -20%)"
-  warriorDescription: "\uBCA0\uAE30 \uAC01\uB3C4\n120\xB0 \u2192 160\xB0"
+  warriorDescription: "\uBCA0\uAE30 \uAC01\uB3C4 +40\xB0\n\uC544\uD14C\uB098: \uCC0C\uB974\uAE30
+    \uAE38\uC774 +40%"
   icon: {fileID: 21300000, guid: aa320365fade0604289650d51ea2f568, type: 3}
   rarity: 1
   tags: 4

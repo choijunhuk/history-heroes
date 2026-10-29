@@ -257,6 +257,7 @@ GameObject:
   - component: {fileID: 5373058149336094206}
   - component: {fileID: 3001772681645939238}
   - component: {fileID: 6654086337988785109}
+  - component: {fileID: 8002611716021933974}
   - component: {fileID: 7699291858797669680}
   - component: {fileID: 3852770640075395163}
   m_Layer: 9
@@ -417,6 +418,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Health
   team: 1
+--- !u!114 &8002611716021933974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2401002657274160141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d63072603ff2ded419dc7225195e6003, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.HitFlash
+  target: {fileID: 6153609387778162063}
+  duration: 0.08
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &7699291858797669680
 MonoBehaviour:
   m_ObjectHideFlags: 0
