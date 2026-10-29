@@ -78,6 +78,21 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void RealAttempt_SnapshotCarriesTrialAndHeart_BeforeSceneLoads()
+        {
+            // 하트를 쓴 저장과 이어하기가 따로 저장되면, 장면 로딩 중 앱이 꺼질 때 하트만 사라졌다 (Codex 리뷰)
+            SaveData save = OpenTrial();
+            Assert.IsTrue(GameSession.TryPrepareGodTrialAttempt(save, Modes.GodTrialRules.ThorTrialId, "own", System.DateTimeOffset.FromUnixTimeSeconds(1_800_000_000)));
+            RunSnapshot run = GameSession.BossSnapshot(1_800_000_000);
+            Assert.IsTrue(run.valid);
+            Assert.AreEqual((int)BattleMode.Boss, run.mode);
+            Assert.AreEqual(Modes.GodTrialRules.ThorTrialId, run.godTrialId);
+            Assert.AreEqual("own", run.recordId);
+            Assert.IsTrue(run.heartSpent);
+            Assert.IsFalse(run.practice);
+        }
+
+        [Test]
         public void FailedAttemptNeverSpendsHeartOrReplacesSession()
         {
             SaveData save = OpenTrial();

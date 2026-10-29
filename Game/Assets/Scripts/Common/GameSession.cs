@@ -57,6 +57,7 @@ namespace HistoryHeroes.Common
         public static bool TryStartGodTrial(string trialId, string recordId)
         {
             if (!TryPrepareGodTrialAttempt(SaveSystem.Data, trialId, recordId, Clock.Now())) return false;
+            SaveSystem.Data.run = BossSnapshot(Clock.UnixSeconds); // 하트와 이어하기를 한 번에 저장
             SaveSystem.Save();
             Load(BattleScene);
             return true;
@@ -435,8 +436,20 @@ namespace HistoryHeroes.Common
             Mode = BattleMode.Boss;
             Chapter = Mathf.Max(1, chapter);
             BossRecordId = recordId;
+            SaveSystem.Data.run = BossSnapshot(Clock.UnixSeconds);
+            SaveSystem.Save();
             Load(BattleScene);
         }
+
+        /// <summary>
+        /// 보스 · 시련 이어하기 스냅샷 (지금 입장 설정 그대로). 장면을 열기 전에 저장한다:
+        /// 하트를 저장한 뒤 장면 로딩 중에 앱이 꺼지면 하트만 사라지고 이어하기가 없었다 (2026-10-29 Codex 리뷰). BossRun.Start가 같은 값으로 다시 쓴다.
+        /// </summary>
+        public static RunSnapshot BossSnapshot(long now) => new RunSnapshot
+        {
+            valid = true, mode = (int)BattleMode.Boss, chapter = Chapter, practice = Practice,
+            recordId = BossRecordId, godTrialId = GodTrialId, heartSpent = HeartSpent, savedAt = now,
+        };
 
         /// <summary>같은 설정으로 한 번 더 (결과 화면의 "다시 도전")</summary>
         public static void Retry() => Load(BattleScene);
