@@ -24,8 +24,11 @@ namespace HistoryHeroes.Combat
         /// <summary>몸이 막는 피해 (방패병의 방패). IncomingModifier보다 먼저. 피해를 0으로 돌려주면 "막음"</summary>
         public Func<DamageInfo, DamageInfo> Guard { get; set; }
 
-        /// <summary>공유 체력의 두 형상이 각자의 남은 몫보다 더 깎지 않도록 최종 피해를 제한한다.</summary>
-        public Func<float, float> DamageCap { get; set; }
+        /// <summary>
+        /// 들어온 피해 → 실제로 깎을 피해 (스사노오 시련의 두 형상 공유 체력). 형상 몫보다 덜 깎게도, 마지막 형상의 마지막 피해는 남은 체력 전부로도 정한다
+        /// (형상 체력과 본체 체력을 따로 깎으면 소수 오차로 0.004가 남아 이길 수 없었다, Codex 리뷰 🔴).
+        /// </summary>
+        public Func<float, float> FinalDamage { get; set; }
 
         /// <summary>두 시험 형상이 체력을 공유할 때 실제 본체의 피해 결과를 그대로 돌려준다.</summary>
         public delegate bool DamageReceiver(DamageInfo info, out float dealt);
@@ -53,7 +56,7 @@ namespace HistoryHeroes.Combat
             _invulnerableDuration = invulnerableDuration;
             _invulnerableUntil = 0f;
             DamageRedirect = null;
-            DamageCap = null;
+            FinalDamage = null;
             Max = maxHp;
             Current = maxHp;
             DamageScale = 1f;
@@ -116,7 +119,7 @@ namespace HistoryHeroes.Combat
                 }
             }
 
-            if (DamageCap != null) incoming = Mathf.Min(incoming, Mathf.Max(0f, DamageCap(incoming)));
+            if (FinalDamage != null) incoming = Mathf.Max(0f, FinalDamage(incoming));
             dealt = Mathf.Min(Current, incoming);
             if (Current - dealt <= 0f && PreventDeath != null && PreventDeath())
             {

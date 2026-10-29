@@ -63,7 +63,7 @@ namespace HistoryHeroes.Enemy
             {
                 _trialState.Reset(health.Max);
                 health.Guard = GuardTrialDamage;
-                health.DamageCap = incoming => _trialState.Remaining(_incomingSecond || _promotedSecond);
+                health.FinalDamage = TrialDamage;
             }
             twin.gameObject.SetActive(true);
             twin.transform.SetParent(null, true);
@@ -210,6 +210,15 @@ namespace HistoryHeroes.Enemy
             if (_promotedSecond && !_incomingSecond || second != _openSecond || _trialState.Remaining(second) <= 0f) hit.Amount = 0f;
             else hit.Amount = Mathf.Min(hit.Amount, _trialState.Remaining(second));
             return hit;
+        }
+
+        /// <summary>형상 몫까지만 깎는다. 다른 형상이 이미 쓰러졌고 이 피해로 끝나면 본체 체력을 정확히 0으로 (소수 오차로 못 이기던 것)</summary>
+        private float TrialDamage(float incoming)
+        {
+            bool second = _incomingSecond || _promotedSecond;
+            float remaining = _trialState.Remaining(second);
+            bool otherDown = second ? !_trialState.FirstAlive : !_trialState.SecondAlive;
+            return ShadowTwinTrialState.FinalDamage(incoming, remaining, otherDown, health.Current);
         }
 
         private bool RedirectTwinDamage(DamageInfo hit, out float dealt)

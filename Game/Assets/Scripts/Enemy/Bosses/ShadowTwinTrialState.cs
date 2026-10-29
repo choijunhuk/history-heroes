@@ -23,6 +23,17 @@ namespace HistoryHeroes.Enemy
 
         public float Remaining(bool second) => second ? _second : _first;
 
+        /// <summary>
+        /// 실제로 깎을 피해: 형상 몫까지. 다른 형상이 쓰러졌고 이 피해가 몫을 넘으면 본체 남은 체력 전부
+        /// (형상 몫 합과 본체 체력은 float 오차로 조금 다를 수 있다 — 마지막 한 방이 그 차이까지 지운다)
+        /// </summary>
+        public static float FinalDamage(float incoming, float remaining, bool otherDown, float bodyCurrent)
+        {
+            if (incoming <= 0f || remaining <= 0f) return 0f;
+            if (otherDown && incoming >= remaining) return bodyCurrent;
+            return Math.Min(incoming, remaining);
+        }
+
         public float Apply(bool second, float dealt)
         {
             float actual = Math.Min(Math.Max(0f, dealt), Remaining(second));
