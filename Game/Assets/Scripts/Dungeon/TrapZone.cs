@@ -233,7 +233,7 @@ namespace HistoryHeroes.Dungeon
                 if (_hits[i].attachedRigidbody == null) continue;
                 // 적은 약하게 민다: 느린 적(방패병 1.3 · 증기 골렘 1.1)도 거슬러 건널 수 있게 (2.2로 밀면 띠 끝에 영영 붙는다)
                 bool enemy = _hits[i].TryGetComponent(out Health h) && h.Team == Team.Enemy;
-                _hits[i].attachedRigidbody.position += dir * ConveyorSpeed * (enemy ? EnemyConveyorScale : 1f) * dt;
+                RoomDevices.Push(_hits[i], dir * ConveyorSpeed * (enemy ? EnemyConveyorScale : 1f) * dt);
             }
         }
 
@@ -306,7 +306,7 @@ namespace HistoryHeroes.Dungeon
             float dx = _size.x * 0.5f - Mathf.Abs(local.x);
             float dy = _size.y * 0.5f - Mathf.Abs(local.y);
             Vector2 push = dx < dy ? new Vector2(Mathf.Sign(local.x) * (dx + 0.5f), 0f) : new Vector2(0f, Mathf.Sign(local.y == 0f ? 1f : local.y) * (dy + 0.5f));
-            rb.position += (Vector2)(transform.rotation * push);
+            RoomDevices.Push(c, (Vector2)(transform.rotation * push));
         }
 
         private void Unslow()

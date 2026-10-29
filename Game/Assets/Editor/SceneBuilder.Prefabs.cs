@@ -20,7 +20,7 @@ namespace HistoryHeroes.EditorTools
             public EnemyBase WraithLord, SteelColossus, ShadowTwins, OblivionKing;
             public EnemyBase RiftWarden;
             public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust, Starlight, SandOrb, ZeusLightning, WindWave;
-            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate, WindSlash, StormPath, OwlEye, GuardianGaze, TomoeVolley, TomoeCrosswind, WuzetianDecree, WuzetianOrder, CuriePrism, CurieSpectrum;
+            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation, BoudicaRally, BoudicaUprising, ThorHammer, ThorReturn, CleopatraPharos, CleopatraLibrary, SandStatue, SandGate, WindSlash, StormPath, OwlEye, GuardianGaze, TomoeVolley, TomoeCrosswind, WuzetianDecree, WuzetianOrder, CuriePrism, CurieSpectrum, BuddhaRest, BuddhaBreath, AdamPath, AdamWay;
             public Projectile IceShardProjectile;
             public ActiveSkillBehaviour IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillBehaviour FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -144,6 +144,10 @@ namespace HistoryHeroes.EditorTools
                 .Color("starColor", new Color(0.73f, 0.82f, 0.94f, 0.34f)).Color("lineColor", new Color(0.7f, 0.8f, 0.95f, 0.5f)));
             p.CurieSpectrum = Behaviour<ConstellationBehaviour>("Skill_CurieSpectrum", props => props.Float("starSpacing", 1f)
                 .Color("starColor", new Color(0.82f, 0.87f, 0.97f, 0.4f)).Color("lineColor", new Color(0.78f, 0.87f, 0.98f, 0.55f)));
+            p.BuddhaRest = Behaviour<BuddhaRestBehaviour>("Skill_BuddhaRest", null);
+            p.BuddhaBreath = Behaviour<BuddhaRestBehaviour>("Skill_BuddhaBreath", null);
+            p.AdamPath = Behaviour<AdamPathBehaviour>("Skill_AdamPath", props => props.Float("arcDegrees", 140f));
+            p.AdamWay = Behaviour<AdamPathBehaviour>("Skill_AdamWay", props => props.Float("arcDegrees", 160f));
             p.JeanneWave = Behaviour<BannerWaveBehaviour>("Skill_JeanneWave", null);
             p.JeanneOrleans = Behaviour<BannerWaveBehaviour>("Skill_JeanneOrleans", null);
             p.SeondeokStarlight = Behaviour<ConstellationBehaviour>("Skill_SeondeokStarlight", null);

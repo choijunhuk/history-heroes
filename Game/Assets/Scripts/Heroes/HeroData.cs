@@ -211,6 +211,22 @@ namespace HistoryHeroes.Heroes
         public float observationWaveRadius;
         public float observationWaveCoefficient;
 
+        [Header("부처 고요한 호흡")]
+        public int breathAttacks;
+        public float breathShieldFraction;
+        public float breathShieldDuration;
+        public float breathCooldown;
+        public float star3BreathShieldDuration;
+        public float star5BreathShieldFraction;
+
+        [Header("아담 살피는 발걸음")]
+        public float footstepMoveSeconds;
+        public float footstepDodgeBonus;
+        public float footstepDodgeDuration;
+        public float footstepCooldown;
+        public float star3FootstepDodgeDuration;
+        public float star5FootstepDodgeBonus;
+
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
         public float star3FirstShotBonus = -1f;

@@ -175,7 +175,11 @@ namespace HistoryHeroes.Dungeon
         public static void Push(Collider2D c, Vector2 delta)
         {
             Rigidbody2D rb = c.attachedRigidbody;
-            if (rb != null) rb.position += delta;
+            if (rb != null)
+            {
+                rb.position += delta;
+                if (rb.TryGetComponent(out PlayerController player)) player.NoteExternalDisplacement(delta);
+            }
             else c.transform.position += (Vector3)delta;
         }
     }

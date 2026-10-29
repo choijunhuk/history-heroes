@@ -29,11 +29,11 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void RosterContainsExactlyNineteenHeroesAndMissionOrderMatches()
+        public void RosterContainsExactlyTwentyOneHeroesAndMissionOrderMatches()
         {
             HeroRoster roster = Roster();
             Assert.IsNotNull(roster);
-            string[] ids = { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena", "tomoe", "wuzetian", "curie" };
+            string[] ids = { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena", "tomoe", "wuzetian", "curie", "buddha", "adam" };
             CollectionAssert.AreEqual(ids, roster.heroes.ConvertAll(hero => hero.id));
             var missions = ScriptableObject.CreateInstance<MissionTable>();
             try { CollectionAssert.AreEqual(ids, missions.heroOrder); }

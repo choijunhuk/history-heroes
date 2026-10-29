@@ -14,6 +14,9 @@ namespace HistoryHeroes.Skills
         public float cooldown = 3f;
         public float damageFirstLevel = 1f;
         public float damagePerLevel = 0.2f;
+        [Tooltip("자신의 최대체력 기준 회복 비율. 피해·치명타 배수와 분리한다")]
+        public float healFractionFirstLevel;
+        public float healFractionPerLevel;
         [Tooltip("레벨마다 늘어나는 개수 (칼날, 번개, 화살 수 등)")]
         public int countFirstLevel = 1;
         public int countPerLevel = 1;
@@ -45,6 +48,7 @@ namespace HistoryHeroes.Skills
         public override SkillKind Kind => SkillKind.Active;
 
         public float DamageAt(int level) => damageFirstLevel + damagePerLevel * (level - 1);
+        public float HealFractionAt(int level) => healFractionFirstLevel + healFractionPerLevel * (level - 1);
         public int CountAt(int level) => countFirstLevel + countPerLevel * (level - 1);
         public float RadiusAt(int level) => radius * (1f + radiusPerLevel * (level - 1));
         public float DurationAt(int level) => duration + durationPerLevel * (level - 1);

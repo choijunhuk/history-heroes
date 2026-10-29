@@ -1,5 +1,6 @@
 using HistoryHeroes.Meta;
 using HistoryHeroes.Missions;
+using HistoryHeroes.Heroes;
 using HistoryHeroes.UI;
 using TMPro;
 using UnityEditor;
@@ -14,13 +15,17 @@ namespace HistoryHeroes.EditorTools
     /// </summary>
     public static partial class SceneBuilder
     {
-        private static MissionTable CreateMissions()
+        /// <summary>오늘의 영웅 순서는 로스터에서 복사해 영웅 추가 때 빠지는 일을 막는다.</summary>
+        public static System.Collections.Generic.List<string> MissionHeroOrder(HeroRoster roster) =>
+            roster.heroes.ConvertAll(hero => hero.id);
+
+        private static MissionTable CreateMissions(HeroRoster roster)
         {
             var t = AssetUtil.LoadOrCreate<MissionTable>($"{DataDir}/Missions/MissionTable.asset");
             const MissionDays all = MissionDays.All;
 
             // 기존 미션 표 에셋도 다시 만들 때 새 영웅 순서를 받게 한다.
-            t.heroOrder = new System.Collections.Generic.List<string> { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica", "thor", "cleopatra", "anubis", "susanoo", "athena", "tomoe", "wuzetian", "curie" };
+            t.heroOrder = MissionHeroOrder(roster);
 
             t.dailyFixed.Clear();
             t.dailyFixed.Add(M("login", "게임 접속", MissionEvents.Login, 1, 10));

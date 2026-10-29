@@ -66,6 +66,7 @@ namespace HistoryHeroes.Combat
             _stats = stats;
             _invulnerableDuration = invulnerableDuration;
             _invulnerableUntil = 0f;
+            ClearShield();
             DamageRedirect = null;
             DamageDisplayTarget = null;
             FinalDamage = null;
@@ -121,14 +122,12 @@ namespace HistoryHeroes.Combat
             float incoming = LastBeforeReduction * (1f - reduction);
             if (Shield > 0f)
             {
-                float absorbed = Mathf.Min(Shield, incoming);
-                Shield -= absorbed;
+                bool guardWasPresent = _shields.Remaining(_legacyShieldOwner, Time.time) > 0f;
+                float absorbed = _shields.Absorb(incoming, Time.time);
                 incoming -= absorbed;
-                if (Shield <= 0f)
-                {
-                    Shield = 0f;
+                // 부처 보호막의 만료·소진으로 철벽 폭발을 새로 만들지 않는다.
+                if (guardWasPresent && _shields.Remaining(_legacyShieldOwner, Time.time) <= 0f)
                     ShieldBroken?.Invoke();
-                }
             }
 
             if (FinalDamage != null) incoming = Mathf.Max(0f, FinalDamage(incoming));
@@ -164,7 +163,10 @@ namespace HistoryHeroes.Combat
         public bool Invulnerable { get; set; }
 
         /// <summary>보호막: 체력보다 먼저 깎인다 (수호 방패·철벽)</summary>
-        public float Shield { get; private set; }
+        public float Shield => _shields.Maximum(Time.time);
+
+        private readonly ShieldSources _shields = new ShieldSources();
+        private readonly object _legacyShieldOwner = new object();
 
         /// <summary>보호막이 다 깎였을 때 (철벽: 깨질 때 폭발)</summary>
         public event Action ShieldBroken;
@@ -173,15 +175,26 @@ namespace HistoryHeroes.Combat
         public Func<bool> PreventDeath;
 
         /// <summary>보호막을 채운다. 이미 있는 것보다 크면 그만큼으로 (겹쳐서 무한히 쌓이지 않게)</summary>
-        public void SetShieldAtLeast(float amount) => Shield = Mathf.Max(Shield, amount);
+        public void SetShieldAtLeast(float amount) => _shields.SetAtLeast(_legacyShieldOwner, amount, float.PositiveInfinity);
 
-        public void ClearShield() => Shield = 0f;
+        public void ClearShield() => _shields.Clear();
+
+        /// <summary>같은 보호를 덧씌워도 합산하지 않는다. 만료 시 이 출처만 지운다.</summary>
+        public void SetShieldFrom(object source, float amount, float duration, float now)
+        {
+            _shields.Expire(now);
+            _shields.SetAtLeast(source, amount, now + Mathf.Max(0f, duration));
+        }
+
+        public void ClearShieldFrom(object source) => _shields.Remove(source);
+        public float ShieldFrom(object source, float now) => _shields.Remaining(source, now);
+        public void ExpireShields(float now) => _shields.Expire(now);
 
         /// <summary>판 포기: 막기·보호막·무적·불굴을 건너뛰고 바로 쓰러진다 (일시정지 메뉴, v1.0)</summary>
         public void Kill()
         {
             if (IsDead) return;
-            Shield = 0f;
+            ClearShield();
             Current = 0f;
             Died?.Invoke(this);
         }

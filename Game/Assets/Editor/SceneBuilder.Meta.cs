@@ -1,5 +1,6 @@
 using System;
 using HistoryHeroes.Equipment;
+using HistoryHeroes.Heroes;
 using HistoryHeroes.Meta;
 using HistoryHeroes.Stats;
 using UnityEditor;
@@ -9,7 +10,7 @@ namespace HistoryHeroes.EditorTools
     /// <summary>v0.4 판 밖 성장 데이터: 장비 42종 (Equipment 7장) + 장비 표 + 판 밖 성장 표</summary>
     public static partial class SceneBuilder
     {
-        private static MetaTable CreateMetaData()
+        private static MetaTable CreateMetaData(HeroRoster roster)
         {
             var table = AssetUtil.LoadOrCreate<EquipmentTable>($"{DataDir}/Equipment/EquipmentTable.asset");
             ConfigureEquipment(table, id => AssetUtil.LoadOrCreate<EquipmentData>($"{DataDir}/Equipment/Equip_{id}.asset"));
@@ -43,7 +44,7 @@ namespace HistoryHeroes.EditorTools
             meta.runes = runes;
             meta.relics = relics;
             meta.pets = CreatePets();
-            meta.missions = CreateMissions();
+            meta.missions = CreateMissions(roster);
             EditorUtility.SetDirty(meta);
 
             // 상자 표 (Gacha 2장): 화면 확률과 추첨이 같이 읽는다. 숫자는 GachaTable 기본값
