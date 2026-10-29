@@ -115,43 +115,129 @@ namespace HistoryHeroes.EditorTools
             TMP_Text wallet = Label("Wallet", panel, "", 26, TextAlignmentOptions.Center);
             Place(wallet.rectTransform, Center, Center, new Vector2(0f, 775f), new Vector2(1000f, 50f));
 
-            Button normalBuy = Btn("NormalBuy", panel, "일반 상자", new Vector2(-252f, 680f), new Vector2(496f, 100f), ButtonBlue, out TMP_Text normalBuyLabel);
+            Button equipmentTab = Btn("EquipmentTab", panel, "장비 상자", new Vector2(-252f, 690f), new Vector2(496f, 78f), ButtonBlue, out _);
+            Button relicTab = Btn("RelicTab", panel, "유물 뽑기", new Vector2(252f, 690f), new Vector2(496f, 78f), ButtonBlue, out _);
+
+            RectTransform equipmentSection = Rect("EquipmentSection", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            Button normalBuy = Btn("NormalBuy", equipmentSection, "일반 상자", new Vector2(-252f, 560f), new Vector2(496f, 100f), ButtonBlue, out TMP_Text normalBuyLabel);
             normalBuyLabel.fontSize = 28;
-            Button normalFree = Btn("NormalFree", panel, "광고 보고 무료", new Vector2(252f, 680f), new Vector2(496f, 100f), ButtonBlue, out TMP_Text normalFreeLabel);
+            Button normalFree = Btn("NormalFree", equipmentSection, "광고 보고 무료", new Vector2(252f, 560f), new Vector2(496f, 100f), ButtonBlue, out TMP_Text normalFreeLabel);
             normalFreeLabel.fontSize = 28;
 
-            TMP_Text premiumInfo = Label("PremiumInfo", panel, "", 28, TextAlignmentOptions.Center);
-            Place(premiumInfo.rectTransform, Center, Center, new Vector2(0f, 580f), new Vector2(1000f, 60f));
-            Button premium1 = Btn("Premium1", panel, "1회", new Vector2(-335f, 490f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium1Label);
+            TMP_Text premiumInfo = Label("PremiumInfo", equipmentSection, "", 28, TextAlignmentOptions.Center);
+            Place(premiumInfo.rectTransform, Center, Center, new Vector2(0f, 460f), new Vector2(1000f, 60f));
+            Button premium1 = Btn("Premium1", equipmentSection, "1회", new Vector2(-335f, 370f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium1Label);
             premium1Label.fontSize = 27;
-            Button premium10 = Btn("Premium10", panel, "10연", new Vector2(0f, 490f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium10Label);
+            Button premium10 = Btn("Premium10", equipmentSection, "10연", new Vector2(0f, 370f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium10Label);
             premium10Label.fontSize = 27;
-            Button ticket = Btn("Ticket", panel, "소환권", new Vector2(335f, 490f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text ticketLabel);
+            Button ticket = Btn("Ticket", equipmentSection, "소환권", new Vector2(335f, 370f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text ticketLabel);
             ticketLabel.fontSize = 25;
 
-            Button rates = Btn("Rates", panel, "확률 보기", new Vector2(-335f, 385f), new Vector2(325f, 84f), ButtonGray, out TMP_Text ratesButtonLabel);
+            Button rates = Btn("Rates", equipmentSection, "확률 보기", new Vector2(-335f, 265f), new Vector2(325f, 84f), ButtonGray, out TMP_Text ratesButtonLabel);
             ratesButtonLabel.fontSize = 28;
-            Button exchange = Btn("Exchange", panel, "조각 교환소", new Vector2(0f, 385f), new Vector2(325f, 84f), ButtonGray, out TMP_Text exchangeLabel);
+            Button exchange = Btn("Exchange", equipmentSection, "조각 교환소", new Vector2(0f, 265f), new Vector2(325f, 84f), ButtonGray, out TMP_Text exchangeLabel);
             exchangeLabel.fontSize = 28;
-            Button goldShop = Btn("GoldShop", panel, "골드 상점", new Vector2(335f, 385f), new Vector2(325f, 84f), ButtonGray, out TMP_Text goldShopLabel);
+            Button goldShop = Btn("GoldShop", equipmentSection, "골드 상점", new Vector2(335f, 265f), new Vector2(325f, 84f), ButtonGray, out TMP_Text goldShopLabel);
             goldShopLabel.fontSize = 28;
 
-            TMP_Text message = Label("Message", panel, "", 26, TextAlignmentOptions.Center);
-            Place(message.rectTransform, Center, Center, new Vector2(0f, 300f), new Vector2(1000f, 60f));
-            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, -230f), new Vector2(1000f, 960f), 90f, 26f);
+            TMP_Text message = Label("Message", equipmentSection, "", 26, TextAlignmentOptions.Center);
+            Place(message.rectTransform, Center, Center, new Vector2(0f, 165f), new Vector2(1000f, 60f));
+            ButtonList list = BuildButtonList(equipmentSection, "List", new Vector2(0f, -285f), new Vector2(1000f, 810f), 90f, 26f);
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -800f), new Vector2(400f, 100f), ButtonGray, out _);
+
+            // 장비 상자와 같은 화면 안에 두어 도감에서도 한 화면만 열면 된다.
+            RectTransform relicSection = Rect("RelicSection", panel, Center, Center, Center, new Vector2(0f, -20f), new Vector2(1040f, 1320f));
+            Img(relicSection, PanelColor, null).raycastTarget = true;
+            TMP_Text relicInfo = Label("RelicInfo", relicSection, "", 34, TextAlignmentOptions.Center);
+            Place(relicInfo.rectTransform, Center, Center, new Vector2(0f, 545f), new Vector2(1000f, 160f));
+            Button relicPay = Btn("RelicPay", relicSection, "결제 재화", new Vector2(0f, 395f), new Vector2(820f, 86f), ButtonBlue, out TMP_Text relicPayLabel);
+            relicPayLabel.fontSize = 30f;
+            Button relic1 = Btn("Relic1", relicSection, "1회", new Vector2(-252f, 140f), new Vector2(496f, 108f), ButtonBlue, out TMP_Text relic1Label);
+            Button relic10 = Btn("Relic10", relicSection, "10회", new Vector2(252f, 140f), new Vector2(496f, 108f), ButtonGreen, out TMP_Text relic10Label);
+            Button relicFree = Btn("RelicFree", relicSection, "무료 1회 (오늘)", new Vector2(0f, 15f), new Vector2(700f, 90f), ButtonBlue, out TMP_Text relicFreeLabel);
+            Button relicRates = Btn("RelicRates", relicSection, "확률 보기", new Vector2(0f, -100f), new Vector2(500f, 86f), ButtonBlue, out _);
+            TMP_Text relicNotice = Label("RelicNotice", relicSection,
+                "<color=#A9B4C2>확률·보장·중복 규칙은 확률 보기에서 확인하세요</color>", 28, TextAlignmentOptions.Center);
+            Place(relicNotice.rectTransform, Center, Center, new Vector2(0f, -215f), new Vector2(980f, 80f));
+            TMP_Text relicLegal = Label("RelicLegal", relicSection,
+                "<color=#A9B4C2>보석으로 뽑을 수 있습니다. 사용한 보석·뽑기는 철회가 제한됩니다. 이 버전은 실제 결제가 없는 시험판입니다.</color>", 27, TextAlignmentOptions.Center);
+            Place(relicLegal.rectTransform, Center, Center, new Vector2(0f, 280f), new Vector2(980f, 110f));
+            TMP_Text relicMessage = Label("RelicMessage", relicSection, "", 30, TextAlignmentOptions.Center);
+            Place(relicMessage.rectTransform, Center, Center, new Vector2(0f, -335f), new Vector2(980f, 100f));
 
             // 확률 보기 (덮는 판)
             RectTransform ratesPanel = Rect("RatesPanel", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             Img(ratesPanel, PanelColor, null).raycastTarget = true; // 뒤 화면이 비치지 않게
-            TMP_Text ratesText = Label("RatesText", ratesPanel, "", 28, TextAlignmentOptions.TopLeft);
-            Place(ratesText.rectTransform, Center, Center, new Vector2(0f, 120f), new Vector2(980f, 1300f));
+            TMP_Text ratesTitle = Label("RatesTitle", ratesPanel, "확률 보기", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(ratesTitle.rectTransform, Center, Center, new Vector2(0f, 820f), new Vector2(900f, 90f));
+            RectTransform ratesViewport = Rect("RatesViewport", ratesPanel, Center, Center, Center, new Vector2(0f, 70f), new Vector2(1000f, 1250f));
+            Img(ratesViewport, new Color(0f, 0f, 0f, 0.25f), null).raycastTarget = true;
+            ratesViewport.gameObject.AddComponent<RectMask2D>();
+            RectTransform ratesContent = Rect("Content", ratesViewport, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 100f));
+            var ratesLayout = ratesContent.gameObject.AddComponent<VerticalLayoutGroup>();
+            ratesLayout.padding = new RectOffset(24, 24, 24, 36);
+            ratesLayout.childControlHeight = true;
+            ratesLayout.childControlWidth = true;
+            ratesLayout.childForceExpandHeight = false;
+            ratesContent.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            TMP_Text ratesText = Label("RatesText", ratesContent, "", 30, TextAlignmentOptions.TopLeft);
             ratesText.lineSpacing = 8f;
+            ScrollRect ratesScroll = ratesViewport.gameObject.AddComponent<ScrollRect>();
+            ratesScroll.viewport = ratesViewport;
+            ratesScroll.content = ratesContent;
+            ratesScroll.horizontal = false;
+            ratesScroll.movementType = ScrollRect.MovementType.Clamped;
+            ratesScroll.scrollSensitivity = 40f;
             Button ratesClose = Btn("RatesClose", ratesPanel, "닫기", new Vector2(0f, -700f), new Vector2(400f, 100f), ButtonGray, out _);
+
+            RectTransform resultsPanel = Rect("RelicResults", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            Img(resultsPanel, PanelColor, null).raycastTarget = true;
+            TMP_Text resultsTitle = Label("ResultsTitle", resultsPanel, "유물 뽑기 결과", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(resultsTitle.rectTransform, Center, Center, new Vector2(0f, 820f), new Vector2(900f, 90f));
+            TMP_Text resultsLabel = Label("ResultsLabel", resultsPanel, "", 34, TextAlignmentOptions.Center);
+            Place(resultsLabel.rectTransform, Center, Center, new Vector2(0f, 730f), new Vector2(1000f, 60f));
+            RectTransform resultsViewport = Rect("ResultsViewport", resultsPanel, Center, Center, Center, new Vector2(0f, -10f), new Vector2(1000f, 1330f));
+            Img(resultsViewport, new Color(0f, 0f, 0f, 0.25f), null).raycastTarget = true;
+            resultsViewport.gameObject.AddComponent<RectMask2D>();
+            RectTransform resultsContent = Rect("Content", resultsViewport, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 1190f));
+            var grid = resultsContent.gameObject.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(478f, 210f);
+            grid.spacing = new Vector2(12f, 16f);
+            grid.padding = new RectOffset(12, 12, 12, 12);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 2;
+            var resultIcons = new Image[10];
+            var resultLabels = new TMP_Text[10];
+            for (int i = 0; i < 10; i++)
+            {
+                RectTransform card = Rect($"RelicCard{i + 1}", resultsContent, Center, Center, Center, Vector2.zero, grid.cellSize);
+                Img(card, RowColor, null);
+                Image icon = Rect("Icon", card, Center, Center, Center, new Vector2(-164f, 0f), new Vector2(100f, 100f)).gameObject.AddComponent<Image>();
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                TMP_Text label = Label("CardText", card, "", 29, TextAlignmentOptions.MidlineLeft);
+                Place(label.rectTransform, Center, Center, new Vector2(55f, 0f), new Vector2(340f, 180f));
+                resultIcons[i] = icon;
+                resultLabels[i] = label;
+            }
+            ScrollRect resultsScroll = resultsViewport.gameObject.AddComponent<ScrollRect>();
+            resultsScroll.viewport = resultsViewport;
+            resultsScroll.content = resultsContent;
+            resultsScroll.horizontal = false;
+            resultsScroll.movementType = ScrollRect.MovementType.Clamped;
+            resultsScroll.scrollSensitivity = 40f;
+            Button resultsClose = Btn("RelicResultsClose", resultsPanel, "닫기", new Vector2(0f, -800f), new Vector2(400f, 100f), ButtonBlue, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("gacha", gacha).Ref("walletLabel", wallet)
+                    .Ref("equipmentTabButton", equipmentTab).Ref("relicTabButton", relicTab).Ref("relicSection", relicSection.gameObject)
+                    .Ref("equipmentSection", equipmentSection.gameObject).Ref("relicInfoLabel", relicInfo).Ref("relicPayButton", relicPay).Ref("relicPayLabel", relicPayLabel)
+                    .Ref("relic1Button", relic1).Ref("relic1Label", relic1Label).Ref("relic10Button", relic10).Ref("relic10Label", relic10Label)
+                    .Ref("relicFreeButton", relicFree).Ref("relicFreeLabel", relicFreeLabel).Ref("relicRatesButton", relicRates)
+                    .Ref("relicMessageLabel", relicMessage).Ref("relicResultsRoot", resultsPanel.gameObject).Ref("relicResultsLabel", resultsLabel)
+                    .Refs("relicResultIcons", resultIcons).Refs("relicResultLabels", resultLabels).Ref("relicResultsCloseButton", resultsClose)
+                    .Ref("relicResultsScroll", resultsScroll).Ref("ratesScroll", ratesScroll)
                     .Ref("normalBuyButton", normalBuy).Ref("normalBuyLabel", normalBuyLabel).Ref("normalFreeButton", normalFree).Ref("normalFreeLabel", normalFreeLabel)
                     .Ref("premiumInfoLabel", premiumInfo).Ref("premium1Button", premium1).Ref("premium1Label", premium1Label)
                     .Ref("premium10Button", premium10).Ref("premium10Label", premium10Label).Ref("ticketButton", ticket).Ref("ticketLabel", ticketLabel)
@@ -286,14 +372,13 @@ namespace HistoryHeroes.EditorTools
             detailIcon.preserveAspect = true;
             detailIcon.raycastTarget = false;
             detailIcon.gameObject.SetActive(false);
-            Button action = Btn("RelicAction", panel, "★ 올리기", new Vector2(-220f, -720f), new Vector2(400f, 110f), new Color(0.5f, 0.4f, 0.15f), out TMP_Text actionLabel);
-            actionLabel.fontSize = 28;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(220f, -720f), new Vector2(400f, 110f), ButtonGray, out _);
+            Button draw = Btn("RelicDraw", panel, "뽑기", new Vector2(-220f, -720f), new Vector2(400f, 110f), ButtonBlue, out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(220f, -720f), new Vector2(400f, 110f), ButtonBlue, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("table", relics).Ref("summaryLabel", summary).Ref("list", list)
-                    .Ref("detailLabel", detail).Ref("detailIcon", detailIcon).Ref("actionButton", action).Ref("actionLabel", actionLabel).Ref("backButton", back);
+                    .Ref("detailLabel", detail).Ref("detailIcon", detailIcon).Ref("drawButton", draw).Ref("backButton", back);
             }
 
             return screen;

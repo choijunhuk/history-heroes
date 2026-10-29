@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace HistoryHeroes.Tests
 {
-    /// <summary>v0.4 유물 (Relics 2·4·5장)</summary>
+    /// <summary>유물 도감·영웅 첫 클리어·힘 예산 (Relics 2~5장)</summary>
     public sealed class RelicTests
     {
         private RelicTable _table;
@@ -84,7 +84,7 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void CheckAll_GrantsEachSourceOnce()
+        public void CheckAll_GrantsHeroRelicAndShardsForOldSourcesOnce()
         {
             var save = new SaveData { unlockedChapter = 2 };
             RelicService.MarkHeroClear(save, "khan");
@@ -96,43 +96,41 @@ namespace HistoryHeroes.Tests
 
             for (int i = 0; i < 5; i++) save.discoveredRecipes.Add("r" + i);
             List<string> got = RelicService.CheckAll(save, _table, heroesUnlocked: 2);
-            Assert.AreEqual(4, got.Count, "파이자·측우기·거북선·다빈치");
+            Assert.AreEqual(4, got.Count, "파이자 1개·파편 보상 3개");
             Assert.AreEqual(1, RelicService.Stars(save, "khan_paiza"));
+            Assert.AreEqual(0, RelicService.Stars(save, "rain_gauge"));
+            Assert.AreEqual(0, RelicService.Stars(save, "turtle_ship_plan"));
+            Assert.AreEqual(0, RelicService.Stars(save, "davinci_sketch"));
+            Assert.AreEqual(3 * _table.sourceShards, RelicService.Shards(save));
             Assert.AreEqual(0, RelicService.Stars(save, "magna_carta"), "영웅 4명 전에는 없음");
             Assert.AreEqual(0, RelicService.Stars(save, "sundial"), "서바이벌은 v0.5");
             Assert.AreEqual(0, RelicService.CheckAll(save, _table, 2).Count, "한 번만");
 
             save.relics.recordsSavedTotal = 10;
             Assert.AreEqual(2, RelicService.CheckAll(save, _table, 4).Count, "구텐베르크·마그나 카르타");
+            Assert.AreEqual(5 * _table.sourceShards, RelicService.Shards(save));
         }
 
         [Test]
-        public void Exchange_ThenOriginalSourceRefunds120()
+        public void CheckAll_OldSourceAlreadyOwnedStillGrantsOnlyShardsOnce()
         {
             var save = new SaveData();
-            save.AddItem(RelicTable.AncientShard, 120);
-            Assert.IsTrue(RelicService.TryExchange(save, _table, "rain_gauge"));
-            Assert.AreEqual(0, RelicService.Shards(save));
-            Assert.IsFalse(RelicService.TryExchange(save, _table, "rain_gauge"), "이미 가짐");
+            RelicService.Add(save, _table, _table.Find("rain_gauge"));
+            save.unlockedChapter = 2;
 
-            save.unlockedChapter = 2; // 원래 획득처(1구간 보스)를 나중에 채움
-            List<string> lines = RelicService.CheckAll(save, _table);
-            Assert.AreEqual(1, lines.Count);
-            StringAssert.Contains("고대 파편 +120", lines[0]);
-            Assert.AreEqual(120, RelicService.Shards(save), "중복 대신 돌려받음");
-            Assert.AreEqual(1, RelicService.Stars(save, "rain_gauge"), "별은 그대로");
+            Assert.AreEqual(1, RelicService.CheckAll(save, _table).Count);
+            Assert.AreEqual(_table.sourceShards, RelicService.Shards(save));
+            Assert.AreEqual(1, RelicService.Stars(save, "rain_gauge"), "기존 유물에 별을 더하지 않는다");
+            Assert.IsEmpty(RelicService.CheckAll(save, _table));
+            Assert.AreEqual(_table.sourceShards, RelicService.Shards(save));
         }
 
         [Test]
-        public void Star_Costs30Then80_AndActiveOnlyAfterTabUnlocks()
+        public void Active_UsesCurrentStarsOnlyAfterTabUnlocks()
         {
             var save = new SaveData { unlockedChapter = 2 };
-            save.relics.owned.Add(new RelicStar { id = "khan_paiza", stars = 1 });
-            save.AddItem(RelicTable.AncientShard, 110);
-            Assert.IsTrue(RelicService.TryStar(save, _table, "khan_paiza"));
-            Assert.IsTrue(RelicService.TryStar(save, _table, "khan_paiza"));
-            Assert.IsFalse(RelicService.TryStar(save, _table, "khan_paiza"), "★3이 끝");
-            Assert.AreEqual(0, RelicService.Shards(save));
+            var relic = _table.Find("khan_paiza");
+            for (int i = 0; i < 4; i++) RelicService.Add(save, _table, relic);
 
             Assert.AreEqual(0, RelicService.Active(save).Count, "유물 탭(2구간 보스) 전에는 보관만");
             save.unlockedChapter = 3;
@@ -196,7 +194,6 @@ namespace HistoryHeroes.Tests
             float[] expected = { 0.0008333333f, 0.0016666667f, 0.0025f };
             var save = new SaveData { unlockedChapter = 3 };
             save.relics.owned.Add(new RelicStar { id = relicId, stars = 1 });
-            save.AddItem(RelicTable.AncientShard, 110);
             var meta = ScriptableObject.CreateInstance<MetaTable>();
             meta.relics = _table;
             try
@@ -210,7 +207,12 @@ namespace HistoryHeroes.Tests
                     var modifiers = MetaStats.Build(MetaStats.FromAccount(save, meta, relic.sourceValue), meta, this);
                     Assert.AreEqual(expected[stars - 1], MetaStats.Sum(modifiers, StatType.Attack, ModifierKind.Percent), 1e-7f);
                     Assert.AreEqual(expected[stars - 1], MetaStats.Sum(modifiers, StatType.MaxHp, ModifierKind.Percent), 1e-7f);
-                    if (stars < 3) Assert.IsTrue(RelicService.TryStar(save, _table, relicId));
+                    if (stars == 1) RelicService.Add(save, _table, relic);
+                    if (stars == 2)
+                    {
+                        RelicService.Add(save, _table, relic);
+                        RelicService.Add(save, _table, relic);
+                    }
                 }
                 Assert.AreEqual(0, RelicService.Shards(save));
             }
@@ -248,13 +250,12 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void Catalog_HasTwentyFourUniqueRelics_SixEqualSets_AndCosts2640Shards()
+        public void Catalog_HasTwentyFourUniqueRelics_SixEqualSets_AndEightHeroLinks()
         {
             Assert.AreEqual(24, _table.relics.Count);
             Assert.AreEqual(6, _table.setNames.Length);
             var ids = new HashSet<string>();
             var heroes = new HashSet<string>();
-            var save = new SaveData();
             int[] sets = new int[6];
             foreach (RelicData relic in _table.relics)
             {
@@ -262,41 +263,26 @@ namespace HistoryHeroes.Tests
                 Assert.That(relic.set, Is.InRange(0, 5));
                 sets[relic.set]++;
                 if (relic.source == RelicSource.HeroFirstClear) Assert.IsTrue(heroes.Add(relic.sourceValue));
-                save.relics.owned.Add(new RelicStar { id = relic.id, stars = 1 });
             }
             Assert.AreEqual(8, heroes.Count);
             foreach (int count in sets) Assert.AreEqual(4, count);
-            Assert.AreEqual(30, _table.StarCost(1));
-            Assert.AreEqual(80, _table.StarCost(2));
-            save.AddItem(RelicTable.AncientShard, 2640);
-            foreach (RelicData relic in _table.relics)
-            {
-                Assert.IsTrue(RelicService.TryStar(save, _table, relic.id));
-                Assert.IsTrue(RelicService.TryStar(save, _table, relic.id));
-                Assert.AreEqual(3, RelicService.Stars(save, relic.id));
-                Assert.IsFalse(RelicService.TryStar(save, _table, relic.id));
-            }
-            Assert.AreEqual(0, RelicService.Shards(save), "24 × (30 + 80) = 2,640");
         }
 
         [TestCase("yisunsin", "yisunsin_diary")]
         [TestCase("yiseonggye", "yiseonggye_bow")]
         [TestCase("davinci", "davinci_gears")]
         [TestCase("zhuge", "zhuge_memorial")]
-        public void NewHeroClear_AfterExchangeRefundsOnce_AndPreservesStars(string heroId, string relicId)
+        public void NewHeroClear_AfterGachaDrawCountsAsDuplicateOnce(string heroId, string relicId)
         {
             var save = new SaveData();
-            save.AddItem(RelicTable.AncientShard, 230);
-            Assert.IsTrue(RelicService.TryExchange(save, _table, relicId));
-            Assert.IsTrue(RelicService.TryStar(save, _table, relicId));
-            Assert.IsTrue(RelicService.TryStar(save, _table, relicId));
+            RelicService.Add(save, _table, _table.Find(relicId));
             RelicService.MarkHeroClear(save, heroId);
             Assert.AreEqual(1, RelicService.CheckAll(save, _table).Count);
-            Assert.AreEqual(120, RelicService.Shards(save));
-            Assert.AreEqual(3, RelicService.Stars(save, relicId));
+            Assert.AreEqual(0, RelicService.Shards(save));
+            Assert.AreEqual(2, RelicService.Stars(save, relicId));
             RelicService.MarkHeroClear(save, heroId);
             Assert.IsEmpty(RelicService.CheckAll(save, _table));
-            Assert.AreEqual(120, RelicService.Shards(save));
+            Assert.AreEqual(0, RelicService.Shards(save));
             Assert.AreEqual(1, save.relics.owned.Count);
         }
     }

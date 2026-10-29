@@ -14,7 +14,8 @@ namespace HistoryHeroes.Records
         /// 1: v0.2 기록·도감·구간 / 2: v0.2b 재화·하트·계정 레벨·별 / 3: v0.4 장비·영웅 성장·수련·상자·상점
         /// <summary>4 (v0.5): 서바이벌·펫·미션 — 빈 상태로 시작 (Normalize가 채운다). 옛 빌드는 더 새 파일을 읽지 않고 멈춘다</summary>
         /// <summary>6: 카드 빼기 이력·남은 횟수와 목표 레시피 (옛 저장은 빼기 2회부터)</summary>
-        public const int CurrentSchemaVersion = 6;
+        /// <summary>7: 유물 뽑기 횟수·무료 날짜·중복 진행. 옛 저장의 빈 값은 모두 0/없음이 맞다.</summary>
+        public const int CurrentSchemaVersion = 7;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -99,6 +100,7 @@ namespace HistoryHeroes.Records
         public ShopSave shop = new ShopSave();
         public RuneSave runes = new RuneSave();
         public RelicSave relics = new RelicSave();
+        public RelicGachaSave relicGacha = new RelicGachaSave();
 
         // ----- v0.5 서바이벌 (GameDesign 8-3: 생존 시간 기록, 영웅별 최고 기록) -----
         public SurvivalSave survival = new SurvivalSave();
@@ -658,7 +660,7 @@ namespace HistoryHeroes.Records
     public sealed class RelicSave
     {
         public List<RelicStar> owned = new List<RelicStar>();
-        /// <summary>원래 획득처를 이미 채운 유물 (교환소로 먼저 얻었으면 그때 🏺 돌려받음)</summary>
+        /// <summary>영웅 첫 클리어 또는 종전 고정 유물의 파편 보상을 이미 받았는가</summary>
         public List<string> sourcesClaimed = new List<string>();
         /// <summary>던전을 클리어해 본 영웅 (영웅 유물)</summary>
         public List<string> heroDungeonClears = new List<string>();
@@ -671,6 +673,18 @@ namespace HistoryHeroes.Records
     {
         public string id;
         public int stars;
+        /// <summary>다음 ★까지 모인 중복 (★2에서 0~1개)</summary>
+        public int duplicates;
+    }
+
+    [Serializable]
+    public sealed class RelicGachaSave
+    {
+        /// <summary>새 유물을 못 얻은 연속 횟수. 전부 얻으면 0으로 둔다.</summary>
+        public int newRelicPity;
+        public int totalPulls;
+        public string freeDate;
+        public List<GachaLogEntry> log = new List<GachaLogEntry>();
     }
 
     // ---------------------------------------------------------------- v0.4 룬 (Runes 9장)

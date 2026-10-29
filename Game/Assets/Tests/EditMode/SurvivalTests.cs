@@ -110,7 +110,7 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void Relics_SurvivalMilestones()
+        public void Relics_SurvivalMilestonesGrantShardsInsteadOfRelics()
         {
             var table = ScriptableObject.CreateInstance<RelicTable>();
             RelicData Add(string id, string value)
@@ -131,21 +131,26 @@ namespace HistoryHeroes.Tests
             var save = new SaveData();
             save.survival.longestSeconds = 299f;
             Assert.AreEqual(0, RelicService.CheckAll(save, table).Count, "5분이 안 됨");
+            Assert.AreEqual(0, RelicService.Shards(save));
 
             save.survival.longestSeconds = 300f;
             RelicService.CheckAll(save, table);
-            Assert.Greater(RelicService.Stars(save, "sundial"), 0);
+            Assert.AreEqual(table.sourceShards, RelicService.Shards(save));
+            Assert.AreEqual(0, RelicService.Stars(save, "sundial"));
             Assert.AreEqual(0, RelicService.Stars(save, "astrolabe"));
 
             save.survival.clears = 1;
             save.survival.clearHeroes.Add("khan");
             RelicService.CheckAll(save, table);
-            Assert.Greater(RelicService.Stars(save, "astrolabe"), 0);
+            Assert.AreEqual(2 * table.sourceShards, RelicService.Shards(save));
+            Assert.AreEqual(0, RelicService.Stars(save, "astrolabe"));
             Assert.AreEqual(0, RelicService.Stars(save, "galileo"), "영웅 1명");
 
             save.survival.clearHeroes.Add("guan");
             RelicService.CheckAll(save, table);
-            Assert.Greater(RelicService.Stars(save, "galileo"), 0);
+            Assert.AreEqual(3 * table.sourceShards, RelicService.Shards(save));
+            Assert.AreEqual(0, RelicService.Stars(save, "galileo"));
+            Assert.IsEmpty(RelicService.CheckAll(save, table));
         }
 
         [Test]

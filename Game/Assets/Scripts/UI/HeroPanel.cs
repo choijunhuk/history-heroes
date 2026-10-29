@@ -96,7 +96,7 @@ namespace HistoryHeroes.UI
                 }
             }
 
-            if (relicButton != null && relics != null) relicButton.onClick.AddListener(() => relics.Open());
+            if (relicButton != null && relics != null) relicButton.onClick.AddListener(() => relics.Open(Render));
         }
 
         /// <summary>판 밖 성장을 다 더한 공격력 · 체력 (StatSheet 규칙: (기본 + 고정) × (1 + %))</summary>

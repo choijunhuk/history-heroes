@@ -373,6 +373,7 @@ namespace HistoryHeroes.Records
                 data.rift.checkpoint.bansLeft = Skills.SkillLoadout.BansPerRun;
             }
 
+            // 6 → 7: 뽑기 횟수·날짜·중복 진행은 0/빈 값이 맞다. Normalize에서 빠진 묶음만 채우며 기존 별은 보존한다.
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -443,9 +444,17 @@ namespace HistoryHeroes.Records
             data.relics ??= new RelicSave();
             data.relics.owned ??= new List<RelicStar>();
             data.relics.owned.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id) || r.stars <= 0);
-            foreach (RelicStar r in data.relics.owned) r.stars = Math.Clamp(r.stars, 1, 3);
+            foreach (RelicStar r in data.relics.owned)
+            {
+                r.stars = Math.Clamp(r.stars, 1, 3);
+                r.duplicates = r.stars == 2 ? Math.Clamp(r.duplicates, 0, 1) : 0;
+            }
             data.relics.sourcesClaimed ??= new List<string>();
             data.relics.heroDungeonClears ??= new List<string>();
+            data.relicGacha ??= new RelicGachaSave();
+            data.relicGacha.newRelicPity = Math.Clamp(data.relicGacha.newRelicPity, 0, 19);
+            data.relicGacha.totalPulls = Math.Max(0, data.relicGacha.totalPulls);
+            data.relicGacha.log ??= new List<GachaLogEntry>();
             data.rift ??= new RiftSave();
             data.rift.rewardsClaimed ??= new List<int>();
             data.rift.checkpoint ??= new RiftCheckpoint();

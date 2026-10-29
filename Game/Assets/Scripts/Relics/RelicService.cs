@@ -7,9 +7,8 @@ namespace HistoryHeroes.Relics
 {
     /// <summary>
     /// 유물 규칙 (Relics 2·4·5장). 저장 데이터만 바꾸고 저장은 부르는 쪽이 한다.
-    /// - 획득: 유물마다 획득처 하나. 조건을 채우면 ★1로 (탭은 2구간 보스 뒤에 열리지만, 그전 것도 보관했다가 그때 적용)
-    /// - 교환소: 🏺120으로 못 얻은 유물을 미리 → 나중에 원래 획득처를 채우면 중복 대신 🏺120 돌려줌
-    /// - ★ 올리기: 🏺30 / 80. 뽑기·판매 없음
+    /// - 영웅 첫 던전 클리어로 연결 유물 1개. 보스·별·업적·서바이벌의 종전 고정 유물은 파편 보상으로 바꾼다.
+    /// - 같은 유물을 다시 받으면 ★를 올린다. ★3 초과는 파편으로 바꾼다.
     /// </summary>
     public static class RelicService
     {
@@ -27,6 +26,40 @@ namespace HistoryHeroes.Relics
         }
 
         public static int Shards(SaveData save) => save.ItemCount(RelicTable.AncientShard);
+
+        /// <summary>뽑기와 영웅 첫 클리어가 쓰는 동일한 중복 규칙</summary>
+        public static RelicGachaService.Pull Add(SaveData save, RelicTable table, RelicData relic)
+        {
+            foreach (RelicStar owned in save.relics.owned)
+            {
+                if (owned.id != relic.id) continue;
+                var result = new RelicGachaService.Pull { Data = relic, Stars = owned.stars };
+                if (owned.stars >= RelicTable.MaxStars)
+                {
+                    save.AddItem(RelicTable.AncientShard, table.overflowShards);
+                    result.Shards = table.overflowShards;
+                }
+                else
+                {
+                    owned.duplicates++;
+                    if (owned.duplicates >= table.DuplicatesNeeded(owned.stars))
+                    {
+                        owned.stars++;
+                        owned.duplicates = 0;
+                        result.StarUp = true;
+                    }
+
+                    result.Stars = owned.stars;
+                    result.Duplicates = owned.duplicates;
+                }
+
+                return result;
+            }
+
+            save.relics.owned.Add(new RelicStar { id = relic.id, stars = 1 });
+            save.relicGacha.newRelicPity = 0;
+            return new RelicGachaService.Pull { Data = relic, Stars = 1, IsNew = true };
+        }
 
         // ---------------------------------------------------------------- 보너스
 
@@ -73,7 +106,7 @@ namespace HistoryHeroes.Relics
 
         // ---------------------------------------------------------------- 얻기
 
-        /// <summary>조건을 채운 획득처를 모두 확인해 준다. 받은 줄 글자들</summary>
+        /// <summary>영웅 첫 클리어는 유물, 종전 고정 유물 조건은 파편으로 한 번 지급한다</summary>
         public static List<string> CheckAll(SaveData save, RelicTable table, int heroesUnlocked = -1)
         {
             var lines = new List<string>();
@@ -82,16 +115,16 @@ namespace HistoryHeroes.Relics
             {
                 if (r == null || save.relics.sourcesClaimed.Contains(r.id) || !Earned(save, r, heroesUnlocked)) continue;
                 save.relics.sourcesClaimed.Add(r.id);
-                if (Stars(save, r.id) > 0)
+                if (r.source != RelicSource.HeroFirstClear)
                 {
-                    // 교환소로 먼저 얻은 유물: 중복 대신 돌려준다
-                    save.AddItem(RelicTable.AncientShard, table.exchangeCost);
-                    lines.Add($"유물  {r.displayName} (이미 교환함) → <sprite name=ancient_shard>고대 파편 +{table.exchangeCost}");
+                    save.AddItem(RelicTable.AncientShard, table.sourceShards);
+                    lines.Add($"조건 달성 보상 · <sprite name=ancient_shard>고대 파편 +{table.sourceShards}");
                     continue;
                 }
 
-                save.relics.owned.Add(new RelicStar { id = r.id, stars = 1 });
-                lines.Add($"유물 발견!  {r.displayName}");
+                RelicGachaService.Pull got = Add(save, table, r);
+                string outcome = got.IsNew ? "NEW ★1" : got.StarUp ? $"★UP ★{got.Stars}" : got.Shards > 0 ? $"고대 파편 +{got.Shards}" : $"★{got.Stars} 중복 {got.Duplicates}/{table.DuplicatesNeeded(got.Stars)}";
+                lines.Add($"유물  {r.displayName} · {outcome}");
             }
 
             return lines;
@@ -133,29 +166,5 @@ namespace HistoryHeroes.Relics
             if (!string.IsNullOrEmpty(heroId) && !save.relics.heroDungeonClears.Contains(heroId)) save.relics.heroDungeonClears.Add(heroId);
         }
 
-        // ---------------------------------------------------------------- ★·교환
-
-        public static bool TryStar(SaveData save, RelicTable table, string relicId)
-        {
-            int stars = Stars(save, relicId);
-            int cost = table.StarCost(stars);
-            if (cost < 0 || Shards(save) < cost) return false;
-            save.AddItem(RelicTable.AncientShard, -cost);
-            foreach (RelicStar r in save.relics.owned)
-            {
-                if (r.id == relicId) r.stars++;
-            }
-
-            return true;
-        }
-
-        /// <summary>🏺120: 아직 없는 유물 (원래 획득처를 이미 채운 유물은 교환할 필요가 없으니 이미 가지고 있다)</summary>
-        public static bool TryExchange(SaveData save, RelicTable table, string relicId)
-        {
-            if (table.Find(relicId) == null || Stars(save, relicId) > 0 || Shards(save) < table.exchangeCost) return false;
-            save.AddItem(RelicTable.AncientShard, -table.exchangeCost);
-            save.relics.owned.Add(new RelicStar { id = relicId, stars = 1 });
-            return true;
-        }
     }
 }
