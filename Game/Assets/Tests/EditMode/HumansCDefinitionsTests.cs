@@ -274,13 +274,14 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void WuzetianLookUsesFemalePeasantGoldCrownAndScroll()
+        public void WuzetianLookUsesFemalePeasantRedRobeCrownAndScroll()
         {
             Art3DCharacters.Look look = Art3DCharacters.Heroes.Single(item => item.name == "Wuzetian");
             Assert.IsTrue(look.female);
             Assert.AreEqual("Female_Peasant", look.body);
             CollectionAssert.AreEquivalent(new[] { "Hair_Buns", "Eyebrows_Female" }, look.hair);
-            CollectionAssert.Contains(look.goldParts, "Female_Peasant_Body");
+            CollectionAssert.DoesNotContain(look.goldParts ?? new string[0], "Female_Peasant_Body", "같은 몸의 선덕여왕(금빛 윗옷)과 구분 — 짙은 붉은 옷");
+            Assert.Greater(look.tint.r, look.tint.g * 2f);
             Assert.That(look.hairColor.r, Is.LessThan(0.12f));
             CollectionAssert.AreEquivalent(new[] { "WuZetian_Crown", "Davinci_Scroll" }, look.props);
             Assert.AreEqual("Head", Art3DProps.Bones["WuZetian_Crown"]);

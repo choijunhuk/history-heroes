@@ -78,7 +78,8 @@ namespace HistoryHeroes.Tests
             Assert.IsTrue(look.female);
             Assert.AreEqual("Female_Peasant", look.body);
             CollectionAssert.AreEquivalent(new[] { "Hair_Long", "Eyebrows_Female" }, look.hair);
-            CollectionAssert.Contains(look.goldParts, "Female_Peasant_Body");
+            CollectionAssert.DoesNotContain(look.goldParts ?? new string[0], "Female_Peasant_Body", "같은 몸의 선덕여왕(금빛 윗옷)과 구분 — 상아 윗옷");
+            Assert.Greater(look.tint.r, 0.9f);
             Assert.Less(look.hairColor.r, 0.1f);
             Assert.Less(look.hairColor.g, 0.1f);
             Assert.Less(look.hairColor.b, 0.1f);
