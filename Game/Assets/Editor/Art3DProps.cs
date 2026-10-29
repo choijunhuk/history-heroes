@@ -28,6 +28,9 @@ namespace HistoryHeroes.EditorTools
             ["Yi_Helmet"] = "Head", ["Yi_Bow"] = "hand_l", // 이성계
             ["Davinci_Beret"] = "Head", ["Davinci_Scroll"] = "hand_l", ["Davinci_Crossbow"] = "hand_r", // 다빈치
             ["Zhuge_Fan"] = "hand_r", ["Zhuge_Hat"] = "Head", // 제갈량
+            ["Jeanne_Sword"] = "hand_r", ["Jeanne_Banner"] = "spine_03", // 잔 다르크 (블렌더 2026-10-29, Tools/blender/hero_props.py)
+            ["Boudica_Sword"] = "hand_r", // 부디카 켈트 잎 모양 검
+            ["Thor_Hammer"] = "hand_r", // 토르 (신의 시련 1 · 플레이 토르)
             ["Enemy_TowerShield"] = "hand_l", // 방패병의 큰 나무 방패 (앞을 막는다)
             // 그래픽 재평가 6번 "적을 실루엣으로 구분": 무리 적마다 머리 · 등 · 손 장식 (블렌더 notes_enemies.txt)
             ["Enemy_HornHelm"] = "Head", ["Enemy_Hood"] = "Head", ["Enemy_ShortBow"] = "hand_l", ["Enemy_BombPack"] = "spine_03",
@@ -50,6 +53,7 @@ namespace HistoryHeroes.EditorTools
             ["Wood"] = (Hex(0x815938), false), ["Metal"] = (Hex(0xC4C7CB), true), ["Black"] = (Hex(0x212124), false),
             ["Copper"] = (Hex(0xCE8955), true), ["Hair"] = (Hex(0x453527), false), ["Red"] = (Hex(0x992727), false),
             ["White"] = (Hex(0xE7E5DA), false), ["Blue"] = (Hex(0x2745A0), false),
+            ["Bronze"] = (Hex(0xB0803A), true), // 부디카 검 손잡이 (켈트 청동)
             // 펫 (블렌더 pets/notes.txt, 선형 색을 화면 색으로)
             ["Feather"] = (Hex(0x7A5639), false), ["Beak"] = (Hex(0xEDBA47), false), ["Eye"] = (Hex(0x1C1917), false),
             ["Horse"] = (Hex(0x944530), false), ["Horse_Gray"] = (Hex(0xC9C9CC), false), ["Horse_Dapple"] = (Hex(0xB3B3B8), false),
