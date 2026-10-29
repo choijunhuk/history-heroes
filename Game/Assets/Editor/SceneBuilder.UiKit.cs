@@ -99,6 +99,8 @@ namespace HistoryHeroes.EditorTools
         // ---------- 글자 체계 (전체 UI 검토 3번) ----------
         // 기준 화면 1080×1920 = 검토의 540px 캡처 × 2. 보조 15~16px → 30~32 · 본문 18~20px → 36~40 · 제목 28~34px → 56~68
         private const float MinTextSize = 30f;
+        // 줄 간격 (2026-10-29 개발자: "글씨 위아래가 너무 짧아서 뭉쳐 있는 느낌")
+        private const float BodyLineSpacing = 26f; // TMP 줄 간격 = 글자 크기의 % (26 = +26%)
 
         /// <summary>
         /// 장면 저장 직전: 보조 크기(30)보다 작은 글자를 모두 30까지 키운다.
@@ -108,6 +110,7 @@ namespace HistoryHeroes.EditorTools
         {
             foreach (TextMeshProUGUI t in Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
+                if (t.lineSpacing < BodyLineSpacing) t.lineSpacing = BodyLineSpacing; // 단추 두 줄 글(미션 줄 · 모드 카드)도 — 한 줄 글엔 영향 없다
                 if (t.enableAutoSizing)
                 {
                     t.fontSizeMax = Mathf.Max(t.fontSizeMax, MinTextSize);

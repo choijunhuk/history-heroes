@@ -390,6 +390,7 @@ namespace HistoryHeroes.EditorTools
             Bottom(ui.Dungeon, -250f, 452f);
             ui.Survival = ModeCard("Survival", main, "survival", "서바이벌", Vector2.zero, new Vector2(480f, 220f), LobbyOrange, out ui.SurvivalLabel);
             Bottom(ui.Survival, 250f, 452f);
+            ui.SurvivalLabel.textWrappingMode = TextWrappingModes.NoWrap; // "하트 1"의 1만 셋째 줄로 넘어가지 않게
 
             // ----- 도전 줄 -----
             ui.Rift = ModeCard("Rift", main, "rift", "무한의 균열", Vector2.zero, new Vector2(480f, 120f), new Color(0.5f, 0.32f, 0.9f), out ui.RiftLabel);
