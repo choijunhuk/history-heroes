@@ -124,5 +124,25 @@ namespace HistoryHeroes.Tests
             }
             finally { Object.DestroyImmediate(go); }
         }
+    
+
+        [Test]
+        public void GuardShieldIgnoresSourcedShields_ForTheGuardVisual()
+        {
+            var go = new GameObject("GuardShieldProbe");
+            try
+            {
+                Health health = go.AddComponent<Health>();
+                health.Init(Team.Player, 100f);
+                health.SetShieldAtLeast(20f);
+                var buddha = new object();
+                health.SetShieldFrom(buddha, 50f, 10f, Time.time);
+                Assert.AreEqual(20f, health.GuardShield, 0.001f);
+                health.TryTakeDamage(new DamageInfo { Amount = 30f, AttackerTeam = Team.Enemy, Kind = DamageKind.BasicAttack });
+                Assert.AreEqual(0f, health.GuardShield, 0.001f, "철벽이 닳으면 방패 연출을 끈다");
+                Assert.Greater(health.Shield, 0f, "부처 보호막은 남는다");
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
     }
 }

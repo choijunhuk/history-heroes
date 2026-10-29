@@ -168,6 +168,9 @@ namespace HistoryHeroes.Combat
         private readonly ShieldSources _shields = new ShieldSources();
         private readonly object _legacyShieldOwner = new object();
 
+        /// <summary>수호 방패 · 철벽(출처 없는 SetShieldAtLeast) 잔량만. 부처 보호막 같은 출처별 보호막은 빼고 센다 (방패 연출 표시용)</summary>
+        public float GuardShield => _shields.Remaining(_legacyShieldOwner, Time.time);
+
         /// <summary>보호막이 다 깎였을 때 (철벽: 깨질 때 폭발)</summary>
         public event Action ShieldBroken;
 

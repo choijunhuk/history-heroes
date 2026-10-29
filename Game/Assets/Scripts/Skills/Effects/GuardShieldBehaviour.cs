@@ -50,7 +50,7 @@ namespace HistoryHeroes.Skills
                 _bubble.sortingOrder = 4;
             }
 
-            bool on = player.Health.Shield > 0f;
+            bool on = player.Health.GuardShield > 0f; // 부처 보호막이 남아도 철벽이 닳았으면 방패를 끈다 (Codex 리뷰)
             _bubble.enabled = on;
 
             // 그래픽 평가 5번: 영웅 둘레를 도는 3D 방패 2개 (평평한 원만으로는 막는 느낌이 약하다)
