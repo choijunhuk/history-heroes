@@ -19,6 +19,7 @@
 
 ## 아이콘
 
+- 보상 · 재화 컬러 그림 10장 (`Game/Assets/Art/UI/Rewards`: 금화 · 보석 · 영웅 조각 · 장비 조각 · 고대 파편 · 소환권 · 하트 · 경험치 · 일반/고급 상자): **AI 이미지 생성** (OpenAI 이미지 생성, Codex CLI로 2026-10-29). 생성물은 만든 사람이 쓸 수 있다 (OpenAI 이용약관). 글 속 아이콘 묶음 `RewardIcons.asset`은 이 그림으로 빌더가 만든다
 - 스킬 · 메뉴 · 재화 아이콘 85개 (`Game/Assets/Art/UI/Icons`): **game-icons.net**, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). 흰색으로 칠하고 크기만 맞췄다.
 - 만든 이: Lorc, Delapouite, Sbed, Guard13007, Skoll, Zeromancer, Heavenly Dog, DarkZaitzev, Caro Asercion, AussieSim, Badges. 아이콘마다 만든 이와 주소: `Game/Assets/Art/UI/Icons/CREDITS.txt`
 - 버튼 · 창 · 테두리 · 리본 · 막대 같은 UI 부품 그림: 이 게임을 만들면서 직접 코드로 그림 (`Tools/ui_kit.py`).

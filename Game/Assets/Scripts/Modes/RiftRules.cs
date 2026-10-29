@@ -121,7 +121,7 @@ namespace HistoryHeroes.Modes
                 Wallet.Grant(save, r);
                 if (shards > 0) save.AddItem(Relics.RelicTable.AncientShard, shards);
                 string text = r.ToString();
-                if (shards > 0) text += (text.Length > 0 ? " · " : "") + $"고대 파편 +{shards}";
+                if (shards > 0) text += (text.Length > 0 ? " · " : "") + $"<sprite name=ancient_shard>고대 파편 +{shards}";
                 lines.Add($"균열 {m}층 보상  {text}");
             }
 

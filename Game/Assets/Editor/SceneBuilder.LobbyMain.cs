@@ -268,7 +268,9 @@ namespace HistoryHeroes.EditorTools
             RectTransform pill = Rect("Pill_" + iconKey, parent, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Center, position, new Vector2(width, 64f));
             Image bg = Img(pill, new Color(0.04f, 0.06f, 0.12f, 0.88f), _kit != null ? _kit.Badge : null);
             if (_kit != null) bg.type = Image.Type.Sliced;
-            Sprite icon = Icon(iconKey);
+            Sprite reward = RewardIcon(iconKey); // 컬러 보상 그림이 있으면 그것 (금화 · 보석 · 하트)
+            Sprite icon = reward != null ? reward : Icon(iconKey);
+            if (reward != null) iconColor = Color.white;
             if (icon != null)
             {
                 RectTransform iconRect = Rect("Icon", pill, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(26f, 2f), new Vector2(58f, 58f));

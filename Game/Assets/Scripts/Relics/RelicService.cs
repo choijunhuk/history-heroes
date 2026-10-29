@@ -86,7 +86,7 @@ namespace HistoryHeroes.Relics
                 {
                     // 교환소로 먼저 얻은 유물: 중복 대신 돌려준다
                     save.AddItem(RelicTable.AncientShard, table.exchangeCost);
-                    lines.Add($"유물  {r.displayName} (이미 교환함) → 고대 파편 +{table.exchangeCost}");
+                    lines.Add($"유물  {r.displayName} (이미 교환함) → <sprite name=ancient_shard>고대 파편 +{table.exchangeCost}");
                     continue;
                 }
 

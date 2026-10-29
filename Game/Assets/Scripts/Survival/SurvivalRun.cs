@@ -414,7 +414,7 @@ namespace HistoryHeroes.Survival
             if (shards > 0)
             {
                 save.AddItem(Relics.RelicTable.AncientShard, shards);
-                lines.Add($"고대 파편 +{shards}");
+                lines.Add($"<sprite name=ancient_shard>고대 파편 +{shards}");
             }
 
             lines.Add(RunText.Level(AccountLevel.AddExp(save, minutes * data.accountExpPerMinute, Clock.UnixSeconds)));

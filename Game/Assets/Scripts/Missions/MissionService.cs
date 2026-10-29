@@ -374,7 +374,7 @@ namespace HistoryHeroes.Missions
         public static string RewardText(ChestDef chest, string heroId)
         {
             string text = RewardOf(chest, heroId).ToString();
-            if (chest.ancientShards > 0) text += (text.Length > 0 ? " · " : "") + $"고대 파편 +{chest.ancientShards}";
+            if (chest.ancientShards > 0) text += (text.Length > 0 ? " · " : "") + $"<sprite name=ancient_shard>고대 파편 +{chest.ancientShards}";
             return text;
         }
 

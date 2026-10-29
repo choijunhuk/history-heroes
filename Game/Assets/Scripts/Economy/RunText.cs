@@ -35,7 +35,7 @@ namespace HistoryHeroes.Economy
         public static string Level(AccountLevel.Result r)
         {
             if (r.Exp <= 0 && !r.LeveledUp) return r.ToLevel >= AccountLevel.MaxLevel ? "계정 레벨 최대" : "계정 경험치 +0";
-            string line = $"계정 경험치 +{r.Exp}";
+            string line = $"<sprite name=exp>계정 경험치 +{r.Exp}";
             if (r.LeveledUp) line += $" · Lv {r.FromLevel} → {r.ToLevel} ({r.Reward}) · 하트 가득";
             return line;
         }

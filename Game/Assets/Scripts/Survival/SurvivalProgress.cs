@@ -83,7 +83,7 @@ namespace HistoryHeroes.Survival
                 d.survival.starChestsTaken++;
                 Wallet.Grant(d, new Reward { Gems = ChestGems });
                 d.AddItem(Relics.RelicTable.AncientShard, ChestShards);
-                lines.Add($"서바이벌 별 상자: 보석 +{ChestGems} · 고대 파편 +{ChestShards}");
+                lines.Add($"서바이벌 별 상자: <sprite name=gem>보석 +{ChestGems} · <sprite name=ancient_shard>고대 파편 +{ChestShards}");
             }
 
             return lines;

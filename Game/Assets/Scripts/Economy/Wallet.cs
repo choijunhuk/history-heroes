@@ -78,11 +78,12 @@ namespace HistoryHeroes.Economy
         public override string ToString()
         {
             var parts = new System.Collections.Generic.List<string>();
-            if (Gold > 0) parts.Add($"골드 +{Wallet.Format(Gold)}");
-            if (Gems > 0) parts.Add($"보석 +{Wallet.Format(Gems)}");
-            if (Tickets > 0) parts.Add($"고급 소환권 +{Tickets}");
-            if (GearShards > 0) parts.Add($"장비 조각 +{GearShards}");
-            if (HeroShards > 0) parts.Add($"영웅 조각 +{HeroShards}");
+            // 글 앞에 보상 그림 (2026-10-29 개발자: "보상에 그림이 너무 없다" — TMP 기본 스프라이트 묶음 RewardIcons)
+            if (Gold > 0) parts.Add($"<sprite name=gold>골드 +{Wallet.Format(Gold)}");
+            if (Gems > 0) parts.Add($"<sprite name=gem>보석 +{Wallet.Format(Gems)}");
+            if (Tickets > 0) parts.Add($"<sprite name=ticket>고급 소환권 +{Tickets}");
+            if (GearShards > 0) parts.Add($"<sprite name=equip_shard>장비 조각 +{GearShards}");
+            if (HeroShards > 0) parts.Add($"<sprite name=hero_shard>영웅 조각 +{HeroShards}");
             return string.Join(" · ", parts);
         }
     }

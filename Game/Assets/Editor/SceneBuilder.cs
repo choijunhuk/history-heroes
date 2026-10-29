@@ -45,6 +45,7 @@ namespace HistoryHeroes.EditorTools
             CreateSprites();
             SetupFont();
             SetupUiKit(); // 그래픽 평가 3번: 게임다운 버튼·창·아이콘·제목 글꼴
+            SetupRewardIcons(); // 2026-10-29: 보상·재화 컬러 그림 + 글 속 아이콘 (<sprite name=gold>)
             CreateSkillArt(); // 그래픽 평가 2번: 스킬 3D 모양 (Resources/SkillArt)
             CreateGimmickArt(); // 확장 1차 5장: 기믹 보스 수정 기둥 (Resources/GimmickArt)
             CopyLegalTexts(); // v1.0 약관·개인정보·크레딧 (Docs → Resources/Legal)

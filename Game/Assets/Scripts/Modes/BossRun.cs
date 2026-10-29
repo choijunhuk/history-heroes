@@ -196,7 +196,7 @@ namespace HistoryHeroes.Modes
                     if (!firstClear && !reward.IsEmpty && metaTable != null && metaTable.relics != null)
                     {
                         save.AddItem(Relics.RelicTable.AncientShard, metaTable.relics.bossRepeatShards);
-                        lines.Add($"고대 파편 +{metaTable.relics.bossRepeatShards}");
+                        lines.Add($"<sprite name=ancient_shard>고대 파편 +{metaTable.relics.bossRepeatShards}");
                     }
                 }
                 else if (!save.defeatedBosses.Contains(_info.id) && GameSession.HeartSpent)
