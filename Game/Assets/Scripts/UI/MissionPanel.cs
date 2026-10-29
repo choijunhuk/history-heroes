@@ -215,11 +215,14 @@ namespace HistoryHeroes.UI
             rerollButton.gameObject.SetActive(false);
         }
 
+        /// <summary>진행도 글 (서바이벌 시간은 분으로). 로비 홈 미션 띠도 쓴다</summary>
+        public static string Progress(MissionProgress m) => m.eventKey == MissionEvents.SurvivalSeconds
+            ? $"{m.progress / 60}분/{m.target / 60}분"
+            : $"{m.progress}/{m.target}";
+
         private static string MissionText(MissionProgress m)
         {
-            string progress = m.eventKey == MissionEvents.SurvivalSeconds
-                ? $"{m.progress / 60}분/{m.target / 60}분"
-                : $"{m.progress}/{m.target}";
+            string progress = Progress(m);
             string mark = m.done ? "<color=#7CE38B>[완료]</color> " : string.Empty;
             return $"{mark}<b>{m.title}</b>\n<size=88%>{progress}  ·  +{m.points}</size>";
         }

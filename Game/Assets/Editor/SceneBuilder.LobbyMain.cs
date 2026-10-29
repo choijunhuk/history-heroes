@@ -19,8 +19,9 @@ namespace HistoryHeroes.EditorTools
         private sealed class LobbyMainUi
         {
             public TMP_Text Wallet, Notice, Gold, Gem, Heart, Level, Chapter, ChapterInfo, HeroName;
-            public Button Prev, Next, Dungeon, Boss, Survival, Rift, Daily, Archive, Codex, Hero, Settings, Shop, Missions, Newcomer, Patrol;
-            public TMP_Text BossLabel, SurvivalLabel, RiftLabel, DailyLabel, ArchiveLabel, CodexLabel, MissionLabel, NewcomerLabel, PatrolLabel;
+            public Button Prev, Next, Dungeon, Boss, Survival, Rift, Daily, Archive, Codex, Hero, Settings, Shop, Missions, Newcomer, Patrol, HomeMission;
+            public Image HomeMissionFill;
+            public TMP_Text BossLabel, SurvivalLabel, RiftLabel, DailyLabel, ArchiveLabel, CodexLabel, MissionLabel, NewcomerLabel, PatrolLabel, HomeMissionLabel;
             public LobbyDiorama Diorama;
         }
 
@@ -323,6 +324,35 @@ namespace HistoryHeroes.EditorTools
             ui.Gem = Pill(topBar, "gem", new Color(0.55f, 0.85f, 1f), new Vector2(70f, 0f), 280f);
             ui.Heart = Pill(topBar, "heart", new Color(1f, 0.4f, 0.45f), new Vector2(370f, 0f), 300f);
             ui.Wallet = null;
+
+            // ----- 홈 미션 띠 (2026-10-29 개발자: "미션이 홈에 없고 따로 있어서 불편") — 누르면 미션 창 -----
+            ui.HomeMission = Btn("HomeMission", main, "", Vector2.zero, new Vector2(1040f, 88f), ButtonBlue, out ui.HomeMissionLabel);
+            var missionRect = (RectTransform)ui.HomeMission.transform;
+            missionRect.anchorMin = missionRect.anchorMax = new Vector2(0.5f, 1f);
+            missionRect.pivot = new Vector2(0.5f, 1f);
+            missionRect.anchoredPosition = new Vector2(0f, -106f);
+            Sprite missionIcon = Icon("mission");
+            if (missionIcon != null)
+            {
+                RectTransform mi = Rect("Icon", missionRect, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(18f, 4f), new Vector2(56f, 56f));
+                Img(mi, Color.white, missionIcon).preserveAspect = true;
+            }
+
+            ui.HomeMissionLabel.font = _font;
+            if (_bodyMat != null) ui.HomeMissionLabel.fontSharedMaterial = _bodyMat;
+            ui.HomeMissionLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            ui.HomeMissionLabel.margin = new Vector4(90f, 0f, 24f, 14f);
+            ui.HomeMissionLabel.fontSize = 30f;
+            ui.HomeMissionLabel.enableAutoSizing = true;
+            ui.HomeMissionLabel.fontSizeMin = 22f;
+            ui.HomeMissionLabel.fontSizeMax = 30f;
+            ui.HomeMissionLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            // 오늘 활동 점수 막대 (띠 아래쪽에 얇게)
+            RectTransform missionBar = Rect("Progress", missionRect, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(-120f, 10f));
+            missionBar.offsetMin = new Vector2(90f, 14f);
+            missionBar.offsetMax = new Vector2(-30f, 24f);
+            Fill(missionBar, new Color(0f, 0f, 0f, 0.35f), new Color(1f, 0.82f, 0.3f), out ui.HomeMissionFill);
+            ui.HomeMissionFill.fillAmount = 0f;
 
             ui.Notice = Label("Notice", main, "", 30, TextAlignmentOptions.Center, new Color(1f, 0.9f, 0.45f));
             Place(ui.Notice.rectTransform, Center, Center, new Vector2(0f, 600f), new Vector2(1000f, 80f));

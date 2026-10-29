@@ -73,6 +73,10 @@ namespace HistoryHeroes.UI
         [Header("v0.5 미션")]
         [SerializeField] private Button missionButton;
         [SerializeField] private TMP_Text missionLabel;
+        [Header("홈 미션 띠 (2026-10-29)")]
+        [SerializeField] private Button homeMissionButton;
+        [SerializeField] private TMP_Text homeMissionLabel;
+        [SerializeField] private Image homeMissionFill;
         [SerializeField] private MissionPanel missions;
         [Header("v0.6 무한의 균열 · 일일 도전")]
         [SerializeField] private Button riftButton;
@@ -112,6 +116,7 @@ namespace HistoryHeroes.UI
             if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
             if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
             if (missionButton != null) missionButton.onClick.AddListener(() => missions.Open(Render));
+            if (homeMissionButton != null) homeMissionButton.onClick.AddListener(() => missions.Open(Render));
             if (newcomerButton != null) newcomerButton.onClick.AddListener(() => newcomerPanel.Open(Render, ShowNotice));
             if (patrolButton != null) patrolButton.onClick.AddListener(ClaimPatrol);
             if (riftButton != null) riftButton.onClick.AddListener(OpenRift);
@@ -427,6 +432,17 @@ namespace HistoryHeroes.UI
 
         private BossData BossFor(int chapter) => bosses.Find(b => b != null && b.chapter == chapter);
 
+        /// <summary>홈 미션 띠: 오늘 활동 점수 · 받을 보상 · 아직 안 끝난 첫 미션 (2026-10-29 개발자: 미션이 홈에 없어서 불편)</summary>
+        private void RenderHomeMission(SaveData data, int ready)
+        {
+            if (homeMissionLabel == null) return;
+            MissionProgress next = data.missions.daily.Find(m => !m.done);
+            string line1 = $"<b>오늘 미션</b>  {data.missions.dailyPoints}/100" + (ready > 0 ? $"   <color=#FFD966>● 받을 보상 {ready}</color>" : string.Empty);
+            string line2 = next != null ? $"{next.title}  {MissionPanel.Progress(next)}" : data.missions.daily.Count > 0 ? "오늘 미션을 다 끝냈어요!" : "미션을 열어 보세요";
+            homeMissionLabel.text = $"{line1}\n<size=85%><color=#C9D3E0>{line2}</color></size>";
+            if (homeMissionFill != null) homeMissionFill.fillAmount = Mathf.Clamp01(data.missions.dailyPoints / 100f);
+        }
+
         private void Render()
         {
             SaveData data = SaveSystem.Data;
@@ -454,6 +470,7 @@ namespace HistoryHeroes.UI
             {
                 int ready = Missions.MissionService.ClaimableCount(data, metaTable.missions, Missions.MissionEvents.Context);
                 missionLabel.text = ready > 0 ? $"미션 <color=#FFD966>●{ready}</color>" : "미션";
+                RenderHomeMission(data, ready);
             }
 
             int found = data.discoveredRecipes.Count;
