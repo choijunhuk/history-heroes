@@ -224,17 +224,18 @@ namespace HistoryHeroes.EditorTools
             Place(title.rectTransform, Center, Center, new Vector2(0f, 680f), new Vector2(900f, 100f));
             Button normalTab = Btn("NormalBossTab", panel, "기존 보스", new Vector2(-260f, 890f), new Vector2(470f, 90f), ButtonBlue, out _);
             Button trialTab = Btn("GodTrialTab", panel, "신의 시련", new Vector2(260f, 890f), new Vector2(470f, 90f), ButtonBlue, out _);
-            var trialButtons = new Button[3];
-            var trialLabels = new TMP_Text[3];
-            string[] trialNames = { "TrialThor", "TrialAnubis", "TrialZeus" };
-            string[] trialTitles = { "토르", "아누비스", "제우스" };
+            var trialButtons = new Button[5];
+            var trialLabels = new TMP_Text[5];
+            string[] trialNames = { "TrialThor", "TrialAnubis", "TrialZeus", "TrialSusanoo", "TrialAthena" };
+            string[] trialTitles = { "토르", "아누비스", "제우스", "스사노오", "아테나" };
             for (int i = 0; i < trialButtons.Length; i++)
             {
-                trialButtons[i] = Btn(trialNames[i], panel, trialTitles[i], new Vector2(-340f + i * 340f, 775f), new Vector2(320f, 90f), ButtonBlue, out trialLabels[i]);
-                trialLabels[i].fontSize = 25f;
+                // 다섯 단추가 제목(중심 680, 높이 100) 바로 위 한 줄에 들어가도록 폭과 간격을 고정한다.
+                trialButtons[i] = Btn(trialNames[i], panel, trialTitles[i], new Vector2(-388f + i * 194f, 780f), new Vector2(184f, 90f), ButtonBlue, out trialLabels[i]);
+                trialLabels[i].fontSize = 22f;
             }
             TMP_Text tests = Label("Tests", panel, "", 32, TextAlignmentOptions.Center);
-            Place(tests.rectTransform, Center, Center, new Vector2(0f, 570f), new Vector2(980f, 90f));
+            Place(tests.rectTransform, Center, Center, new Vector2(0f, 580f), new Vector2(980f, 80f));
             TMP_Text recommend = Label("Recommend", panel, "", 28, TextAlignmentOptions.Center, new Color(0.7f, 0.9f, 1f));
             Place(recommend.rectTransform, Center, Center, new Vector2(0f, 500f), new Vector2(980f, 70f));
             Button weeklyGoal = Btn("ChooseGodGoal", panel, "주간 목표 선택", new Vector2(0f, 420f), new Vector2(920f, 70f), ButtonBlue, out TMP_Text weeklyLabel);

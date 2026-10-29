@@ -24,6 +24,13 @@ namespace HistoryHeroes.Combat
         /// <summary>몸이 막는 피해 (방패병의 방패). IncomingModifier보다 먼저. 피해를 0으로 돌려주면 "막음"</summary>
         public Func<DamageInfo, DamageInfo> Guard { get; set; }
 
+        /// <summary>공유 체력의 두 형상이 각자의 남은 몫보다 더 깎지 않도록 최종 피해를 제한한다.</summary>
+        public Func<float, float> DamageCap { get; set; }
+
+        /// <summary>두 시험 형상이 체력을 공유할 때 실제 본체의 피해 결과를 그대로 돌려준다.</summary>
+        public delegate bool DamageReceiver(DamageInfo info, out float dealt);
+        public DamageReceiver DamageRedirect { get; set; }
+
         /// <summary>실제로 깎인 양과 함께 알린다.</summary>
         public event Action<DamageInfo, float> Damaged;
         public event Action<Health> Died;
@@ -45,6 +52,8 @@ namespace HistoryHeroes.Combat
             _stats = stats;
             _invulnerableDuration = invulnerableDuration;
             _invulnerableUntil = 0f;
+            DamageRedirect = null;
+            DamageCap = null;
             Max = maxHp;
             Current = maxHp;
             DamageScale = 1f;
@@ -75,6 +84,8 @@ namespace HistoryHeroes.Combat
         {
             dealt = 0f;
             if (IsDead || info.AttackerTeam == team) return false;
+            if (DamageRedirect != null) return DamageRedirect(info, out dealt);
+            if (Invulnerable || Time.time < _invulnerableUntil) return false;
             if (Guard != null)
             {
                 info = Guard(info);
@@ -83,8 +94,6 @@ namespace HistoryHeroes.Combat
 
             if (IncomingModifier != null) info = IncomingModifier(info); // 사냥매 표식: 기본 공격 치명타 확률 +25%
             if (team == Team.Enemy && EnemyIncoming != null) info = EnemyIncoming(this, info);
-            if (Invulnerable || Time.time < _invulnerableUntil) return false;
-
             float reduction = 0f, taken = 0f;
             if (_stats != null)
             {
@@ -107,6 +116,7 @@ namespace HistoryHeroes.Combat
                 }
             }
 
+            if (DamageCap != null) incoming = Mathf.Min(incoming, Mathf.Max(0f, DamageCap(incoming)));
             dealt = Mathf.Min(Current, incoming);
             if (Current - dealt <= 0f && PreventDeath != null && PreventDeath())
             {

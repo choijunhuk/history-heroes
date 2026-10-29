@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace HistoryHeroes.Combat
@@ -20,6 +21,8 @@ namespace HistoryHeroes.Combat
         private int _ricochetLeft;
         private float _pierceFalloff;
         private float _age;
+        private float _travelled;
+        private float _maxDistance;
         private LayerMask _hitMask;
         private LayerMask _wallMask;
         private Collider2D _lastHit;
@@ -28,11 +31,21 @@ namespace HistoryHeroes.Combat
         private Action<Health, Vector2> _onHitTarget;
         private bool _notifyFirstTargetOnly;
         private bool _targetNotified;
+        private bool _hitOncePerTarget;
+        private HashSet<Collider2D> _hitTargets;
         private TrailRenderer[] _trails;
 
         // 한 번에 여러 개를 받아서, 방금 뚫고 지나온 적은 빼고 가장 가까운 것을 고른다
         // (첫 결과가 방금 그 적이면 뒤의 벽을 못 보고 통과하던 문제 방지)
         private static readonly RaycastHit2D[] _hits = new RaycastHit2D[8];
+        private static readonly RaycastHit2D[] _waveHits = new RaycastHit2D[64];
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            Array.Clear(_hits, 0, _hits.Length);
+            Array.Clear(_waveHits, 0, _waveHits.Length);
+        }
 
         /// <summary>날아가는 방향·빠르기·피해 (마렝고가 막고 되돌리는 데, 벤치가 피하는 데 쓴다)</summary>
         public Vector2 Direction => _direction;
@@ -46,8 +59,12 @@ namespace HistoryHeroes.Combat
 
         public void Launch(Vector2 direction, float speed, DamageInfo damage, LayerMask hitMask, LayerMask wallMask,
             int pierce, int ricochet, Action<Projectile> release, Action<DamageInfo, float> onHit = null,
-            float pierceFalloff = 0.2f, Action<Health, Vector2> onHitTarget = null, bool notifyFirstTargetOnly = false)
+            float pierceFalloff = 0.2f, Action<Health, Vector2> onHitTarget = null, bool notifyFirstTargetOnly = false,
+            float maxDistance = float.PositiveInfinity, bool hitOncePerTarget = false)
         {
+            _hitOncePerTarget = hitOncePerTarget;
+            if (hitOncePerTarget && _hitTargets == null) _hitTargets = new HashSet<Collider2D>();
+            _hitTargets?.Clear();
             _onHitTarget = onHitTarget;
             _notifyFirstTargetOnly = notifyFirstTargetOnly;
             _targetNotified = false;
@@ -64,6 +81,8 @@ namespace HistoryHeroes.Combat
             _release = release;
             _onHit = onHit;
             _age = 0f;
+            _travelled = 0f;
+            _maxDistance = maxDistance;
             _lastHit = null;
             Owner = null;
             transform.right = _direction;
@@ -72,9 +91,10 @@ namespace HistoryHeroes.Combat
             foreach (TrailRenderer trail in _trails) trail.Clear();
         }
 
-        private void Update()
+        private void Update() => Step(Time.deltaTime);
+
+        private void Step(float dt)
         {
-            float dt = Time.deltaTime;
             if (dt <= 0f) return;
 
             _age += dt;
@@ -84,25 +104,36 @@ namespace HistoryHeroes.Combat
                 return;
             }
 
-            float distance = _speed * SlowFactor * dt;
+            float distance = Mathf.Min(_speed * SlowFactor * dt, _maxDistance - _travelled);
+            if (distance <= 0f)
+            {
+                Release();
+                return;
+            }
             Vector2 position = transform.position;
             var filter = new ContactFilter2D { useLayerMask = true, layerMask = _hitMask | _wallMask, useTriggers = true };
-            int count = Physics2D.CircleCast(position, radius, _direction, filter, _hits, distance);
+            RaycastHit2D[] hits = _hitOncePerTarget ? _waveHits : _hits;
+            int count = Physics2D.CircleCast(position, radius, _direction, filter, hits, distance);
 
             RaycastHit2D hit = default;
             float nearest = float.MaxValue;
             for (int i = 0; i < count; i++)
             {
-                if (_hits[i].collider == _lastHit || _hits[i].distance >= nearest) continue;
-                nearest = _hits[i].distance;
-                hit = _hits[i];
+                if (hits[i].collider == _lastHit || (_hitOncePerTarget && _hitTargets.Contains(hits[i].collider))
+                    || hits[i].distance >= nearest) continue;
+                nearest = hits[i].distance;
+                hit = hits[i];
             }
 
             if (hit.collider == null)
             {
                 transform.position = position + _direction * distance;
+                _travelled += distance;
+                if (_travelled >= _maxDistance) Release();
                 return;
             }
+
+            _travelled += hit.distance;
 
             if (((1 << hit.collider.gameObject.layer) & _wallMask) != 0)
             {
@@ -129,10 +160,12 @@ namespace HistoryHeroes.Combat
 
             transform.position = hit.centroid;
             _lastHit = hit.collider;
+            if (_hitOncePerTarget) _hitTargets.Add(hit.collider);
 
             _damage.Direction = _direction;
             _damage.HasDirection = true;
             _damage.Piercing = _piercing;
+            _damage.IsProjectile = true;
             if (hit.collider.TryGetComponent(out Health health) && health.TryTakeDamage(_damage, out float dealt))
             {
                 _onHit?.Invoke(_damage, dealt);

@@ -122,6 +122,14 @@ namespace HistoryHeroes.UI
             sb.AppendLine("<b>제우스 · 그리스 신화</b>  <color=#9FD8FF>신화 · 각색</color>");
             sb.AppendLine("하늘과 번개의 신으로 전해집니다. 기록을 시험하는 탄막은 게임 각색이며, 이번에는 시련의 형상으로만 등장합니다.\n");
 
+            sb.AppendLine("<b>스사노오 · 일본 신화</b>  <color=#9FD8FF>신화 · 각색</color>");
+            sb.AppendLine("오로치와 검의 전승으로 알려져 있습니다. 두 시험 형상, 바람의 간격·바람 베기·폭풍의 길은 게임 각색입니다.");
+            sb.AppendLine("<color=#C8D6E5>실패 뒤에도 길을 고쳐 지킨 인간의 기록을 보고, 봉인보다 동행을 택했습니다.</color>\n");
+
+            sb.AppendLine("<b>아테나 · 그리스 신화</b>  <color=#9FD8FF>신화 · 각색</color>");
+            sb.AppendLine("지혜와 전쟁의 신으로 전해집니다. 판단의 방패·올빼미의 눈·수호자의 시선과 기록의 시험은 게임 각색입니다.");
+            sb.AppendLine("<color=#C8D6E5>잘못에서 배우고 서로를 지키는 인간의 선택을 보고, 함께 기억을 지키기로 했습니다.</color>\n");
+
             sb.AppendLine("<b>클레오파트라 · 프톨레마이오스 왕조</b>  <color=#9FD8FF>사실 · 후대 기록 · 각색</color>");
             sb.AppendLine("이집트의 여왕이었습니다. 언어 능력에 관한 설명은 후대 저술의 기록이며, 기록의 수호상·파로스의 빛·알렉산드리아의 서고는 게임 각색입니다.\n");
 

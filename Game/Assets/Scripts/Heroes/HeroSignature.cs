@@ -44,6 +44,10 @@ namespace HistoryHeroes.Heroes
         public readonly float MarkSlow;
         public readonly float MarkDuration;
         public readonly float MarkCooldown;
+        public readonly float WindFirstCoefficient;
+        public readonly float WindFollowCoefficient;
+        public readonly float ShieldPrepareSeconds;
+        public readonly float OwlBonusCoefficient;
 
         private HeroSignature(float firstShotBonus, bool firstShotPierce, float damageReduction, float lowHpAttackBonus,
             float cannonRadius, int cannonEvery, int chainBounces, float chainFalloff, float stopGuard = 0f, float stopGuardCap = 0f,
@@ -51,8 +55,13 @@ namespace HistoryHeroes.Heroes
             float bannerDuration = 0f, float bannerAttackBonus = 0f, float observationAttackBonus = 0f,
             float reclaimKnockback = 0f, float reclaimAttackBonus = 0f, float thunderRadius = 0f, float thunderCoefficient = 0f,
             float guardianCoefficient = 0f, int guardianTargets = 0, int markHits = 0, float markSlow = 0f,
-            float markDuration = 0f, float markCooldown = 0f)
+            float markDuration = 0f, float markCooldown = 0f, float windFirstCoefficient = 0f,
+            float windFollowCoefficient = 0f, float shieldPrepareSeconds = 0f, float owlBonusCoefficient = 0f)
         {
+            WindFirstCoefficient = windFirstCoefficient;
+            WindFollowCoefficient = windFollowCoefficient;
+            ShieldPrepareSeconds = shieldPrepareSeconds;
+            OwlBonusCoefficient = owlBonusCoefficient;
             MarkHits = markHits;
             MarkSlow = markSlow;
             MarkDuration = markDuration;
@@ -123,7 +132,11 @@ namespace HistoryHeroes.Heroes
                 hero.markHits,
                 hero.markHits > 0 ? (s5 && hero.star5MarkSlow >= 0f ? hero.star5MarkSlow : hero.markSlow) : 0f,
                 hero.markHits > 0 ? (s3 && hero.star3MarkDuration >= 0f ? hero.star3MarkDuration : hero.markDuration) : 0f,
-                hero.markHits > 0 ? hero.markCooldown : 0f);
+                hero.markHits > 0 ? hero.markCooldown : 0f,
+                hero.windFirstArc > 0f ? (s3 && hero.star3WindFirstCoefficient >= 0f ? hero.star3WindFirstCoefficient : hero.windFirstCoefficient) : 0f,
+                hero.windFollowArc > 0f ? (s5 && hero.star5WindFollowCoefficient >= 0f ? hero.star5WindFollowCoefficient : hero.windFollowCoefficient) : 0f,
+                hero.shieldPrepareSeconds > 0f ? (s3 && hero.star3ShieldPrepareSeconds > 0f ? hero.star3ShieldPrepareSeconds : hero.shieldPrepareSeconds) : 0f,
+                hero.owlBonusCoefficient > 0f ? (s5 && hero.star5OwlBonusCoefficient >= 0f ? hero.star5OwlBonusCoefficient : hero.owlBonusCoefficient) : 0f);
         }
 
         /// <summary>별 강화 설명 ("★3 첫 발 피해 +75% · ★5 첫 발 +100%, 관통")</summary>
@@ -145,6 +158,8 @@ namespace HistoryHeroes.Heroes
             if (hero.thunderEvery > 0 && hero.star3ThunderRadius > 0f) s3 = $"충격파 반경 {hero.star3ThunderRadius:0.#}";
             if (hero.guardianAttacks > 0 && hero.star3GuardianCoefficient >= 0f) s3 = $"수호상 한 타격 {hero.star3GuardianCoefficient * 100f:0}%";
             if (hero.markHits > 0 && hero.star3MarkDuration >= 0f) s3 = $"표식 둔화 {hero.star3MarkDuration:0.#}초";
+            if (hero.windFirstArc > 0f && hero.star3WindFirstCoefficient >= 0f) s3 = $"첫 베기 피해 {hero.star3WindFirstCoefficient * 100f:0}%";
+            if (hero.shieldPrepareSeconds > 0f && hero.star3ShieldPrepareSeconds > 0f) s3 = $"방패 준비 {hero.star3ShieldPrepareSeconds:0.#}초";
             if (hero.star5FirstShotBonus >= 0f) s5 = $"첫 발 피해 +{hero.star5FirstShotBonus * 100f:0}%" + (hero.star5FirstShotPierce ? ", 첫 발 관통" : string.Empty);
             if (hero.star5LowHpAttackBonus >= 0f) s5 = $"체력 50% 아래 공격력 +{hero.star5LowHpAttackBonus * 100f:0}%";
             if (hero.star5CannonEvery > 0) s5 = $"{hero.star5CannonEvery}발마다 포탄";
@@ -159,6 +174,8 @@ namespace HistoryHeroes.Heroes
             if (hero.thunderEvery > 0 && hero.star5ThunderCoefficient > 0f) s5 = $"충격파 피해 {hero.star5ThunderCoefficient * 100f:0}%";
             if (hero.guardianAttacks > 0 && hero.star5GuardianTargets > 0) s5 = $"수호상 최대 {hero.star5GuardianTargets}명 공격";
             if (hero.markHits > 0 && hero.star5MarkSlow >= 0f) s5 = $"표식 둔화 {hero.star5MarkSlow * 100f:0}%";
+            if (hero.windFollowArc > 0f && hero.star5WindFollowCoefficient >= 0f) s5 = $"연속 베기 피해 {hero.star5WindFollowCoefficient * 100f:0}%";
+            if (hero.owlBonusCoefficient > 0f && hero.star5OwlBonusCoefficient >= 0f) s5 = $"표식 기본 공격 추가 {hero.star5OwlBonusCoefficient * 100f:0}%";
             return $"★3 {s3 ?? "—"} · ★5 {s5 ?? "—"}";
         }
     }

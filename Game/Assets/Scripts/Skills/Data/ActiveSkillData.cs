@@ -34,6 +34,12 @@ namespace HistoryHeroes.Skills
         [Tooltip("귀환 망치가 돌아올 때 내리는 한 번의 낙뢰 피해 배수. 다른 기술은 0")]
         public float returnImpactCoefficient;
 
+        [Header("직선 검기")]
+        public float waveLength;
+        public float waveSpeed;
+        public float waveInterval;
+        public float pushDistance;
+
         public ActiveSkillBehaviour behaviourPrefab;
 
         public override SkillKind Kind => SkillKind.Active;

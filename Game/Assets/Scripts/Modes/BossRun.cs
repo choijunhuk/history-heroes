@@ -151,7 +151,9 @@ namespace HistoryHeroes.Modes
             if (bossHud != null) bossHud.Bind(_boss, _info.displayName);
             // 기믹 보스 (확장 1차 5장): 쌍둥이 = 그림자 표식, 망각의 왕 = 수정 기둥 보호막 (+ 2단계 무너지는 바닥)
             Vector2 center = transform.parent != null ? (Vector2)transform.parent.position : Vector2.zero;
-            BossGimmick gimmick = BossGimmicks.Attach(_boss, BossGimmicks.For(_boss), BossArena.Circle(center, arenaRadius));
+            // 아테나의 방패는 외형이다. 왕의 수정 기둥 보호막을 시련에 붙이면 설계와 다른 피해 면역이 생긴다.
+            GimmickKind kind = GameSession.GodTrialId == GodTrialRules.AthenaTrialId ? GimmickKind.None : BossGimmicks.For(_boss);
+            BossGimmick gimmick = BossGimmicks.Attach(_boss, kind, BossArena.Circle(center, arenaRadius));
             if (gimmick != null && hud != null) hud.ShowNotice(gimmick.Hint, 3f);
         }
 

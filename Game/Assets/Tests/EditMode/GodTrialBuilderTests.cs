@@ -12,14 +12,14 @@ namespace HistoryHeroes.Tests
     public sealed class GodTrialBuilderTests
     {
         [Test]
-        public void ExistingHeroOrderStaysAndAnubisIsFourteenthWithoutPlayableZeus()
+        public void ExistingHeroOrderStaysAndSusanooAthenaFollowAnubisWithoutPlayableZeus()
         {
             CollectionAssert.AreEqual(new[]
             {
                 "Khan", "Guan", "Napoleon", "Tesla", "YiSunsin", "YiSeonggye", "Davinci", "Zhuge",
-                "Jeanne", "Seondeok", "Boudica", "Thor", "Cleopatra", "Anubis"
+                "Jeanne", "Seondeok", "Boudica", "Thor", "Cleopatra", "Anubis", "Susanoo", "Athena"
             }, Art3DCharacters.Heroes.Select(look => look.name).ToArray());
-            Assert.AreEqual(4, Art3DCharacters.Heroes.Count(look => look.female));
+            Assert.AreEqual(5, Art3DCharacters.Heroes.Count(look => look.female));
             Assert.IsFalse(Art3DCharacters.Heroes.Any(look => look.name == "Zeus"));
         }
 

@@ -30,7 +30,9 @@ namespace HistoryHeroes.Enemy
         private int _announced;
         private Player.PlayerController _player;
 
-        public override string Hint => BossGimmicks.HintFor(GimmickKind.ShadowMarks);
+        public override string Hint => boss is ShadowTwinsBoss twins && twins.IsTwoFormTrial
+            ? "그림자 표식이 뜨면 열린 형상을 사거리에 두고 멈춰 있어요 (1.2초)"
+            : BossGimmicks.HintFor(GimmickKind.ShadowMarks);
         public bool Armed => _armedAt >= 0f;
         /// <summary>모은 시간 (0 ~ 1.2초)</summary>
         public float Focus => _focus;
@@ -54,7 +56,8 @@ namespace HistoryHeroes.Enemy
         {
             if (_player == null || boss == null || !_player.IsStopped) return;
             float range = _player.Stats.Get(Stats.StatType.Range) + RangeSlack;
-            if (((Vector2)boss.transform.position - (Vector2)hero.position).sqrMagnitude > range * range) return;
+            Vector2 openForm = boss is ShadowTwinsBoss twins ? twins.OpenFormPosition : (Vector2)boss.transform.position;
+            if ((openForm - (Vector2)hero.position).sqrMagnitude > range * range) return;
             _focus += dt;
             int step = Mathf.Min(3, Mathf.FloorToInt(_focus / FocusNeeded * 3f));
             if (step > _announced && step < 3)
@@ -105,7 +108,9 @@ namespace HistoryHeroes.Enemy
 
             foreach (Vector2 p in _points) _marks.Add(Telegraphs.Circle(p, Radius, Telegraphs.Danger));
             Audio.AudioManager.Play("telegraph", 0.8f);
-            BossGimmicks.Notice?.Invoke("그림자 표식! 진한 쌍둥이를 사거리에 두고 멈춰서 1.2초");
+            BossGimmicks.Notice?.Invoke(boss is ShadowTwinsBoss twins && twins.IsTwoFormTrial
+                ? "그림자 표식! 열린 형상을 사거리에 두고 멈춰서 1.2초"
+                : "그림자 표식! 진한 쌍둥이를 사거리에 두고 멈춰서 1.2초");
         }
 
         private Vector2 Clamp(Vector2 p)

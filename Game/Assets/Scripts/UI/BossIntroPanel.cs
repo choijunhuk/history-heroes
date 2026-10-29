@@ -141,7 +141,9 @@ namespace HistoryHeroes.UI
                 : GodTrialRules.Trials[definition.Order - 2].DisplayName + " 시련";
             testsLabel.text = trialLocked ? $"{condition}을 본인 기록으로 처음 격파하면 열려요"
                 : "시험하는 것: " + boss.tests;
-            string hint = boss.prefab != null ? Enemy.BossGimmicks.HintFor(Enemy.BossGimmicks.For(boss.prefab)) : string.Empty;
+            string hint = boss.id == GodTrialRules.AthenaTrialId ? string.Empty
+                : boss.id == GodTrialRules.SusanooTrialId ? "그림자 표식은 열린 형상을 사거리에 두고 멈춰서 풀어요"
+                : boss.prefab != null ? Enemy.BossGimmicks.HintFor(Enemy.BossGimmicks.For(boss.prefab)) : string.Empty;
             if (!trialLocked && !string.IsNullOrEmpty(hint)) testsLabel.text += $"\n<color=#C9A8FF>기믹: {hint}</color>";
             recommendLabel.text = trialLocked ? "기록을 모아 마지막 보스에 도전해 보세요"
                 : boss.recommendedRole != SkillRole.None

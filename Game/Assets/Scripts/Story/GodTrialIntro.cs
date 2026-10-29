@@ -29,8 +29,22 @@ namespace HistoryHeroes.Story
             "<color=#E8EDF5>제우스</color>  \"흔들리는 길에서도 너희의 답을 보겠다.\"",
         };
 
+        private static readonly string[] SusanooScenes =
+        {
+            "<color=#FFD966>클리오</color>  \"두 형상은 하나의 시험이에요. 열린 쪽을 보세요.\"",
+            "<color=#7DD8CE>스사노오</color>  \"짧은 틈에 무엇을 지킬지 보여 다오.\"",
+        };
+
+        private static readonly string[] AthenaScenes =
+        {
+            "<color=#FFD966>클리오</color>  \"공격이 끝나면 멈춰 답할 자리가 있어요.\"",
+            "<color=#E6C486>아테나</color>  \"힘뿐 아니라 선택도 기록에 남는다. 보여 다오.\"",
+        };
+
         public static string[] For(string trialId) => trialId == Modes.GodTrialRules.AnubisTrialId ? AnubisScenes
             : trialId == Modes.GodTrialRules.ZeusTrialId ? ZeusScenes
+            : trialId == Modes.GodTrialRules.SusanooTrialId ? SusanooScenes
+            : trialId == Modes.GodTrialRules.AthenaTrialId ? AthenaScenes
             : trialId == Modes.GodTrialRules.ThorTrialId ? Scenes : System.Array.Empty<string>();
 
         public static Color[] TintsFor(string trialId) => For(trialId).Length > 0 ? Tints : System.Array.Empty<Color>();

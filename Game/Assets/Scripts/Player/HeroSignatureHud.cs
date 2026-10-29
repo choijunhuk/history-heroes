@@ -26,6 +26,8 @@ namespace HistoryHeroes.Player
         private static readonly Color Thunder = new Color(0.58f, 0.82f, 1f, 1f);
         private static readonly Color Guardian = new Color(0.4f, 0.9f, 0.8f, 1f);
         private static readonly Color Sand = new Color(0.95f, 0.78f, 0.4f, 1f);
+        private static readonly Color Susanoo = new Color(0.43f, 0.88f, 0.8f, 1f);
+        private static readonly Color Athena = new Color(0.93f, 0.77f, 0.46f, 1f);
         private static readonly Color Wind = new Color(0.45f, 0.95f, 1f, 0.32f); // 화면 점검 2차: 벽 밖까지 보이는 원이 헷갈리지 않게 옅게
         private static readonly Color[] Stage = { new Color(1f, 1f, 1f, 0.95f), new Color(0.45f, 0.85f, 1f, 1f), new Color(1f, 0.82f, 0.25f, 1f) };
 
@@ -115,12 +117,13 @@ namespace HistoryHeroes.Player
             else if (_pips[0].enabled)
             {
                 // 관측·되찾기 점은 대표 효과만 뜻한다. 부품 그림을 붙이면 작업대처럼 보인다.
-                sprite = art != null && _player.Hero.observationSeconds <= 0f && _player.Hero.reclaimStopSeconds <= 0f && _player.Hero.thunderEvery <= 0 && _player.Hero.guardianAttacks <= 0 && _player.Hero.markHits <= 0
+                sprite = art != null && _player.Hero.observationSeconds <= 0f && _player.Hero.reclaimStopSeconds <= 0f && _player.Hero.thunderEvery <= 0 && _player.Hero.guardianAttacks <= 0 && _player.Hero.markHits <= 0 && _player.Hero.windFirstArc <= 0f && _player.Hero.shieldPrepareSeconds <= 0f
                     ? (_player.Hero.chargeShot ? art.hudCharge : art.hudParts) : null;
                 int total = _player.Hero.chargeShot ? 3 : _player.Hero.observationSeconds > 0f || _player.Hero.reclaimStopSeconds > 0f
                     ? 1 : _player.Hero.thunderEvery > 0 ? 2 : _player.Hero.guardianAttacks > 0
                     ? Mathf.Clamp(_player.Hero.guardianAttacks, 1, _pips.Length) : _player.Hero.markHits > 0
-                    ? Mathf.Clamp(_player.Hero.markHits, 1, _pips.Length) : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
+                    ? Mathf.Clamp(_player.Hero.markHits, 1, _pips.Length) : _player.Hero.windFirstArc > 0f ? 2
+                    : _player.Hero.shieldPrepareSeconds > 0f ? 1 : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
                 left = -(total - 1) * 0.5f * PipGap - 0.42f;
             }
 
@@ -195,8 +198,21 @@ namespace HistoryHeroes.Player
                 total = Mathf.Clamp(_player.Hero.markHits, 1, _pips.Length);
                 on = _player.MarkReady ? Sand : new Color(Sand.r, Sand.g, Sand.b, 0.55f);
             }
+            else if (_player.Hero.windFirstArc > 0f)
+            {
+                filled = Mathf.Min(2, _player.WindSlashCount);
+                total = 2;
+                on = Susanoo;
+            }
+            else if (_player.Hero.shieldPrepareSeconds > 0f)
+            {
+                filled = _player.AthenaShieldReady ? 1 : 0;
+                total = 1;
+                on = Athena;
+            }
 
-            bool show = alive && total > 0 && (stopped || filled > 0 || reclaim && _player.ReclaimCooldownRemaining > 0f);
+            bool show = alive && total > 0 && (stopped || filled > 0 || reclaim && _player.ReclaimCooldownRemaining > 0f
+                || _player.Hero.shieldPrepareSeconds > 0f && _player.AthenaShieldCooldownRemaining > 0f);
             if (filled > _lastFilled) _pop = 1f; // 새 칸이 켜졌다
             _lastFilled = filled;
             _pop = Mathf.MoveTowards(_pop, 0f, Time.deltaTime * 5f);
@@ -218,7 +234,13 @@ namespace HistoryHeroes.Player
                     float cooldown = _player.ReclaimCooldownRemaining;
                     c = new Color(Reclaim.r, Reclaim.g, Reclaim.b, cooldown > 0f ? 0.18f : 0.2f + 0.45f * progress);
                 }
-                if (!lit && i == filled && stopped && !observation && !reclaim) c.a = 0.25f + 0.2f * Mathf.PingPong(Time.time * 3f, 1f); // 다음 칸이 차오르는 중
+                if (_player.Hero.shieldPrepareSeconds > 0f && !lit)
+                {
+                    float cooldown = _player.AthenaShieldCooldownRemaining;
+                    c = new Color(Athena.r, Athena.g, Athena.b, cooldown > 0f ? 0.18f : 0.2f + 0.45f * _player.AthenaShieldProgress / _player.Hero.shieldPrepareSeconds);
+                }
+                if (!lit && i == filled && stopped && !observation && !reclaim && _player.Hero.shieldPrepareSeconds <= 0f)
+                    c.a = 0.25f + 0.2f * Mathf.PingPong(Time.time * 3f, 1f); // 다음 칸이 차오르는 중
                 pip.color = c;
                 float pop = lit && i == filled - 1 ? 1f + 0.6f * _pop : 1f; // 방금 켜진 칸은 톡 커졌다 돌아온다
                 pip.transform.localScale = Vector3.one * (lit && charge && i == 2 ? PipSize * 1.3f : PipSize) * pop; // 3단은 크게

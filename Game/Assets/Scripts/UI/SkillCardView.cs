@@ -189,7 +189,8 @@ namespace HistoryHeroes.UI
                 Add(DamageName(a), Percent(DamageValue(a, from)), Percent(DamageValue(a, to)));
                 Add("지속", $"{a.DurationAt(from):0.#}초", $"{a.DurationAt(to):0.#}초");
                 Add("둔화", Percent(a.SlowAt(from)), Percent(a.SlowAt(to)));
-                if (a.radius > 0f) Add("범위", Percent(a.RadiusAt(from) / a.radius), Percent(a.RadiusAt(to) / a.radius));
+                if (a.id == "owl_eye") Add("표적 거리", $"{a.RadiusAt(from):0.#}", $"{a.RadiusAt(to):0.#}");
+                else if (a.radius > 0f) Add("범위", Percent(a.RadiusAt(from) / a.radius), Percent(a.RadiusAt(to) / a.radius));
             }
             else if (skill is PassiveSkillData p)
             {

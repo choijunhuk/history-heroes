@@ -15,8 +15,8 @@ namespace HistoryHeroes.EditorTools
         private sealed class BossDataSet
         {
             public EnemyData Bison, Torch, Golem, Hunter, HunterClone, Executor;
-            public EnemyData Wraith, Colossus, Twins, King, Thor, Anubis, Zeus, MemoryGuardian;
-            public BossData WraithLord, SteelColossus, ShadowTwins, OblivionKing, ThorTrial, AnubisTrial, ZeusTrial;
+            public EnemyData Wraith, Colossus, Twins, King, Thor, Anubis, Zeus, Susanoo, Athena, MemoryGuardian;
+            public BossData WraithLord, SteelColossus, ShadowTwins, OblivionKing, ThorTrial, AnubisTrial, ZeusTrial, SusanooTrial, AthenaTrial;
         }
 
         private static BossDataSet _bosses;
@@ -38,9 +38,11 @@ namespace HistoryHeroes.EditorTools
                 Thor = Enemy("thor_trial", "토르의 시험 형상", 2.2f, 1.1f, 1.5f, new Color(0.55f, 0.58f, 0.65f)),
                 Anubis = Enemy("anubis_trial", "아누비스의 시험 형상", 1.6f, 1f, 1.5f, new Color(0.2f, 0.17f, 0.12f)),
                 Zeus = Enemy("zeus_trial", "제우스의 시험 형상", 0.8f, 1f, 1.6f, new Color(0.92f, 0.91f, 0.82f)),
+                Susanoo = Enemy("susanoo_trial", "스사노오의 시험 형상", 2.2f, 0.85f, 1.8f, new Color(0.28f, 0.65f, 0.68f)),
+                Athena = Enemy("athena_trial", "아테나의 시험 형상", 1.6f, 1f, 1.8f, new Color(0.78f, 0.68f, 0.45f)),
                 MemoryGuardian = Enemy("memory_guardian", "기억의 수호병", 2.4f, 0.8f, 1.1f, new Color(0.77f, 0.65f, 0.42f)),
             };
-            foreach (EnemyData e in new[] { b.Bison, b.Torch, b.Golem, b.Hunter, b.Executor, b.Wraith, b.Colossus, b.Twins, b.King, b.Thor, b.Anubis, b.Zeus })
+            foreach (EnemyData e in new[] { b.Bison, b.Torch, b.Golem, b.Hunter, b.Executor, b.Wraith, b.Colossus, b.Twins, b.King, b.Thor, b.Anubis, b.Zeus, b.Susanoo, b.Athena })
             {
                 e.experience = 0; // 보스는 경험치 대신 방 클리어로
                 EditorUtility.SetDirty(e);
@@ -59,6 +61,8 @@ namespace HistoryHeroes.EditorTools
             b.ThorTrial = Boss("thor_trial", "토르", 5, "망치 내려치기 → 직선 충격파 → 멈춰 쏠 빈틈", "정지 단일 화력 (공격속도·공격력)", SkillRole.Single, 780f, 2.35f, 0);
             b.AnubisTrial = Boss("anubis_trial", "아누비스", 2, "기억의 수호병 소환 → 수호병을 줄여 보호 걷기", "광역·소환 정리 (장판·낙뢰)", SkillRole.Area, 830f, 2.3f, 0);
             b.ZeusTrial = Boss("zeus_trial", "제우스", 3, "차례로 오는 번개 탄막 사이로 이동 → 멈춰 공격", "탄 차단·방어 (방패·최대체력)", SkillRole.Defense, 880f, 2.5f, 0);
+            b.SusanooTrial = Boss("susanoo_trial", "스사노오", 4, "두 시험 형상이 교대 → 열린 형상에 집중", "짧은 순간 화력 (공격속도·멀티샷)", SkillRole.Single, 940f, 2.55f, 0);
+            b.AthenaTrial = Boss("athena_trial", "아테나", 5, "창 돌진·소환·탄막을 단계마다 섞음 → 공격 뒤 반격", "단일·광역·방어가 고른 빌드", SkillRole.None, 1000f, 2.6f, 0);
             _bosses = b;
         }
 
@@ -139,10 +143,39 @@ namespace HistoryHeroes.EditorTools
                     mark.enabled = true;
                 }
             });
+            b.SusanooTrial.prefab = EnemyPrefab<ShadowTwinsBoss>("Boss_SusanooTrial", b.Susanoo, _circle, line, false, (go, props) =>
+            {
+                Common(false, 1.9f)(go, props);
+                SpriteRenderer twin = ChildSprite(go, "TrialForm", _circle, new Color(0.26f, 0.55f, 0.62f, 0.65f), 1f, 2);
+                twin.gameObject.layer = EnemyLayer;
+                CircleCollider2D twinHit = twin.gameObject.AddComponent<CircleCollider2D>();
+                twinHit.radius = 0.45f;
+                twinHit.isTrigger = true;
+                Rigidbody2D twinBody = twin.gameObject.AddComponent<Rigidbody2D>();
+                twinBody.bodyType = RigidbodyType2D.Kinematic;
+                twinBody.gravityScale = 0f;
+                twinBody.freezeRotation = true;
+                twin.gameObject.AddComponent<HistoryHeroes.Combat.Health>();
+                var form = twin.gameObject.AddComponent<ShadowTrialForm>();
+                using (var formProps = new Props(form)) formProps.Ref("data", b.Susanoo).Mask("playerMask", Mask(PlayerLayer));
+                GameObject ghost = Art3DCharacters.SusanooGhostModel();
+                if (ghost != null)
+                    using (var visualProps = new Props(twin.gameObject.AddComponent<HistoryHeroes.Combat.Visual3D>()))
+                        visualProps.Ref("modelPrefab", ghost).Float("height", Art3DCharacters.TwinHeight)
+                            .Float("runSpeed", 4f).Refs("hideRenderers", new Object[] { twin }).Ref("tintSource", twin);
+                SpriteRenderer mark = ChildSprite(twin.gameObject, "OpenFormRing", _circle, new Color(1f, 0.86f, 0.36f, 0.35f), 1.6f, -2);
+                props.Ref("twin", twin).Ref("trialForm", form).Ref("twinOpeningRing", mark)
+                    .Bool("twoFormTrial", true).Float("trialRecover", 1.8f);
+            });
             p.OblivionKing = EnemyPrefab<OblivionKingBoss>("Boss_OblivionKing", b.King, _circle, line, false, (go, props) =>
             {
                 Common(false, 2.3f)(go, props);
                 props.Ref("minion", p.Minion);
+            });
+            b.AthenaTrial.prefab = EnemyPrefab<OblivionKingBoss>("Boss_AthenaTrial", b.Athena, _circle, line, false, (go, props) =>
+            {
+                Common(false, 2.3f)(go, props);
+                props.Ref("minion", p.Minion).Bool("athenaTrial", true).Float("trialRecover", 1.8f);
             });
             // 수문장의 예고·빈틈을 그대로 쓰되, 토르는 파동을 전방 한 줄로 낸다.
             b.ThorTrial.prefab = EnemyPrefab<RiftWardenBoss>("Boss_ThorTrial", b.Thor, _circle, line, false, (go, props) =>
@@ -163,7 +196,7 @@ namespace HistoryHeroes.EditorTools
             b.SteelColossus.prefab = p.SteelColossus;
             b.ShadowTwins.prefab = p.ShadowTwins;
             b.OblivionKing.prefab = p.OblivionKing;
-            foreach (BossData boss in new[] { b.WraithLord, b.SteelColossus, b.ShadowTwins, b.OblivionKing, b.ThorTrial, b.AnubisTrial, b.ZeusTrial }) EditorUtility.SetDirty(boss);
+            foreach (BossData boss in new[] { b.WraithLord, b.SteelColossus, b.ShadowTwins, b.OblivionKing, b.ThorTrial, b.AnubisTrial, b.ZeusTrial, b.SusanooTrial, b.AthenaTrial }) EditorUtility.SetDirty(boss);
         }
 
         /// <summary>구간 1~5 보스맵 보스 (로비·보스맵이 같이 쓴다)</summary>
@@ -187,6 +220,8 @@ namespace HistoryHeroes.EditorTools
             LoadThorTrial(),
             AssetDatabase.LoadAssetAtPath<BossData>($"{DataDir}/Bosses/Boss_anubis_trial.asset"),
             AssetDatabase.LoadAssetAtPath<BossData>($"{DataDir}/Bosses/Boss_zeus_trial.asset"),
+            AssetDatabase.LoadAssetAtPath<BossData>($"{DataDir}/Bosses/Boss_susanoo_trial.asset"),
+            AssetDatabase.LoadAssetAtPath<BossData>($"{DataDir}/Bosses/Boss_athena_trial.asset"),
         };
     }
 }
