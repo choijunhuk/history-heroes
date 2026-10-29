@@ -139,6 +139,12 @@ namespace HistoryHeroes.Heroes
         [Tooltip("깃발 안에 멈춰 있을 때 받는 피해 감소")]
         public float bannerDamageReduction;
 
+        [Header("선덕여왕 별자리 관측")]
+        [Tooltip("연속으로 멈춰 다음 기본 공격의 관통을 준비하는 시간. 0이면 사용하지 않는다")]
+        public float observationSeconds;
+        [Tooltip("준비한 기본 공격 한 번의 피해 보너스")]
+        public float observationAttackBonus;
+
         [Header("각성 대표 효과 강화 (Stats 6-1, ★3·★5). 음수 = 그대로")]
         [Tooltip("★3 첫 발 피해 보너스 (칭기즈 칸 +75%)")]
         public float star3FirstShotBonus = -1f;
@@ -178,6 +184,10 @@ namespace HistoryHeroes.Heroes
         public float star3BannerDuration = -1f;
         [Tooltip("★5 깃발 안 기본 공격력 보너스 (잔 다르크 30%)")]
         public float star5BannerAttackBonus = -1f;
+        [Tooltip("★3 준비한 기본 공격 피해 보너스 (선덕여왕 15%)")]
+        public float star3ObservationAttackBonus = -1f;
+        [Tooltip("★5 준비한 기본 공격 피해 보너스 (선덕여왕 30%)")]
+        public float star5ObservationAttackBonus = -1f;
 
         [Header("전용")]
         [Tooltip("이 영웅만 쓰는 액티브. 첫 레벨업에 조금 더 잘 나온다 (Skills.md 3장)")]

@@ -14,9 +14,9 @@ namespace HistoryHeroes.EditorTools
     {
         private sealed class Data
         {
-            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne;
+            public HeroData Khan, Guan, Napoleon, Tesla, YiSunsin, YiSeonggye, Davinci, Zhuge, Jeanne, Seondeok;
             public HeroRoster Roster;
-            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans;
+            public ActiveSkillData KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation;
             // v0.3 스킬 전체 목록
             public ActiveSkillData IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillData FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -193,6 +193,18 @@ namespace HistoryHeroes.EditorTools
             d.Jeanne.star5BannerAttackBonus = 0.3f;
             d.Jeanne.gemsOnly = true;
             d.Jeanne.unlockGems = 2000;
+
+            // 선덕여왕: 관측은 다음 기본 공격 한 번에만 쓰고, 이동하면 준비를 버린다.
+            d.Seondeok = Hero("seondeok", "선덕여왕", HeroClass.Mage, BasicAttackKind.Projectile, 900f, 90f, 1f, 5f, 6f, new Color(0.68f, 0.4f, 0.9f));
+            d.Seondeok.playStyle = "멈춰 별빛 한 발을 준비하고, 일직선으로 모인 적을 관통하는 법사";
+            d.Seondeok.signatureName = "별자리 관측";
+            d.Seondeok.signatureDescription = "1초 멈추면 다음 기본 공격 1회가 적 1명을 관통한다. 이동하면 준비 취소";
+            d.Seondeok.observationSeconds = 1f;
+            d.Seondeok.observationAttackBonus = 0f;
+            d.Seondeok.star3ObservationAttackBonus = 0.15f;
+            d.Seondeok.star5ObservationAttackBonus = 0.3f;
+            d.Seondeok.gemsOnly = true;
+            d.Seondeok.unlockGems = 2000;
 
             // ----- 적 3종 (Content.md 4장, Stats.md 8장 기준값 체력 120 · 공격력 60) -----
             d.Charger = Enemy("charger", "돌진병", 2.6f, 0.8f, 1.2f, new Color(0.85f, 0.25f, 0.25f));
@@ -447,6 +459,13 @@ namespace HistoryHeroes.EditorTools
             d.JeanneWave.heroOnlyId = "jeanne";
             d.Pool.Add(d.JeanneWave);
             d.Jeanne.exclusiveActive = d.JeanneWave;
+            d.SeondeokStarlight = Active("seondeok_starlight", "첨성대 별빛", Rarity.Rare, SkillTag.Lightning, 5, 3,
+                "8초마다 가까운 적 자리에 별빛\n(반경 2, 피해 140%)\n레벨마다 피해 +25%",
+                cooldown: 8f, damage: 1.4f, damagePerLevel: 0.25f, count: 1, countPerLevel: 0, radius: 2f);
+            d.SeondeokStarlight.icon = Icon("star");
+            d.SeondeokStarlight.heroOnlyId = "seondeok";
+            d.Pool.Add(d.SeondeokStarlight);
+            d.Seondeok.exclusiveActive = d.SeondeokStarlight;
             d.Khan.exclusiveActive = d.KhanVolley;
             d.Guan.exclusiveActive = d.GuanSpin;
             d.Napoleon.exclusiveActive = d.NapoCannon;
@@ -490,7 +509,12 @@ namespace HistoryHeroes.EditorTools
                 cooldown: 8f, damage: 0.9f, damagePerLevel: 0.15f, count: 3, countPerLevel: 0, radius: 3.5f, saveCostFirst: 12);
             d.JeanneOrleans.icon = Icon("shield");
             d.JeanneOrleans.heroOnlyId = "jeanne";
-            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans }) UnityEditor.EditorUtility.SetDirty(s);
+            d.SeondeokConstellation = Active("seondeok_constellation", "별자리의 길", Rarity.Rare, SkillTag.Lightning, 3, 4,
+                "8초마다 적 자리를 중심으로 별빛 3개\n(일직선, 각 반경 1.4, 피해 90%)\n0.25초 간격, 레벨마다 피해 +22.5%",
+                cooldown: 8f, damage: 0.9f, damagePerLevel: 0.225f, count: 3, countPerLevel: 0, radius: 1.4f, saveCostFirst: 12);
+            d.SeondeokConstellation.icon = Icon("star");
+            d.SeondeokConstellation.heroOnlyId = "seondeok";
+            foreach (ActiveSkillData s in new[] { d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation }) UnityEditor.EditorUtility.SetDirty(s);
             d.KhanStorm.heroOnlyId = "khan";
             d.GuanFive.heroOnlyId = "guan";
             d.NapoAusterlitz.heroOnlyId = "napoleon";
@@ -506,9 +530,10 @@ namespace HistoryHeroes.EditorTools
             AddHeroRecipe(d, "dav_spiral", FusionType.Merge, d.DavTank, 3, d.Whirlwind, 3, d.DavSpiral, "davinci");
             AddHeroRecipe(d, "ysg_shingung", FusionType.Evolution, d.YsgPyeonjeon, 5, (PassiveSkillData)d.Pool.Find(s => s.id == "crit_dmg"), 1, d.YsgShingung, "yiseonggye");
             AddHeroRecipe(d, "jeanne_orleans", FusionType.Evolution, d.JeanneWave, 5, d.DefUp, 1, d.JeanneOrleans, "jeanne");
+            AddHeroRecipe(d, "seondeok_constellation", FusionType.Evolution, d.SeondeokStarlight, 5, d.Pool.Find(s => s.id == "pierce"), 1, d.SeondeokConstellation, "seondeok");
 
             d.Roster = AssetUtil.LoadOrCreate<HeroRoster>($"{DataDir}/Heroes/HeroRoster.asset");
-            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne };
+            d.Roster.heroes = new List<HeroData> { d.Khan, d.Guan, d.Napoleon, d.Tesla, d.YiSunsin, d.YiSeonggye, d.Davinci, d.Zhuge, d.Jeanne, d.Seondeok };
 
             d.Dungeon = AssetUtil.LoadOrCreate<DungeonData>($"{DataDir}/Dungeons/Dungeon_Chapter1_v01.asset");
 
@@ -517,7 +542,7 @@ namespace HistoryHeroes.EditorTools
             d.Database.balanceVersion = 1;
             d.Database.skills = new List<SkillData>(d.Pool)
             {
-                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans,
+                d.SteelWhirl, d.ThunderFire, d.KhanStorm, d.GuanFive, d.NapoAusterlitz, d.TeslaTower, d.YiHakIkJin, d.YsgShingung, d.DavSpiral, d.ZhugeSevenStar, d.JeanneOrleans, d.SeondeokConstellation,
                 d.FlameTrail, d.BlizzardShard, d.ToxicBloom, d.IronWall, d.ThunderGod, d.TwinBoomerang, d.Blizzard, d.HeavenBow,
             };
             d.Database.recipes = new List<FusionRecipe>(d.Recipes);
@@ -564,6 +589,7 @@ namespace HistoryHeroes.EditorTools
             ["yi_turtle"] = SkillRole.Area, ["yi_hakikjin"] = SkillRole.Area, ["dav_tank"] = SkillRole.Area, ["dav_spiral"] = SkillRole.Area,
             ["zhuge_sevenstar"] = SkillRole.Area,
             ["jeanne_wave"] = SkillRole.Area, ["jeanne_orleans"] = SkillRole.Area,
+            ["seondeok_starlight"] = SkillRole.Area, ["seondeok_constellation"] = SkillRole.Area,
             ["ysg_pyeonjeon"] = SkillRole.Single, ["ysg_shingung"] = SkillRole.Single,
             ["zhuge_gate"] = SkillRole.Defense,
             // 방어: 버티기·막기
@@ -725,6 +751,9 @@ namespace HistoryHeroes.EditorTools
             d.Jeanne.projectilePrefab = p.SwordWave;
             d.JeanneWave.behaviourPrefab = p.JeanneWave;
             d.JeanneOrleans.behaviourPrefab = p.JeanneOrleans;
+            d.Seondeok.projectilePrefab = p.Starlight;
+            d.SeondeokStarlight.behaviourPrefab = p.SeondeokStarlight;
+            d.SeondeokConstellation.behaviourPrefab = p.SeondeokConstellation;
             d.KhanVolley.behaviourPrefab = p.KhanVolley;
             d.KhanStorm.behaviourPrefab = p.KhanStorm;
             d.GuanSpin.behaviourPrefab = p.GuanSpin;

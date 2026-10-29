@@ -20,6 +20,7 @@ namespace HistoryHeroes.Player
         private static readonly Color Empty = new Color(1f, 1f, 1f, 0.22f);
         private static readonly Color Iron = new Color(1f, 0.55f, 0.15f, 0.95f);
         private static readonly Color Part = new Color(0.95f, 0.68f, 0.35f, 1f);
+        private static readonly Color Star = new Color(0.9f, 0.74f, 1f, 1f);
         private static readonly Color Wind = new Color(0.45f, 0.95f, 1f, 0.32f); // 화면 점검 2차: 벽 밖까지 보이는 원이 헷갈리지 않게 옅게
         private static readonly Color[] Stage = { new Color(1f, 1f, 1f, 0.95f), new Color(0.45f, 0.85f, 1f, 1f), new Color(1f, 0.82f, 0.25f, 1f) };
 
@@ -108,8 +109,10 @@ namespace HistoryHeroes.Player
             }
             else if (_pips[0].enabled)
             {
-                sprite = art != null ? (_player.Hero.chargeShot ? art.hudCharge : art.hudParts) : null;
-                int total = _player.Hero.chargeShot ? 3 : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
+                // 관측 점은 단독으로 별빛을 뜻한다. 부품 그림을 붙이면 작업대처럼 보인다.
+                sprite = art != null && _player.Hero.observationSeconds <= 0f
+                    ? (_player.Hero.chargeShot ? art.hudCharge : art.hudParts) : null;
+                int total = _player.Hero.chargeShot ? 3 : _player.Hero.observationSeconds > 0f ? 1 : Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
                 left = -(total - 1) * 0.5f * PipGap - 0.42f;
             }
 
@@ -140,6 +143,7 @@ namespace HistoryHeroes.Player
             int filled = 0, total = 0;
             Color on = Part;
             bool charge = _player.Hero.chargeShot;
+            bool observation = _player.Hero.observationSeconds > 0f;
             if (charge)
             {
                 filled = _player.ChargeStage;
@@ -150,6 +154,12 @@ namespace HistoryHeroes.Player
                 filled = _player.WorkbenchParts;
                 total = Mathf.Clamp(_player.PartsPerMachine, 1, _pips.Length);
                 if (_player.MachineCount >= _player.MaxMachines) on.a = 0.45f; // 가득: 다음 기계는 기다린다
+            }
+            else if (observation)
+            {
+                filled = _player.ObservationReady ? 1 : 0;
+                total = 1;
+                on = Star;
             }
 
             bool show = alive && total > 0 && (stopped || filled > 0);
@@ -167,7 +177,8 @@ namespace HistoryHeroes.Player
                 _pipBacks[i].transform.localPosition = at;
                 bool lit = i < filled;
                 Color c = lit ? (charge ? Stage[i] : on) : Empty;
-                if (!lit && i == filled && stopped) c.a = 0.25f + 0.2f * Mathf.PingPong(Time.time * 3f, 1f); // 다음 칸이 차오르는 중
+                if (observation && !lit) c = new Color(Star.r, Star.g, Star.b, 0.2f + 0.45f * _player.ObservationProgress);
+                if (!lit && i == filled && stopped && !observation) c.a = 0.25f + 0.2f * Mathf.PingPong(Time.time * 3f, 1f); // 다음 칸이 차오르는 중
                 pip.color = c;
                 float pop = lit && i == filled - 1 ? 1f + 0.6f * _pop : 1f; // 방금 켜진 칸은 톡 커졌다 돌아온다
                 pip.transform.localScale = Vector3.one * (lit && charge && i == 2 ? PipSize * 1.3f : PipSize) * pop; // 3단은 크게

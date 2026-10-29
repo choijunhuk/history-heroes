@@ -181,6 +181,7 @@ namespace HistoryHeroes.Player
         private void OnDestroy()
         {
             ClearBanner();
+            _observation.Reset();
             Stats.Changed -= OnStatsChanged;
             if (_sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone();
         }
@@ -192,6 +193,7 @@ namespace HistoryHeroes.Player
         private void ClearSignatureState()
         {
             ClearBanner();
+            _observation.Reset();
             Stats.RemoveAllFrom(_ironOwner);
             _ironOn = false;
             _ironStore = 0f;
@@ -240,6 +242,7 @@ namespace HistoryHeroes.Player
         public void Teleport(Vector2 position)
         {
             ClearBanner();
+            _observation.Reset();
             _body.position = position;
             _body.linearVelocity = Vector2.zero;
             transform.position = position;
@@ -251,12 +254,14 @@ namespace HistoryHeroes.Player
             if (Health.IsDead || GamePause.IsPaused)
             {
                 if (Health.IsDead) ClearBanner();
+                if (Health.IsDead) _observation.Reset();
                 if (Health.IsDead && _sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone(); // 동남풍은 살아 있을 때만
                 return;
             }
 
             float dt = Time.deltaTime;
             Stop.Tick(ReadInput(), dt);
+            _observation.Tick(dt, Stop.IsStopped, hero);
 
             // 쿨다운은 이동 중에도 흐른다 → 멈췄다 움직이기를 반복해도 공격속도보다 빨리 쏠 수 없다.
             _attackCooldown -= dt;
@@ -450,7 +455,17 @@ namespace HistoryHeroes.Player
             if (_bannerView != null) _bannerView.gameObject.SetActive(false);
         }
 
-        private void OnDisable() => ClearBanner();
+        private void OnDisable()
+        {
+            ClearBanner();
+            _observation.Reset();
+        }
+
+        // ---------------------------------------------------------------- 선덕여왕 별자리 관측
+
+        private readonly SeondeokObservationState _observation = new SeondeokObservationState();
+        public float ObservationProgress => _observation.Progress;
+        public bool ObservationReady => _observation.IsReady;
 
         // ---------------------------------------------------------------- 다빈치 작업대
 
@@ -659,13 +674,17 @@ namespace HistoryHeroes.Player
             Audio.AudioManager.Play("shoot", 0.35f, 0.1f);
             int extra = Attack.Get(AttackModifierKind.ExtraProjectiles);
             int count = Mathf.Max(1, hero.fanShots) + extra; // 제갈량 깃털 부채: 3갈래
+            // 표적을 찾고 실제로 발사할 때만 준비를 쓰므로 빈 방에서 관통을 잃지 않는다.
+            bool observedShot = _observation.TryConsume();
             float perProjectile = NextShotCoefficient(extra) * (hero.fanShots > 1 ? hero.fanCoefficient : 1f);
+            if (observedShot) perProjectile *= 1f + _sig.ObservationAttackBonus;
             _lastShotCoefficient = perProjectile;
             _bulletsFired += count;
 
             Vector2 origin = transform.position;
             Vector2 aim = ((Vector2)target.transform.position - origin).normalized;
             PlayAttack(aim);
+            if (observedShot) AttackFx.Burst(origin + aim * 0.6f, 0.55f, new Color(0.78f, 0.63f, 1f, 0.5f), 0.15f);
             ShotSpread(hero.fanShots, hero.fanSpread, spreadDegrees, count, out float start, out float spread);
             bool needsTarget = hero.knockback > 0f || _sig.ChainBounces > 0;
 
@@ -675,7 +694,8 @@ namespace HistoryHeroes.Player
                 DamageInfo damage = DamageCalculator.Roll(Stats, perProjectile, DamageKind.BasicAttack);
                 if (i == 0) damage.Amount += TakeIroncladStore(); // 이순신 철갑: 첫 발에 쌓인 피해
                 Projectile p = _projectiles.Get(origin, Quaternion.identity);
-                int pierce = Attack.Get(AttackModifierKind.Pierce) + (_sig.FirstShotPierce && _firstShotThisShot ? 1 : 0); // 칭기즈 칸 ★5: 첫 발 관통
+                int pierce = Attack.Get(AttackModifierKind.Pierce) + (_sig.FirstShotPierce && _firstShotThisShot ? 1 : 0)
+                    + (observedShot ? 1 : 0); // 관측은 멀티샷 묶음 하나의 기본 공격에 적용한다.
                 p.Launch(direction, hero.projectileSpeed, damage, enemyMask, wallMask,
                     pierce, Attack.Get(AttackModifierKind.Ricochet),
                     _projectiles.Release, OnBasicAttackHit, onHitTarget: needsTarget ? OnProjectileHitTarget : null);
