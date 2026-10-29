@@ -29,6 +29,8 @@ MonoBehaviour:
   cooldown: 3
   damageFirstLevel: 1.2
   damagePerLevel: 0
+  healFractionFirstLevel: 0
+  healFractionPerLevel: 0
   countFirstLevel: 5
   countPerLevel: 0
   radius: 1.5

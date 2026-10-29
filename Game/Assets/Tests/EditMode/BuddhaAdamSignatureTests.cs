@@ -95,13 +95,15 @@ namespace HistoryHeroes.Tests
         [Test]
         public void DevicePushReportsItsDisplacementToThePlayer()
         {
+            // 켜진 오브젝트여야 콜라이더에 강체가 연결된다 (실제 게임과 같게). 에디트 모드라 PlayerController.Awake는 돌지 않는다
             var go = new GameObject("PushProbe");
-            go.SetActive(false);
             try
             {
                 Rigidbody2D body = go.AddComponent<Rigidbody2D>();
+                body.gravityScale = 0f;
                 BoxCollider2D collider = go.AddComponent<BoxCollider2D>();
                 PlayerController player = go.AddComponent<PlayerController>();
+                Physics2D.SyncTransforms();
                 RoomDevices.Push(collider, new Vector2(0.4f, 0.1f));
                 FieldInfo field = typeof(PlayerController).GetField("_externalDisplacement", BindingFlags.Instance | BindingFlags.NonPublic);
                 Assert.IsNotNull(field);

@@ -219,7 +219,7 @@ namespace HistoryHeroes.Tests
 
             Art3DCharacters.Look adam = Art3DCharacters.Heroes.Single(look => look.name == "Adam");
             Assert.AreEqual("Male_Peasant", adam.body);
-            Assert.AreEqual("T_Peasant_2_BaseColor", adam.bodyTex);
+            Assert.AreEqual("T_Peasant_BaseColor", adam.bodyTex); // 어두운 T_Peasant_2에선 모래색이 검게 보였다 (화면 점검)
             CollectionAssert.AreEquivalent(new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, adam.hair);
             CollectionAssert.AreEquivalent(new[] { "Adam_Staff" }, adam.props);
             Assert.AreEqual("hand_r", Art3DProps.Bones["Adam_Staff"]);

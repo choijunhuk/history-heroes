@@ -241,7 +241,7 @@ namespace HistoryHeroes.EditorTools
             // 후대 불상 외모를 복원하지 않는다. 기존 농민 옷으로 몸을 가리고 작은 발우만 든다.
             new Look { name = "Buddha", body = "Male_Peasant", bodyTex = "T_Peasant_BaseColor", tint = new Color(0.79f, 0.57f, 0.34f), hair = new[] { "Hair_Buzzed", "Eyebrows" }, hairColor = new Color(0.14f, 0.11f, 0.09f), attack = "Spell_Simple_Shoot", props = new[] { "Buddha_Bowl" } },
             // 성서 복식의 재현이 아닌 여행자의 단순한 옷이며, 나체나 잎사귀 차림을 쓰지 않는다.
-            new Look { name = "Adam", body = "Male_Peasant", bodyTex = "T_Peasant_2_BaseColor", tint = new Color(0.79f, 0.68f, 0.51f), hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.21f, 0.15f, 0.1f), attack = "Sword_Regular_A", props = new[] { "Adam_Staff" } },
+            new Look { name = "Adam", body = "Male_Peasant", bodyTex = "T_Peasant_BaseColor", tint = new Color(0.92f, 0.85f, 0.68f), hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.21f, 0.15f, 0.1f), attack = "Sword_Regular_A", props = new[] { "Adam_Staff" } },
         };
 
         public sealed class EnemyLook

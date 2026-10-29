@@ -108,6 +108,18 @@ MonoBehaviour:
   observationMark: 0
   observationWaveRadius: 0
   observationWaveCoefficient: 0
+  breathAttacks: 0
+  breathShieldFraction: 0
+  breathShieldDuration: 0
+  breathCooldown: 0
+  star3BreathShieldDuration: 0
+  star5BreathShieldFraction: 0
+  footstepMoveSeconds: 0
+  footstepDodgeBonus: 0
+  footstepDodgeDuration: 0
+  footstepCooldown: 0
+  star3FootstepDodgeDuration: 0
+  star5FootstepDodgeBonus: 0
   star3FirstShotBonus: -1
   star5FirstShotBonus: -1
   star5FirstShotPierce: 0
