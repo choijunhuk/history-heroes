@@ -160,7 +160,7 @@ namespace HistoryHeroes.UI
             bool unlocked = EquipmentInventory.Unlocked(save);
             walletLabel.text = _relicMode
                 ? $"<sprite name=gem>보석 {Wallet.Gems(save):N0} · <sprite name=ancient_shard>고대 파편 {RelicService.Shards(save):N0}"
-                : $"골드 {save.gold:N0} · 보석 {Wallet.Gems(save):N0} · 고급 소환권 {save.ItemCount(Wallet.Ticket)} · 장비 조각 {save.ItemCount(Wallet.GearShard)}";
+                : $"<sprite name=gold>골드 {save.gold:N0} · <sprite name=gem>보석 {Wallet.Gems(save):N0} · <sprite name=ticket>고급 소환권 {save.ItemCount(Wallet.Ticket)} · <sprite name=equip_shard>장비 조각 {save.ItemCount(Wallet.GearShard)}";
             relicSection.SetActive(_relicMode);
             equipmentSection.SetActive(!_relicMode);
             equipmentTabButton.interactable = _relicMode;

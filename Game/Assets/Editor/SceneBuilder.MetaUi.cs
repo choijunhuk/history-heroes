@@ -112,6 +112,19 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        /// <summary>단추 왼쪽에 컬러 보상 그림 (Art/UI/Rewards). 글자는 그만큼 오른쪽으로</summary>
+        private static void LeftPicture(Button button, string rewardKey)
+        {
+            Sprite sprite = RewardIcon(rewardKey);
+            if (button == null || sprite == null) return;
+            var rt = (RectTransform)button.transform;
+            float size = Mathf.Min(rt.sizeDelta.y * 0.86f, 96f);
+            RectTransform pic = Rect("Picture", rt, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(10f, 4f), new Vector2(size, size));
+            Img(pic, Color.white, sprite).preserveAspect = true;
+            TMP_Text label = button.GetComponentInChildren<TMP_Text>();
+            if (label != null) label.margin = new Vector4(size + 6f, label.margin.y, label.margin.z, label.margin.w);
+        }
+
         private static ShopPanel BuildShopPanel(Transform parent, GachaTable gacha)
         {
             RectTransform panel = Overlay(parent, "ShopPanel", out GameObject holder);
@@ -139,6 +152,12 @@ namespace HistoryHeroes.EditorTools
             premium10Label.fontSize = 27;
             Button ticket = Btn("Ticket", equipmentSection, "소환권", new Vector2(335f, 370f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text ticketLabel);
             ticketLabel.fontSize = 25;
+            // 상자 그림 (2026-10-29 개발자: "보상에 그림이 너무 없다") — 단추 왼쪽에
+            LeftPicture(normalBuy, "chest_normal");
+            LeftPicture(normalFree, "chest_normal");
+            LeftPicture(premium1, "chest_premium");
+            LeftPicture(premium10, "chest_premium");
+            LeftPicture(ticket, "ticket");
 
             Button rates = Btn("Rates", equipmentSection, "확률 보기", new Vector2(-335f, 265f), new Vector2(325f, 84f), ButtonGray, out TMP_Text ratesButtonLabel);
             ratesButtonLabel.fontSize = 28;
@@ -162,6 +181,9 @@ namespace HistoryHeroes.EditorTools
             Button relic1 = Btn("Relic1", relicSection, "1회", new Vector2(-252f, 140f), new Vector2(496f, 108f), ButtonBlue, out TMP_Text relic1Label);
             Button relic10 = Btn("Relic10", relicSection, "10회", new Vector2(252f, 140f), new Vector2(496f, 108f), ButtonGreen, out TMP_Text relic10Label);
             Button relicFree = Btn("RelicFree", relicSection, "무료 1회 (오늘)", new Vector2(0f, 15f), new Vector2(700f, 90f), ButtonBlue, out TMP_Text relicFreeLabel);
+            LeftPicture(relic1, "ancient_shard");
+            LeftPicture(relic10, "ancient_shard");
+            LeftPicture(relicFree, "ancient_shard");
             Button relicRates = Btn("RelicRates", relicSection, "확률 보기", new Vector2(0f, -100f), new Vector2(500f, 86f), ButtonBlue, out _);
             TMP_Text relicNotice = Label("RelicNotice", relicSection,
                 "<color=#A9B4C2>확률·보장·중복 규칙은 확률 보기에서 확인하세요</color>", 28, TextAlignmentOptions.Center);
