@@ -1,0 +1,158 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ebc6196135fc4408657c8ea9d0378e, type: 3}
+  m_Name: Hero_wuzetian
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Heroes.HeroData
+  id: wuzetian
+  displayName: "\uBB34\uCE21\uCC9C"
+  heroClass: 3
+  playStyle: "\uAC19\uC740 \uC801\uC744 \uACA8\uB220 \uC8FC\uBCC0 \uD55C \uC801\uC758
+    \uBC1C\uC744 \uC7A0\uC2DC \uBB36\uB294 \uBC95\uC0AC"
+  maxHp: 900
+  attack: 90
+  attackSpeed: 1
+  moveSpeed: 5
+  range: 5.5
+  critRate: 0.05
+  critDamage: 1.5
+  attackKind: 0
+  projectilePrefab: {fileID: 1703544268103197824, guid: 3ea8bdb1b89ca524386934c5df072f74, type: 3}
+  projectileSpeed: 12
+  meleeArcDegrees: 120
+  meleeWaveCoefficient: 0.4
+  windFirstArc: 0
+  windFirstCoefficient: 0
+  windFollowArc: 0
+  windFollowCoefficient: 0
+  spearWidth: 0
+  spearPierceReachBonus: 0.4
+  shieldPrepareSeconds: 0
+  shieldReuseSeconds: 0
+  owlBonusCoefficient: 0
+  signatureName: "\uC9C8\uC11C\uC758 \uC778\uC7A5"
+  signatureDescription: "\uAC19\uC740 \uC801\uC5D0 \uC815\uC9C0 \uAE30\uBCF8 \uACF5\uACA9
+    3\uD68C \uBA85\uC911\uD558\uBA74 \uC8FC\uBCC0 \uB2E4\uB978 \uC77C\uBC18 \uC801
+    1\uBA85\uC744 \uC7A0\uAE50 \uBB36\uC74C. \uBCF4\uC2A4\uB9CC \uB0A8\uC73C\uBA74
+    \uC57D\uD55C \uB454\uD654, \uB300\uC0C1\uB9C8\uB2E4 6\uCD08 \uC81C\uD55C"
+  firstShotDelay: 0.2
+  firstShotBonus: 0
+  damageReduction: 0
+  lowHpThreshold: 0.5
+  lowHpAttackBonus: 0
+  cannonEvery: 0
+  cannonCoefficient: 0.8
+  cannonRadius: 1.2
+  knockback: 0
+  chainBounces: 0
+  chainRadius: 3
+  chainFalloff: 0.3
+  stopGuard: 0
+  stopGuardStore: 0.5
+  stopGuardCap: 2
+  stopGuardDecay: 2
+  chargeShot: 0
+  chargeTimes: {x: 0.4, y: 0.9, z: 1.5}
+  chargeMidMultiplier: 1.4
+  chargeFullMultiplier: 2.5
+  fanShots: 1
+  fanSpread: 20
+  fanCoefficient: 1
+  windRadius: 0
+  windSlow: 0.4
+  workbench: 0
+  partEvery: 1
+  partsPerMachine: 3
+  maxMachines: 2
+  machineLife: 20
+  machineDamage: 0.35
+  machineFireRate: 1
+  helperModel: {fileID: 0}
+  bannerDeploySeconds: 0
+  bannerRadius: 0
+  bannerDuration: 0
+  bannerAttackBonus: 0
+  bannerDamageReduction: 0
+  observationSeconds: 0
+  observationAttackBonus: 0
+  reclaimStopSeconds: 0
+  reclaimCooldown: 0
+  reclaimKnockback: 0
+  reclaimBossScale: 0
+  thunderEvery: 0
+  thunderRadius: 0
+  thunderCoefficient: 0
+  godShardUnlock: 0
+  markHits: 0
+  markSlow: 0
+  markDuration: 0
+  markCooldown: 0
+  markBossScale: 0.3
+  guardianAttacks: 0
+  guardianCoefficient: 0
+  guardianNearbyRadius: 0
+  crossShotEvery: 0
+  crossShotHalfAngle: 0
+  crossShotCoefficient: 0
+  sealHits: 3
+  sealRadius: 2.5
+  sealRootDuration: 0.6
+  sealBossSlow: 0.15
+  sealCooldown: 6
+  observationMark: 0
+  observationWaveRadius: 0
+  observationWaveCoefficient: 0
+  star3FirstShotBonus: -1
+  star5FirstShotBonus: -1
+  star5FirstShotPierce: 0
+  star3DamageReduction: -1
+  star5LowHpAttackBonus: -1
+  star3CannonRadiusScale: -1
+  star5CannonEvery: -1
+  star3ExtraBounces: 0
+  star5NoFalloff: 0
+  star3StopGuard: -1
+  star5StopGuardCap: -1
+  star3ChargeFull: -1
+  star5ChargeFullTime: -1
+  star3MachineDamage: -1
+  star5MaxMachines: -1
+  star3WindRadius: -1
+  star5WindSlow: -1
+  star3BannerDuration: -1
+  star5BannerAttackBonus: -1
+  star3ObservationAttackBonus: -1
+  star5ObservationAttackBonus: -1
+  star3ReclaimKnockback: -1
+  star5ReclaimAttackBonus: -1
+  star3ThunderRadius: -1
+  star5ThunderCoefficient: -1
+  star3MarkDuration: -1
+  star5MarkSlow: -1
+  star3WindFirstCoefficient: -1
+  star5WindFollowCoefficient: -1
+  star3ShieldPrepareSeconds: -1
+  star5OwlBonusCoefficient: -1
+  star3GuardianCoefficient: -1
+  star5GuardianTargets: -1
+  star3CrossShotCoefficient: -1
+  star5CrossShotCoefficient: -1
+  star3SealRootDuration: 0.8
+  star5SealRadius: 3
+  star3ObservationWaveCoefficient: -1
+  star5ObservationWaveRadius: -1
+  exclusiveActive: {fileID: 11400000, guid: 4ba38af8665894ee9a6559357be8ac76, type: 2}
+  unlockAfterBossChapter: 0
+  gemsOnly: 1
+  unlockGems: 2000
+  color: {r: 0.65, g: 0.18, b: 0.16, a: 1}
+  model3D: {fileID: 8810894449559016185, guid: 32e046a8df3c4411da160bc2f755aa08, type: 3}
+  modelHeight: 2.1

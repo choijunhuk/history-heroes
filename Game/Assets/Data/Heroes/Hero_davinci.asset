@@ -99,6 +99,17 @@ MonoBehaviour:
   guardianAttacks: 0
   guardianCoefficient: 0
   guardianNearbyRadius: 0
+  crossShotEvery: 0
+  crossShotHalfAngle: 0
+  crossShotCoefficient: 0
+  sealHits: 0
+  sealRadius: 0
+  sealRootDuration: 0
+  sealBossSlow: 0
+  sealCooldown: 0
+  observationMark: 0
+  observationWaveRadius: 0
+  observationWaveCoefficient: 0
   star3FirstShotBonus: -1
   star5FirstShotBonus: -1
   star5FirstShotPierce: 0
@@ -132,6 +143,12 @@ MonoBehaviour:
   star5OwlBonusCoefficient: -1
   star3GuardianCoefficient: -1
   star5GuardianTargets: -1
+  star3CrossShotCoefficient: -1
+  star5CrossShotCoefficient: -1
+  star3SealRootDuration: -1
+  star5SealRadius: -1
+  star3ObservationWaveCoefficient: -1
+  star5ObservationWaveRadius: -1
   exclusiveActive: {fileID: 11400000, guid: cbb12e5e680751e49b91f90b1e83d6a9, type: 2}
   unlockAfterBossChapter: 0
   gemsOnly: 1
