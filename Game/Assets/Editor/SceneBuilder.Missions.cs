@@ -20,7 +20,7 @@ namespace HistoryHeroes.EditorTools
             const MissionDays all = MissionDays.All;
 
             // 기존 미션 표 에셋도 다시 만들 때 새 영웅 순서를 받게 한다.
-            t.heroOrder = new System.Collections.Generic.List<string> { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok" };
+            t.heroOrder = new System.Collections.Generic.List<string> { "khan", "guan", "napoleon", "tesla", "yisunsin", "yiseonggye", "davinci", "zhuge", "jeanne", "seondeok", "boudica" };
 
             t.dailyFixed.Clear();
             t.dailyFixed.Add(M("login", "게임 접속", MissionEvents.Login, 1, 10));

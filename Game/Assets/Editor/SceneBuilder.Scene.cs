@@ -314,6 +314,14 @@ namespace HistoryHeroes.EditorTools
                 {
                     ((SkillData)d.SeondeokConstellation, 1, true), (Find("pierce"), 1, false), (Find("hp_up"), 4, false), (Find("atk_up"), 4, false),
                 }),
+                ("부디카 되찾는 자리형 (이케니의 함성 5 · 공격력 4 · 최대체력 4)", new[]
+                {
+                    ((SkillData)d.BoudicaRally, 5, false), (Find("atk_up"), 4, false), (Find("hp_up"), 4, false),
+                }),
+                ("부디카 되찾은 터전형 (되찾은 터전 · 공격력 4 · 최대체력 4)", new[]
+                {
+                    ((SkillData)d.BoudicaUprising, 1, true), (Find("atk_up"), 4, false), (Find("hp_up"), 4, false),
+                }),
             };
 
             var so = new SerializedObject(cheats);
