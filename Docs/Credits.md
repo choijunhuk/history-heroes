@@ -30,7 +30,7 @@
 - 3D로 바꾸는 중 ([3D 전환 계획](Dev/Art3D-Plan.md)). 전투 화면의 영웅·적·바닥·벽·장애물은 3D, 투사체·이펙트·로비는 아직 임시 도형 (게임이 직접 그린 원·사각형).
 - 바닥·벽·상자·바위 무늬 (풀밭 · 돌바닥 · 돌벽 · 나무 상자 · 바위): 이 게임을 만들면서 직접 만든 그림 (노이즈로 그림, 외부 에셋 아님).
 - 영웅 상징 소품 9개 (몽골 털모자·활·화살통, 청룡언월도·두건, 이각모·권총, 콧수염·코일) · 방패병 나무 방패: 이 게임을 만들면서 Blender로 직접 만든 모델 (`Game/Assets/Art/3D/Props`).
-- 잔 다르크 검·등 깃발 · 부디카 켈트 검 · 토르 망치 (2026-10-29): Blender 스크립트로 직접 만든 모델 (`Tools/blender/hero_props.py` → `Game/Assets/Art/3D/Props`).
+- 잔 다르크 검·등 깃발 · 부디카 켈트 검 · 토르 망치 · 클레오파트라 머리장식·넓은 목걸이 (2026-10-29): Blender 스크립트로 직접 만든 모델 (`Tools/blender/hero_props.py` → `Game/Assets/Art/3D/Props`).
 - 펫 4마리 (사냥매 · 적토마 · 마렝고 · 흰 비둘기): 이 게임을 만들면서 Blender로 직접 만든 모델 (`Game/Assets/Art/3D/Pets`).
 - 가벼운 괴물 모델 `Puglin_LOD` · `Imp_LOD`: Quaternius Bestiary(CC0)의 Puglin · Imp를 Blender로 삼각형을 줄인 사본 (뼈·동작 그대로).
 - 나폴레옹 군복 무늬 `T_Ranger_Navy_BaseColor`: Quaternius Ranger 옷 무늬(CC0)의 초록을 파랗게 바꾼 사본.

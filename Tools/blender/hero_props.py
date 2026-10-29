@@ -1,5 +1,5 @@
-# 영웅 손·등 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
-# 손 hand_r 머리 (0.706, -0.065, 1.456), 날은 +Y (Unity -Z, 관우 언월도와 같은 방향), 등 = +Y.
+# 영웅 손·등·머리 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치, 클레오파트라 머리장식·목걸이). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
+# 손 hand_r 머리 (0.706, -0.065, 1.456), 날은 +Y (얼굴 쪽, 관우 언월도와 같은 방향). 얼굴 = +Y, 등 = -Y (칭기즈 칸 화살통이 -Y).
 import bpy, bmesh, math
 from mathutils import Vector, Matrix
 
@@ -109,9 +109,10 @@ objs = [
 export("Boudica_Sword", objs)
 reset()
 
-# 3) 잔 다르크 깃발: 등 뒤 깃대 + 가로대에 매달린 세로 깃발 (파랑 바탕 · 금 테두리 · 금 문장). spine_03 (0, 0.007, 1.311) 뒤 = +Y
+# 3) 잔 다르크 깃발: 등 뒤 깃대 + 가로대에 매달린 세로 깃발 (파랑 바탕 · 금 테두리 · 금 문장). spine_03 (0, 0.007, 1.311), 등 = -Y
+#    처음엔 +Y(몸 앞)에 놓는 실수를 했다 → 몸 뒤 -0.20 (몸통 뒤 끝 -0.163)
 #    처음 만든 옆으로 뻗은 흰 천은 화면에서 낫 날처럼 보였다 → 아래로 늘어진 깃발로 (2026-10-29 화면 확인)
-PX, PY = 0.12, 0.17
+PX, PY = 0.12, -0.20
 L, R, TOP, BOT = PX + 0.03, PX + 0.33, 2.17, 1.72
 flag = bmesh.new()
 pts = [(L, TOP), (R, TOP), (R, BOT), ((L + R) / 2, BOT + 0.09), (L, BOT)]  # 아래 끝 제비꼬리
@@ -141,4 +142,65 @@ objs = [
     box("band_bottom", (HX, HY + 0.34, HZ - 0.115), (0.16, 0.16, 0.025), "Gold"),
 ]
 export("Thor_Hammer", objs)
+reset()
+
+# 5) 클레오파트라 (여자 기본 몸 Superhero_Female_FullBody 기준: Head 뼈 (0, -0.011, 1.55), 머리 꼭대기 1.767, 얼굴 = +Y)
+#    머리장식: 금 머리띠 + 이마 앞 코브라(우라에우스) + 머리 위 붉은 해 원반 (게임 각색 — 특정 유물 재현이 아님)
+def torus(name, center, major, minor, material):
+    bm = bmesh.new()
+    seg, ring = 20, 6
+    verts = []
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        row = []
+        for j in range(ring):
+            b = 2 * math.pi * j / ring
+            r = major + minor * math.cos(b)
+            row.append(bm.verts.new((center[0] + r * math.cos(a), center[1] + r * math.sin(a), center[2] + minor * math.sin(b))))
+        verts.append(row)
+    for i in range(seg):
+        for j in range(ring):
+            bm.faces.new((verts[i][j], verts[(i + 1) % seg][j], verts[(i + 1) % seg][(j + 1) % ring], verts[i][(j + 1) % ring]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return new_obj(name, bm, material)
+
+def disk_y(name, center, radius, depth, material):
+    return cyl_y(name, center, radius, depth, material, seg=16)
+
+objs = [
+    torus("circlet", (0.0, -0.008, 1.695), 0.104, 0.011, "Gold"),
+    cyl_z("uraeus_body", (0.0, 0.1, 1.725), 0.011, 0.07, "Gold"),
+    box("uraeus_hood", (0.0, 0.104, 1.765), (0.04, 0.012, 0.035), "Gold"),
+    box("disk_stand", (0.0, -0.01, 1.785), (0.02, 0.02, 0.04), "Gold"),
+    disk_y("sun_rim", (0.0, -0.01, 1.85), 0.062, 0.014, "Gold"),
+    disk_y("sun", (0.0, -0.01, 1.85), 0.052, 0.022, "Red"),
+]
+export("Cleopatra_Crown", objs)
+reset()
+
+#    넓은 목걸이 (우세크): 목둘레 앞쪽 반원, 안쪽 금 · 가운데 청색 · 바깥 금 띠
+def arc_band(name, center, r0, r1, z, thick, material, a0=-20, a1=200):
+    bm = bmesh.new()
+    seg = 16
+    rows = []
+    for i in range(seg + 1):
+        a = math.radians(a0 + (a1 - a0) * i / seg)
+        c, s_ = math.cos(a), math.sin(a)
+        rows.append([bm.verts.new((center[0] + r * c, center[1] + r * s_, z + dz)) for r, dz in ((r0, 0), (r1, 0), (r1, -thick), (r0, -thick))])
+    for i in range(seg):
+        a, b = rows[i], rows[i + 1]
+        for k in range(4):
+            bm.faces.new((a[k], b[k], b[(k + 1) % 4], a[(k + 1) % 4]))
+    bm.faces.new(rows[0])
+    bm.faces.new(list(reversed(rows[-1])))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return new_obj(name, bm, material)
+
+NC = (0.0, -0.02)
+objs = [
+    arc_band("inner", NC, 0.075, 0.105, 1.468, 0.012, "Gold"),
+    arc_band("middle", NC, 0.105, 0.14, 1.462, 0.012, "Blue"),
+    arc_band("outer", NC, 0.14, 0.155, 1.456, 0.012, "Gold"),
+]
+export("Cleopatra_Collar", objs)
 print("DONE")
