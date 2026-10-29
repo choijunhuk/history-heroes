@@ -35,6 +35,7 @@ namespace HistoryHeroes.EditorTools
             ["Anubis_Mask"] = "Head", // 아누비스 자칼 가면 (사람 머리를 숨기고 대신 씀)
             ["Susanoo_Sword"] = "hand_r", ["Athena_Spear"] = "hand_r", ["Athena_Helmet"] = "Head", // 신의 시련 4 · 5 (아테나 투구는 여자 몸 기준)
             ["Tomoe_Sode_L"] = "upperarm_l", ["Tomoe_Sode_R"] = "upperarm_r", ["WuZetian_Crown"] = "Head", ["Curie_Flask"] = "hand_l", // 토모에 · 무측천 · 퀴리
+            ["Buddha_Bowl"] = "hand_l", ["Adam_Staff"] = "hand_r", // 부처 발우 · 아담 목봉 (Heroes 6-16 · 6-17)
             ["Enemy_TowerShield"] = "hand_l", // 방패병의 큰 나무 방패 (앞을 막는다)
             // 그래픽 재평가 6번 "적을 실루엣으로 구분": 무리 적마다 머리 · 등 · 손 장식 (블렌더 notes_enemies.txt)
             ["Enemy_HornHelm"] = "Head", ["Enemy_Hood"] = "Head", ["Enemy_ShortBow"] = "hand_l", ["Enemy_BombPack"] = "spine_03",

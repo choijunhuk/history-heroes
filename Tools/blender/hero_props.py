@@ -1,4 +1,4 @@
-# 영웅 손·등·머리 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치, 클레오파트라 머리장식·목걸이, 아누비스 자칼 가면, 스사노오 검, 아테나 창·투구, 토모에 어깨 덧갑, 무측천 관, 퀴리 실험병). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py [-- 이름...] 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
+# 영웅 손·등·머리 소품 (잔 다르크 검·깃발, 부디카 검, 토르 망치, 클레오파트라 머리장식·목걸이, 아누비스 자칼 가면, 스사노오 검, 아테나 창·투구, 토모에 어깨 덧갑, 무측천 관, 퀴리 실험병, 부처 발우, 아담 목봉). 실행: Blender -b --factory-startup -P Tools/blender/hero_props.py [-- 이름...] 기본 몸 Superhero_Male_FullBody 바인드 자세 기준 (블렌더 좌표).
 # 손 hand_r 머리 (0.706, -0.065, 1.456), 날은 +Y (얼굴 쪽, 관우 언월도와 같은 방향). 얼굴 = +Y, 등 = -Y (칭기즈 칸 화살통이 -Y).
 import bpy, bmesh, math
 from mathutils import Vector, Matrix
@@ -335,4 +335,25 @@ objs = [
     cone_x("stopper", (fx + 0.11, fy, fz), 0.021, 0.016, 0.025, "Wood"),
 ]
 export("Curie_Flask", objs)
+reset()
+
+# 12) 부처 발우 (남자 기본 몸 왼손 hand_l 기준): 장식 없는 작은 검은 그릇. 팔을 내리면 바로 서도록 그릇 입구가 몸 쪽(+X)을 향한다
+#     광배 · 연꽃 · 불상 장식은 넣지 않는다 (Heroes 6-16, GodsVsHumanity §5 묘사 기준)
+bm = bmesh.new()
+bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=8, radius=1.0)
+bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.x > 0.35], context='VERTS')  # 몸 쪽(+X)을 잘라 입구로
+bmesh.ops.scale(bm, vec=Vector((0.05, 0.065, 0.065)), verts=bm.verts)
+bmesh.ops.translate(bm, vec=Vector((-0.84, -0.065, 1.42)), verts=bm.verts)
+bowl = new_obj("bowl", bm, "Black")
+export("Buddha_Bowl", [bowl])
+reset()
+
+# 13) 아담 목봉 (남자 기본 몸 오른손 hand_r 기준): 끝이 둥근 짧은 나무 봉, 언월도처럼 앞(+Y)으로. 사과 · 뱀 · 신의 무기는 넣지 않는다
+objs = [
+    cyl_y("staff", (HX, 0.33, HZ), 0.022, 1.2, "Wood"),
+    sphere("tip_front", (HX, 0.93, HZ), 0.03, "Wood_Dark"),
+    sphere("tip_back", (HX, -0.27, HZ), 0.028, "Wood_Dark"),
+    cyl_y("wrap", (HX, HY + 0.01, HZ), 0.025, 0.12, "Cloth"),
+]
+export("Adam_Staff", objs)
 print("DONE")
