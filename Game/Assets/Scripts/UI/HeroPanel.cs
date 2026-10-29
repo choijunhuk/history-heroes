@@ -26,6 +26,13 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text unlockLabel;
         [SerializeField] private Button trialButton;
         [SerializeField] private Button backButton;
+        [Header("2026-10-29 탕탕특공대식: 장비 칸 3개 (무기 · 갑옷 · 장신구) · 유물 칸 · 공격력/체력")]
+        [SerializeField] private Button[] gearSlots;
+        [SerializeField] private TMP_Text[] gearLabels;
+        [SerializeField] private Button relicButton;
+        [SerializeField] private TMP_Text relicLabel;
+        [SerializeField] private RelicPanel relics;
+        [SerializeField] private TMP_Text powerLabel;
         [Header("v0.4 장비")]
         [SerializeField] private Button equipButton;
         [SerializeField] private TMP_Text equipLabel;
@@ -81,6 +88,52 @@ namespace HistoryHeroes.UI
             if (trainingButton != null) trainingButton.onClick.AddListener(() => training.Open(Render));
             if (runeButton != null) runeButton.onClick.AddListener(() => runes.Open(FocusHero.id, FocusHero.displayName, Render));
             if (petButton != null) petButton.onClick.AddListener(() => pets.Open(FocusHero.id, FocusHero.displayName, Render));
+            if (gearSlots != null)
+            {
+                foreach (Button slot in gearSlots)
+                {
+                    if (slot != null) slot.onClick.AddListener(OpenEquipment);
+                }
+            }
+
+            if (relicButton != null && relics != null) relicButton.onClick.AddListener(() => relics.Open());
+        }
+
+        /// <summary>판 밖 성장을 다 더한 공격력 · 체력 (StatSheet 규칙: (기본 + 고정) × (1 + %))</summary>
+        private (float attack, float hp) Power(SaveData d, HeroData h)
+        {
+            if (metaTable == null) return (h.attack, h.maxHp);
+            var mods = Meta.MetaStats.Build(Meta.MetaStats.FromAccount(d, metaTable, h.id), metaTable, this);
+            float Total(Stats.StatType stat, float baseValue) =>
+                (baseValue + Meta.MetaStats.Sum(mods, stat, Stats.ModifierKind.Flat)) * (1f + Meta.MetaStats.Sum(mods, stat, Stats.ModifierKind.Percent));
+            return (Total(Stats.StatType.Attack, h.attack), Total(Stats.StatType.MaxHp, h.maxHp));
+        }
+
+        /// <summary>양옆 칸 글: 지금 낀 장비 (등급 색) · 유물 모음 · 공격력/체력</summary>
+        private void RenderGear(SaveData d, HeroData focus, bool focusUnlocked)
+        {
+            bool gear = Equipment.EquipmentInventory.Unlocked(d);
+            if (gearSlots != null && gearLabels != null)
+            {
+                string[] kinds = { "무기", "갑옷", "장신구" };
+                for (int i = 0; i < gearSlots.Length && i < gearLabels.Length; i++)
+                {
+                    gearSlots[i].interactable = focusUnlocked && gear;
+                    Records.EquipmentItem item = focusUnlocked ? Equipment.EquipmentInventory.Equipped(d, focus.id, (Equipment.EquipSlot)i) : null;
+                    Equipment.EquipmentData data = item != null && metaTable != null ? metaTable.equipment.Find(item.dataId) : null;
+                    gearLabels[i].text = !gear ? "1구간 보스 뒤"
+                        : data != null ? $"<color={Equipment.EquipmentText.RarityColor(data.rarity)}>{data.displayName}</color>"
+                        : $"<color=#A9B4C2>{kinds[i]} 비어 있음</color>";
+                }
+            }
+
+            if (relicLabel != null && metaTable != null && metaTable.relics != null)
+                relicLabel.text = $"유물 {d.relics.owned.Count}/{metaTable.relics.relics.Count}";
+            if (powerLabel != null)
+            {
+                (float attack, float hp) = Power(d, focus);
+                powerLabel.text = $"<color=#FF9B7A>공격력</color> <b>{attack:N0}</b>      <color=#7CE38B>체력</color> <b>{hp:N0}</b>";
+            }
         }
 
         private HeroData FocusHero => roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
@@ -194,7 +247,8 @@ namespace HistoryHeroes.UI
             selectButton.interactable = focusUnlocked && focus != selected;
             selectLabel.text = !focusUnlocked ? "잠긴 영웅" : focus == selected ? "지금 영웅" : KoreanText.Josa(focus.displayName, "으로", "로") + " 하기";
 
-            if (equipButton != null)
+            RenderGear(d, focus, focusUnlocked);
+            if (equipButton != null && gearSlots == null)
             {
                 bool gear = Equipment.EquipmentInventory.Unlocked(d);
                 equipButton.gameObject.SetActive(focusUnlocked);
@@ -204,19 +258,19 @@ namespace HistoryHeroes.UI
 
             if (runeButton != null && metaTable != null && metaTable.runes != null)
             {
-                runeButton.gameObject.SetActive(focusUnlocked);
+                runeButton.interactable = focusUnlocked; // 칸은 늘 보인다 (양옆 칸 배열이 비지 않게)
                 int slots = Runes.RuneService.SlotCount(d, metaTable.runes);
                 bool pendingChoice = Runes.RuneService.PendingChoice(d, metaTable.runes) != null;
-                runeLabel.text = slots == 0 ? "룬 (2구간 보스 뒤)" : pendingChoice ? "룬 <color=#FFD966>(보상!)</color>" : $"룬 ({slots}칸)";
+                runeLabel.text = slots == 0 ? "2구간 보스 뒤" : pendingChoice ? "룬 <color=#FFD966>보상!</color>" : $"룬 {slots}칸";
             }
 
             if (petButton != null && metaTable != null && metaTable.pets != null)
             {
-                petButton.gameObject.SetActive(focusUnlocked);
+                petButton.interactable = focusUnlocked;
                 Pets.PetData pet = metaTable.pets.Find(Pets.PetService.Equipped(d, focus.id));
                 bool bond = Pets.PetService.IsBond(pet, focus.id);
-                petLabel.text = !Pets.PetService.Unlocked(d) ? "펫 (첫 던전 클리어 뒤)"
-                    : pet != null ? $"펫 · {pet.displayName}{(bond ? " <color=#FF7A8A>♥</color>" : "")}" : "펫 (비어 있음)";
+                petLabel.text = !Pets.PetService.Unlocked(d) ? "첫 던전 뒤"
+                    : pet != null ? $"{pet.displayName}{(bond ? " <color=#FF7A8A>♥</color>" : "")}" : "<color=#A9B4C2>펫 비어 있음</color>";
             }
 
             if (levelButton != null && metaTable != null)
