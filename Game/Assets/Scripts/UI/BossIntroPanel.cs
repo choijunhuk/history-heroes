@@ -134,7 +134,7 @@ namespace HistoryHeroes.UI
         {
             if (boss == null) return;
             _boss = boss;
-            titleLabel.text = boss.displayName + (_trial && SaveSystem.Data.godTrials.cleared.Contains(boss.id) ? "  <color=#7CE38B>✔ 첫 격파</color>" : string.Empty);
+            titleLabel.text = boss.displayName + (_trial && SaveSystem.Data.godTrials.cleared.Contains(boss.id) ? "  <color=#7CE38B><size=60%>첫 격파 완료</size></color>" : string.Empty);
             bool trialLocked = _trial && !GodTrialRules.IsUnlocked(SaveSystem.Data, boss.id);
             GodTrialDefinition definition = _trial ? GodTrialRules.Find(boss.id) : null;
             string condition = definition == null || definition.Order == 1 ? "망각의 왕"
@@ -207,14 +207,14 @@ namespace HistoryHeroes.UI
                     trialButtons[i].image.color = _boss.id == definition.Id ? Selected : Normal;
                     if (trialLabels != null && i < trialLabels.Length && trialLabels[i] != null)
                     {
-                        string clearText = data.godTrials.cleared.Contains(definition.Id) ? " ✔" : string.Empty;
+                        string clearText = data.godTrials.cleared.Contains(definition.Id) ? " <color=#7CE38B>완료</color>" : string.Empty; // ✔ 글자는 글꼴에 없다
                         if (GodTrialRules.IsUnlocked(data, definition.Id))
                             trialLabels[i].text = definition.DisplayName + clearText;
                         else
                         {
                             string predecessor = definition.Order == 1 ? "망각의 왕"
                                 : GodTrialRules.Trials[definition.Order - 2].DisplayName + " 시련";
-                            trialLabels[i].text = $"{definition.DisplayName} 🔒\n<size=65%>{predecessor} 첫 승리</size>";
+                            trialLabels[i].text = $"{definition.DisplayName} <color=#FFB347>잠김</color>\n<size=65%>{predecessor} 첫 승리</size>"; // 자물쇠 이모지는 글꼴에 없어 네모로 보였다
                         }
                     }
                 }

@@ -183,12 +183,7 @@ namespace HistoryHeroes.Player
 
         private void OnDestroy()
         {
-            ClearBanner();
-            _observation.Reset();
-            _reclaim.Reset();
-            _thunder.Moved();
-            _mark.Reset();
-            ResetGuardian();
+            ResetStopSignatures();
             Stats.Changed -= OnStatsChanged;
             if (_sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone();
         }
@@ -199,12 +194,7 @@ namespace HistoryHeroes.Player
         /// </summary>
         private void ClearSignatureState()
         {
-            ClearBanner();
-            _observation.Reset();
-            _reclaim.Reset();
-            _thunder.Moved();
-            _mark.Reset();
-            ResetGuardian();
+            ResetStopSignatures();
             Stats.RemoveAllFrom(_ironOwner);
             _ironOn = false;
             _ironStore = 0f;
@@ -252,12 +242,7 @@ namespace HistoryHeroes.Player
         /// <summary>방을 옮길 때 시작 위치로 (물리 위치까지 같이 옮겨야 다음 프레임에 되돌아가지 않는다).</summary>
         public void Teleport(Vector2 position)
         {
-            ClearBanner();
-            _observation.Reset();
-            _reclaim.Reset();
-            _thunder.Moved();
-            _mark.Reset();
-            ResetGuardian();
+            ResetStopSignatures();
             _body.position = position;
             _body.linearVelocity = Vector2.zero;
             transform.position = position;
@@ -268,12 +253,7 @@ namespace HistoryHeroes.Player
             // 카드 화면 등으로 멈춘 동안에는 쏘지도, 쿨다운이 돌지도 않는다
             if (Health.IsDead || GamePause.IsPaused)
             {
-                if (Health.IsDead) ClearBanner();
-                if (Health.IsDead) _observation.Reset();
-                if (Health.IsDead) _reclaim.Reset();
-                if (Health.IsDead) _thunder.Moved();
-                if (Health.IsDead) _mark.Reset();
-                if (Health.IsDead) ResetGuardian();
+                if (Health.IsDead) ResetStopSignatures();
                 if (Health.IsDead && _sig.WindRadius > 0f) Enemy.EnemyProjectiles.ClearSlowZone(); // 동남풍은 살아 있을 때만
                 return;
             }
@@ -478,12 +458,7 @@ namespace HistoryHeroes.Player
 
         private void OnDisable()
         {
-            ClearBanner();
-            _observation.Reset();
-            _reclaim.Reset();
-            _thunder.Moved();
-            _mark.Reset();
-            ResetGuardian();
+            ResetStopSignatures();
         }
 
         // ---------------------------------------------------------------- 선덕여왕 별자리 관측
@@ -511,6 +486,21 @@ namespace HistoryHeroes.Player
         private GameObject _guardianVisual;
         public int GuardianCount => _guardian.Count;
         public bool GuardianReady => _guardian.IsReady;
+
+        /// <summary>
+        /// 멈춤에 묶인 대표 효과 상태를 비운다 (잔 다르크 깃발 · 선덕여왕 관측 · 부디카 되찾는 자리 · 토르 천둥 · 아누비스 저울 · 클레오파트라 수호상).
+        /// 방 이동 · 영웅 변경 · 사망 · 꺼짐 · 파괴가 모두 여기로 온다 — 새 영웅의 상태는 여기 한 곳에만 더한다
+        /// (예전엔 같은 6줄이 다섯 군데 있어서 하나를 빠뜨리기 쉬웠다, 2026-10-29 Codex 리뷰).
+        /// </summary>
+        private void ResetStopSignatures()
+        {
+            ClearBanner();
+            _observation.Reset();
+            _reclaim.Reset();
+            _thunder.Moved();
+            _mark.Reset();
+            ResetGuardian();
+        }
 
         private void ResetGuardian()
         {

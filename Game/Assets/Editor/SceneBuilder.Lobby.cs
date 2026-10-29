@@ -240,14 +240,14 @@ namespace HistoryHeroes.EditorTools
             Button weeklyGoal = Btn("ChooseGodGoal", panel, "주간 목표 선택", new Vector2(0f, 420f), new Vector2(920f, 70f), ButtonBlue, out TMP_Text weeklyLabel);
             weeklyLabel.fontSize = 25;
             TMP_Text pick = Label("Pick", panel, "싸울 기록을 고르세요 (기록은 이겨도 져도 사라지지 않아요)", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(pick.rectTransform, Center, Center, new Vector2(0f, 355f), new Vector2(1000f, 44f));
+            Place(pick.rectTransform, Center, Center, new Vector2(0f, 356f), new Vector2(1000f, 40f)); // 위 줄이 늘 때마다 1번 칸에 가려졌다 → 칸 위 끝(333)보다 위에
 
             var buttons = new Button[3];
             var backgrounds = new Image[3];
             var labels = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
             {
-                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 250f - i * 240f), new Vector2(980f, 196f), RowColor, out TMP_Text label);
+                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 238f - i * 236f), new Vector2(980f, 190f), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
                 label.fontSize = 27;
                 label.alignment = TextAlignmentOptions.MidlineLeft;
