@@ -67,6 +67,11 @@ MonoBehaviour:
   machineDamage: 0.35
   machineFireRate: 1
   helperModel: {fileID: 0}
+  bannerDeploySeconds: 0
+  bannerRadius: 0
+  bannerDuration: 0
+  bannerAttackBonus: 0
+  bannerDamageReduction: 0
   star3FirstShotBonus: -1
   star5FirstShotBonus: -1
   star5FirstShotPierce: 0
@@ -84,6 +89,8 @@ MonoBehaviour:
   star5MaxMachines: -1
   star3WindRadius: -1
   star5WindSlow: -1
+  star3BannerDuration: -1
+  star5BannerAttackBonus: -1
   exclusiveActive: {fileID: 11400000, guid: cf25fe18983ea8144a2b1eb88c8578ce, type: 2}
   unlockAfterBossChapter: 4
   gemsOnly: 0

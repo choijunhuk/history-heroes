@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_jeanne_orleans
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: jeanne_orleans
+  displayName: "\uC624\uB97C\uB808\uC559\uC758 \uBE5B"
+  description: "8\uCD08\uB9C8\uB2E4 \uAE43\uBC1C \uC790\uB9AC\uC5D0\uC11C \uBE5B\uC758
+    \uD30C\uB3D9 3\uBC88\n(\uAC01 90%, 0.4\uCD08 \uAC04\uACA9, \uBC00\uC5B4\uB0C4)\n\uB808\uBCA8\uB9C8\uB2E4
+    \uD53C\uD574 +15%"
+  warriorDescription: 
+  icon: {fileID: 21300000, guid: 07eaf87ade54b6845b2c59a2b3431a72, type: 3}
+  rarity: 1
+  tags: 1032
+  role: 2
+  maxLevel: 3
+  saveCostFirstLevel: 12
+  saveCostPerLevel: 4
+  recordable: 1
+  heroOnlyId: jeanne
+  cooldown: 8
+  damageFirstLevel: 0.9
+  damagePerLevel: 0.15
+  countFirstLevel: 3
+  countPerLevel: 0
+  radius: 3.5
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  behaviourPrefab: {fileID: 5378447802713766832, guid: 08482cfa8f1aa4122ad1cda81ffac08a, type: 3}
