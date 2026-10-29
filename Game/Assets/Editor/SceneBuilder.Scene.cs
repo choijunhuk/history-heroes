@@ -305,6 +305,14 @@ namespace HistoryHeroes.EditorTools
                 {
                     ((SkillData)d.ThunderFire, 3, true), (Find("hp_up"), 5, false), (Find("atk_up"), 1, false),
                 }),
+                ("선덕여왕 관측형 (첨성대 별빛 5 · 관통 · 공속 4 · 최대체력 5)", new[]
+                {
+                    ((SkillData)d.SeondeokStarlight, 5, false), (Find("pierce"), 1, false), (Find("aspd_up"), 4, false), (Find("hp_up"), 5, false),
+                }),
+                ("선덕여왕 별자리형 (별자리의 길 · 관통 · 최대체력 4 · 공격력 4)", new[]
+                {
+                    ((SkillData)d.SeondeokConstellation, 1, true), (Find("pierce"), 1, false), (Find("hp_up"), 4, false), (Find("atk_up"), 4, false),
+                }),
             };
 
             var so = new SerializedObject(cheats);

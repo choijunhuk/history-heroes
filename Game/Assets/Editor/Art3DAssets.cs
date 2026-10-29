@@ -37,18 +37,35 @@ namespace HistoryHeroes.EditorTools
         public static string Import()
         {
             var log = new List<string>();
-            foreach (string file in Directory.GetFiles(Models, "*.fbx"))
+            string[] files = Directory.GetFiles(Models, "*.fbx");
+            // 복사 대상보다 원본을 먼저 가져와야 현재 프로젝트에 아직 아바타가 없어도 재실행할 수 있다.
+            System.Array.Sort(files, (left, right) =>
+            {
+                bool leftSource = Path.GetFileName(left) == "Female_Ranger.fbx";
+                bool rightSource = Path.GetFileName(right) == "Female_Ranger.fbx";
+                return leftSource == rightSource ? string.CompareOrdinal(left, right) : leftSource ? -1 : 1;
+            });
+            foreach (string file in files)
             {
                 string path = file.Replace('\\', '/');
                 var importer = AssetImporter.GetAtPath(path) as ModelImporter;
                 if (importer == null) continue;
                 bool hair = Path.GetFileName(path).StartsWith("Hair_") || Path.GetFileName(path).StartsWith("Eyebrows_");
+                bool peasant = Path.GetFileName(path) == "Female_Peasant.fbx";
+                Avatar sourceAvatar = peasant ? AssetDatabase.LoadAssetAtPath<Avatar>($"{Models}/Female_Ranger.fbx") : null;
+                if (peasant && (sourceAvatar == null || !sourceAvatar.isHuman || !sourceAvatar.isValid))
+                {
+                    log.Add("Female_Peasant.fbx: 휴머노이드 실패 (Female_Ranger 아바타 없음)");
+                    continue;
+                }
                 importer.animationType = hair ? ModelImporterAnimationType.Generic : ModelImporterAnimationType.Human;
-                importer.avatarSetup = hair ? ModelImporterAvatarSetup.NoAvatar : ModelImporterAvatarSetup.CreateFromThisModel;
+                importer.avatarSetup = hair ? ModelImporterAvatarSetup.NoAvatar : peasant ? ModelImporterAvatarSetup.CopyFromOther : ModelImporterAvatarSetup.CreateFromThisModel;
+                if (peasant) importer.sourceAvatar = sourceAvatar;
                 importer.importAnimation = false;
                 importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
                 importer.SaveAndReimport();
-                var avatar = AssetDatabase.LoadAssetAtPath<Avatar>(path);
+                // CopyFromOther는 대상 FBX에 Avatar 서브에셋을 만들지 않는다.
+                var avatar = peasant ? importer.sourceAvatar : AssetDatabase.LoadAssetAtPath<Avatar>(path);
                 log.Add($"{Path.GetFileName(path)}: {(hair ? "머리카락(Generic)" : avatar != null && avatar.isHuman && avatar.isValid ? "휴머노이드 OK" : "휴머노이드 실패")}");
             }
 

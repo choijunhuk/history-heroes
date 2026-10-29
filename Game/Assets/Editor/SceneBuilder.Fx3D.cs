@@ -20,6 +20,7 @@ namespace HistoryHeroes.EditorTools
             EnemyArrow,
             Bullet,
             Orb,
+            Starlight,
             Shard,
             Wave,
             Cannonball,
@@ -130,6 +131,15 @@ namespace HistoryHeroes.EditorTools
                 case Fx.Orb:
                     FxPart(root, Stage3D.Shape.Rock, FxMat("Orb", new Color(0.5f, 0.88f, 1f), 2.2f), Vector3.zero, Quaternion.identity, Vector3.one * 0.34f);
                     break;
+                case Fx.Starlight:
+                {
+                    // 3D 구체는 스프라이트 색을 쓰지 않으므로 별빛의 보라·금색을 따로 정한다.
+                    FxPart(root, Stage3D.Shape.Rock, FxMat("Starlight", new Color(0.8f, 0.5f, 1f), 1.5f), Vector3.zero, Quaternion.identity, Vector3.one * 0.28f);
+                    Material gold = FxMat("Starlight_Gold", new Color(1f, 0.85f, 0.5f), 1.2f);
+                    FxPart(root, Stage3D.Shape.Box, gold, Vector3.zero, Quaternion.identity, new Vector3(0.4f, 0.05f, 0.05f));
+                    FxPart(root, Stage3D.Shape.Box, gold, Vector3.zero, Quaternion.identity, new Vector3(0.05f, 0.4f, 0.05f));
+                    break;
+                }
                 case Fx.Cannonball:
                 {
                     // 이순신 총통 포탄: 블렌더 철 공 (없으면 어두운 쇠공)
@@ -180,6 +190,7 @@ namespace HistoryHeroes.EditorTools
                 case Fx.EnemyArrow: AddTrail(root.gameObject, new Color(1f, 0.3f, 0.6f), 0.16f, 0.16f); break;
                 case Fx.Bullet: AddTrail(root.gameObject, new Color(1f, 0.8f, 0.35f), 0.14f, 0.1f); break;
                 case Fx.Orb: AddTrail(root.gameObject, new Color(0.45f, 0.85f, 1f), 0.3f, 0.2f); break;
+                case Fx.Starlight: AddTrail(root.gameObject, new Color(0.85f, 0.65f, 1f), 0.24f, 0.16f); break;
                 case Fx.Cannonball: AddTrail(root.gameObject, new Color(1f, 0.6f, 0.25f), 0.26f, 0.18f); break;
                 case Fx.BigArrow: AddTrail(root.gameObject, new Color(1f, 0.9f, 0.6f), 0.18f, 0.16f); break;
                 case Fx.Gust: AddTrail(root.gameObject, new Color(0.85f, 0.97f, 1f), 0.35f, 0.18f); break;

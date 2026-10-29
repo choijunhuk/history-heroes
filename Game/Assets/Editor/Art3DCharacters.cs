@@ -175,6 +175,7 @@ namespace HistoryHeroes.EditorTools
             public bool female;
             public string[] hide = new string[0];
             public string[] metalParts = new string[0];
+            public string[] goldParts = new string[0];
             public string[] hair = new string[0];
             public string hairTex = "T_Hair_1";
             public Color hairColor = new Color(0.1f, 0.075f, 0.06f); // 머리카락 텍스처는 회색 → 색을 곱한다
@@ -214,6 +215,8 @@ namespace HistoryHeroes.EditorTools
             new Look { name = "Zhuge", body = "Male_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", hair = new[] { "Hair_Long", "Hair_Beard", "Eyebrows" }, hairColor = new Color(0.05f, 0.045f, 0.045f), props = new[] { "Zhuge_Fan", "Zhuge_Hat" } },
             // 잔 다르크: 짧은 머리, 후드 없는 레인저와 어깨 갑옷. 남색·은빛 옷으로 구별한다.
             new Look { name = "Jeanne", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = Color.white, hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, hair = new[] { "Hair_BuzzedFemale", "Eyebrows_Female" }, hairColor = new Color(0.34f, 0.22f, 0.14f), attack = "Sword_Regular_A" },
+            // 선덕여왕: 기존 농민 옷의 몸통을 금색, 나머지를 보라색으로 나눠 왕실 색을 낸다. 관식은 별도 제작 전까지 쓰지 않는다.
+            new Look { name = "Seondeok", female = true, body = "Female_Peasant", bodyTex = "T_Zhuge_Robe_BaseColor", tint = new Color(0.66f, 0.38f, 0.82f), goldParts = new[] { "Female_Peasant_Body" }, hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.09f, 0.065f, 0.09f), props = new[] { "Davinci_Scroll" } },
         };
 
         public sealed class EnemyLook
@@ -496,6 +499,9 @@ namespace HistoryHeroes.EditorTools
                 metal.SetFloat("_Smoothness", 0.6f);
                 EditorUtility.SetDirty(metal);
             }
+            Material gold = look.goldParts.Length > 0
+                ? Lit(look.name + "_Gold", look.bodyTex, normal, new Color(1f, 0.8f, 0.38f))
+                : null;
 
             foreach (var r in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
@@ -507,9 +513,11 @@ namespace HistoryHeroes.EditorTools
 
                 Material[] slots = r.sharedMaterials;
                 bool steelPart = metal != null && System.Array.IndexOf(look.metalParts, r.name) >= 0;
+                bool goldPart = gold != null && System.Array.IndexOf(look.goldParts, r.name) >= 0;
                 for (int i = 0; i < slots.Length; i++)
                 {
                     if (steelPart) slots[i] = metal;
+                    else if (goldPart) slots[i] = gold;
                     else slots[i] = !look.Monster && slots[i] != null && (slots[i].name.Contains("Regular_Male") || look.female && slots[i].name.Contains("Regular_Female")) ? arms : outfit;
                 }
                 r.sharedMaterials = slots;
@@ -541,7 +549,12 @@ namespace HistoryHeroes.EditorTools
             foreach (string prop in look.props) notes.Add(Art3DProps.Attach(go, prop, look.shadows));
 
             var animator = go.GetComponent<Animator>() ?? go.AddComponent<Animator>();
-            animator.avatar = AssetDatabase.LoadAssetAtPath<Avatar>($"{Models}/{look.body}.fbx");
+            string bodyPath = $"{Models}/{look.body}.fbx";
+            // 복사 모드에는 대상 모델의 Avatar가 없으므로 원본을 프리팹에도 직접 연결한다.
+            Avatar avatar = look.body == "Female_Peasant"
+                ? (AssetImporter.GetAtPath(bodyPath) as ModelImporter)?.sourceAvatar
+                : AssetDatabase.LoadAssetAtPath<Avatar>(bodyPath);
+            animator.avatar = avatar;
             animator.runtimeAnimatorController = controller;
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;

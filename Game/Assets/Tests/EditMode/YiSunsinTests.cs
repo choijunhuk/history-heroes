@@ -100,7 +100,7 @@ namespace HistoryHeroes.Tests
         public void GemsOnlyHeroes_StayLockedUntilBought()
         {
             var roster = UnityEditor.AssetDatabase.LoadAssetAtPath<HeroRoster>("Assets/Data/Heroes/HeroRoster.asset");
-            foreach (string id in new[] { "davinci", "zhuge", "jeanne" })
+            foreach (string id in new[] { "davinci", "zhuge", "jeanne", "seondeok" })
             {
                 HeroData h = roster.Find(id);
                 Assert.AreEqual(id, h.id);

@@ -19,8 +19,8 @@ namespace HistoryHeroes.EditorTools
             public EnemyBase MidBison, MidTorch, MidGolem, MidHunter, MidExecutor;
             public EnemyBase WraithLord, SteelColossus, ShadowTwins, OblivionKing;
             public EnemyBase RiftWarden;
-            public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust;
-            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans;
+            public Projectile Bullet, Orb, SwordWave, Cannonball, BigArrow, Bolt, Gust, Starlight;
+            public ActiveSkillBehaviour KhanVolley, KhanStorm, GuanSpin, GuanFive, NapoCannon, NapoAusterlitz, TeslaCoil, TeslaTower, YiTurtle, YiHakIkJin, YsgPyeonjeon, YsgShingung, DavTank, DavSpiral, ZhugeGate, ZhugeSevenStar, JeanneWave, JeanneOrleans, SeondeokStarlight, SeondeokConstellation;
             public Projectile IceShardProjectile;
             public ActiveSkillBehaviour IceShard, PoisonCloud, GuardShield, Boomerang, Whirlwind, Meteor;
             public ActiveSkillBehaviour FlameTrail, BlizzardShard, ToxicBloom, IronWall, ThunderGod, TwinBoomerang, Blizzard, HeavenBow;
@@ -37,6 +37,7 @@ namespace HistoryHeroes.EditorTools
                 // 영웅별 기본 공격 (Heroes.md): 나폴레옹 총알, 테슬라 전기 구체, 관우 검기 (벽 튕김 패시브)
                 Bullet = ProjectilePrefab("Bullet_Napoleon", new Color(1f, 0.85f, 0.4f), new Vector2(0.32f, 0.14f), 0.12f, 2.5f, fx: Fx.Bullet),
                 Orb = ProjectilePrefab("Orb_Tesla", new Color(0.55f, 0.9f, 1f), new Vector2(0.34f, 0.34f), 0.17f, 3f, _circle, Fx.Orb),
+                Starlight = ProjectilePrefab("Starlight_Seondeok", new Color(0.88f, 0.7f, 1f), new Vector2(0.28f, 0.28f), 0.14f, 3f, _circle, Fx.Starlight),
                 Gust = ProjectilePrefab("Gust_Zhuge", new Color(0.85f, 0.95f, 1f), new Vector2(0.3f, 0.5f), 0.2f, 1.6f, fx: Fx.Gust), // 제갈량 부채 바람 (짧게 날아간다)
                 Bolt = ProjectilePrefab("Bolt_Davinci", new Color(0.85f, 0.8f, 0.7f), new Vector2(0.4f, 0.12f), 0.12f, 2.5f, fx: Fx.Arrow), // 다빈치 석궁 화살
                 BigArrow = ProjectilePrefab("Arrow_Yiseonggye", new Color(0.95f, 0.9f, 0.75f), new Vector2(0.6f, 0.2f), 0.14f, 3f, fx: Fx.BigArrow), // 이성계 큰 화살
@@ -128,6 +129,8 @@ namespace HistoryHeroes.EditorTools
             p.ZhugeSevenStar = Behaviour<EightGateBehaviour>("Skill_ZhugeSevenStar", props => props.Ref("stoneModel", stone).Bool("whirlwinds", true));
             p.JeanneWave = Behaviour<BannerWaveBehaviour>("Skill_JeanneWave", null);
             p.JeanneOrleans = Behaviour<BannerWaveBehaviour>("Skill_JeanneOrleans", null);
+            p.SeondeokStarlight = Behaviour<ConstellationBehaviour>("Skill_SeondeokStarlight", null);
+            p.SeondeokConstellation = Behaviour<ConstellationBehaviour>("Skill_SeondeokConstellation", null);
             GameObject tank = Art3DStage.Prefab("Fx_ArmoredTank");
             p.DavTank = Behaviour<ArmoredTankBehaviour>("Skill_DavTank", props => props.Ref("tankModel", tank));
             p.DavSpiral = Behaviour<ArmoredTankBehaviour>("Skill_DavSpiral", props => props.Ref("tankModel", tank).Bool("spiral", true));

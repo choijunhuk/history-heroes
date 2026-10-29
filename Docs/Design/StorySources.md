@@ -21,3 +21,13 @@
 | 짧은 머리 모습 | [오를레앙 미술관 교육 자료](https://www.orleans-metropole.fr/fileadmin/orleans/MEDIA/document/culture/musees/offre_pedagogique/2022/mba/dossier/Une_Heroine_orleanaise_MAIL.pdf) 9쪽. 후대 조각의 역사적 묘사 설명이며 머리 모양의 실물 증거로 삼지 않는다 |
 
 성녀의 깃발·깃발의 파동·오를레앙의 빛과 게임 대사는 각색이다. 특정 종교·국가를 적으로 설정하지 않는다.
+
+## 선덕여왕 (2026-10-29)
+
+| 내용 | 구분과 출처 |
+|---|---|
+| 신라 제27대 왕, 632~647년 재위 | **사실:** [한국학중앙연구원 한국민족문화대백과사전: 경주 선덕여왕릉](https://encykorea.aks.ac.kr/Article/E0032832). 재위 기간과 왕위는 역사 소개에만 쓴다 |
+| 첨성대가 선덕여왕 때 축조됐다는 설명 | **추정:** [국가유산청 국가유산 안내판: 경주 첨성대](https://www.heritage.go.kr/heri/cul/culGuidePostDetail.do?ccbaCpno=1113700310000&ccgbGbtype=IND&ccgbGbtypeNo=2&pageNo=1_5_0_0). 안내문도 『삼국유사』를 근거로 추정한다고 적는다. 여왕이 직접 별을 관측했다는 증거로 쓰지 않는다 |
+| 세 가지 일의 기미를 알아차렸다는 ‘지기삼사’ | **전승:** [한국학중앙연구원 한국민족문화대백과사전: 선덕왕지기삼사 설화](https://encykorea.aks.ac.kr/Article/E0028656). 『삼국유사』에 실린 설화로 소개하며 예언을 역사적 사실로 표현하지 않는다 |
+
+별자리 관측·첨성대 별빛·별자리의 길과 게임 대사는 각색이다. 옷·머리·두루마리는 실물 복식이나 실제 유품의 재현이 아니다.
