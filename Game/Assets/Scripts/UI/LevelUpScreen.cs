@@ -209,7 +209,7 @@ namespace HistoryHeroes.UI
                 }
 
                 PersistBans();
-                _banMode = skills.Loadout.BansLeft > 0;
+                _banMode = false; // 한 번 빼면 빼기 상태를 끈다 (이어서 고르다 한 장 더 빼는 실수 막기, Claude 화면 점검)
                 GuardInput();
                 Render();
                 return;
