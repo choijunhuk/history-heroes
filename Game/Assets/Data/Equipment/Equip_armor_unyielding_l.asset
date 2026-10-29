@@ -19,4 +19,4 @@ MonoBehaviour:
   hasSecondary: 1
   secondaryStat: 3
   secondaryKind: 1
-  secondaryValue: 0.02
+  secondaryValue: 0.01
