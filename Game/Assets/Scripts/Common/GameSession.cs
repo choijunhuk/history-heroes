@@ -122,16 +122,16 @@ namespace HistoryHeroes.Common
         /// <summary>하트 1개를 쓰고 던전 시작. 모자라면 false (로비가 충전 방법을 보여준다)</summary>
         public static bool TryStartDungeon(int chapter)
         {
-            if (!TrySpendHeart()) return false;
-            StartDungeon(chapter);
+            if (!TrySaveRunEntry(BattleMode.Dungeon, chapter)) return false;
+            Load(BattleScene);
             return true;
         }
 
         /// <summary>하트 1개를 쓰고 보스 도전 (Modes 8장)</summary>
         public static bool TryStartBoss(int chapter, string recordId)
         {
-            if (!TrySpendHeart()) return false;
-            StartBoss(chapter, recordId);
+            if (!TrySaveRunEntry(BattleMode.Boss, chapter, recordId: recordId)) return false;
+            Load(BattleScene);
             return true;
         }
 
@@ -194,6 +194,8 @@ namespace HistoryHeroes.Common
                     ClearSpecialRun();
                     Practice = false;
                     Mode = BattleMode.Survival;
+                    RunSeed = s.seed;
+                    Chapter = Mathf.Max(1, s.chapter);
                     SurvivalMap = Mathf.Clamp(s.survivalMap, 0, Survival.SurvivalProgress.MapIds.Length - 1);
                     break;
                 case BattleMode.Daily:
@@ -353,8 +355,8 @@ namespace HistoryHeroes.Common
         public static bool TryStartSurvival(int map = 0)
         {
             if (!SurvivalMapUnlocked(SaveSystem.Data, map)) return false;
-            if (!TrySpendHeart(SurvivalHearts)) return false;
-            StartSurvival(map);
+            if (!TrySaveRunEntry(BattleMode.Survival, Chapter, map)) return false;
+            Load(BattleScene);
             return true;
         }
 
@@ -399,18 +401,51 @@ namespace HistoryHeroes.Common
                 return true;
             }
 
-            if (!TrySpendHeart(HeartCost)) return false;
+            if (!TrySaveRunEntry(Mode, Chapter, SurvivalMap, BossRecordId)) return false;
             Retry();
             return true;
         }
 
-        private static bool TrySpendHeart(int amount = 1)
+        private static Meta.MetaTable _metaTable;
+
+        /// <summary>로비·전투의 같은 표로 입장 전 성장 스냅샷을 만든다.</summary>
+        public static void ConfigureMetaTable(Meta.MetaTable table) => _metaTable = table;
+
+        /// <summary>하트와 첫 이어하기를 한 번에 저장한다. 저장이 실패하면 하트도 이전 판도 되돌린다.</summary>
+        public static bool TrySaveRunEntry(BattleMode mode, int chapter, int survivalMap = 0, string recordId = null)
         {
-            SaveData data = SaveSystem.Data;
-            if (!Hearts.TrySpend(data, amount, Clock.UnixSeconds, Clock.Today, out bool free)) return false;
-            HeartSpent = !free;
-            SaveSystem.Save();
-            return true;
+            if (mode != BattleMode.Dungeon && mode != BattleMode.Survival && mode != BattleMode.Boss) return false;
+            bool previousHeartSpent = HeartSpent;
+            SaveSystem.CommitResult saved = SaveSystem.Commit(() =>
+            {
+                SaveData data = SaveSystem.Data;
+                if (data.pendingRecord != null) return false; // 미확정 기록은 저장하거나 명시적으로 버린 뒤 새 판을 연다
+                int cost = mode == BattleMode.Survival ? SurvivalHearts : 1;
+                if (!Hearts.TrySpend(data, cost, Clock.UnixSeconds, Clock.Today, out bool free)) return false;
+                PrepareDungeon(chapter);
+                Mode = mode;
+                SurvivalMap = Mathf.Clamp(survivalMap, 0, Survival.SurvivalProgress.MapIds.Length - 1);
+                BossRecordId = mode == BattleMode.Boss ? recordId : null;
+                HeartSpent = !free;
+                data.run = mode == BattleMode.Boss ? BossSnapshot(Clock.UnixSeconds) : InitialSnapshot(data);
+                return true;
+            });
+            if (saved != SaveSystem.CommitResult.Saved) HeartSpent = previousHeartSpent;
+            return saved == SaveSystem.CommitResult.Saved;
+        }
+
+        private static RunSnapshot InitialSnapshot(SaveData data)
+        {
+            RunSeed = RunRandom.BeginRandom();
+            if (RunSeed == 0) { RunSeed = 1; RunRandom.Begin(RunSeed); }
+            return new RunSnapshot
+            {
+                valid = true, mode = (int)Mode, chapter = Chapter, room = 1,
+                seed = RunSeed, heroId = data.selectedHero, survivalMap = SurvivalMap,
+                heartSpent = HeartSpent, savedAt = Clock.UnixSeconds,
+                hasMeta = _metaTable != null,
+                meta = Meta.MetaStats.FromAccount(data, _metaTable, data.selectedHero),
+            };
         }
 
         public static void StartDungeon(int chapter)
@@ -454,9 +489,34 @@ namespace HistoryHeroes.Common
         /// <summary>같은 설정으로 한 번 더 (결과 화면의 "다시 도전")</summary>
         public static void Retry() => Load(BattleScene);
 
+        private static string _lobbyHero;
+
+        /// <summary>장면 전환 전에 연습·특수 모드를 끝낸다. 로비 성장 미션을 다시 센다.</summary>
+        public static void PrepareLobby(string focusHeroId = null)
+        {
+            PrepareDungeon(Chapter);
+            HeartSpent = false;
+            DailyOfficial = false;
+            RiftContinue = false;
+            _lobbyHero = focusHeroId;
+        }
+
+        public static string ConsumeLobbyHero()
+        {
+            string hero = _lobbyHero;
+            _lobbyHero = null;
+            return hero;
+        }
+
         public static void ToLobby()
         {
-            if (IsHeroTrial) PrepareDungeon(Chapter); // 로비의 미션·성장은 다시 정상 처리한다
+            PrepareLobby();
+            Load(LobbyScene);
+        }
+
+        public static void ToLobbyHero(string heroId)
+        {
+            PrepareLobby(heroId);
             Load(LobbyScene);
         }
 
@@ -474,6 +534,8 @@ namespace HistoryHeroes.Common
             BossRecordId = null;
             HeartSpent = false;
             Practice = false;
+            _metaTable = null;
+            _lobbyHero = null;
             ClearSpecialRun();
         }
     }

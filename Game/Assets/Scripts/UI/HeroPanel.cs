@@ -177,10 +177,17 @@ namespace HistoryHeroes.UI
             if (equipment != null) equipment.Open(focus.id, focus.displayName, Render, slot);
         }
 
-        public void Open(Action onChanged)
+        /// <summary>체험 ID가 있을 때만 그 영웅을 보여 준다. 보통 열기는 계정에서 고른 영웅이다.</summary>
+        public static HeroData HeroToFocus(HeroRoster roster, SaveData save, string focusHeroId = null)
+        {
+            HeroData focused = string.IsNullOrEmpty(focusHeroId) ? null : roster.heroes.Find(h => h != null && h.id == focusHeroId);
+            return focused != null ? focused : HeroUnlock.Selected(save, roster);
+        }
+
+        public void Open(Action onChanged, string focusHeroId = null)
         {
             _onChanged = onChanged;
-            HeroData selected = HeroUnlock.Selected(SaveSystem.Data, roster);
+            HeroData selected = HeroToFocus(roster, SaveSystem.Data, focusHeroId);
             _focus = Mathf.Max(0, roster.heroes.IndexOf(selected));
             root.SetActive(true);
             Render();

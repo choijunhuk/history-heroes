@@ -35,6 +35,17 @@ namespace HistoryHeroes.Records
         /// <summary>마지막 저장 실패 이유 (화면에 보여줄 때)</summary>
         public static string LastError { get; private set; }
 
+        public const string UnsupportedNewerSaveText = "더 새 버전에서 만든 저장 파일이에요. 게임을 업데이트한 뒤 다시 열어 주세요. 저장 파일은 그대로 보관했어요.";
+
+        public static bool UnsupportedNewerSave
+        {
+            get
+            {
+                _ = Data;
+                return Store.LastLoad.UnsupportedNewerSchema;
+            }
+        }
+
         public static SaveData Data
         {
             get
@@ -61,6 +72,7 @@ namespace HistoryHeroes.Records
             _store = store;
             _data = null;
             _dirty = false;
+            LastError = null;
         }
 
         /// <summary>바뀐 게 있다고 표시만 한다. 실제 쓰기는 SaveIfDirty / Save에서.</summary>
@@ -71,6 +83,11 @@ namespace HistoryHeroes.Records
         {
             try
             {
+                if (UnsupportedNewerSave)
+                {
+                    LastError = UnsupportedNewerSaveText;
+                    return false;
+                }
                 Store.Save(Data);
                 _dirty = false;
                 LastError = null;
@@ -100,6 +117,7 @@ namespace HistoryHeroes.Records
         /// </summary>
         public static CommitResult Commit(Func<bool> change)
         {
+            if (UnsupportedNewerSave) return CommitResult.Rejected;
             string before = JsonUtility.ToJson(Data);
             if (!change()) return CommitResult.Rejected;
             if (Save()) return CommitResult.Saved;

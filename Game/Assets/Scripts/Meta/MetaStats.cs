@@ -28,6 +28,11 @@ namespace HistoryHeroes.Meta
             snap.training = new List<int>(save.training);
             snap.relics = Relics.RelicService.Active(save);
             Pets.PetService.FillSnapshot(snap, save, table.pets, heroId);
+            if (table.runes != null)
+            {
+                snap.runes = Runes.RuneService.Snapshot(save, table.runes, heroId);
+                snap.hasRunes = true;
+            }
             return snap;
         }
 

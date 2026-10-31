@@ -786,7 +786,8 @@ namespace HistoryHeroes.Tests
 
             SaveData loaded = store.Load();
 
-            Assert.IsTrue(store.LastLoad.IsFresh);
+            Assert.IsTrue(store.LastLoad.UnsupportedNewerSchema);
+            Assert.IsFalse(store.LastLoad.IsFresh);
             Assert.AreEqual(0, loaded.records.Count);
             Assert.AreEqual(future, File.ReadAllText(store.MainPath), "원본은 그대로");
         }

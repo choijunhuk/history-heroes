@@ -83,6 +83,14 @@ namespace HistoryHeroes.EditorTools
                     .Ref("homeMissionButton", m.HomeMission).Ref("homeMissionLabel", m.HomeMissionLabel).Ref("homeMissionFill", m.HomeMissionFill).Ref("goldLabel", m.Gold).Ref("gemLabel", m.Gem).Ref("heartLabel", m.Heart).Ref("levelLabel", m.Level).Ref("diorama", m.Diorama);
             }
 
+            // 안내를 닫고 새 계정으로 진행하면 최신 저장을 잃을 수 있어 닫기 단추를 두지 않는다.
+            RectTransform unsupported = Rect("UnsupportedSaveNotice", root, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            Img(unsupported, new Color(0.08f, 0.06f, 0.12f), null).raycastTarget = true;
+            TMP_Text unsupportedText = Label("Notice", unsupported, "게임 업데이트가 필요해요\n\n<size=70%>" + HistoryHeroes.Records.SaveSystem.UnsupportedNewerSaveText + "</size>", 54, TextAlignmentOptions.Center);
+            Place(unsupportedText.rectTransform, Center, Center, Vector2.zero, new Vector2(920f, 900f));
+            unsupported.gameObject.SetActive(false);
+            using (var props = new Props(lobby)) props.Ref("unsupportedSaveNotice", unsupported.gameObject).Ref("reselect", reselect);
+
             AddUiSounds(root);
             ApplyTypeScale();
             EditorSceneManager.SaveScene(scene, LobbyScenePath);

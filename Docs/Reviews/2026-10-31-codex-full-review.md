@@ -32,3 +32,33 @@
 - **A-5 긴 방** — ★★ · **M**. 기존 영웅·적을 재사용해 전투 공간 변화 추가. `Docs/GameDesign.md:640`.
 - **첫 스킨 묶음** — ★★ · **M**, 출시 이후. `Docs/GameDesign.md:643`.
 
+
+## 처리 — 저장·보상 무결성 A (2026-10-31)
+
+`feature/fix-save`에서 아래 코드를 수정하고 EditMode 회귀 검사를 추가했다. 아래의 “수정”은 구현 상태이며 에디터 검사 통과를 뜻하지 않는다. 기획·보상량은 바꾸지 않았다.
+
+| 원문 행 | 수정 | 주요 파일 | 회귀 검사 |
+|---:|---|---|---|
+| 1 | 미리보기는 후보 복사본만 만든다. 기록·튜토리얼 ID·300골드·후보 삭제를 한 번의 `Commit`으로 확정하고 쓰기 실패 때 함께 되돌린다. | `DungeonRun.cs`, `RecordSaveScreen.cs` | `PendingPreview_IsPure_AndTutorialRewardIsCommittedOnce`, `FailedTutorialRecordSave_RollsBackRecordIdRewardAndCandidate` |
+| 2 | 불굴 사용 여부를 일반·균열·서바이벌 체크포인트에 저장하고 복원한다. `PlayerController`는 이 플래그의 복원 메서드만 추가했다. | `SaveData.cs`, `PlayerController.cs`, `DungeonRun.cs`, `SurvivalRun.cs` | `RunAndRiftCheckpoint_RestoreUsedReviveAfterRestart` |
+| 3 | 로비 복귀 준비에서 연습·특수 모드를 끝내 성장 미션을 다시 센다. | `GameSession.cs` | `LobbyReturn_ClearsPracticeAndRestoresGrowthMissionProgress` |
+| 5 | 종료 보상·이어하기 종료와 함께 미확정 기록 후보를 저장한다. 로비에서 선택을 다시 열고 저장·명시적 포기 때만 지운다. 처리 전 새 유료 판은 후보를 덮지 못하며, 스킬을 읽지 못한 후보도 명시적으로 포기할 수 있다. | `SaveData.cs`, `DungeonRun.cs`, `RecordSaveScreen.cs`, `LobbyScreen.cs`, `GameSession.cs`, `SceneBuilder.Lobby.cs` | `PendingRecord_SurvivesReload_AndDiscardRemovesIt`, `PendingCandidate_BlocksPaidEntryWithoutSpendingHeart` |
+| 6 | 던전·서바이벌·일반 보스 입장과 재도전은 하트·초기 스냅샷을 장면 로딩 전에 한 번에 저장한다. 저장 실패 때 하트·기존 이어하기를 되돌린다. | `GameSession.cs` | `PaidEntry_SavesHeartAndInitialSnapshotTogether` (세 모드), `RetryEntry_ReplacesPreviousSnapshotBeforeLoading`, `FailedEntry_RollsBackHeartAndExistingSnapshot` |
+| 7 | 서바이벌 시작 직후에도 저장하고, 시드·난수 네 갈래를 던전과 같은 `RunRandom` 경로로 저장·복원한다. | `SurvivalRun.cs` | `SurvivalSnapshot_RestoresNextCardsAfterRestart` |
+| 10 | 시작할 때의 룬 ID·레벨을 성장 스냅샷에 복사한다. 일반·서바이벌·균열 이어하기의 카드 가중치는 이 값을 쓴다. | `SaveData.cs`, `MetaStats.cs`, `RuneService.cs`, `BattleBootstrap.cs`, `DungeonRun.cs` | `SavedRunKeepsEquippedRuneAndLevelAfterAccountChanges`, `EmptyRuneSnapshotDoesNotAcquireLaterRune`, `RiftCheckpointUsesStoredMetaAfterAccountChanges` |
+| 18 | 지원하지 않는 새 저장 구조는 손상과 다른 상태로 반환한다. 옛 백업으로 진행하지 않고 자동저장·직접 저장·Commit·백업 교체를 차단한다. 로비는 한국어 업데이트 안내를 띄우고 조작을 막는다. | `SaveStore.cs`, `SaveSystem.cs`, `LobbyScreen.cs`, `SceneBuilder.Lobby.cs` | `NewerMainSave_BlocksBackupFallbackAndAllWrites`, `NewerTemporarySave_StopsRecoveryBeforeOldBackup`, `DirectSave_CannotReplaceUnloadedNewerMainFile` |
+| 21 | “영웅 보러 가기”에 체험 ID를 전달해 로비의 해당 영웅 화면을 연다. 계정의 선택 영웅은 바꾸지 않고 일반 열기는 기존 선택을 따른다. | `GameSession.cs`, `RunResultScreen.cs`, `LobbyScreen.cs`, `HeroPanel.cs` | `TrialHeroLobbyFocus_IsConsumedOnceWithoutChangingSelectedHero`, `HeroPanel_FocusesTrialHeroOrCurrentSelection` |
+
+### 저장 호환성·변경 범위
+
+- 저장 구조는 새 영속 필드 때문에 **9 → 10**으로 올렸다. `VersionNineSave_MigratesWithoutLosingProgress`로 기존 기록·진행 보존과 새 필드 기본값을 검사한다. 기존 버전 검사 세 곳도 현재 상수를 따르게 맞췄다.
+- v9 이전에는 불굴 사용 여부와 시작 룬이 없어서 과거 이력을 복원할 수 없다. 옛 불굴 플래그는 미사용으로 시작하고, 옛 체크포인트의 룬은 첫 복귀의 계정 상태를 채운 뒤 다음 저장부터 고정한다. 옛 파일에서 이미 잃은 기록 후보도 복구할 수 없다.
+- 기존 `Commit`, 성장 스냅샷, `RunRandom`과 로비의 기록 선택 화면을 재사용했다. 새 의존성·별도 보상 경로는 추가하지 않았다.
+- 새 검사 파일: `PendingRecordTests.cs`, `FutureSaveTests.cs`, `SaveEntryIntegrityTests.cs`, `RuneSnapshotTests.cs`, `SurvivalResumeIntegrityTests.cs`와 각 `.meta`.
+- 장면·프리팹·데이터 에셋·폰트·Unity 캐시 폴더를 수정하지 않았다. 커밋하지 않았다.
+
+### 확인 증거·남은 확인
+
+- **PASS — 별도 C# 컴파일:** 설치된 Unity **6000.3.27f1**의 참조 DLL과 Roslyn으로 Runtime **281개**, Editor **46개**, EditMode 검사 **61개** 소스 파일을 컴파일했다. 세 어셈블리 모두 오류 **0개**. Runtime 경고 664개(주로 직렬화 필드 미할당·기존 API 사용 등), Editor·검사 경고 0개. 프로젝트 `Library`는 참조하지 않았다.
+- **PASS — 정적 확인:** 변경한 코드·문서의 `git diff --check`. 독립 검토에서 발견한 일반 영웅 선택 회귀와 미확정 후보 덮어쓰기 경로를 보완했다.
+- **NOT_RUN — Unity 컴파일·전체 EditMode 실행·화면·기기:** 에디터에서 실행하지 않았다. 검사 통과나 기존 검사 전체 정상은 아직 주장하지 않는다. 리드는 SceneBuilder를 다시 실행해 새 안내와 로비 기록 선택 참조를 연결한 뒤 전체 EditMode와 실제 재접속·기록 선택·저장 실패 화면을 확인해야 한다.

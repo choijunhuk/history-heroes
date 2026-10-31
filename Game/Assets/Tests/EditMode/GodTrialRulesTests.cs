@@ -286,7 +286,7 @@ namespace HistoryHeroes.Tests
                 Directory.CreateDirectory(folder);
                 File.WriteAllText(store.MainPath, SaveStore.Sign(JsonUtility.ToJson(old, true)));
                 SaveData loaded = store.Load();
-                Assert.AreEqual(9, loaded.schemaVersion);
+                Assert.AreEqual(SaveData.CurrentSchemaVersion, loaded.schemaVersion);
                 Assert.AreEqual(1234, loaded.gold);
                 CollectionAssert.Contains(loaded.defeatedBosses, "oblivion_king");
                 Assert.IsNotNull(loaded.godTrials);

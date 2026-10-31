@@ -63,11 +63,9 @@ namespace HistoryHeroes.Survival
             player.Teleport(playerStart != null ? (Vector2)playerStart.position : Vector2.zero);
             player.Health.Died += _ => Finish(victory: false);
             RunSnapshot resume = GameSession.ConsumeResume();
-            if (resume == null && SaveSystem.Data.run.valid)
-            {
-                SaveSystem.Data.run = new RunSnapshot(); // 새 판: 전에 남은 판은 지운다
-                SaveSystem.Save();
-            }
+            if (resume != null && resume.mode == (int)BattleMode.Survival) RestoreRandomState(resume);
+            else if (GameSession.RunSeed != 0) RunRandom.Begin(GameSession.RunSeed);
+            else RunRandom.BeginRandom();
             skills.FusionCompleted += recipe => _fusions.Add(recipe.result.displayName);
             experience.MaxGems = data.maxGems;
             experience.ExpMultiplier = data.expMultiplier;
@@ -78,7 +76,11 @@ namespace HistoryHeroes.Survival
             StageLook.Show(string.IsNullOrEmpty(data.lookKey) ? "survival" : data.lookKey); // 맵마다 색 (들판 · 성곽 · 공장)
             StartCrates(); // 짚더미 · 화로 (확장 1차 6-4장)
             if (resume != null && resume.mode == (int)BattleMode.Survival) RestoreSnapshot(resume);
-            else hud.ShowNotice($"{data.mapName} — 임무: {MissionText}", 3f);
+            else
+            {
+                hud.ShowNotice($"{data.mapName} — 임무: {MissionText}", 3f);
+                SaveSnapshot(); // 첫 30초 안에 꺼져도 하트와 같은 판을 이어한다
+            }
             _nextSnapshot = _elapsed + SnapshotEvery;
         }
 
@@ -86,6 +88,18 @@ namespace HistoryHeroes.Survival
 
         private const float SnapshotEvery = 30f;
         private float _nextSnapshot;
+
+        private static void CaptureRandomState(RunSnapshot snapshot)
+        {
+            snapshot.seed = RunRandom.Seed;
+            snapshot.rng = RunRandom.Capture();
+        }
+
+        private static void RestoreRandomState(RunSnapshot snapshot)
+        {
+            RunRandom.Begin(snapshot.seed);
+            RunRandom.Restore(snapshot.rng); // 옛 저장에 상태가 없으면 시드 첫 상태를 쓴다
+        }
 
         /// <summary>
         /// 30초마다 판 상태를 남긴다: 빌드 · 레벨 · 체력 · 시간 · 임무 · 다음 엘리트 · 무리.
@@ -118,6 +132,7 @@ namespace HistoryHeroes.Survival
                 choseLegendary = skills.ChoseLegendary,
                 rerollsLeft = levelUp.RerollsLeft,
                 heartSpent = GameSession.HeartSpent,
+                reviveUsed = player.UndyingUsed,
                 hasMeta = true,
                 meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)),
                 savedAt = Clock.UnixSeconds,
@@ -132,6 +147,7 @@ namespace HistoryHeroes.Survival
             foreach (SkillInstance k in skills.Loadout.Actives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
             foreach (SkillInstance k in skills.Loadout.Passives) s.skills.Add(new RecordSkill(k.Data.id, k.Level, k.IsFusionResult));
             s.fusions.AddRange(_fusions);
+            CaptureRandomState(s);
             SaveSystem.Data.run = s;
             SaveSystem.Save();
         }
@@ -154,6 +170,7 @@ namespace HistoryHeroes.Survival
             _bagGold = s.bagGold;
             levelUp.Floor = 1 + Mathf.FloorToInt(_elapsed / 60f * data.floorPerMinute);
             player.Health.Revive(player.Health.Max * Mathf.Clamp(s.hpRatio, 0.05f, 1f));
+            player.RestoreUndyingUsed(s.reviveUsed);
             hud.ShowNotice($"{data.mapName} — {Format(_elapsed)}부터 이어서", 2.5f);
         }
 
