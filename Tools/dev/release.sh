@@ -5,11 +5,13 @@
 #   버전 번호(versionCode) = 커밋 수 (늘 커져야 폰에서 업데이트가 된다).
 #   서명 키: ~/.history-heroes/signing.properties (없으면 디버그 키 — 다른 컴퓨터 APK와 업데이트 호환 안 됨)
 #   APK만 만들고 올리지 않으려면: Tools/dev/release.sh <버전> --no-upload
+#   구글 플레이용 AAB (Play Console에 직접 올림):  Tools/dev/release.sh <버전> --aab
 set -e
 source "$(dirname "$0")/_env.sh"
 VERSION="$1"
 NOTES="$2"
-[ -z "$VERSION" ] && { echo "사용: release.sh <버전> [\"바뀐 점\" | --no-upload]"; exit 1; }
+[ -z "$VERSION" ] && { echo "사용: release.sh <버전> [\"바뀐 점\" | --no-upload | --aab]"; exit 1; }
+AAB=false; [ "$NOTES" = "--aab" ] && AAB=true
 unity status 2>/dev/null | grep -q ready || { echo "Unity 에디터를 먼저 열 것 (Game/ 프로젝트)"; exit 1; }
 
 cd "$ROOT"
@@ -21,10 +23,11 @@ rm -f "$RESULT"
 
 cd "$GAME"
 echo "빌드 시작: $VERSION ($CODE) — 10~30분 걸린다"
-$U eval "if (UnityEditor.EditorApplication.isPlaying) return \"Play 중 — 멈추고 다시\"; UnityEditor.EditorApplication.delayCall += () => HistoryHeroes.EditorTools.AndroidRelease.Build(\"$VERSION\", $CODE); return \"시작\";" 2>&1 | grep -o '"시작"\|Play 중[^"]*' || true
+$U eval "if (UnityEditor.EditorApplication.isPlaying) return \"Play 중 — 멈추고 다시\"; UnityEditor.EditorApplication.delayCall += () => HistoryHeroes.EditorTools.AndroidRelease.Build(\"$VERSION\", $CODE, $AAB); return \"시작\";" 2>&1 | grep -o '"시작"\|Play 중[^"]*' || true
 until [ -f "$RESULT" ]; do sleep 15; done # 빌드 중에는 에디터가 대답하지 않는다 → 결과 파일을 기다린다
 cat "$RESULT"; echo
 grep -q "^성공" "$RESULT" || exit 1
+$AAB && { echo "Play Console → 테스트 → 새 버전 만들기 → $GAME/Builds/Android/HistoryHeroes.aab 올리기"; exit 0; }
 
 # 구글 플레이 16KB 메모리 페이지 정렬 확인 (안드로이드 15+ 요구)
 ZIPALIGN=$(ls -d /Applications/Unity/Hub/Editor/*/PlaybackEngines/AndroidPlayer/SDK/build-tools/*/zipalign "/c/Program Files/Unity/Hub/Editor/"*/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/build-tools/*/zipalign.exe 2>/dev/null | tail -1)
