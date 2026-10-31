@@ -925,7 +925,8 @@ namespace HistoryHeroes.Player
                     bool humanHit = i == 0 && (hero.sealHits > 0 || hero.observationMark);
                     System.Action<Health, Vector2> onTarget = humanHit
                         ? (h, point) => OnHumanProjectileHitTarget(h, point, generation, observationAttack)
-                        : i == 0 && _sig.MarkHits > 0 ? OnMarkProjectileHitTarget : needsTarget ? OnProjectileHitTarget : null;
+                        : i == 0 && _sig.MarkHits > 0 ? (h, point) => OnMarkProjectileHitTarget(h, point, generation)
+                        : needsTarget ? OnProjectileHitTarget : null;
                     p.Launch(branchDirection, hero.projectileSpeed, damage, enemyMask, wallMask,
                         pierce, Attack.Get(AttackModifierKind.Ricochet),
                         _projectiles.Release, OnBasicAttackHit, onHitTarget: onTarget,
@@ -998,8 +999,9 @@ namespace HistoryHeroes.Player
             if (_sig.ChainBounces > 0) Chain(target, _lastShotCoefficient);
         }
 
-        private void OnMarkProjectileHitTarget(Health target, Vector2 point)
+        private void OnMarkProjectileHitTarget(Health target, Vector2 point, int generation)
         {
+            if (!isActiveAndEnabled || Health.IsDead || !Stop.IsStopped || generation != _stopSignatureGeneration || target == null) return;
             OnProjectileHitTarget(target, point);
             // 죽인 명중도 표식 대상은 바꾼다 (예전엔 건너뛰어서: A에 3회 → B를 처치 → A 다시 맞히면 바로 둔화, Codex 리뷰). 둔화만 산 적에게
             bool fire = _mark.RecordHit(target, target.Life, Time.time, true, _sig.MarkHits, _sig.MarkCooldown);
@@ -1086,10 +1088,11 @@ namespace HistoryHeroes.Player
 
         private IEnumerator Swings(Health target, int swings, float coefficient, float arc, int waveBounces, bool reclaimed, bool thunder)
         {
+            int generation = _stopSignatureGeneration;
             for (int s = 0; s < swings; s++)
             {
-                // 기본 공격은 멈췄을 때만: 연속 베기 도중에 움직이면 남은 베기는 취소 (GameDesign 3-3)
-                if (Health.IsDead || (s > 0 && !Stop.IsStopped)) yield break;
+                // 간격 중 이동했다 다시 멈춰도 이전 공격의 남은 베기는 취소한다.
+                if (Health.IsDead || generation != _stopSignatureGeneration || (s > 0 && !Stop.IsStopped)) yield break;
                 Vector2 origin = transform.position;
                 Vector2 aim = target != null && !target.IsDead ? ((Vector2)target.transform.position - origin) : (Vector2)transform.up;
                 if (aim.sqrMagnitude < 0.0001f) aim = Vector2.up;

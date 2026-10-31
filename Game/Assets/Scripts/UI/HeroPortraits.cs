@@ -9,8 +9,8 @@ namespace HistoryHeroes.UI
     /// <summary>
     /// 영웅 화면의 3D 초상 (Art3D-Plan 7번): 영웅마다 작은 카메라가 3D 모델을 그림(RenderTexture)으로 그려 줄의 오른쪽에 보인다.
     /// 끌면 그 영웅이 돈다. 이 부품은 영웅 화면에 붙어 있어 화면이 열려 있을 때만 그린다.
-    /// 필요할 때만 그린다 (Codex 3D 코드 리뷰 2차 2번): 열 때 네 장을 한 번씩, 그 뒤엔 고른 영웅만 초당 15번(서 있는 동작),
-    /// 끄는 영웅은 바로. 카메라는 늘 꺼 두고 손으로 Render를 부른다 → 장비·펫 화면을 위에 열어도 카메라 네 대가 계속 돌지 않는다.
+    /// 필요할 때만 그린다 (Codex 3D 코드 리뷰 2차 2번): 보이는 칸은 처음 한 번씩, 그 뒤엔 고른 영웅만 초당 15번(서 있는 동작),
+    /// 끄는 영웅은 바로. 카메라는 늘 꺼 두고 손으로 Render를 부른다 → 장비·펫 화면을 위에 열어도 카메라가 계속 돌지 않는다.
     /// 무대는 로비 UI와 멀리 떨어진 곳(위가 +Y인 보통 3D)에 둔다. 카메라는 3D 렌더러(1번), 배경은 투명.
     /// </summary>
     public sealed class HeroPortraits : MonoBehaviour
@@ -29,6 +29,7 @@ namespace HistoryHeroes.UI
 
         private readonly List<Slot> _slots = new List<Slot>();
         private Transform _stage;
+        private ScrollRect _scroll;
         private Light[] _lights = new Light[0];
         private static readonly System.Collections.Generic.List<Light> _sceneLights = new System.Collections.Generic.List<Light>();
         private int _focus = -1;
@@ -46,9 +47,9 @@ namespace HistoryHeroes.UI
 
         private void OnEnable()
         {
-            if (_stage == null) Build();
+            if (_stage == null && roster != null && images.Length > 0) Build();
             if (_stage != null) _stage.gameObject.SetActive(true);
-            foreach (Slot s in _slots) Draw(s); // 열 때 한 번씩
+            EnsureVisible();
         }
 
         private void OnDisable()
@@ -56,8 +57,14 @@ namespace HistoryHeroes.UI
             if (_stage != null) _stage.gameObject.SetActive(false); // 모델 동작도 멈춘다
         }
 
+        private void OnApplicationFocus(bool focused)
+        {
+            if (focused && isActiveAndEnabled) EnsureVisible();
+        }
+
         private void OnDestroy()
         {
+            if (_scroll != null) _scroll.onValueChanged.RemoveListener(OnScroll);
             foreach (Slot s in _slots)
             {
                 if (s.Camera != null) s.Camera.targetTexture = null;
@@ -77,7 +84,23 @@ namespace HistoryHeroes.UI
         public Texture TextureOf(int index) => index >= 0 && index < images.Length && images[index] != null ? images[index].texture : null;
 
         /// <summary>지금 고른(포커스) 영웅: 이 초상만 계속 움직인다</summary>
-        public void SetFocus(int index) => _focus = index;
+        public void SetFocus(int index)
+        {
+            Slot next = FindSlot(index);
+            if (_focus == index && next != null) return;
+            Slot previous = FindSlot(_focus);
+            if (previous != null && previous.Animator != null) previous.Animator.enabled = false;
+            _focus = index;
+            bool created = next == null;
+            if (created) next = EnsureSlot(index);
+            if (next != null)
+            {
+                if (next.Animator != null) next.Animator.enabled = true;
+                if (!created) Draw(next);
+            }
+            if (created) EnsureVisible();
+            _nextLive = Time.unscaledTime + 1f / Mathf.Max(1f, liveFps);
+        }
 
         /// <summary>한 영웅 초상만 보인다 (로비 "영웅" 버튼: 지금 영웅)</summary>
         public void ShowOnly(int index)
@@ -93,8 +116,9 @@ namespace HistoryHeroes.UI
         /// <summary>잠긴 영웅은 초상을 어둡게 (그림이 아직 없으면 그대로 투명)</summary>
         public void SetLocked(int index, bool locked)
         {
-            if (index < 0 || index >= images.Length || images[index] == null || images[index].texture == null) return;
-            images[index].color = locked ? new Color(0.6f, 0.6f, 0.68f, 1f) : Color.white; // 잠긴 영웅도 알아보게 ("잠김" 띠가 따로 알린다)
+            if (index < 0 || index >= images.Length || images[index] == null) return;
+            float alpha = images[index].texture == null ? 0f : 1f;
+            images[index].color = locked ? new Color(0.6f, 0.6f, 0.68f, alpha) : new Color(1f, 1f, 1f, alpha); // 그림이 늦게 생겨도 빈 칸은 투명하게 둔다
             Transform badge = images[index].transform.Find("LockBack") ?? images[index].transform.Find("Lock"); // "잠김" 글 + 받침 띠 (어두운 옷이 아니라 잠긴 것으로 보이게)
             if (badge != null) badge.gameObject.SetActive(locked);
         }
@@ -103,10 +127,7 @@ namespace HistoryHeroes.UI
         {
             if (_focus < 0 || Time.unscaledTime < _nextLive) return;
             _nextLive = Time.unscaledTime + 1f / Mathf.Max(1f, liveFps);
-            foreach (Slot s in _slots)
-            {
-                if (s.Index == _focus) Draw(s);
-            }
+            Draw(FindSlot(_focus));
         }
 
         /// <summary>
@@ -115,7 +136,7 @@ namespace HistoryHeroes.UI
         /// </summary>
         private void Draw(Slot s)
         {
-            if (s.Camera == null) return;
+            if (s == null || s.Camera == null) return;
             _sceneLights.Clear();
             foreach (Light l in FindObjectsByType<Light>(FindObjectsSortMode.None))
             {
@@ -153,51 +174,95 @@ namespace HistoryHeroes.UI
             sun.enabled = false; // 그릴 때만 켠다 (Draw)
             rim.enabled = false;
 
+            if (images.Length > 0 && images[0] != null)
+            {
+                _scroll = images[0].GetComponentInParent<ScrollRect>();
+                if (_scroll != null) _scroll.onValueChanged.AddListener(OnScroll);
+            }
+        }
+
+        private void OnScroll(Vector2 position) => EnsureVisible();
+
+        private void EnsureVisible()
+        {
+            if (_scroll == null || _scroll.viewport == null) return;
+            Rect view = _scroll.viewport.rect;
             int count = Mathf.Min(images.Length, roster != null ? roster.heroes.Count : 0);
             for (int i = 0; i < count; i++)
             {
-                HeroData hero = roster.heroes[i];
-                if (hero == null || hero.model3D == null || images[i] == null) continue;
-
-                Vector3 at = stageOrigin + new Vector3(i * SlotGap, 0f, 0f);
-                Transform model = Instantiate(hero.model3D, at, Quaternion.Euler(0f, startYaw, 0f), _stage).transform;
-                float raw = hero.model3D.TryGetComponent(out Combat.Model3DInfo info) && info.height > 0.01f ? info.height : 1.8f;
-                model.localScale = Vector3.one * (modelHeight / raw);
-                foreach (Renderer r in model.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                var animator = model.GetComponent<Animator>();
-                if (animator != null)
-                {
-                    animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; // 손으로 그리니 "보이는지"로 끄지 않게
-                    animator.Update(0f); // 첫 장에 T자세가 찍히지 않게
-                }
-
-                var texture = new RenderTexture(textureSize, Mathf.RoundToInt(textureSize * 1.15f), 16, RenderTextureFormat.ARGB32) { name = $"Portrait_{hero.id}", antiAliasing = 2 };
-                var cameraObject = new GameObject($"Camera {hero.id}");
-                cameraObject.transform.SetParent(_stage, false);
-                cameraObject.transform.position = at + new Vector3(0f, modelHeight * 0.55f, -modelHeight * 1.9f);
-                cameraObject.transform.LookAt(at + new Vector3(0f, modelHeight * 0.52f, 0f));
-                var cam = cameraObject.AddComponent<Camera>();
-                cam.clearFlags = CameraClearFlags.SolidColor;
-                cam.backgroundColor = new Color(0f, 0f, 0f, 0f);
-                cam.fieldOfView = 30f;
-                cam.nearClipPlane = 0.1f;
-                cam.farClipPlane = 12f; // 옆 칸 영웅(30 유닛 떨어짐)이 안 보이게
-                cam.targetTexture = texture;
-                cam.GetUniversalAdditionalCameraData().SetRenderer(1); // 3D 렌더러 (로비 기본은 2D)
-                cam.enabled = false; // 늘 꺼 두고 Draw에서 손으로 그린다
-
-                images[i].texture = texture;
-                images[i].color = Color.white;
-                var slot = new Slot { Index = i, Camera = cam, Model = model, Animator = animator, Texture = texture, Yaw = startYaw };
-                // 가로 영웅 줄에서는 손가락 끌기를 ScrollRect가 받아야 목록을 넘길 수 있다.
-                if (images[i].GetComponentInParent<ScrollRect>() == null)
-                {
-                    var drag = images[i].GetComponent<PortraitDrag>();
-                    if (drag == null) drag = images[i].gameObject.AddComponent<PortraitDrag>();
-                    drag.Dragged = dx => Rotate(slot, dx);
-                }
-                _slots.Add(slot);
+                if (IsVisible(i, view)) EnsureSlot(i);
             }
+        }
+
+        private bool IsVisible(int index, Rect view)
+        {
+            if (images[index] == null || !images[index].gameObject.activeInHierarchy) return false;
+            Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(_scroll.viewport, images[index].rectTransform);
+            return bounds.max.x >= view.xMin && bounds.min.x <= view.xMax;
+        }
+
+        private Slot FindSlot(int index)
+        {
+            foreach (Slot slot in _slots) if (slot.Index == index) return slot;
+            return null;
+        }
+
+        private Slot EnsureSlot(int index)
+        {
+            if (index < 0 || index >= images.Length || roster == null || index >= roster.heroes.Count) return null;
+            Slot existing = FindSlot(index);
+            if (existing != null)
+            {
+                // 모바일에서 렌더 표면이 사라진 뒤에도 보이는 칸은 복구한다.
+                if (existing.Texture != null && !existing.Texture.IsCreated()) Draw(existing);
+                return existing;
+            }
+            HeroData hero = roster.heroes[index];
+            if (hero == null || hero.model3D == null || images[index] == null) return null;
+            if (_stage == null) Build();
+
+            Vector3 at = stageOrigin + new Vector3(index * SlotGap, 0f, 0f);
+            Transform model = Instantiate(hero.model3D, at, Quaternion.Euler(0f, startYaw, 0f), _stage).transform;
+            float raw = hero.model3D.TryGetComponent(out Combat.Model3DInfo info) && info.height > 0.01f ? info.height : 1.8f;
+            model.localScale = Vector3.one * (modelHeight / raw);
+            foreach (Renderer r in model.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            var animator = model.GetComponent<Animator>();
+            if (animator != null)
+            {
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; // 고른 영웅은 수동 렌더 사이에도 움직인다
+                animator.Update(0f); // 첫 장에 T자세가 찍히지 않게
+            }
+
+            var texture = new RenderTexture(textureSize, Mathf.RoundToInt(textureSize * 1.15f), 16, RenderTextureFormat.ARGB32) { name = $"Portrait_{hero.id}", antiAliasing = 2 };
+            var cameraObject = new GameObject($"Camera {hero.id}");
+            cameraObject.transform.SetParent(_stage, false);
+            cameraObject.transform.position = at + new Vector3(0f, modelHeight * 0.55f, -modelHeight * 1.9f);
+            cameraObject.transform.LookAt(at + new Vector3(0f, modelHeight * 0.52f, 0f));
+            var cam = cameraObject.AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0f, 0f, 0f, 0f);
+            cam.fieldOfView = 30f;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 12f; // 옆 칸 영웅(30 유닛 떨어짐)이 안 보이게
+            cam.targetTexture = texture;
+            cam.GetUniversalAdditionalCameraData().SetRenderer(1); // 3D 렌더러 (로비 기본은 2D)
+            cam.enabled = false; // 늘 꺼 두고 Draw에서 손으로 그린다
+
+            images[index].texture = texture;
+            Color tint = images[index].color;
+            images[index].color = new Color(tint.r, tint.g, tint.b, 1f);
+            var slot = new Slot { Index = index, Camera = cam, Model = model, Animator = animator, Texture = texture, Yaw = startYaw };
+            // 가로 영웅 줄에서는 손가락 끌기를 ScrollRect가 받아야 목록을 넘길 수 있다.
+            if (_scroll == null)
+            {
+                var drag = images[index].GetComponent<PortraitDrag>();
+                if (drag == null) drag = images[index].gameObject.AddComponent<PortraitDrag>();
+                drag.Dragged = dx => Rotate(slot, dx);
+            }
+            _slots.Add(slot);
+            Draw(slot);
+            if (animator != null && index != _focus) animator.enabled = false;
+            return slot;
         }
 
         private void Rotate(Slot slot, float deltaX)

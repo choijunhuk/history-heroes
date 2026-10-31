@@ -269,6 +269,13 @@ namespace HistoryHeroes.Missions
         public static List<string> Raise(SaveData save, string key, int amount, string param)
         {
             var done = new List<string>();
+            Raise(save, key, amount, param, done);
+            return done;
+        }
+
+        /// <summary>전투 사건은 같은 알림 목록을 재사용한다. 호출자가 목록 비우기를 맡는다.</summary>
+        public static void Raise(SaveData save, string key, int amount, string param, List<string> done)
+        {
             MissionSave ms = save.missions;
             foreach (MissionProgress m in ms.daily)
             {
@@ -287,8 +294,6 @@ namespace HistoryHeroes.Missions
                     done.Add($"주간 미션 완료  {m.title}");
                 }
             }
-
-            return done;
         }
 
         /// <summary>"지금 값"으로 맞추는 미션 (액티브 3개 Lv3, 패시브 칸 다 채우기): 판 중 가장 높았던 값</summary>

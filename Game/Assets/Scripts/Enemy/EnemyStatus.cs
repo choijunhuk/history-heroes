@@ -22,6 +22,7 @@ namespace HistoryHeroes.Enemy
         private EnemyBase _enemy;
         private Rigidbody2D _body;
         private SpriteRenderer _tint;
+        private HitFlash _hitFlash;
         private Color _baseColor;
 
         private readonly SlowChannels _slow = new SlowChannels();
@@ -62,6 +63,7 @@ namespace HistoryHeroes.Enemy
             _enemy = GetComponent<EnemyBase>();
             _body = GetComponent<Rigidbody2D>();
             _tint = GetComponent<SpriteRenderer>();
+            _hitFlash = GetComponent<HitFlash>();
             if (_tint != null) _baseColor = _tint.color;
         }
 
@@ -73,6 +75,8 @@ namespace HistoryHeroes.Enemy
             Haste = 1f;
             _chillStacks = 0;
             _poison.Clear();
+            _poisonTimer = 0f;
+            _push = Vector2.zero;
             if (_tint != null) _tint.color = _baseColor;
         }
 
@@ -171,7 +175,10 @@ namespace HistoryHeroes.Enemy
             float now = Time.time;
 
             // 독: 0.5초마다, 지금 걸린 구름 중 가장 센 3개의 초당 피해 합 × 0.5
-            _poison.RemoveAll(p => now >= p.Until);
+            for (int i = _poison.Count - 1; i >= 0; i--)
+            {
+                if (now >= _poison[i].Until) _poison.RemoveAt(i);
+            }
             if (_poison.Count > 0)
             {
                 _poisonTimer -= Time.deltaTime;
@@ -226,6 +233,6 @@ namespace HistoryHeroes.Enemy
         }
 
         /// <summary>맞았을 때 번쩍이는 중이면 색을 건드리지 않는다 (HitFlash가 원래 색으로 돌려놓는다)</summary>
-        private bool IsFlashing() => TryGetComponent(out HitFlash flash) && flash.IsFlashing;
+        private bool IsFlashing() => _hitFlash != null && _hitFlash.IsFlashing;
     }
 }

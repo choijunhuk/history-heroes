@@ -62,3 +62,34 @@
 - **PASS — 별도 C# 컴파일:** 설치된 Unity **6000.3.27f1**의 참조 DLL과 Roslyn으로 Runtime **281개**, Editor **46개**, EditMode 검사 **61개** 소스 파일을 컴파일했다. 세 어셈블리 모두 오류 **0개**. Runtime 경고 664개(주로 직렬화 필드 미할당·기존 API 사용 등), Editor·검사 경고 0개. 프로젝트 `Library`는 참조하지 않았다.
 - **PASS — 정적 확인:** 변경한 코드·문서의 `git diff --check`. 독립 검토에서 발견한 일반 영웅 선택 회귀와 미확정 후보 덮어쓰기 경로를 보완했다.
 - **NOT_RUN — Unity 컴파일·전체 EditMode 실행·화면·기기:** 에디터에서 실행하지 않았다. 검사 통과나 기존 검사 전체 정상은 아직 주장하지 않는다. 리드는 SceneBuilder를 다시 실행해 새 안내와 로비 기록 선택 참조를 연결한 뒤 전체 EditMode와 실제 재접속·기록 선택·저장 실패 화면을 확인해야 한다.
+
+
+## 처리 — 전투 · 성능 (B)
+
+`feature/combat-perf`에서 원문 8·9·11·12·19·20행을 수정했다. 기획·밸런스·보상량은 바꾸지 않았다. 아래 검사는 추가한 EditMode 검사이며, Unity Editor 실행 결과가 아니다.
+
+### 수정과 회귀 검사
+
+| 원문 행 | 수정 | 주요 파일 | EditMode 검사 |
+|---:|---|---|---|
+| 8 | 아누비스 탄에 발사 당시 세대를 담고, 명중 때 활성·생존·정지·세대를 검사한다. 이동 뒤 늦게 맞은 탄의 기본 피해는 남지만 표식을 쌓거나 준비된 둔화를 소모하지 않는다. | `PlayerController.cs` | `AnubisFireMoveLateHit_DoesNotBuildMark` (이동 중·재정지), `AnubisFireMoveRestopLateHit_DoesNotConsumeReadyMark`, `AnubisLateHit_AfterDeathOrDisableDoesNotBuildMark`, `AnubisStationaryHit_StillBuildsMark` |
+| 9 | 연속 베기 시작 세대를 보관해 간격 중 이동·재정지해도 남은 베기를 취소한다. 새 상태 초기화 경로를 만들지 않고 기존 `ResetStopSignatures(bool moved)`를 쓴다. | `PlayerController.cs` | `MultiSwing_MoveAndRestopBetweenSwings_CancelsRemainingDamage`, `MultiSwing_WithoutMovement_DealsAllThreeSwings` |
+| 11 | 독 만료 목록을 역순으로 지워 매 프레임 캡처 람다를 없애고, 피격 표시를 `Awake()`에서 한 번 찾아 둔다. 빌더의 `HitFlash` → 적/상태 컴포넌트 생성 순서도 확인했다. | `EnemyStatus.cs` | `ExpiredPoisonSourcesAreRemovedWithoutSkippingAdjacentEntries`, `HitFlashIsResolvedOnceWhenStatusAwakes` |
+| 20 | 풀 초기화에서 예약 밀침과 독 틱 시간을 모두 비운다. 검사도 `Spawn` → `Health.Kill` → 비활성화 → 재활성화/`Spawn` 경로를 쓴다. | `EnemyStatus.cs` | `DeathThenImmediateReuseClearsQueuedPushAndPoisonTick` |
+| 19 | 초기화 시각을 뺀 날짜 값을 비교해 날이 바뀔 때만 날짜·주 문자열을 계산한다. 보통 처치는 완료 목록을 재사용하고, 알림 안의 재진입만 별도 목록으로 기존 전달 순서를 유지한다. | `MissionEvents.cs`, `MissionService.cs` | `KillEvents_RollDailyAndWeeklyAtKstFiveWithoutEarlyReset`, `CachedDate_RechecksResetHourClockRollbackAndSaveReplacement`, `CompletionListener_RaisingAnotherEvent_DeliversEachNoticeOnce` |
+| 12 | 화면에 보이는 타일과 선택 영웅만 모델·RT를 지연 생성한다. 비선택 모델의 Animator를 끄고 기존 RT는 다시 열어도 재사용한다. 선택 영웅만 초당 15회 갱신하며, 앱 복귀·재열기·스크롤 때 잃은 가시 RT만 복구한다. | `HeroPortraits.cs` | `FocusChange_StopsPreviousAnimatorAndKeepsFocusedAnimatorRunning`, `SetLocked_BeforeLazyTextureCreation_KeepsBadgeAndTint`, `Viewport_OnlyMarksIntersectingPortraitsForLazyCreation`, `OnEnable_BeforeReferencesInjected_DoesNotBuildEmptyStage` |
+
+### 변경 범위와 단순화
+
+- 운영 코드 5개와 검사 파일 `CombatGenerationTests.cs`, `EnemyStatusPerformanceTests.cs`, `MissionEventsPerformanceTests.cs`, `HeroPortraitsPerformanceTests.cs` 및 각 `.meta`를 변경·추가했다.
+- 기존 세대 번호·오브젝트 풀·미션 진행 경로를 재사용했다. 새 의존성은 없다. 초상화의 전체 생성·전체 재렌더 대신 필요한 슬롯만 처리한다. 모든 영웅을 둘러본 뒤에는 방문한 RT를 화면이 파괴될 때까지 보관한다.
+- 미션은 기존처럼 **기기 시계의 오전 5시**, 주간은 **월요일 오전 5시**에 바뀐다. KST 테스트는 `+09:00` 시각을 넣어 같은 경계를 확인한다. 시간대 정책을 새로 바꾸지 않았다.
+- `Hero1..HeroN` 버튼 이름·장면 생성 코드와 `PortraitDrag`의 회전 경로를 유지했다. 장면·프리팹·데이터 에셋·SDF 폰트·Unity 캐시 폴더는 수정하지 않았다. 시작 때 보였던 `LiberationSans.ttf` 상태도 건드리지 않았다. 커밋하지 않았다.
+
+### 확인 증거와 남은 확인
+
+- **PASS — 별도 C# 컴파일:** Unity **6000.3.27f1** 설치본의 참조 DLL과 Roslyn으로 Runtime **283개**, Editor **47개**, EditMode 검사 **70개** 소스 파일을 컴파일했다. 오류 **0개**. Runtime 경고 **670개**, Editor·검사 경고 **0개**. 프로젝트 `Library`를 읽거나 Unity를 실행하지 않았다. 로그·참조·소스 해시는 `/private/tmp/hh-combat-perf-validation/manifest.json`과 같은 폴더의 로그에 남겼다.
+- **PASS — 순수 관리 코드 확인:** 같은 Runtime DLL의 `MissionService`를 Mono에서 호출해 KST 월요일 05:00 전후 날짜·주 키, 완료 1회와 포인트 보존을 확인했다. 이미 완료한 미션에 처치 사건 **10,000회**를 전달한 좁은 측정에서, 기존 호환 API의 반환 목록 할당은 **400,000바이트**, 재사용 버퍼 경로는 **0바이트**였다. 전체 처치 경로나 모바일 GC 수치를 뜻하지 않는다. 기록은 `/private/tmp/hh-combat-perf-validation/ManagedMissionChecks.log`에 있다.
+- **PASS — 정적 검토:** `git diff --check`. 독립 검토에서 찾은 비선택 RT 유실 복구를 보완했고, `OnEnable` 회귀 검사도 메서드를 직접 호출하도록 고쳤다. 최종 운영 코드에서 추가 결함은 발견되지 않았다.
+- **NOT_RUN — Unity 컴파일·전체 EditMode·수정 전 실패/수정 후 통과:** Unity를 실행할 수 없어 실제 red/green과 전체 검사 정상은 확인하지 못했다. 아누비스는 실제 발사 탄의 충돌 경로, 연속 베기는 실제 열거자, 적 재사용은 실제 사망·재생성 경로를 검사하도록 작성했다.
+- **NOT_RUN — 화면·기기·실측:** 리드가 전체 EditMode 실행 후 250마리 서바이벌의 프레임/GC, 아누비스 이동 후 명중과 짧은 이동·재정지, 처음 열기·재열기·끝까지 스크롤·`Hero1..HeroN` 선택·큰 초상 회전, `RenderTexture.Release()`/앱 복귀 후 가시 타일 복구를 확인해야 한다. 실제 GPU 복구는 자동 검사로 증명하지 않았다.
