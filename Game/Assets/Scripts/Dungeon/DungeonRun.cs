@@ -170,6 +170,7 @@ namespace HistoryHeroes.Dungeon
                 level = experience.Level.Level,
                 experience = experience.Level.Experience,
                 hpRatio = player.Health.Current / Mathf.Max(1f, player.Health.Max),
+                reviveUsed = player.UndyingUsed,
                 kills = experience.Kills,
                 roomsCleared = _roomsCleared,
                 hits = _hitsTaken,
@@ -220,6 +221,7 @@ namespace HistoryHeroes.Dungeon
             experience.Level.Restore(s.level, s.experience);
             experience.RestoreKills(s.kills);
             player.Health.Revive(player.Health.Max * Mathf.Clamp(s.hpRatio, 0.05f, 1f));
+            player.RestoreUndyingUsed(s.reviveUsed);
             _hitsTaken = s.hits;
             _roomsCleared = s.roomsCleared;
             _startTime = Time.time - Mathf.Max(0f, s.elapsed);
@@ -331,6 +333,7 @@ namespace HistoryHeroes.Dungeon
             skills.Loadout.RestoreBans(cp.bannedSkillIds, cp.bansLeft);
             experience.Level.Restore(cp.level, cp.experience);
             player.Health.Revive(player.Health.Max * Mathf.Clamp(cp.hpRatio, 0.2f, 1f));
+            player.RestoreUndyingUsed(cp.reviveUsed);
             _roomsCleared = cp.floor;
             hud.ShowNotice($"균열 {cp.floor + 1}층부터 이어서", 2.5f);
             return cp.floor + 1;
@@ -868,8 +871,11 @@ namespace HistoryHeroes.Dungeon
                 seed = RunRandom.Seed,
                 heroId = skills.HeroId,
                 hpRatio = player.Health.Current / Mathf.Max(1f, player.Health.Max),
+                reviveUsed = player.UndyingUsed,
                 level = experience.Level.Level,
                 experience = experience.Level.Experience,
+                hasMeta = true,
+                meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)),
             };
             cp.bannedSkillIds = new List<string>(skills.Loadout.BannedSkillIds);
             cp.bansLeft = skills.Loadout.BansLeft;
@@ -979,16 +985,15 @@ namespace HistoryHeroes.Dungeon
                 int balance = database != null ? database.balanceVersion : 0;
                 string subtitle = victory ? "클리어! 용량 안에서 남길 스킬을 고르세요" : $"방 {room}에서 쓰러졌어요. 깬 방만큼 용량이 줄었어요";
                 string heroName = player.Hero != null ? player.Hero.displayName : string.Empty;
-                recordSave.DamageShare = DamageLog.ShareOf;
-                saveRecord = () => recordSave.Open(draft, d =>
-                {
-                    RunRecord r = d.ToRecord(skills.HeroId, chapter, room, RoomCount, victory, balance);
-                    r.heroName = heroName;
-                    r.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)); // 이번 판 판 밖 성장을 고정 저장 (복사본, 7-5)
-                    return r;
-                }, subtitle, GameSession.ToLobby);
+                RunRecord candidate = draft.ToRecord(skills.HeroId, chapter, room, RoomCount, victory, balance);
+                candidate.heroName = heroName;
+                candidate.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta)); // 이번 판 성장값을 후보에 고정한다.
+                SaveSystem.Data.pendingRecord = candidate;
+                SaveSystem.Data.pendingTutorialRecord = false;
+                saveRecord = () => recordSave.OpenPending(candidate, false, GameSession.ToLobby, DamageLog.ShareOf, subtitle);
             }
 
+            SaveSystem.Save(); // 보상·이어하기 종료·기록 후보를 한 파일로 남긴다.
             result.Show(summary, saveRecord);
         }
 
@@ -1046,25 +1051,19 @@ namespace HistoryHeroes.Dungeon
             {
                 int balance = database != null ? database.balanceVersion : 0;
                 string heroName = player.Hero != null ? player.Hero.displayName : string.Empty;
-                RunRecord made = null;
-                recordSave.DamageShare = DamageLog.ShareOf;
+                RunRecord candidate = draft.ToRecord(skills.HeroId, 1, RoomCount, RoomCount, true, balance);
+                candidate.heroName = heroName;
+                candidate.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta));
+                SaveSystem.Data.pendingRecord = candidate;
+                SaveSystem.Data.pendingTutorialRecord = true;
                 saveRecord = () =>
                 {
-                    recordSave.AllowSkip = false;
-                    recordSave.Open(draft, d =>
-                    {
-                        RunRecord r = d.ToRecord(skills.HeroId, 1, RoomCount, RoomCount, true, balance);
-                        r.heroName = heroName;
-                        r.meta = JsonUtility.FromJson<MetaSnapshot>(JsonUtility.ToJson(player.Meta));
-                        made = r;
-                        SaveSystem.Data.tutorialRecordId = r.id; // 보스 전에 앱이 꺼져도 로비가 튜토리얼 보스로 보낸다
-                        Wallet.Grant(SaveSystem.Data, reward); // 기록과 같은 저장에 들어간다
-                        return r;
-                    }, "용량이 넘쳤어요! 뺄 스킬을 눌러 용량 안으로 맞춘 뒤 저장해요 → 이 기록으로 보스와 싸워요",
-                    () => GameSession.StartTutorialBoss(made != null ? made.id : null));
+                    recordSave.OpenPending(candidate, true, null, DamageLog.ShareOf,
+                        "용량이 넘쳤어요! 뺄 스킬을 눌러 용량 안으로 맞춘 뒤 저장해요 → 이 기록으로 보스와 싸워요");
                 };
             }
 
+            SaveSystem.Save(); // 튜토리얼 후보를 보상 지급 전 디스크에 남긴다.
             result.Show(summary, saveRecord);
         }
 
@@ -1179,7 +1178,6 @@ namespace HistoryHeroes.Dungeon
             // 펫 (Pets 3장): 첫 던전 클리어 = 사냥매 + 펫 칸
             if (metaTable != null && metaTable.pets != null) lines.AddRange(Pets.PetService.CheckAll(save, metaTable.pets));
 
-            SaveSystem.Save();
             return lines;
         }
 

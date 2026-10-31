@@ -1,5 +1,6 @@
 using System;
 using HistoryHeroes.Common;
+using HistoryHeroes.Economy;
 using HistoryHeroes.Records;
 using HistoryHeroes.Skills;
 using TMPro;
@@ -60,6 +61,7 @@ namespace HistoryHeroes.UI
         private RecordDraft _draft;
         private Func<RecordDraft, RunRecord> _makeRecord;
         private Action _onDone;
+        private bool _pending;
 
         /// <summary>"저장 안 함"을 보일까 (튜토리얼은 꼭 저장해야 보스로 간다). 닫으면 다시 true</summary>
         public bool AllowSkip { get; set; } = true;
@@ -112,13 +114,107 @@ namespace HistoryHeroes.UI
         /// <summary>새 기록 남기기 (던전이 끝난 뒤)</summary>
         public void Open(RecordDraft draft, Func<RecordDraft, RunRecord> makeRecord, string subtitle, Action onDone)
         {
+            _pending = false;
             _fixedRecordId = null;
             OpenInternal(draft, makeRecord, "기록 남기기", subtitle, "저장 안 함", onDone);
+        }
+
+        /// <summary>앱을 다시 켠 뒤에도 판 끝의 원래 스킬로 선택 화면을 되살린다.</summary>
+        public bool OpenPending(RunRecord candidate, bool tutorial, Action onDone,
+            Func<string, float> damageShare = null, string subtitle = null)
+        {
+            if (candidate == null || candidate.skills == null || database == null) return false;
+            var entries = new System.Collections.Generic.List<RecordDraft.Entry>();
+            foreach (RecordSkill saved in candidate.skills)
+            {
+                SkillData skill = database.Find(saved.id);
+                if (skill == null) continue;
+                FusionRecipe recipe = saved.fusion ? database.RecipeProducing(skill) : null;
+                entries.Add(new RecordDraft.Entry(skill, saved.level, saved.fusion, recipe));
+            }
+
+            if (entries.Count == 0) return false;
+            _pending = true;
+            _fixedRecordId = null;
+            DamageShare = damageShare; // 다시 켠 뒤에는 피해 비율이 없으므로 기본 추천값을 쓴다.
+            AllowSkip = !tutorial;
+            Action finished = tutorial ? () => GameSession.StartTutorialBoss(candidate.id) : onDone;
+            OpenInternal(new RecordDraft(entries, candidate.capacity), d => PreviewPending(candidate, d),
+                "기록 남기기", subtitle ?? (tutorial
+                    ? "튜토리얼 기록을 저장하면 보스로 이어져요"
+                    : "끝낸 판의 기록을 다시 고를 수 있어요"), "저장 안 함", finished);
+            return true;
+        }
+
+        /// <summary>미리보기는 후보의 복사본만 바꾼다. ID와 당시 성장은 그대로 둔다.</summary>
+        public static RunRecord PreviewPending(RunRecord candidate, RecordDraft draft)
+        {
+            if (candidate == null || draft == null) return null;
+            RunRecord preview = JsonUtility.FromJson<RunRecord>(JsonUtility.ToJson(candidate));
+            preview.skills = draft.ToSkills();
+            return preview;
+        }
+
+        public static SaveSystem.CommitResult SavePendingToSlot(RecordDraft draft, int slot)
+        {
+            if (draft == null || !draft.Fits || !draft.HasAnything) return SaveSystem.CommitResult.Rejected;
+            SaveData data = SaveSystem.Data;
+            RunRecord candidate = data.pendingRecord;
+            if (candidate == null) return SaveSystem.CommitResult.Rejected;
+            RunRecord record = PreviewPending(candidate, draft);
+            return SaveSystem.Commit(() =>
+            {
+                if (data.pendingRecord == null || data.pendingRecord.id != candidate.id
+                    || !RecordService.SaveToSlot(data, record, slot)) return false;
+                FinishPending(data, record);
+                return true;
+            });
+        }
+
+        public static SaveSystem.CommitResult SavePendingToTemp(RecordDraft draft)
+        {
+            if (draft == null || !draft.Fits || !draft.HasAnything) return SaveSystem.CommitResult.Rejected;
+            SaveData data = SaveSystem.Data;
+            RunRecord candidate = data.pendingRecord;
+            if (candidate == null) return SaveSystem.CommitResult.Rejected;
+            RunRecord record = PreviewPending(candidate, draft);
+            return SaveSystem.Commit(() =>
+            {
+                if (data.pendingRecord == null || data.pendingRecord.id != candidate.id
+                    || !RecordService.SaveToTemp(data, record)) return false;
+                FinishPending(data, record);
+                return true;
+            });
+        }
+
+        private static void FinishPending(SaveData data, RunRecord record)
+        {
+            if (data.pendingTutorialRecord)
+            {
+                data.tutorialRecordId = record.id;
+                Wallet.Grant(data, new Reward { Gold = 300 });
+            }
+
+            data.pendingRecord = null;
+            data.pendingTutorialRecord = false;
+        }
+
+        public static SaveSystem.CommitResult DiscardPending()
+        {
+            return SaveSystem.Commit(() =>
+            {
+                SaveData data = SaveSystem.Data;
+                if (data.pendingRecord == null) return false;
+                data.pendingRecord = null;
+                data.pendingTutorialRecord = false;
+                return true;
+            });
         }
 
         /// <summary>패치로 비용이 올라 용량을 넘은 기록을 다시 고르기 (같은 칸에 덮어씀, GameDesign 7-5)</summary>
         public void OpenReselect(RecordDraft draft, Func<RecordDraft, RunRecord> makeRecord, string recordId, Action onDone)
         {
+            _pending = false;
             DamageShare = null; // 다시 고르기에는 판 피해 기록이 없다
             _fixedRecordId = recordId;
             OpenInternal(draft, makeRecord, "기록 다시 고르기", "패치로 비용이 올라 용량을 넘었어요. 남길 스킬을 다시 골라 주세요.", "취소", onDone);
@@ -271,7 +367,7 @@ namespace HistoryHeroes.UI
         {
             RunRecord record = _makeRecord(_draft);
             bool newRecord = _fixedRecordId == null;
-            SaveSystem.CommitResult result = SaveSystem.Commit(() => newRecord
+            SaveSystem.CommitResult result = _pending ? SavePendingToSlot(_draft, slot) : SaveSystem.Commit(() => newRecord
                 ? RecordService.SaveToSlot(SaveSystem.Data, record, slot)
                 : RecordService.Reselect(SaveSystem.Data, _fixedRecordId, record));
             if (result != SaveSystem.CommitResult.Saved)
@@ -302,7 +398,8 @@ namespace HistoryHeroes.UI
             }
 
             RunRecord record = _makeRecord(_draft);
-            SaveSystem.CommitResult result = SaveSystem.Commit(() => RecordService.SaveToTemp(SaveSystem.Data, record));
+            SaveSystem.CommitResult result = _pending ? SavePendingToTemp(_draft)
+                : SaveSystem.Commit(() => RecordService.SaveToTemp(SaveSystem.Data, record));
             if (result != SaveSystem.CommitResult.Saved)
             {
                 ShowSlotChoices();
@@ -333,7 +430,17 @@ namespace HistoryHeroes.UI
             Render();
         }
 
-        private void Skip() => Close();
+        private void Skip()
+        {
+            if (_pending && DiscardPending() != SaveSystem.CommitResult.Saved)
+            {
+                subtitleLabel.text = SaveSystem.SaveFailedText;
+                subtitleLabel.color = Over;
+                return;
+            }
+
+            Close();
+        }
 
         private void Close()
         {

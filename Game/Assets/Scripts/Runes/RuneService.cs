@@ -176,13 +176,34 @@ namespace HistoryHeroes.Runes
         public static RuneWeightModifier ModifierFor(SaveData save, RuneTable table, string heroId, IReadOnlyList<FusionRecipe> recipes)
         {
             if (save == null || table == null) return null;
-            var equipped = new List<(RuneData rune, float multiplier)>();
+            return ModifierFor(new MetaSnapshot { hasRunes = true, runes = Snapshot(save, table, heroId) }, table, heroId, recipes);
+        }
+
+        /// <summary>판 시작 때 장착한 룬 ID와 레벨을 복사한다. 빈 목록도 유효한 시작 상태다.</summary>
+        public static List<RuneLevel> Snapshot(SaveData save, RuneTable table, string heroId)
+        {
+            var equipped = new List<RuneLevel>();
+            if (save == null || table == null) return equipped;
             int slots = SlotCount(save, table);
             for (int s = 0; s < slots; s++)
             {
-                RuneData rune = table.Find(Equipped(save, heroId, s));
-                int level = rune != null ? Level(save, rune.id) : 0;
-                if (rune != null && level > 0) equipped.Add((rune, table.MultiplierAt(level)));
+                string id = Equipped(save, heroId, s);
+                int level = Level(save, id);
+                if (table.Find(id) != null && level > 0) equipped.Add(new RuneLevel { id = id, level = level });
+            }
+
+            return equipped;
+        }
+
+        /// <summary>이어하는 판에서는 저장된 룬으로 가중치를 만든다.</summary>
+        public static RuneWeightModifier ModifierFor(MetaSnapshot snapshot, RuneTable table, string heroId, IReadOnlyList<FusionRecipe> recipes)
+        {
+            if (snapshot == null || !snapshot.hasRunes || table == null) return null;
+            var equipped = new List<(RuneData rune, float multiplier)>();
+            foreach (RuneLevel saved in snapshot.runes ?? new List<RuneLevel>())
+            {
+                RuneData rune = table.Find(saved.id);
+                if (rune != null && saved.level > 0) equipped.Add((rune, table.MultiplierAt(saved.level)));
             }
 
             return equipped.Count > 0 ? new RuneWeightModifier(equipped, table.maxMultiplier, recipes, heroId) : null;

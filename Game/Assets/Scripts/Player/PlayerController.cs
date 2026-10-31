@@ -365,6 +365,9 @@ namespace HistoryHeroes.Player
 
         public bool UndyingUsed => _undyingUsed;
 
+        /// <summary>이어하기에서 이미 쓴 불굴을 다시 쓰지 못하게 한다.</summary>
+        public void RestoreUndyingUsed(bool used) => _undyingUsed = used;
+
         /// <summary>관우 의리의 투지: 체력이 절반 아래면 공격력 +20%</summary>
         private void UpdateLowHpBonus()
         {

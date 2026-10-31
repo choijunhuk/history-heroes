@@ -17,7 +17,8 @@ namespace HistoryHeroes.Records
         /// <summary>7: 유물 뽑기 횟수·무료 날짜·중복 진행. 옛 저장의 빈 값은 모두 0/없음이 맞다.</summary>
         /// <summary>8: 장비 6칸. 앞의 무기·갑옷·장신구 번호는 그대로 두고 새 칸을 뒤에 붙인다.</summary>
         /// <summary>9: 신의 시련 첫 격파와 주간 목표를 별도로 보관한다.</summary>
-        public const int CurrentSchemaVersion = 9;
+        /// <summary>10: 미확정 기록·불굴 사용 여부·판 시작 룬을 함께 보관한다.</summary>
+        public const int CurrentSchemaVersion = 10;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -38,6 +39,10 @@ namespace HistoryHeroes.Records
 
         /// <summary>번호 칸과 따로 두는 임시 기록 (없거나 하나). 보관함 개수에는 세지 않는다.</summary>
         public List<RunRecord> tempRecords = new List<RunRecord>();
+
+        /// <summary>결과·기록 선택 중 앱이 꺼져도 다시 고를 수 있는 빌드. 저장·명시적 포기 뒤에만 비운다.</summary>
+        public RunRecord pendingRecord;
+        public bool pendingTutorialRecord;
 
         public RunRecord TempRecord => tempRecords != null && tempRecords.Count > 0 ? tempRecords[0] : null;
 
@@ -279,6 +284,9 @@ namespace HistoryHeroes.Records
     [Serializable]
     public sealed class MetaSnapshot
     {
+        /// <summary>룬이 없던 판과 옛 저장을 구분한다. ID와 레벨은 판 시작 값이다.</summary>
+        public bool hasRunes;
+        public List<RuneLevel> runes = new List<RuneLevel>();
         public int heroLevel = 1;
         public int heroStars = 1;
         /// <summary>장착 장비 (칸마다 하나, 비면 빠짐). level = 그 칸의 강화값을 장비 등급 상한으로 자른 값</summary>
@@ -364,6 +372,9 @@ namespace HistoryHeroes.Records
     [Serializable]
     public sealed class RiftCheckpoint
     {
+        public bool reviveUsed;
+        public bool hasMeta;
+        public MetaSnapshot meta;
         public bool valid;
         public int floor;
         public int seed;
@@ -385,6 +396,8 @@ namespace HistoryHeroes.Records
     [Serializable]
     public sealed class RunSnapshot
     {
+        /// <summary>불굴은 같은 판에서 앱을 다시 켜도 한 번만 쓴다.</summary>
+        public bool reviveUsed;
         public bool valid;
         /// <summary>Common.BattleMode (0 던전 · 1 보스 · 3 균열 · 4 일일 도전 연습)</summary>
         public int mode;

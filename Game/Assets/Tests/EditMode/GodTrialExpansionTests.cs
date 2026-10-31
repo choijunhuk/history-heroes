@@ -186,7 +186,7 @@ namespace HistoryHeroes.Tests
                 Directory.CreateDirectory(folder);
                 File.WriteAllText(store.MainPath, SaveStore.Sign(JsonUtility.ToJson(old, true)));
                 SaveData loaded = store.Load();
-                Assert.AreEqual(9, loaded.schemaVersion);
+                Assert.AreEqual(SaveData.CurrentSchemaVersion, loaded.schemaVersion);
                 Assert.AreEqual(GodTrialRules.ThorTrialId, loaded.godTrials.goalTrialId);
                 Assert.AreEqual("first", loaded.godTrials.firstRecordId);
                 Assert.AreEqual(1, loaded.godTrials.weeklyWins.Count);

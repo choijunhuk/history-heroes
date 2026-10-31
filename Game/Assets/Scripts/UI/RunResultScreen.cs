@@ -106,7 +106,8 @@ namespace HistoryHeroes.UI
             bodyLabel.text = hero != null
                 ? $"{hero.displayName} · Lv1 ★1\n\n{Heroes.HeroUnlock.LockText(hero)}\n\n체험은 보상과 기록을 남기지 않아요"
                 : "체험은 보상과 기록을 남기지 않아요";
-            SetButtons("영웅 보러 가기", GameSession.ToLobby, "로비", GameSession.ToLobby);
+            string trialHeroId = hero != null ? hero.id : GameSession.TrialHeroId;
+            SetButtons("영웅 보러 가기", () => GameSession.ToLobbyHero(trialHeroId), "로비", GameSession.ToLobby);
         }
 
         public void ShowSurvival(Survival.SurvivalSummary s)

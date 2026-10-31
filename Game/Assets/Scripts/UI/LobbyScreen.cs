@@ -92,6 +92,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text patrolLabel;
         [Header("v1.0 튜토리얼")]
         [SerializeField] private OpeningPanel opening;
+        [SerializeField] private RecordSaveScreen reselect;
+        [SerializeField] private GameObject unsupportedSaveNotice;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -101,6 +103,22 @@ namespace HistoryHeroes.UI
         {
             GamePause.ResetAll();
             SaveData data = SaveSystem.Data;
+            if (SaveSystem.UnsupportedNewerSave)
+            {
+                CanvasGroup controls = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+                controls.interactable = false;
+                controls.blocksRaycasts = false;
+                if (unsupportedSaveNotice != null)
+                {
+                    unsupportedSaveNotice.SetActive(true);
+                    unsupportedSaveNotice.transform.SetAsLastSibling();
+                }
+                else ShowNotice(SaveSystem.UnsupportedNewerSaveText);
+                enabled = false;
+                return;
+            }
+            GameSession.ConfigureMetaTable(metaTable);
+            string lobbyHero = GameSession.ConsumeLobbyHero();
             SettingsApplier.Apply(data.settings);
             Screen.sleepTimeout = SleepTimeout.SystemSetting; // 전투에서 막아 둔 화면 꺼짐을 폰 설정대로
             _chapter =Mathf.Clamp(GameSession.Chapter, 1, MaxChapter(data));
@@ -191,12 +209,13 @@ namespace HistoryHeroes.UI
             }
 
             // 튜토리얼 (UX 4장): 처음이면 오프닝 → 튜토리얼 던전. 방금 끝냈으면 다음 목표
-            bool tutorialBoss = Progress.Tutorial.BossPending(data);
-            bool tutorial = tutorialBoss || (Progress.Tutorial.Needed(data) && opening != null);
+            bool pendingRecord = data.pendingRecord != null;
+            bool tutorialBoss = !pendingRecord && Progress.Tutorial.BossPending(data);
+            bool tutorial = tutorialBoss || (!pendingRecord && Progress.Tutorial.Needed(data) && opening != null);
             Audio.AudioManager.PlayMusic(tutorial ? "opening" : "lobby");
             if (tutorialBoss) GameSession.StartTutorialBoss(data.tutorialRecordId); // 기록은 남겼고 보스 전에 꺼졌다
             else if (tutorial) opening.Open(() => GameSession.StartTutorial(false));
-            else if (opening != null && Story.GodsTeaser.Pending(data))
+            else if (!pendingRecord && opening != null && Story.GodsTeaser.Pending(data))
             {
                 // 망각의 왕 첫 격파 뒤 한 번: 신의 심판 예고 (GodsVsHumanity 2장). 본 순간 저장 (건너뛰어도 다시 안 뜬다)
                 data.godsTeaserSeen = true;
@@ -221,9 +240,9 @@ namespace HistoryHeroes.UI
                     ShowNotice("보스 격파 보상: " + string.Join(", ", gear).Replace("장비  ", ""));
                 }
 
-                if (!tutorial && !justFinished && !OfferResume() && !OfferLegendaryChoice()) OfferNotifications();
+                if (!tutorial && !justFinished && string.IsNullOrEmpty(lobbyHero) && !OfferPendingRecord() && !OfferResume() && !OfferLegendaryChoice()) OfferNotifications();
             }
-            else if (!tutorial && !justFinished && !OfferResume())
+            else if (!tutorial && !justFinished && string.IsNullOrEmpty(lobbyHero) && !OfferPendingRecord() && !OfferResume())
             {
                 OfferNotifications();
             }
@@ -231,6 +250,30 @@ namespace HistoryHeroes.UI
             SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
             if (!tutorial) ShowHeroChat(data);
             Render();
+            if (!string.IsNullOrEmpty(lobbyHero) && heroPanel != null) heroPanel.Open(Render, lobbyHero);
+        }
+
+        /// <summary>결과 화면에서 꺼진 판은 새 판보다 먼저 기록을 저장하거나 명시적으로 포기한다.</summary>
+        private bool OfferPendingRecord()
+        {
+            SaveData data = SaveSystem.Data;
+            if (data.pendingRecord == null) return false;
+            if (reselect != null && reselect.OpenPending(data.pendingRecord, data.pendingTutorialRecord, Render)) return true;
+            const string unreadable = "남길 기록의 스킬을 읽지 못했어요. 게임을 업데이트한 뒤 다시 열거나 이 기록을 포기해 주세요";
+            ShowNotice(unreadable);
+            if (choice != null) choice.Open("남기지 않은 기록이 있어요", unreadable, new[]
+            {
+                new ChoicePanel.Option
+                {
+                    Text = "이 기록 포기하기",
+                    OnChosen = () =>
+                    {
+                        if (RecordSaveScreen.DiscardPending() == SaveSystem.CommitResult.Saved) GameSession.ToLobby();
+                        else { OfferPendingRecord(); ShowNotice(SaveSystem.SaveFailedText); }
+                    },
+                },
+            });
+            return true;
         }
 
         /// <summary>영웅끼리 짧은 대화 (Story 3장): 둘 다 해금됐고 다른 알림이 없을 때 가끔</summary>
