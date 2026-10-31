@@ -118,7 +118,7 @@ namespace HistoryHeroes.Tests
             LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("저장 실패"));
             Assert.AreEqual(SaveSystem.CommitResult.SaveFailed, RecordSaveScreen.SavePendingToSlot(draft, 0));
             Assert.AreEqual(0, data.gold);
-            Assert.IsNull(data.tutorialRecordId);
+            Assert.IsTrue(string.IsNullOrEmpty(data.tutorialRecordId), "되돌린 뒤 튜토리얼 기록 id 없음 (JsonUtility 복사라 null 대신 빈 글)");
             Assert.AreEqual("retry", data.pendingRecord.id);
             Assert.IsTrue(data.pendingTutorialRecord);
             Assert.AreEqual(0, data.records.Count);

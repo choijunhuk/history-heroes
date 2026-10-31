@@ -670,6 +670,8 @@ namespace HistoryHeroes.Records
                 NormalizeRecord(record);
             }
 
+            // JsonUtility는 클래스 필드를 null로 못 남긴다 → 불러오면 id 없는 빈 기록이 생겨 "남은 기록 후보"가 유령처럼 떴다 (2026-10-31 Unity 테스트)
+            if (data.pendingRecord != null && string.IsNullOrEmpty(data.pendingRecord.id)) data.pendingRecord = null;
             if (data.pendingRecord != null) NormalizeRecord(data.pendingRecord);
 
             if (!string.IsNullOrEmpty(data.tutorialRecordId) && data.FindRecord(data.tutorialRecordId) == null) data.tutorialRecordId = null;

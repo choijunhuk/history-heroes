@@ -78,6 +78,7 @@ namespace HistoryHeroes.UI
         private bool _payWithGems;
         private Color _relicTabColor;
         private Color _relic1Color;
+        private Color _premiumColor; // 고급 상자 단추 원래 색 (잠겼을 때만 회색)
         private Color _relic10Color;
         private Color _relicPayColor;
         private Color _relicFreeColor;
@@ -90,6 +91,7 @@ namespace HistoryHeroes.UI
         {
             _relicTabColor = relicTabButton.image.color;
             _relic1Color = relic1Button.image.color;
+            _premiumColor = premium1Button.image.color;
             _relic10Color = relic10Button.image.color;
             _relicPayColor = relicPayButton.image.color;
             _relicFreeColor = relicFreeButton.image.color;
@@ -203,6 +205,8 @@ namespace HistoryHeroes.UI
             int tickets = save.ItemCount(Wallet.Ticket);
             ticketLabel.text = $"소환권 1장 ({tickets})\n<size=75%>{legendaryRate} · 확정 {legendaryLeft}회</size>";
             ticketButton.interactable = unlocked && tickets > 0;
+            // 잠긴 상자는 초록 대신 회색 (유물 뽑기와 같게 — 어두운 초록은 눌러도 되는 것처럼 보였다, 2026-10-31 화면 점검)
+            premium1Button.image.color = premium10Button.image.color = ticketButton.image.color = unlocked ? _premiumColor : RowDisabled;
             exchangeButton.interactable = unlocked;
             exchangeLabel.text = _exchangeMode ? "상자 결과" : "조각 교환소";
             if (goldShopLabel != null) goldShopLabel.text = _goldShopMode ? "상자 결과" : "골드 상점";
