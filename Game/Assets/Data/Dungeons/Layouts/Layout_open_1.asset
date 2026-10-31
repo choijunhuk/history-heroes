@@ -16,6 +16,7 @@ MonoBehaviour:
   kind: 0
   use: 0
   chapter: 0
+  longRoom: 0
   obstacles: []
   traps: []
   devices: []

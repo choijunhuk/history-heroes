@@ -16,6 +16,7 @@ MonoBehaviour:
   kind: 4
   use: 0
   chapter: 0
+  longRoom: 0
   obstacles:
   - kind: 2
     circle: 0

@@ -16,6 +16,7 @@ MonoBehaviour:
   kind: 5
   use: 0
   chapter: 1
+  longRoom: 0
   obstacles: []
   traps:
   - position: {x: -2.6, y: 5}
