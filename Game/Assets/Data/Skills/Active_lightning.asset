@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
   id: lightning
   displayName: "\uB099\uB8B0"
-  description: "3\uCD08\uB9C8\uB2E4 \uBB34\uC791\uC704 \uC801\uC5D0\uAC8C \uBC88\uAC1C\n(150%)\n\uB808\uBCA8\uB9C8\uB2E4
+  description: "3\uCD08\uB9C8\uB2E4 \uBB34\uC791\uC704 \uC801\uC5D0\uAC8C \uBC88\uAC1C\n(190%)\n\uB808\uBCA8\uB9C8\uB2E4
     \uBC88\uAC1C +1"
   warriorDescription: 
   icon: {fileID: 21300000, guid: 68845fd9c134d074ebc83dc2695c1908, type: 3}
@@ -27,7 +27,7 @@ MonoBehaviour:
   recordable: 1
   heroOnlyId: 
   cooldown: 3
-  damageFirstLevel: 1.5
+  damageFirstLevel: 1.9
   damagePerLevel: 0
   healFractionFirstLevel: 0
   healFractionPerLevel: 0

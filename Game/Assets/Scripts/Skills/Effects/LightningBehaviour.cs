@@ -23,7 +23,7 @@ namespace HistoryHeroes.Skills
 
         [Header("뇌화 폭풍: 떨어진 자리에 장판")]
         [SerializeField] private bool leaveField;
-        [SerializeField] private float fieldDamagePerSecond = 0.3f;
+        [SerializeField] private float fieldDamagePerSecond = 0.45f; // v1.0 밸런스 1차 (2026-10-31): 0.3 → 0.45
         [SerializeField] private float fieldDuration = 2f;
         [SerializeField] private float fieldRadius = 1.2f;
         [SerializeField] private Color fieldColor = new Color(1f, 0.55f, 0.15f, 0.45f);
