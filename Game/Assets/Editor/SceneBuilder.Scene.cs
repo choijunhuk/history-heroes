@@ -37,7 +37,7 @@ namespace HistoryHeroes.EditorTools
             _stage = CreateStageMaterials();
             var rig = new GameObject("CameraRig");
             var cameraFollow = rig.AddComponent<CameraFollow>();
-            cameraFollow.enabled = false; // BattleBootstrap이 서바이벌에서만 켠다
+            cameraFollow.enabled = false; // 서바이벌과 긴 던전 방에서 켠다
             var mount = new GameObject("CameraMount");
             mount.transform.SetParent(rig.transform, false);
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -70,12 +70,16 @@ namespace HistoryHeroes.EditorTools
 
             // ----- 방: 바닥, 벽, 문 (벽은 두 모드가 같이 쓴다) -----
             var arena = new GameObject("Arena").transform;
-            DressFloor(Block("Floor", dungeonRoot, Vector2.zero, new Vector2(ArenaHalfWidth * 2f, ArenaHalfHeight * 2f), new Color(0.18f, 0.24f, 0.18f), -10, collider: false), _stage.RoomFloor);
+            GameObject dungeonFloor = Block("Floor", dungeonRoot, Vector2.zero, new Vector2(ArenaHalfWidth * 2f, ArenaHalfHeight * 2f), new Color(0.18f, 0.24f, 0.18f), -10, collider: false);
+            DressFloor(dungeonFloor, _stage.RoomFloor);
             Color wall = new Color(0.36f, 0.31f, 0.26f);
-            DressWall(Block("Wall Left", arena, new Vector2(-ArenaHalfWidth - 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true), _stage.WallSide, _stage.WallEnd);
-            DressWall(Block("Wall Right", arena, new Vector2(ArenaHalfWidth + 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true), _stage.WallSide, _stage.WallEnd);
+            GameObject leftWall = Block("Wall Left", arena, new Vector2(-ArenaHalfWidth - 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true);
+            GameObject rightWall = Block("Wall Right", arena, new Vector2(ArenaHalfWidth + 0.5f, 0f), new Vector2(1f, ArenaHalfHeight * 2f + 2f), wall, -5, collider: true);
+            DressWall(leftWall, _stage.WallSide, _stage.WallEnd);
+            DressWall(rightWall, _stage.WallSide, _stage.WallEnd);
             DressWall(Block("Wall Bottom", arena, new Vector2(0f, -ArenaHalfHeight - 0.5f), new Vector2(ArenaHalfWidth * 2f + 2f, 1f), wall, -5, collider: true), _stage.WallSide, _stage.WallEnd);
-            DressWall(Block("Wall Top", arena, new Vector2(0f, ArenaHalfHeight + 0.5f), new Vector2(ArenaHalfWidth * 2f + 2f, 1f), wall, -5, collider: true), _stage.WallSide, _stage.WallEnd);
+            GameObject topWall = Block("Wall Top", arena, new Vector2(0f, ArenaHalfHeight + 0.5f), new Vector2(ArenaHalfWidth * 2f + 2f, 1f), wall, -5, collider: true);
+            DressWall(topWall, _stage.WallSide, _stage.WallEnd);
 
             GameObject doorObject = Block("Door", dungeonRoot, new Vector2(0f, ArenaHalfHeight - 0.3f), new Vector2(1.8f, 0.6f), Color.gray, -4, collider: true);
             doorObject.layer = 0;
@@ -84,7 +88,8 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(door)) props.Ref("sprite", doorObject.GetComponent<SpriteRenderer>());
             DressDoor(dungeonRoot, doorObject, door); // 그래픽 평가 4번: 돌 아치 문
             ForkGate[] forkGates = BuildForkGates(dungeonRoot); // 확장 1차 3-2장 갈림길 문 2개
-            WireStageDecor(BuildDecoGroups(arena)); // 구간별 벽 장식 · 바닥 장식
+            GameObject[] decoGroups = BuildDecoGroups(arena, out Transform[] topDecorations);
+            WireStageDecor(decoGroups); // 구간별 벽 장식 · 바닥 장식
 
             var playerStart = new GameObject("PlayerStart").transform;
             playerStart.position = new Vector2(0f, -ArenaHalfHeight + 1.5f);
@@ -180,6 +185,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("door", door).Ref("playerStart", playerStart)
                     .Ref("levelUp", ui.LevelUp).Ref("hud", ui.Hud).Ref("result", ui.Result).Ref("recordSave", ui.RecordSave).Ref("fade", ui.Fade)
                     .Ref("bossHud", ui.BossHud).Ref("rewardRoom", ui.RewardRoom).Ref("layoutRoot", layoutRoot)
+                    .Ref("roomFloor", dungeonFloor.transform).Ref("leftWall", leftWall.transform).Ref("rightWall", rightWall.transform)
+                    .Ref("topWall", topWall.transform).Refs("topDecorations", topDecorations).Ref("cameraFollow", cameraFollow)
                     .Refs("riftBosses", AllBosses(d.RiftWarden)); // 균열 10층마다 (1~5구간 순서)
             }
 

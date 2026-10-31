@@ -116,11 +116,12 @@ namespace HistoryHeroes.EditorTools
             return list;
         }
 
-        private static RoomLayout Room(string id, LayoutKind kind, RoomUse use, int chapter, List<ObstacleDef> obstacles, List<TrapSpot> traps, List<DeviceSpot> devices = null)
+        private static RoomLayout Room(string id, LayoutKind kind, RoomUse use, int chapter, List<ObstacleDef> obstacles, List<TrapSpot> traps, List<DeviceSpot> devices = null, bool longRoom = false)
         {
             RoomLayout l = Layout(id, kind, obstacles, traps ?? new List<TrapSpot>());
             l.use = use;
             l.chapter = chapter;
+            l.longRoom = longRoom;
             l.devices = devices ?? new List<DeviceSpot>();
             UnityEditor.EditorUtility.SetDirty(l);
             return l;
@@ -131,6 +132,29 @@ namespace HistoryHeroes.EditorTools
         {
             var list = new List<RoomLayout>();
             var none = new List<TrapSpot>();
+
+            // A-5: 각 구간 일반 7·12번 방. 두 모양의 가운데 통로를 열어 먼 문까지 걸어갈 수 있게 한다.
+            for (int chapter = 1; chapter <= 5; chapter++)
+            {
+                List<TrapSpot> longTraps = chapter == 3 ? Spots(Spot(1.5f, 9f, 2f, 1f, 180f))
+                    : chapter >= 4 ? Spots(Spot(2.5f, 9f, 1f, 1f)) : none;
+                List<DeviceSpot> longDevices = chapter == 1 ? Devices(Berry(-3f, 8f), Berry(3f, 3f))
+                    : chapter == 2 ? Devices(Keg(-2f, 8f), Keg(2f, 3f))
+                    : chapter == 3 ? Devices(Lever(3f, -2f), Saw(-2f, 5f, 2f, 5f)) : null;
+                var columns = new List<ObstacleDef>();
+                foreach (float y in new[] { -0.5f, 5.5f, 10.5f })
+                {
+                    columns.Add(High(-2.5f, y, 0.9f, 0.9f, true));
+                    columns.Add(High(2.5f, y + 1f, 0.9f, 0.9f, true));
+                }
+                list.Add(Room($"c{chapter}_long_columns", LayoutKind.Pillars, RoomUse.Normal, chapter, columns, longTraps, longDevices, longRoom: true));
+                list.Add(Room($"c{chapter}_long_passage", LayoutKind.Corridor, RoomUse.Normal, chapter,
+                    new List<ObstacleDef>
+                    {
+                        High(-3.1f, 2f, 0.8f, 3f), High(3.1f, 6.5f, 0.8f, 3f),
+                        High(-3.1f, 10.5f, 0.8f, 2f)
+                    }, longTraps, longDevices, longRoom: true));
+            }
 
             // ----- 공용 새 모양 4종 -----
             list.Add(Room("cross_1", LayoutKind.Pillars, RoomUse.Normal, 0, Cross(false), none));

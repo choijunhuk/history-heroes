@@ -93,6 +93,13 @@ namespace HistoryHeroes.Dungeon
         public RoomUse use = RoomUse.Normal;
         [Tooltip("0 = 모든 구간, 1~5 = 그 구간 전용 (확장 1차 1-2장)")]
         public int chapter;
+        [Tooltip("세로 22칸: 카메라가 따라가고 문은 먼 끝에 둔다")]
+        public bool longRoom;
+        public Rect Bounds => longRoom ? new Rect(-4f, -7f, 8f, 22f) : new Rect(-4f, -7f, 8f, 14f);
+        public float DoorY => Bounds.yMax - 0.3f;
+        public Rect FirstWaveArea => longRoom ? new Rect(-3.5f, -1f, 7f, 6f) : new Rect(-3.5f, -1f, 7f, 7.5f);
+        public Rect SecondWaveArea => new Rect(-3.5f, 5f, 7f, 7f);
+        public bool CanSpawnSecondWave(float playerY) => longRoom && playerY >= 2f;
         public List<ObstacleDef> obstacles = new List<ObstacleDef>();
         public List<TrapSpot> traps = new List<TrapSpot>();
         [Tooltip("구간 장치 (확장 1차 2장)")]

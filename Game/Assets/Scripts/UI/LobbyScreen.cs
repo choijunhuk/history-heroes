@@ -96,10 +96,12 @@ namespace HistoryHeroes.UI
         [SerializeField] private OpeningPanel opening;
         [SerializeField] private RecordSaveScreen reselect;
         [SerializeField] private GameObject unsupportedSaveNotice;
+        [SerializeField] private LobbyGuide firstUseGuide;
 
         private int _chapter = 1;
         private float _nextWallet;
         private float _noticeUntil;
+        private bool _readyForGuide;
 
         private void Start()
         {
@@ -224,12 +226,12 @@ namespace HistoryHeroes.UI
                 SaveSystem.Save();
                 opening.Open(Story.GodsTeaser.Scenes, Story.GodsTeaser.Tints, "확인", null);
             }
-            // 튜토리얼 직후: 다음 목표 하나만 (전체 기획 검토 1번). 출석부·7일 미션·펫은 단추 표시로, 알림 묻기는 다음 로비에서
+            // 튜토리얼 직후 안내는 7일 미션 띠 하나로 모은다. 알림 묻기는 다음 로비에서 한다.
             bool justFinished = GameSession.TutorialJustFinished;
             if (justFinished)
             {
                 GameSession.TutorialJustFinished = false;
-                ShowNotice("튜토리얼 끝! 이제 <b>1구간 던전</b>에 도전하세요");
+                if (firstUseGuide == null) ShowNotice("튜토리얼 끝! 이제 <b>1구간 던전</b>에 도전하세요");
             }
 
             // 장비가 생기기 전에 깬 보스의 장비 보상 (v0.4)
@@ -253,6 +255,7 @@ namespace HistoryHeroes.UI
             if (!tutorial) ShowHeroChat(data);
             Render();
             if (!string.IsNullOrEmpty(lobbyHero) && heroPanel != null) heroPanel.Open(Render, lobbyHero);
+            _readyForGuide = !tutorial;
         }
 
         /// <summary>결과 화면에서 꺼진 판은 새 판보다 먼저 기록을 저장하거나 명시적으로 포기한다.</summary>
@@ -409,8 +412,32 @@ namespace HistoryHeroes.UI
 
         private void Update()
         {
-            if (Time.unscaledTime >= _nextWallet) RenderWallet();
+            if (Time.unscaledTime >= _nextWallet)
+            {
+                RenderWallet();
+                RenderNewcomer(SaveSystem.Data);
+                TryFirstUseHint();
+            }
             if (noticeLabel != null && noticeLabel.gameObject.activeSelf && Time.unscaledTime > _noticeUntil) noticeLabel.gameObject.SetActive(false);
+        }
+
+        private void TryFirstUseHint()
+        {
+            if (!_readyForGuide || firstUseGuide == null || firstUseGuide.Used || firstUseGuide.Blocked) return;
+            SaveData save = SaveSystem.Data;
+            int ready = metaTable != null && metaTable.missions != null
+                ? Missions.MissionService.ClaimableCount(save, metaTable.missions, Missions.MissionEvents.Context) : 0;
+            bool inCombat = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != GameSession.LobbyScene;
+            string id = Progress.FirstUseHints.Next(save, inCombat, false, Clock.Now(),
+                Progress.FirstUseHints.CanLevelUp(save, metaTable, roster),
+                Progress.FirstUseHints.HasGear(save, metaTable != null ? metaTable.equipment : null), ready);
+            Button target = id == Progress.FirstUseHints.Newcomer ? newcomerButton
+                : id == Progress.FirstUseHints.Missions ? missionButton
+                : id == Progress.FirstUseHints.Shop ? shopButton : heroButton;
+            if (id == null || target == null || !target.gameObject.activeInHierarchy) return;
+            // 본 이력도 먼저 확정한다. 저장 실패 때 안내만 사라지고 이력만 남는 일을 피한다.
+            firstUseGuide.Show(Progress.FirstUseHints.Text(id), target,
+                () => SaveSystem.Commit(() => Progress.FirstUseHints.MarkShown(save, id)) == SaveSystem.CommitResult.Saved);
         }
 
         private void ShowNotice(string text)
@@ -561,14 +588,7 @@ namespace HistoryHeroes.UI
             newcomerButton.gameObject.SetActive(attendance);
             if (!attendance) return;
             if (newcomerBadge != null) newcomerBadge.text = UpgradeNotice.HasNewcomerReward(data, Clock.Now()) ? "●" : string.Empty;
-            if (!Missions.Newcomer.Visible(data, Clock.Now()))
-            {
-                newcomerLabel.text = "출석부"; // 7일 미션이 끝나도 출석부는 계속
-                return;
-            }
-
-            int ready = Missions.Newcomer.Claimable(data, Clock.Now());
-            newcomerLabel.text = ready > 0 ? $"7일 <color=#FFD966>●{ready}</color>" : "7일 미션";
+            newcomerLabel.text = Missions.Newcomer.HomeLabel(data, Clock.Now());
         }
 
         private void RenderPatrol(SaveData data)

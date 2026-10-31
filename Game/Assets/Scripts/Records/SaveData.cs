@@ -18,7 +18,8 @@ namespace HistoryHeroes.Records
         /// <summary>8: 장비 6칸. 앞의 무기·갑옷·장신구 번호는 그대로 두고 새 칸을 뒤에 붙인다.</summary>
         /// <summary>9: 신의 시련 첫 격파와 주간 목표를 별도로 보관한다.</summary>
         /// <summary>10: 미확정 기록·불굴 사용 여부·판 시작 룬을 함께 보관한다.</summary>
-        public const int CurrentSchemaVersion = 10;
+        /// <summary>11: 기능 첫 사용 안내를 본 이력. 옛 저장은 아직 안 본 상태로 시작한다.</summary>
+        public const int CurrentSchemaVersion = 11;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -127,6 +128,8 @@ namespace HistoryHeroes.Records
         // ---------------------------------------------------------------- v1.0 (구조 5)
         /// <summary>튜토리얼 보스를 깼다 → 출석부·신규 7일 미션·기록 보관함이 열린다 (Systems 3장)</summary>
         public bool tutorialDone;
+        /// <summary>로비에서 한 번 보여 준 기능 안내 ID. 닫거나 다시 접속해도 반복하지 않는다.</summary>
+        public List<string> seenFirstUseHints = new List<string>();
         /// <summary>튜토리얼 던전에서 남긴 기록 (보스 전에 앱이 꺼져도 튜토리얼 보스로 바로 간다)</summary>
         public string tutorialRecordId;
         public AttendanceSave attendance = new AttendanceSave();

@@ -160,6 +160,7 @@ namespace HistoryHeroes.EditorTools
             var l = AssetUtil.LoadOrCreate<RoomLayout>($"{DataDir}/Dungeons/Layouts/Layout_{id}.asset");
             l.id = id;
             l.kind = kind;
+            l.longRoom = false;
             l.obstacles = obstacles;
             l.traps = traps;
             l.devices = new List<DeviceSpot>(); // 장치는 Room(..., devices)가 채운다 (다시 만들 때 옛 장치가 남지 않게)

@@ -150,6 +150,11 @@ namespace HistoryHeroes.Missions
         /// <summary>로비에 보일까 (시작했고, 기한 안이고, 다 받지 않았다)</summary>
         public static bool Visible(SaveData s, DateTimeOffset now) => DayIndex(s, now) >= 0 && !Expired(s, now) && !AllClaimed(s);
 
+        /// <summary>접속한 날 수로 표시한다. 늦게 끝내도 7/7에서 더 늘지 않는다.</summary>
+        public static string HomeLabel(SaveData s, DateTimeOffset now) => Visible(s, now)
+            ? $"7일 미션\n<size=75%>{Math.Min(Days, Math.Max(1, DayIndex(s, now) + 1))}/{Days}일</size>"
+            : "출석부";
+
         public static bool DayOpen(SaveData s, int day, DateTimeOffset now)
         {
             int index = DayIndex(s, now);

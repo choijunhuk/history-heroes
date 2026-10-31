@@ -294,6 +294,8 @@ namespace HistoryHeroes.EditorTools
             var instance = (GameObject)Object.Instantiate(gate, dungeonRoot, false);
             instance.name = "DoorGate3D";
             instance.transform.position = new Vector3(0f, ArenaHalfHeight + 0.25f, 0f); // 앞면이 위 벽 안쪽 면(y = 7)에 맞는다
+            // 긴 방에서 문 판정과 아치를 함께 옮긴다. 월드 크기를 유지해 부모의 판정 크기에 영향받지 않는다.
+            instance.transform.SetParent(doorObject.transform, true);
             Transform right = FindDeep(instance.transform, "Door_Leaf_XPos");
             Transform left = FindDeep(instance.transform, "Door_Leaf_XNeg");
 
@@ -404,8 +406,9 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>구간 장식 묶음 5개 (StageLook이 그 구간 것만 켠다)</summary>
-        private static GameObject[] BuildDecoGroups(Transform arena)
+        private static GameObject[] BuildDecoGroups(Transform arena, out Transform[] topDecorations)
         {
+            topDecorations = new Transform[5];
             if (Art3DStage.Prefab("Deco_Banner") == null) return new GameObject[0];
             var root = new GameObject("Deco").transform;
             root.SetParent(arena, false);
@@ -415,11 +418,15 @@ namespace HistoryHeroes.EditorTools
                 string key = "ch" + c;
                 var group = new GameObject(key);
                 group.transform.SetParent(root, false);
+                var topDecor = new GameObject("TopDecor").transform;
+                topDecor.SetParent(group.transform, false);
+                topDecorations[c - 1] = topDecor;
                 foreach (DecoItem item in DecoFor(key))
                 {
                     GameObject prefab = Art3DStage.Prefab(item.Prefab);
                     if (prefab == null) continue;
-                    var go = (GameObject)Object.Instantiate(prefab, group.transform, false);
+                    Transform parent = item.Position.y >= ArenaHalfHeight + 0.5f ? topDecor : group.transform;
+                    var go = (GameObject)Object.Instantiate(prefab, parent, false);
                     go.name = item.Prefab;
                     go.transform.position = item.Position;
                     go.transform.rotation = Quaternion.Euler(0f, 0f, item.Turn);
