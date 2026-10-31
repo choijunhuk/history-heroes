@@ -541,7 +541,7 @@ namespace HistoryHeroes.UI
             bool hasRecord = records > 0 || data.TempRecord != null;
             bossButton.interactable = boss != null && hasRecord;
             bossButtonLabel.text = boss == null ? "보스 준비 중" : hasRecord ? "보스 도전" : "보스 도전 (기록이 있어야 해요)";
-            archiveButtonLabel.text = $"기록 보관함  {records}/{data.recordSlots}";
+            archiveButtonLabel.text = $"기록 {records}/{data.recordSlots}";
             RenderSurvival(data);
             RenderRiftAndDaily(data);
             RenderNewcomer(data);
@@ -553,7 +553,7 @@ namespace HistoryHeroes.UI
             }
 
             int found = data.discoveredRecipes.Count;
-            codexButtonLabel.text = $"조합 도감  {found}/{codex.RecipeCount}";
+            codexButtonLabel.text = $"조합 도감\n{found}/{codex.RecipeCount}";
             HeroData hero = HeroUnlock.Selected(data, roster);
             if (heroUpgradeBadge != null) heroUpgradeBadge.text = UpgradeNotice.HasHeroUpgrade(data, metaTable, roster) ? "●" : string.Empty;
             heroButtonLabel.text = hero != null ? $"{hero.displayName} · {hero.ClassLabel}" : "영웅"; // 가운데 무대 영웅 이름표
@@ -568,7 +568,7 @@ namespace HistoryHeroes.UI
             if (survivalButton == null || survivalButtonLabel == null) return;
             if (!GameSession.SurvivalUnlocked(data))
             {
-                survivalButtonLabel.text = "서바이벌\n<size=60%>1구간 보스를 깨면 열려요</size>";
+                survivalButtonLabel.text = "서바이벌\n<size=70%>1구간 보스를 깨면 열려요</size>";
                 return;
             }
 
@@ -576,7 +576,7 @@ namespace HistoryHeroes.UI
             string dev = GameSession.SurvivalUnlockedByProgress(data) ? "" : " · 개발용 해금";
             int stars = data.survival.TotalStars();
             int maxStars = Survival.SurvivalProgress.MapIds.Length * 3;
-            survivalButtonLabel.text = $"서바이벌\n<size=60%>맵 {Survival.SurvivalProgress.MapIds.Length}개 · ★{stars}/{maxStars} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
+            survivalButtonLabel.text = $"서바이벌\n<size=70%>★{stars}/{maxStars} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
         }
 
         // ---------------------------------------------------------------- v1.0 신규 7일 미션 · 순찰
@@ -600,7 +600,7 @@ namespace HistoryHeroes.UI
             long now = Clock.UnixSeconds;
             int gold = Patrol.Pending(data, now);
             string full = Patrol.Full(data, now) ? "<color=#FFD966>가득</color>" : Wallet.Format(gold);
-            patrolLabel.text = $"순찰\n<size=70%>{full}</size>";
+            patrolLabel.text = $"순찰\n<size=80%>{full}</size>";
         }
 
         private void ClaimPatrol()

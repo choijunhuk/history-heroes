@@ -590,6 +590,114 @@ namespace HistoryHeroes.EditorTools
             return $"{id}: 장애물 {layout.obstacles.Count} · 함정 {layout.traps.Count} · 장치 {devices}";
         }
 
+        // ───── 글자 점검 (TextAudit) ─────
+
+        private static string Path(Transform t)
+        {
+            string n = t.name;
+            for (int i = 0; i < 2 && t.parent != null && t.parent.GetComponent<Canvas>() == null; i++) { t = t.parent; n = t.name + "/" + n; }
+            return n;
+        }
+
+        // 캔버스 로컬 좌표 사각형 (에디터 Game 창 크기와 상관없이 1080 기준 단위)
+        private static Rect ScreenBounds(RectTransform rt, Bounds local, Canvas canvas)
+        {
+            var root = (RectTransform)canvas.transform;
+            Vector3 a = root.InverseTransformPoint(rt.TransformPoint(local.min)), b = root.InverseTransformPoint(rt.TransformPoint(local.max));
+            return Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
+        }
+
+        /// <summary>
+        /// 화면의 모든 TMP 글자를 훑어 문제 목록을 만든다 (Play 중에만).
+        /// 종류: 칸밖(OVF) · 잘림(CLIP) · 화면밖(OFF) · 작음(SMALL &lt;15) · 자동축소 바닥(MIN) · 겹침(OVL).
+        /// 측정은 1080 기준 해상도 픽셀. 예: TextAudit() 또는 TextAudit("overlay") 로 겹침만 줄이기.
+        /// </summary>
+        public static string TextAudit(float minSize = 15f)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var lines = new List<string>();
+            var items = new List<(TMPro.TMP_Text t, Rect r, Canvas c)>();
+            int total = 0;
+            foreach (TMPro.TMP_Text t in Object.FindObjectsByType<TMPro.TMP_Text>(FindObjectsSortMode.None))
+            {
+                if (!t.gameObject.activeInHierarchy || string.IsNullOrWhiteSpace(t.text)) continue;
+                Canvas canvas = t.canvas;
+                if (canvas == null || !canvas.isActiveAndEnabled || canvas.renderMode == RenderMode.WorldSpace) continue;
+                canvas = canvas.rootCanvas;
+                if (t.color.a < 0.02f) continue;
+                float cg = 1f;
+                foreach (CanvasGroup g in t.GetComponentsInParent<CanvasGroup>()) cg *= g.alpha;
+                if (cg < 0.02f) continue;
+                t.ForceMeshUpdate();
+                total++;
+                var rt = t.rectTransform;
+                string head = $"{Path(t.transform)} \"{Trim(t.text)}\"";
+                Bounds tb = t.textBounds;
+                Rect sr = ScreenBounds(rt, tb, canvas);
+                if (tb.size.x < 0.01f && tb.size.y < 0.01f) continue;
+
+                float refW = canvas.GetComponent<RectTransform>().rect.width;
+                float scaleToRef = rt.lossyScale.x / Mathf.Max(0.0001f, canvas.transform.lossyScale.x);
+                float eff = t.fontSize * scaleToRef * 1080f / Mathf.Max(1f, refW);
+                if (eff < minSize) lines.Add($"SMALL {eff:0}px | {head}");
+                if (t.enableAutoSizing && t.fontSize <= t.fontSizeMin + 0.01f && t.preferredHeight > rt.rect.height + 1f)
+                    lines.Add($"MIN {t.fontSize:0}px 바닥에서도 넘침 | {head}");
+
+                Rect r = rt.rect;
+                float ow = tb.size.x - r.width, oh = tb.size.y - r.height;
+                if (ow > 2f || oh > 2f || t.isTextTruncated)
+                    lines.Add($"OVF 글 {tb.size.x:0}x{tb.size.y:0} 칸 {r.width:0}x{r.height:0}{(t.isTextTruncated ? " 잘림" : "")} | {head}");
+
+                // 화면 · 안전영역 밖
+                Rect screen = ((RectTransform)canvas.transform).rect;
+                bool inScroll = t.GetComponentInParent<UnityEngine.UI.ScrollRect>() != null; // 스크롤 목록은 가장자리에서 잘려 보이는 게 정상
+                if (!inScroll && screen.Overlaps(sr) && (sr.xMin < screen.xMin - 1f || sr.xMax > screen.xMax + 1f || sr.yMin < screen.yMin - 1f || sr.yMax > screen.yMax + 1f))
+                    lines.Add($"OFF 화면밖 {sr.xMin - screen.xMin:0},{sr.yMin - screen.yMin:0}-{sr.xMax - screen.xMin:0},{sr.yMax - screen.yMin:0} | {head}");
+
+                // 마스크 밖으로 잘림 (스크롤 중 완전히 가려진 건 무시)
+                bool hidden = false;
+                foreach (UnityEngine.UI.RectMask2D m in t.GetComponentsInParent<UnityEngine.UI.RectMask2D>())
+                {
+                    Rect mr = ScreenBounds(m.rectTransform, new Bounds(m.rectTransform.rect.center, m.rectTransform.rect.size), canvas);
+                    if (!mr.Overlaps(sr)) { hidden = true; break; }
+                    if (!inScroll && (sr.xMin < mr.xMin - 2f || sr.xMax > mr.xMax + 2f || sr.yMin < mr.yMin - 2f || sr.yMax > mr.yMax + 2f))
+                        lines.Add($"CLIP 마스크에 걸림 | {head}");
+                    break;
+                }
+                if (!hidden && screen.Overlaps(sr)) items.Add((t, sr, canvas));
+            }
+
+            for (int i = 0; i < items.Count; i++)
+                for (int j = i + 1; j < items.Count; j++)
+                {
+                    var a = items[i]; var b = items[j];
+                    if (a.t.transform.IsChildOf(b.t.transform) || b.t.transform.IsChildOf(a.t.transform)) continue;
+                    if (a.c != b.c || PanelRoot(a.t.transform) != PanelRoot(b.t.transform)) continue; // 뒤에 깔린 다른 화면과는 비교하지 않는다
+                    float ix = Mathf.Min(a.r.xMax, b.r.xMax) - Mathf.Max(a.r.xMin, b.r.xMin);
+                    float iy = Mathf.Min(a.r.yMax, b.r.yMax) - Mathf.Max(a.r.yMin, b.r.yMin);
+                    if (ix <= 0f || iy <= 0f) continue;
+                    float small = Mathf.Min(a.r.width * a.r.height, b.r.width * b.r.height);
+                    if (small > 1f && ix * iy / small > 0.25f)
+                        lines.Add($"OVL {(ix * iy / small):P0} | {Path(a.t.transform)} \"{Trim(a.t.text)}\" <> {Path(b.t.transform)} \"{Trim(b.t.text)}\"");
+                }
+
+            return $"글자 {total}개 · 문제 {lines.Count}\n" + string.Join("\n", lines);
+        }
+
+        // 캔버스(또는 Safe) 바로 아래 가지: 같은 화면인지 가르는 기준
+        private static Transform PanelRoot(Transform t)
+        {
+            while (t.parent != null && t.parent.GetComponent<Canvas>() == null && t.parent.name != "Safe") t = t.parent;
+            return t;
+        }
+
+        private static string Trim(string s)
+        {
+            s = s.Replace("\n", " ");
+            return s.Length > 20 ? s.Substring(0, 20) : s;
+        }
+
         public static string State()
         {
             if (!Application.isPlaying) return "Play 모드가 아님";

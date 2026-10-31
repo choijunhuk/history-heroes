@@ -307,7 +307,7 @@ namespace HistoryHeroes.EditorTools
             ui.Diorama = BuildLobbyDiorama(camera);
 
             // ----- 위: 계정 레벨 · 골드 · 보석 · 하트 -----
-            RectTransform topBar = Rect("TopBar", main, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(1040f, 80f));
+            RectTransform topBar = Rect("TopBar", main, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -26f), new Vector2(1040f, 80f)); // 위 가장자리에서 26 (레벨 글자가 화면 밖으로 안 나가게)
             RectTransform levelBadge = Rect("Level", topBar, Center, Center, Center, new Vector2(-462f, 0f), new Vector2(92f, 92f));
             Image levelImage = Img(levelBadge, new Color(0.3f, 0.6f, 1f), _kit != null ? _kit.Slot : null);
             if (_kit != null) levelImage.type = Image.Type.Sliced;
