@@ -23,8 +23,9 @@ rm -f "$RESULT"
 
 cd "$GAME"
 echo "빌드 시작: $VERSION ($CODE) — 10~30분 걸린다"
-$U eval "if (UnityEditor.EditorApplication.isPlaying) return \"Play 중 — 멈추고 다시\"; UnityEditor.EditorApplication.delayCall += () => HistoryHeroes.EditorTools.AndroidRelease.Build(\"$VERSION\", $CODE, $AAB); return \"시작\";" 2>&1 | grep -o '"시작"\|Play 중[^"]*' || true
-until [ -f "$RESULT" ]; do sleep 15; done # 빌드 중에는 에디터가 대답하지 않는다 → 결과 파일을 기다린다
+# eval 안에서 바로 빌드한다 (맥은 에디터가 뒤에 있으면 delayCall이 돌지 않는다). 연결이 먼저 끊겨도 빌드는 계속되니 결과 파일을 기다린다
+$U --timeout 3600 eval "return HistoryHeroes.EditorTools.AndroidRelease.Build(\"$VERSION\", $CODE, $AAB);" >/dev/null 2>&1 || true # Play 중이면 Build가 "실패"를 남긴다
+until [ -f "$RESULT" ]; do sleep 15; done
 cat "$RESULT"; echo
 grep -q "^성공" "$RESULT" || exit 1
 $AAB && { echo "Play Console → 테스트 → 새 버전 만들기 → $GAME/Builds/Android/HistoryHeroes.aab 올리기"; exit 0; }
