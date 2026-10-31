@@ -53,7 +53,7 @@ namespace HistoryHeroes.UI
         private IEnumerator Opening()
         {
             yield return new WaitForSeconds(0.7f);
-            if (boss != null && boss.isActiveAndEnabled && !GameSession.Tutorial)
+            if (boss != null && boss.isActiveAndEnabled && !GameSession.Tutorial && UsesChapterBossIntro(GameSession.GodTrialId))
             {
                 foreach ((string speaker, string line) in StoryLines.BossIntro(GameSession.Chapter)) Enqueue($"<color=#FFD966>{speaker}</color>  {line}");
                 yield break;
@@ -61,6 +61,8 @@ namespace HistoryHeroes.UI
 
             Once(LineMoment.RunStart);
         }
+
+        public static bool UsesChapterBossIntro(string godTrialId) => string.IsNullOrEmpty(godTrialId);
 
         private void Update()
         {

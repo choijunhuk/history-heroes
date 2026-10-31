@@ -21,9 +21,9 @@ FREE_CHOICE_RUNS = 10
 # Game/Assets/Scripts/Meta/MetaTable.cs:46-53,70,77.
 MAX_LEVEL, LEVEL_COST = 30, 200
 AWAKEN_COSTS = (10, 20, 40, 80)
-# Game/Assets/Scripts/Meta/HeroGrowth.cs:14-15,91-109. 5개는 비교용 제안이다.
-SHARD_PRICE, SHOP_LIMIT = 500, 3
-PROPOSED_LIMIT = 5
+# Game/Assets/Scripts/Meta/HeroGrowth.cs:14-15,91-109. 5개가 현재 결정·구현값이다.
+SHARD_PRICE, SHOP_LIMIT = 500, 5
+PREVIOUS_LIMIT = 3
 # Game/Assets/Scripts/Modes/GodTrialRules.cs:20-31,80-105,154-174.
 GOD_UNLOCK, GOD_FIRST, GOD_WEEKLY = 30, 10, 5
 
@@ -148,13 +148,13 @@ def main():
     # 금액·달력·상한 경계를 고정해 계산식의 실수를 바로 드러낸다.
     assert (HEROES, HUMANS, len(GEM_HEROES), UNLOCK_GEMS) == (21, 17, 11, 20000)
     assert (LEVEL_TOTAL, SHARD_TOTAL) == (87000, 150)
-    assert shard_days(21, 3, weekly=False) == 7
-    assert shard_days(26, 3) == 7  # 7일째 주간 5개를 한 번만 받는다.
+    assert shard_days(21, SHOP_LIMIT, weekly=False) == 5
+    assert shard_days(26, SHOP_LIMIT) == 6
     assert daily_income("30분")[1] == F(730, 7)
     assert daily_income("30분", True)[1] == F(940, 7)
     assert god_days(4, True) == (98, 105)
     assert free_choice_days("30분") == (5, 7)
-    print("21명 기준 경제 재계산 (2026-10-29)")
+    print("21명 기준 경제 재계산 (2026-10-31 결정 반영)")
     print("금액은 정수, 일일 평균은 소수 둘째 자리, 기간은 올림. 1개월=30일.")
     print("모든 수입원 개방·5구간 격파 후 2구간 반복·순찰 하루 2번·미션 전부 수령 가정.")
     print("첫 보상/업적/레벨업/선택 보상방/금화주머니 제외. 시작일부터의 실제 달력 예측은 아님.")
@@ -169,7 +169,7 @@ def main():
     table("하루 반복 수입", ["유형", "골드", "보석", "고대 파편"],
           [(name, *(f"{float(value):,.2f}" for value in income))
            for (name, *_), income in zip(profiles, incomes)])
-    print("각성 조각: 별도 구매 골드로 상점 3/일 + 선택 5/주 + 인간 순환 1/일(계정 합계).")
+    print(f"각성 조각: 별도 구매 골드로 상점 {SHOP_LIMIT}/일 + 선택 5/주 + 인간 순환 1/일(계정 합계).")
     print("시련 2승/주가 반복 보스 2회를 대체하면 고대 파편은 위 표에서 10/7=1.43/일 감소.")
 
     table("해금 비용", ["구분", "인원", "보석", "해금 조각"],
@@ -215,15 +215,15 @@ def main():
                                 ("7일마다 10회", F(RELIC_TEN, 7)))])
     print(f"유물 가격 {RELIC_SINGLE}/회·{RELIC_TEN}/10회, 무료 {RELIC_FREE}/일. 21명이어도 24종·연결 첫 유물 8종 유지.")
 
-    table("각성 병목·해금 후 공급이 모두 열린 상태", ["목표·계산 조건", "상점 3/일 현행", "상점 5/일 제안"],
-          [("주력 인간·주간 5 집중+17명 순환", main_shard_days(3, True), main_shard_days(5, True)),
-           ("주력 신·주간 5 집중, 일일 순환 없음", main_shard_days(3, False), main_shard_days(5, False)),
-           ("21명·상점만", shard_days(HEROES*SHARD_TOTAL, 3, False), shard_days(HEROES*SHARD_TOTAL, 5, False)),
-           ("21명·상점+주간 5", shard_days(HEROES*SHARD_TOTAL, 3), shard_days(HEROES*SHARD_TOTAL, 5)),
-           ("21명·위+인간 순환 전부 유효", shard_days(HEROES*SHARD_TOTAL, 3, daily_pool=True),
-            shard_days(HEROES*SHARD_TOTAL, 5, daily_pool=True)),
-           ("종전 75%상점 가정·나머지 공급 미보장", ceil(F(HEROES*SHARD_TOTAL*3, 4*3)),
-            ceil(F(HEROES*SHARD_TOTAL*3, 4*5)))])
+    table("각성 병목·해금 후 공급이 모두 열린 상태", ["목표·계산 조건", "상점 3/일 이전 기준", "상점 5/일 현재 기준"],
+          [("주력 인간·주간 5 집중+17명 순환", main_shard_days(PREVIOUS_LIMIT, True), main_shard_days(SHOP_LIMIT, True)),
+           ("주력 신·주간 5 집중, 일일 순환 없음", main_shard_days(PREVIOUS_LIMIT, False), main_shard_days(SHOP_LIMIT, False)),
+           ("21명·상점만", shard_days(HEROES*SHARD_TOTAL, PREVIOUS_LIMIT, False), shard_days(HEROES*SHARD_TOTAL, SHOP_LIMIT, False)),
+           ("21명·상점+주간 5", shard_days(HEROES*SHARD_TOTAL, PREVIOUS_LIMIT), shard_days(HEROES*SHARD_TOTAL, SHOP_LIMIT)),
+           ("21명·위+인간 순환 전부 유효", shard_days(HEROES*SHARD_TOTAL, PREVIOUS_LIMIT, daily_pool=True),
+            shard_days(HEROES*SHARD_TOTAL, SHOP_LIMIT, daily_pool=True)),
+           ("종전 75%상점 가정·나머지 공급 미보장", ceil(F(HEROES*SHARD_TOTAL*3, 4*PREVIOUS_LIMIT)),
+            ceil(F(HEROES*SHARD_TOTAL*3, 4*SHOP_LIMIT)))])
     print("단위=일. 합계 하한은 개별 영웅별 배분/해금 전 제한/이미 최대인 영웅 중복에 따라 늦어진다.")
     table("골드만 모으는 데 필요한 일수·다른 지출 0", ["목표", "골드", "구현 30분", "구현 60분"],
           [(label, f"{cost:,}", resource_days(cost, incomes[0][0]), resource_days(cost, incomes[1][0]))

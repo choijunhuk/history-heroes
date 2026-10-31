@@ -131,9 +131,15 @@ namespace HistoryHeroes.EditorTools
 
             var chests = new Button[5];
             var chestLabels = new TMP_Text[5];
+            var chestGlows = new Image[5];
             for (int i = 0; i < 5; i++)
             {
                 chests[i] = Btn($"Chest{i + 1}", panel, "", new Vector2(-404f + i * 202f, 540f), new Vector2(194f, 150f), RowColor, out chestLabels[i]);
+                RectTransform glowRect = Rect("ReadyGlow", chests[i].transform, Vector2.zero, Vector2.one, Center, Vector2.zero, new Vector2(20f, 20f));
+                chestGlows[i] = Img(glowRect, new Color(1f, 0.8f, 0.25f, 0.38f), _kit != null ? _kit.Glow : null);
+                chestGlows[i].raycastTarget = false;
+                glowRect.SetAsFirstSibling();
+                glowRect.gameObject.SetActive(false);
                 chestLabels[i].fontSize = 30;
                 chestLabels[i].enableAutoSizing = true;
                 chestLabels[i].fontSizeMin = 16f;
@@ -143,6 +149,12 @@ namespace HistoryHeroes.EditorTools
             }
 
             ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, -80f), new Vector2(1000f, 1040f), 118f, 30f);
+            Transform template = list.transform.Find("Content/RowTemplate");
+            RectTransform track = Rect("ProgressTrack", template, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(-48f, 10f));
+            Img(track, new Color(0f, 0f, 0f, 0.45f), null).raycastTarget = false;
+            RectTransform fillRect = Rect("ProgressFill", track, Vector2.zero, new Vector2(0f, 1f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            Image progressFill = Img(fillRect, new Color(0.95f, 0.77f, 0.32f, 0.94f), null);
+            progressFill.raycastTarget = false;
             TMP_Text message = Label("Message", panel, "", 28, TextAlignmentOptions.Center);
             Place(message.rectTransform, Center, Center, new Vector2(0f, -650f), new Vector2(1000f, 90f));
 
@@ -153,7 +165,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("metaTable", meta).Ref("roster", roster).Ref("titleLabel", title).Ref("infoLabel", info)
-                    .Refs("tabButtons", tabs).Refs("tabLabels", tabLabels).Refs("chestButtons", chests).Refs("chestLabels", chestLabels)
+                    .Refs("tabButtons", tabs).Refs("tabLabels", tabLabels).Refs("chestButtons", chests).Refs("chestLabels", chestLabels).Refs("chestGlows", chestGlows)
                     .Ref("list", list).Ref("messageLabel", message).Ref("rerollButton", reroll).Ref("rerollLabel", rerollLabel).Ref("backButton", back);
             }
 

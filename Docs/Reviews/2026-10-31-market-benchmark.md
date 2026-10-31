@@ -176,3 +176,30 @@
 
 내부 문서 (비교 기준)
 - `Docs/Design/Gacha.md`, `Relics.md`, `Equipment.md`, `Economy.md`, `UX.md`, `Monetization.md`, `GodsVsHumanity.md`, `Docs/Dev/UX-Overhaul-Plan.md`, `Docs/Legal/terms-ko.md`
+
+## 처리
+
+2026-10-31, `feature/ux-gacha`의 Batch C. 아래는 코드·문서 반영 내역이며 Editor 실행이나 출시 승인을 뜻하지 않는다.
+
+| 항목 | 반영 파일·내용 | 검증 |
+|---|---|---|
+| 1. 미션 | `MissionPanel.cs`, `ButtonList.cs`, `SceneBuilder.Missions.cs`: 받을 업적을 위쪽에 `[받기]`로 표시, 진행 막대·활동 점수·상자 수령 상태·교체 안내 추가. 일일·주간 점수 자동 지급은 유지 | `MissionPresentationTests.ProgressAmount_ClampsAndUsesCompletedState`, `ButtonList_ProgressChangesWidthAndHidesWhenAbsent` |
+| 2. 알림 점 | `UpgradeNotice.cs`, `LobbyScreen.cs`, 로비 빌더: 레벨·각성·장착 장비 성장 가능 여부와 7일 보상 준비 상태 표시. 알림 판정은 저장을 변경하지 않음 | `UpgradeNoticeTests`의 레벨·잠긴 영웅·각성·장비·7일 보상 검사 |
+| 3. 상점 | `ShopPanel.cs`, `SceneBuilder.MetaUi.cs`: 유물 잠김을 회색·조건으로 표시, 짧은 구매 문구와 중앙 보장 횟수, 구매 버튼에 확률·보장 표시, 재화 전환 설명·빈 결과 안내 추가 | `EquipmentTests.Premium_NextLegendaryRateReflectsOrdinaryRareGuaranteeAndPity`, `EquipmentSixSlotTests.BothBoxes_ReachEverySlotAndShowItsIndividualRate` |
+| 4. 시련 안내 | `HeroVoice.cs`, `BossIntroPanel.cs`, `GodTrialRules.cs`, `RunResultScreen.cs` 첫 격파 문구만 국소 수정: 일반 보스 대사 제외, 신의 시련 개방, 서로 다른 본인 기록·액티브 구성 차이 조건과 미집계 이유 | `TrialPresentationTests` |
+| 5. 영웅 타일 | `SceneBuilder.Lobby.cs`: 초상 높이를 줄이고 이름·상태에 별도 영역 배정 | 빌더 정적 컴파일. 실제 줄바꿈·겹침은 Editor 확인 전 |
+| 6. 도감 | `HeroStories.cs`에 승인된 21명 소개를 모음. `CodexPanel.cs`, `SceneBuilder.Codex.cs`에서 같은 경로로 표시하고 잠긴 조합은 3열 카드로 정리. 기존 로비 빌더의 도감 메서드를 전용 partial 파일로 이동 | `CodexPresentationTests.EveryRosterHeroHasOneBiographyWithSeparateSourceLabels`, `UnknownHeroDoesNotBorrowAnotherPersonsStory`, `LockedRecipeCardHidesNameAndMaterials` |
+| 7. 맵 선택 | `SurvivalMapPanel.cs`: 개발용 전체 입장 허용 대신 실제 저장 진행으로 첫 맵 선택 | `SurvivalSelectionTests` |
+| 8. 고급 상자 | `GachaService.cs`, `GachaTable.cs`: 희귀 미만 9회 뒤 다음 회차 보장. 기존 로그에서 누적 상태를 복원하고 마지막 고급 9회 기록 보존. 전설 50회 보장·기본 표 유지. `Gacha.md`, `Equipment.md`, `GameDesign.md` 동기화 | `EquipmentTests.Premium_RareGuaranteeAccumulatesAcrossSinglesTicketsAndTenPulls`, `Premium_RareGuaranteeSurvivesNormalLogTrimmingAndJsonRoundtrip`, `Premium_RareGuaranteeUnknownLegacyItemResetsStreak_AndPityWins` |
+| 9. 공개 확률 | `Tools/export_probabilities.py` → `Docs/Public/probabilities.md`. 실제 에셋 GUID·표에서 장비 42종·유물 24종의 회차별 확률·가격·보장·중복·확정 강화 규칙 생성. 보장 회차 실제 확률과 재추첨 표를 구분 | `ProbabilityExportTests` 4개 통과, `python3 Tools/export_probabilities.py --check` 통과 |
+| 10. 출시 문구 | `Docs/Release/StoreListing.md`: 한국어 초안, ‘확률형 아이템 포함’, 보상형 광고 안내, 무작위 상품·종교 인물 표현을 포함한 IARC 목록 | 문서 검토. 실제 게시·등급 심사 미실행 |
+| 11. 경제 문서 | `Economy.md` 9장·`Monetization.md`·`Handoff.md` 7장·`Tools/economy_21.py`: 상점 5개/일은 현재 기준, 3개는 이전 비교. 광고 보석은 Economy의 계획값 10개×2회=20개/일로 통일하고 미구현 수입과 구분 | `python3 Tools/economy_21.py` 내부 단언·실행 통과 |
+
+### 검증 범위와 남은 확인
+
+- PASS: Python 테스트 4개, 확률표 동기화 검사, 경제 계산, Python 구문 검사, `git diff --check`.
+- PASS: Unity를 실행하지 않고 설치된 Unity 6.3 엔진·템플릿 패키지 DLL과 `.asmdef`의 직접 참조로 Roslyn C# 9 정적 컴파일. Runtime·Editor·EditMode 테스트 어셈블리에서 오류 0개. Runtime에는 직렬화 필드 미할당·기존 API 경고 등이 있으며 무경고 통과를 뜻하지 않는다. Android 전용 알림 코드는 이 Editor 조건 검사 대상이 아니다.
+- NOT_RUN: 실제 Unity 프로젝트 컴파일, EditMode 테스트 실행, `SceneBuilder.BuildAll`, Play·폰·화면 비교. 장면·에셋·폰트는 변경하지 않았으므로 리드는 빌더 재생성 후 연결·줄바꿈·진행 막대·버튼 상태를 확인한다. 화면 캡처가 없어 visual-verdict 점수는 만들지 않았다.
+- 공개 확률표는 저장소 Markdown이다. 실제 공개 사이트 게시와 스토어·게임 내 연결 URL 확인은 출시 작업으로 남는다. 스토어 문구도 실제 상품과 광고 구현에 맞춰 게시 전에 확인한다.
+- 다른 배치 소유인 `Records/*`는 변경하지 않았다. `SaveData.cs`의 조각 상점 ‘하루 3개’ 주석과 뽑기 로그 ‘최근 100개’ 주석은 저장 담당이 각각 ‘5개’, ‘100개 한도 안에서 마지막 고급 9회 보존’으로 맞출 수 있다. 기존 버전에서 이미 지워진 로그나 삭제된 장비 ID의 누적 상태는 복원할 수 없어 확인 가능한 기록까지만 센다.
+- 커밋하지 않았다. 작업 시작부터 보이던 LFS 에셋 차이는 이번 코드 변경에 포함하지 않는다.

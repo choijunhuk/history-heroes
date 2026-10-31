@@ -113,12 +113,12 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>단추 왼쪽에 컬러 보상 그림 (Art/UI/Rewards). 글자는 그만큼 오른쪽으로</summary>
-        private static void LeftPicture(Button button, string rewardKey)
+        private static void LeftPicture(Button button, string rewardKey, float maxSize = 96f)
         {
             Sprite sprite = RewardIcon(rewardKey);
             if (button == null || sprite == null) return;
             var rt = (RectTransform)button.transform;
-            float size = Mathf.Min(rt.sizeDelta.y * 0.86f, 96f);
+            float size = Mathf.Min(rt.sizeDelta.y * 0.86f, maxSize);
             RectTransform pic = Rect("Picture", rt, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(10f, 4f), new Vector2(size, size));
             Img(pic, Color.white, sprite).preserveAspect = true;
             TMP_Text label = button.GetComponentInChildren<TMP_Text>();
@@ -146,18 +146,26 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text premiumInfo = Label("PremiumInfo", equipmentSection, "", 28, TextAlignmentOptions.Center);
             Place(premiumInfo.rectTransform, Center, Center, new Vector2(0f, 460f), new Vector2(1000f, 60f));
-            Button premium1 = Btn("Premium1", equipmentSection, "1회", new Vector2(-335f, 370f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium1Label);
-            premium1Label.fontSize = 27;
-            Button premium10 = Btn("Premium10", equipmentSection, "10연", new Vector2(0f, 370f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium10Label);
-            premium10Label.fontSize = 27;
-            Button ticket = Btn("Ticket", equipmentSection, "소환권", new Vector2(335f, 370f), new Vector2(325f, 100f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text ticketLabel);
+            Button premium1 = Btn("Premium1", equipmentSection, "1회", new Vector2(-335f, 365f), new Vector2(325f, 112f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium1Label);
+            premium1Label.fontSize = 25;
+            Button premium10 = Btn("Premium10", equipmentSection, "10회", new Vector2(0f, 365f), new Vector2(325f, 112f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium10Label);
+            premium10Label.fontSize = 25;
+            Button ticket = Btn("Ticket", equipmentSection, "소환권", new Vector2(335f, 365f), new Vector2(325f, 112f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text ticketLabel);
             ticketLabel.fontSize = 25;
             // 상자 그림 (2026-10-29 개발자: "보상에 그림이 너무 없다") — 단추 왼쪽에
             LeftPicture(normalBuy, "chest_normal");
             LeftPicture(normalFree, "chest_normal");
-            LeftPicture(premium1, "chest_premium");
-            LeftPicture(premium10, "chest_premium");
-            LeftPicture(ticket, "ticket");
+            LeftPicture(premium1, "chest_premium", 60f);
+            LeftPicture(premium10, "chest_premium", 60f);
+            LeftPicture(ticket, "ticket", 60f);
+            // 확률 줄은 의도한 두 번째 줄에 두고, 그림이 글의 가로 자리를 뺏지 않게 한다.
+            foreach (TMP_Text purchaseLabel in new[] { premium1Label, premium10Label, ticketLabel })
+            {
+                purchaseLabel.textWrappingMode = TextWrappingModes.NoWrap;
+                purchaseLabel.enableAutoSizing = true;
+                purchaseLabel.fontSizeMin = 20f;
+                purchaseLabel.fontSizeMax = 25f;
+            }
 
             Button rates = Btn("Rates", equipmentSection, "확률 보기", new Vector2(-335f, 265f), new Vector2(325f, 84f), ButtonGray, out TMP_Text ratesButtonLabel);
             ratesButtonLabel.fontSize = 28;
@@ -168,7 +176,9 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text message = Label("Message", equipmentSection, "", 26, TextAlignmentOptions.Center);
             Place(message.rectTransform, Center, Center, new Vector2(0f, 165f), new Vector2(1000f, 60f));
-            ButtonList list = BuildButtonList(equipmentSection, "List", new Vector2(0f, -285f), new Vector2(1000f, 810f), 90f, 26f);
+            TMP_Text premiumPity = Label("PremiumPity", equipmentSection, "", 26, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(premiumPity.rectTransform, Center, Center, new Vector2(0f, 85f), new Vector2(1000f, 60f));
+            ButtonList list = BuildButtonList(equipmentSection, "List", new Vector2(0f, -345f), new Vector2(1000f, 720f), 90f, 26f);
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -800f), new Vector2(400f, 100f), ButtonGray, out _);
 
             // 장비 상자와 같은 화면 안에 두어 도감에서도 한 화면만 열면 된다.
@@ -176,8 +186,8 @@ namespace HistoryHeroes.EditorTools
             Img(relicSection, PanelColor, null).raycastTarget = true;
             TMP_Text relicInfo = Label("RelicInfo", relicSection, "", 34, TextAlignmentOptions.Center);
             Place(relicInfo.rectTransform, Center, Center, new Vector2(0f, 545f), new Vector2(1000f, 160f));
-            Button relicPay = Btn("RelicPay", relicSection, "결제 재화", new Vector2(0f, 395f), new Vector2(820f, 86f), ButtonBlue, out TMP_Text relicPayLabel);
-            relicPayLabel.fontSize = 30f;
+            Button relicPay = Btn("RelicPay", relicSection, "결제 재화", new Vector2(0f, 395f), new Vector2(940f, 86f), ButtonBlue, out TMP_Text relicPayLabel);
+            relicPayLabel.fontSize = 27f;
             Button relic1 = Btn("Relic1", relicSection, "1회", new Vector2(-252f, 140f), new Vector2(496f, 108f), ButtonBlue, out TMP_Text relic1Label);
             Button relic10 = Btn("Relic10", relicSection, "10회", new Vector2(252f, 140f), new Vector2(496f, 108f), ButtonGreen, out TMP_Text relic10Label);
             Button relicFree = Btn("RelicFree", relicSection, "무료 1회 (오늘)", new Vector2(0f, 15f), new Vector2(700f, 90f), ButtonBlue, out TMP_Text relicFreeLabel);
@@ -186,8 +196,8 @@ namespace HistoryHeroes.EditorTools
             LeftPicture(relicFree, "ancient_shard");
             Button relicRates = Btn("RelicRates", relicSection, "확률 보기", new Vector2(0f, -100f), new Vector2(500f, 86f), ButtonBlue, out _);
             TMP_Text relicNotice = Label("RelicNotice", relicSection,
-                "<color=#A9B4C2>확률·보장·중복 규칙은 확률 보기에서 확인하세요</color>", 28, TextAlignmentOptions.Center);
-            Place(relicNotice.rectTransform, Center, Center, new Vector2(0f, -215f), new Vector2(980f, 80f));
+                "<color=#A9B4C2>각 유물 확률·새 유물 보장·중복 규칙은 확률 보기에서 확인하세요</color>", 28, TextAlignmentOptions.Center);
+            Place(relicNotice.rectTransform, Center, Center, new Vector2(0f, -205f), new Vector2(980f, 80f));
             TMP_Text relicLegal = Label("RelicLegal", relicSection,
                 "<color=#A9B4C2>보석으로 뽑을 수 있습니다. 사용한 보석·뽑기는 철회가 제한됩니다. 이 버전은 실제 결제가 없는 시험판입니다.</color>", 27, TextAlignmentOptions.Center);
             Place(relicLegal.rectTransform, Center, Center, new Vector2(0f, 280f), new Vector2(980f, 110f));
@@ -268,7 +278,7 @@ namespace HistoryHeroes.EditorTools
                     .Refs("relicResultIcons", resultIcons).Refs("relicResultLabels", resultLabels).Ref("relicResultsCloseButton", resultsClose)
                     .Ref("relicResultsScroll", resultsScroll).Ref("ratesScroll", ratesScroll)
                     .Ref("normalBuyButton", normalBuy).Ref("normalBuyLabel", normalBuyLabel).Ref("normalFreeButton", normalFree).Ref("normalFreeLabel", normalFreeLabel)
-                    .Ref("premiumInfoLabel", premiumInfo).Ref("premium1Button", premium1).Ref("premium1Label", premium1Label)
+                    .Ref("premiumInfoLabel", premiumInfo).Ref("premiumPityLabel", premiumPity).Ref("premium1Button", premium1).Ref("premium1Label", premium1Label)
                     .Ref("premium10Button", premium10).Ref("premium10Label", premium10Label).Ref("ticketButton", ticket).Ref("ticketLabel", ticketLabel)
                     .Ref("ratesButton", rates).Ref("exchangeButton", exchange).Ref("exchangeLabel", exchangeLabel).Ref("messageLabel", message)
                     .Ref("list", list).Ref("ratesRoot", ratesPanel.gameObject).Ref("ratesLabel", ratesText).Ref("ratesCloseButton", ratesClose)

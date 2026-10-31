@@ -6,7 +6,7 @@ namespace HistoryHeroes.Meta
 {
     /// <summary>
     /// 영웅 성장 규칙 (Stats 4~7장, Economy 5장): 영웅 레벨(골드), 각성 ★(🧩 영웅 조각), 수련(계정 공용, 골드),
-    /// 골드 상점의 영웅 조각(하루 3개). 저장 데이터만 바꾸고 저장은 부르는 쪽이 한다.
+    /// 골드 상점의 영웅 조각(하루 5개). 저장 데이터만 바꾸고 저장은 부르는 쪽이 한다.
     /// 영웅 조각은 뽑기로도, 보석으로도 팔지 않는다 (Stats 6장).
     /// </summary>
     public static class HeroGrowth

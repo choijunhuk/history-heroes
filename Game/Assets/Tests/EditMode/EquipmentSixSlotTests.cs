@@ -274,8 +274,8 @@ namespace HistoryHeroes.Tests
                 Assert.That(rates, Does.Contain(box.pity > 0 ? "천장" : "보장 없음"));
                 if (box.pity > 0)
                 {
-                    Assert.That(rates, Does.Contain("10연 보장 7.225%"));
-                    Assert.That(rates, Does.Contain("10연 보장 1.108333%, 천장 8.333333%"));
+                    Assert.That(rates, Does.Contain("누적 10회 실제 7.224583%"));
+                    Assert.That(rates, Does.Contain("누적 10회 실제 1.10875%, 천장 8.333333%"));
                 }
             }
         }

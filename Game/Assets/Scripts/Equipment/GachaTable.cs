@@ -38,7 +38,7 @@ namespace HistoryHeroes.Equipment
             id = "premium", displayName = "고급 상자", rarity = new[] { 0.50f, 0.35f, 0.13f, 0.02f }, gemCost = 250, gem10Cost = 2250, pity = 50,
         };
 
-        [Tooltip("10연에서 희귀 이상이 하나도 없으면 10번째를 이 표로 다시 뽑는다 (희귀 86.7% · 전설 13.3%)")]
+        [Tooltip("고급 상자를 희귀 이상 없이 9회 연속 열면 다음 회차에서 희귀 미만 결과를 이 표로 다시 뽑는다 (희귀 86.7% · 전설 13.3%)")]
         public float[] tenPullGuarantee = { 0f, 0f, 0.867f, 0.133f };
 
         [Tooltip("뽑기 기록을 몇 개까지 남길지")]
