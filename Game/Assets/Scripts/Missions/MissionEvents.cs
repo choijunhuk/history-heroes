@@ -46,6 +46,15 @@ namespace HistoryHeroes.Missions
         /// <summary>미션이 끝났다 ("미션 완료  적 300마리 처치  (+15)") — HUD·로비가 알림으로 띄운다</summary>
         public static event Action<string> Completed;
 
+        private static readonly List<string> _notificationLines = new List<string>();
+        private static bool _notifying;
+        private static SaveData _ensuredSave;
+        private static MissionTable _ensuredTable;
+        private static DateTime _ensuredDate;
+        private static string _ensuredDayKey;
+        private static string _ensuredWeekKey;
+        private static int _ensuredResetHour;
+
         private static bool Suppressed => GameSession.Practice;
 
         /// <summary>장면이 열릴 때: 미션 표 + 영웅 해금·이름 + 조합 수</summary>
@@ -75,7 +84,20 @@ namespace HistoryHeroes.Missions
         public static void EnsureCurrent()
         {
             if (Table == null) return;
-            if (MissionService.Ensure(SaveSystem.Data, Table, Clock.Now(), Context)) SaveSystem.MarkDirty();
+            SaveData save = SaveSystem.Data;
+            DateTimeOffset now = Clock.Now();
+            // 날짜 값은 할당 없이 비교하고, 실제 날짜가 바뀔 때만 문자열 키를 다시 만든다.
+            DateTime date = now.AddHours(-Table.resetHour).Date;
+            if (ReferenceEquals(_ensuredSave, save) && ReferenceEquals(_ensuredTable, Table)
+                && _ensuredDate == date && _ensuredResetHour == Table.resetHour
+                && _ensuredDayKey == save.missions.dayKey && _ensuredWeekKey == save.missions.weekKey) return;
+            if (MissionService.Ensure(save, Table, now, Context)) SaveSystem.MarkDirty();
+            _ensuredSave = save;
+            _ensuredTable = Table;
+            _ensuredDate = date;
+            _ensuredResetHour = Table.resetHour;
+            _ensuredDayKey = save.missions.dayKey;
+            _ensuredWeekKey = save.missions.weekKey;
         }
 
         public static void Raise(string key, int amount = 1, string param = null)
@@ -85,7 +107,11 @@ namespace HistoryHeroes.Missions
             EnsureCurrent();
             Count(save, key, amount);
             Newcomer.OnEvent(save, key, amount, param, Clock.Now()); // 신규 7일 미션 (v1.0)
-            Notify(MissionService.Raise(save, key, amount, param));
+            // 알림 안에서 새 사건이 발생하는 드문 경우에는 기존 즉시 전달 순서를 지킨다.
+            List<string> lines = _notifying ? new List<string>() : _notificationLines;
+            if (!_notifying) lines.Clear();
+            MissionService.Raise(save, key, amount, param, lines);
+            Notify(lines);
             SaveSystem.MarkDirty();
         }
 
@@ -160,7 +186,21 @@ namespace HistoryHeroes.Missions
 
         private static void Notify(List<string> lines)
         {
-            foreach (string line in lines) Completed?.Invoke(line);
+            if (_notifying)
+            {
+                foreach (string line in lines) Completed?.Invoke(line);
+                return;
+            }
+            _notifying = true;
+            try
+            {
+                foreach (string line in lines) Completed?.Invoke(line);
+            }
+            finally
+            {
+                if (ReferenceEquals(lines, _notificationLines)) _notificationLines.Clear();
+                _notifying = false;
+            }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -169,6 +209,14 @@ namespace HistoryHeroes.Missions
             Completed = null;
             Table = null;
             Context = null;
+            _notificationLines.Clear();
+            _notifying = false;
+            _ensuredSave = null;
+            _ensuredTable = null;
+            _ensuredDate = default(DateTime);
+            _ensuredDayKey = null;
+            _ensuredWeekKey = null;
+            _ensuredResetHour = 0;
         }
     }
 }
