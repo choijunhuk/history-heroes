@@ -90,12 +90,17 @@ Codex 점수: 전체 4 · UI 3.5 · 전투 가독성 4 · 뽕맛 4.5 · 스토�
 
 ## 5. 출시 준비
 
+> 구글 플레이 정책 점검 결과 (2026-11-01): [Release/GooglePlay-Checklist.md](Release/GooglePlay-Checklist.md)
+> 이미 한 것 (2026-11-01): 앱 아이콘 · 목표 API 36 · 출시 서명 키(저장소 밖) · APK/AAB 빌드 메뉴 · GitHub 릴리스 APK 내려받기 (`Tools/dev/release.sh`) · 글씨 크기 · 넘침 점검
+
 | | 할 일 | 누가 |
 |---|---|---|
-| ⭐ | 폰 시험 (새 APK로 60fps · 발열 · 3D 부하) — `feature/art-3d`가 main보다 49커밋 앞 | 👤 폰 연결 + 🤖 빌드 |
+| ⭐ | 폰 시험 (GitHub 릴리스 APK로 60fps · 발열 · 3D 부하) — `feature/art-3d`가 main보다 앞 | 👤 폰 + 🤖 빌드 |
 | ⭐ | `feature/art-3d` → `main` 합치기 (폰 시험 뒤) | 🤖 |
-| | Google Play 개발자 계정 ($25) · 스토어 등록 정보 · 스크린샷 | 👤 |
-| | 진짜 광고 SDK (LevelPlay) · 인앱 결제 · 계정 연동 · 클라우드 저장 (UGS) | 👤 계정 + 🤖 연결 |
+| ⭐ | Google Play 개발자 계정 ($25) — **개인 계정은 테스터 12명 × 14일 비공개 테스트가 먼저** 필요해서 일찍 만들수록 좋다 · 스토어 등록 정보 · 스크린샷 | 👤 |
+| | 첫 실행 동의 화면 (등급 · 필수 약관 · 만 14세 · 선택 광고성 알림, [LiveOps 19장](Design/LiveOps.md)) | 🤖 |
+| | 계정: 게스트(UGS 익명) → 구글 플레이 게임즈 · 카카오 연동, 클라우드 저장, 계정 삭제 (앱 + 웹) ([LiveOps 3장](Design/LiveOps.md)) | 👤 Unity 클라우드 · Play Console · 카카오 디벨로퍼스 + 🤖 연결 |
+| | 진짜 광고 SDK (LevelPlay) · 인앱 결제 (Unity IAP 5) | 👤 계정 + 🤖 연결 |
 | | 개인정보 처리방침 · 이용약관 공개 주소 | 👤 |
 | | Google Play "자동 보호" 등 앱 보호 설정 확인 | 👤 |
 
