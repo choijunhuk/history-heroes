@@ -19,7 +19,8 @@ namespace HistoryHeroes.Records
         /// <summary>9: 신의 시련 첫 격파와 주간 목표를 별도로 보관한다.</summary>
         /// <summary>10: 미확정 기록·불굴 사용 여부·판 시작 룬을 함께 보관한다.</summary>
         /// <summary>11: 기능 첫 사용 안내를 본 이력. 옛 저장은 아직 안 본 상태로 시작한다.</summary>
-        public const int CurrentSchemaVersion = 11;
+        /// <summary>12: 첫 실행 동의 기록 (약관·개인정보 버전, 동의 시각, 만 14세 확인). 옛 저장은 동의 기록이 없어 다음 로비에서 한 번 묻는다.</summary>
+        public const int CurrentSchemaVersion = 12;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -130,6 +131,8 @@ namespace HistoryHeroes.Records
         public bool tutorialDone;
         /// <summary>로비에서 한 번 보여 준 기능 안내 ID. 닫거나 다시 접속해도 반복하지 않는다.</summary>
         public List<string> seenFirstUseHints = new List<string>();
+        /// <summary>첫 실행 동의 기록 (Progress.Consent가 판정). 비어 있으면 아직 동의 전</summary>
+        public ConsentRecord consent = new ConsentRecord();
         /// <summary>튜토리얼 던전에서 남긴 기록 (보스 전에 앱이 꺼져도 튜토리얼 보스로 바로 간다)</summary>
         public string tutorialRecordId;
         public AttendanceSave attendance = new AttendanceSave();
@@ -919,5 +922,16 @@ namespace HistoryHeroes.Records
             this.level = level;
             this.fusion = fusion;
         }
+    }
+
+    /// <summary>동의한 약관·개인정보 처리방침 버전과 시각. 버전이 0이면 동의한 적 없음.</summary>
+    [Serializable]
+    public sealed class ConsentRecord
+    {
+        public int termsVersion;
+        public int privacyVersion;
+        /// <summary>동의한 시각 (UTC, ISO 8601)</summary>
+        public string agreedAtUtc;
+        public bool age14;
     }
 }

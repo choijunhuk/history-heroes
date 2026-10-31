@@ -445,6 +445,8 @@ namespace HistoryHeroes.Records
 
             // 10 → 11: 예전 진행은 보존하고 첫 사용 안내만 아직 안 본 상태로 연다.
             if (data.schemaVersion < 11) data.seenFirstUseHints = new List<string>();
+            // 11 → 12: 옛 저장에는 동의 기록이 없다. 빈 기록으로 두면 다음 로비에서 한 번 묻는다.
+            if (data.schemaVersion < 12) data.consent = new ConsentRecord();
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -452,6 +454,7 @@ namespace HistoryHeroes.Records
         private static void Normalize(SaveData data)
         {
             data.seenFirstUseHints ??= new List<string>();
+            data.consent ??= new ConsentRecord();
             data.records ??= new List<RunRecord>();
             data.discoveredRecipes ??= new List<string>();
             data.targetRecipes ??= new List<string>();

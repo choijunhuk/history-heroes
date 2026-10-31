@@ -97,11 +97,14 @@ namespace HistoryHeroes.UI
         [SerializeField] private RecordSaveScreen reselect;
         [SerializeField] private GameObject unsupportedSaveNotice;
         [SerializeField] private LobbyGuide firstUseGuide;
+        [Tooltip("첫 실행 동의 (LiveOps 19장). 동의 전에는 로비의 나머지 시작 절차를 미룬다")]
+        [SerializeField] private ConsentPanel consent;
 
         private int _chapter = 1;
         private float _nextWallet;
         private float _noticeUntil;
         private bool _readyForGuide;
+        private bool _begun;
 
         private void Start()
         {
@@ -121,6 +124,16 @@ namespace HistoryHeroes.UI
                 enabled = false;
                 return;
             }
+            // 첫 실행 동의가 먼저다: 튜토리얼 자동 시작 · 출석 · 안내보다 앞. 동의하면 그때 나머지를 시작한다.
+            if (consent != null && Progress.Consent.NeedsConsent(data)) consent.Open(Begin);
+            else Begin();
+        }
+
+        /// <summary>동의가 끝난 뒤의 로비 시작 절차 (예전 Start 본문)</summary>
+        private void Begin()
+        {
+            SaveData data = SaveSystem.Data;
+            _begun = true;
             GameSession.ConfigureMetaTable(metaTable);
             string lobbyHero = GameSession.ConsumeLobbyHero();
             SettingsApplier.Apply(data.settings);
@@ -412,6 +425,7 @@ namespace HistoryHeroes.UI
 
         private void Update()
         {
+            if (!_begun) return; // 동의 대기 중
             if (Time.unscaledTime >= _nextWallet)
             {
                 RenderWallet();

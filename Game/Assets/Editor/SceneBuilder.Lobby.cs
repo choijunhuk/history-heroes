@@ -95,6 +95,10 @@ namespace HistoryHeroes.EditorTools
             LobbyGuide firstUseGuide = BuildLobbyGuide(root, safe, main);
             using (var props = new Props(lobby)) props.Ref("firstUseGuide", firstUseGuide);
 
+            // 첫 실행 동의: 맨 위에 덮는다 (안내 · 튜토리얼보다 먼저)
+            ConsentPanel consentPanel = BuildConsentPanel(root);
+            using (var props = new Props(lobby)) props.Ref("consent", consentPanel);
+
             AddUiSounds(root);
             ApplyTypeScale();
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
