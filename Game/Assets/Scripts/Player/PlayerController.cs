@@ -1220,7 +1220,7 @@ namespace HistoryHeroes.Player
                 Amount = Stats.Get(StatType.Attack, StatTarget.BasicAttack) * coefficient,
                 Kind = DamageKind.BasicAttack,
                 AttackerTeam = Team.Player,
-                SourceId = "sig_athena",
+                SourceId = hero.exclusiveActive != null ? hero.exclusiveActive.id : "sig_athena", // 올빼미의 눈 표식 피해 — 대표 효과(판단의 방패) 이름으로 잡히던 것 (2026-10-31 실전 점검)
             };
             if (target.TryTakeDamage(bonus, out float dealt)) OnBasicAttackHit(bonus, dealt);
         }
