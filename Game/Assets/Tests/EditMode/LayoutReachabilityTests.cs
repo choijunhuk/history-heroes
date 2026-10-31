@@ -12,10 +12,8 @@ namespace HistoryHeroes.Tests
     public sealed class LayoutReachabilityTests
     {
         private const float Cell = 0.25f;
-        private const float HalfWidth = 4f, HalfHeight = 7f;
         private const float HeroRadius = 0.35f;
         private static readonly Vector2 Start = new Vector2(0f, -5.5f);
-        private static readonly Vector2 DoorFront = new Vector2(0f, 6.3f);
 
         private static List<RoomLayout> AllLayouts()
         {
@@ -31,7 +29,9 @@ namespace HistoryHeroes.Tests
 
         private static bool Blocked(RoomLayout layout, Vector2 p)
         {
-            if (Mathf.Abs(p.x) > HalfWidth - HeroRadius || Mathf.Abs(p.y) > HalfHeight - HeroRadius) return true;
+            Rect bounds = layout.Bounds;
+            if (p.x < bounds.xMin + HeroRadius || p.x > bounds.xMax - HeroRadius ||
+                p.y < bounds.yMin + HeroRadius || p.y > bounds.yMax - HeroRadius) return true;
             foreach (ObstacleDef o in layout.obstacles)
             {
                 if (o.kind == ObstacleKind.Breakable) continue;
@@ -64,13 +64,14 @@ namespace HistoryHeroes.Tests
         {
             List<RoomLayout> layouts = AllLayouts();
             Assert.That(layouts.Count, Is.GreaterThan(30), "확장 1차 방 세트가 만들어져 있다 (장면 빌더)");
-            int w = Mathf.RoundToInt(HalfWidth * 2f / Cell) + 1, h = Mathf.RoundToInt(HalfHeight * 2f / Cell) + 1;
-            Vector2 ToWorld(int x, int y) => new Vector2(-HalfWidth + x * Cell, -HalfHeight + y * Cell);
-            (int, int) ToCell(Vector2 p) => (Mathf.RoundToInt((p.x + HalfWidth) / Cell), Mathf.RoundToInt((p.y + HalfHeight) / Cell));
-
             var failures = new List<string>();
             foreach (RoomLayout layout in layouts)
             {
+                Rect bounds = layout.Bounds;
+                int w = Mathf.RoundToInt(bounds.width / Cell) + 1, h = Mathf.RoundToInt(bounds.height / Cell) + 1;
+                Vector2 ToWorld(int x, int y) => new Vector2(bounds.xMin + x * Cell, bounds.yMin + y * Cell);
+                (int, int) ToCell(Vector2 p) => (Mathf.RoundToInt((p.x - bounds.xMin) / Cell), Mathf.RoundToInt((p.y - bounds.yMin) / Cell));
+                Vector2 doorFront = new Vector2(0f, bounds.yMax - 0.7f);
                 var free = new bool[w, h];
                 int freeCount = 0;
                 for (int x = 0; x < w; x++)
@@ -107,14 +108,14 @@ namespace HistoryHeroes.Tests
                     }
                 }
 
-                (int dxCell, int dyCell) = ToCell(DoorFront);
+                (int dxCell, int dyCell) = ToCell(doorFront);
                 if (!seen[dxCell, dyCell]) failures.Add($"{layout.id}: 문까지 못 감");
                 // 확장 1차 3-2장 갈림길 문 2개 (SceneBuilder.ForkX = 2.4): 일반 방(3·9번 자리)에서 양쪽 문 앞까지
                 if (layout.use == RoomUse.Normal)
                 {
                     foreach (float fx in new[] { -2.4f, 2.4f })
                     {
-                        (int fxCell, int fyCell) = ToCell(new Vector2(fx, DoorFront.y));
+                        (int fxCell, int fyCell) = ToCell(new Vector2(fx, doorFront.y));
                         if (!seen[fxCell, fyCell]) failures.Add($"{layout.id}: 갈림길 문({fx})까지 못 감");
                     }
                 }
@@ -156,6 +157,7 @@ namespace HistoryHeroes.Tests
                 int own = layouts.FindAll(l => l.chapter == c && l.use == RoomUse.Normal).Count;
                 Assert.That(own, Is.GreaterThanOrEqualTo(6), $"{c}구간 전용 방 6개 이상");
                 Assert.IsTrue(layouts.Exists(l => l.chapter == c && l.use == RoomUse.MidBoss), $"{c}구간 중간 보스 방");
+                Assert.AreEqual(2, layouts.FindAll(l => l.chapter == c && l.longRoom).Count, $"{c}구간 긴 방 두 모양");
             }
 
             Assert.IsTrue(layouts.Exists(l => l.use == RoomUse.Elite), "엘리트 원형 투기장");

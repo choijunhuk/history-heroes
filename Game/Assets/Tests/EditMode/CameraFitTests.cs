@@ -51,6 +51,105 @@ namespace HistoryHeroes.Tests
             Assert.That(s.Ground.yMax, Is.GreaterThan(room.y * 0.5f));
         }
 
+        [TestCase(9f / 16f)]
+        [TestCase(9f / 20f)]
+        public void LongRoom_CameraAndDoorStayWithinTwentyTwoCellBounds(float aspect)
+        {
+            var layout = ScriptableObject.CreateInstance<HistoryHeroes.Dungeon.RoomLayout>();
+            try
+            {
+                layout.longRoom = true;
+                Assert.AreEqual(22f, layout.Bounds.height);
+                Assert.AreEqual(14.7f, layout.DoorY, 0.001f);
+                CameraFit.Solution s = CameraFit.Solve(new Vector2(9.2f, 15.2f), 32f, Fov, aspect, Top, Bottom, Side);
+                Rect trackingView = new Rect(-4f, -7f, 8f, 14f);
+                Assert.That(s.Ground.height, Is.GreaterThan(22f), "실제 원근 시야로 자르면 긴 방 카메라가 움직이지 않는다");
+                Vector2 half = layout.Bounds.size * 0.5f;
+                Assert.AreEqual(0f, CameraFollow.ClampToBounds(new Vector2(0f, -5.5f), trackingView, layout.Bounds.center, half).y, 0.001f);
+                Assert.AreEqual(8f, CameraFollow.ClampToBounds(new Vector2(0f, layout.DoorY), trackingView, layout.Bounds.center, half).y, 0.001f);
+                foreach (float x in new[] { -3.65f, 3.65f })
+                {
+                    foreach (float y in new[] { -5.5f, 0f, 2f, 8f, 14.65f })
+                    {
+                        Vector2 position = new Vector2(x, y);
+                        Vector2 cameraRig = CameraFollow.ClampToBounds(position, trackingView, layout.Bounds.center, half);
+                        Vector3 hero = CameraFit.Project(position - cameraRig, s.Position, s.Tilt, Fov, aspect);
+                        Assert.That(hero.x, Is.InRange(Side - 0.001f, 1f - Side + 0.001f), $"가장자리 영웅 {position} 가로");
+                        Assert.That(hero.y, Is.InRange(Bottom - 0.001f, 1f - Top + 0.001f), $"가장자리 영웅 {position} 세로·HUD");
+                    }
+                }
+            }
+            finally { Object.DestroyImmediate(layout); }
+        }
+
+        [Test]
+        public void LongRoom_GeometryMovesDoorToFarEnd_AndRestoresNormalRoom()
+        {
+            var root = new GameObject("room-test");
+            var longLayout = ScriptableObject.CreateInstance<HistoryHeroes.Dungeon.RoomLayout>();
+            var shortLayout = ScriptableObject.CreateInstance<HistoryHeroes.Dungeon.RoomLayout>();
+            try
+            {
+                root.SetActive(false);
+                var run = root.AddComponent<HistoryHeroes.Dungeon.DungeonRun>();
+                var floor = new GameObject("floor").transform;
+                var left = new GameObject("left").transform;
+                var right = new GameObject("right").transform;
+                var top = new GameObject("top").transform;
+                var topDecor = new GameObject("topDecor").transform;
+                floor.SetParent(root.transform);
+                left.SetParent(root.transform);
+                right.SetParent(root.transform);
+                top.SetParent(root.transform);
+                topDecor.SetParent(root.transform);
+                var doorObject = new GameObject("door");
+                doorObject.transform.SetParent(root.transform);
+                doorObject.transform.position = new Vector3(0f, 6.7f, 0f);
+                doorObject.AddComponent<BoxCollider2D>();
+                var door = doorObject.AddComponent<HistoryHeroes.Dungeon.Door>();
+                var arch = new GameObject("arch").transform;
+                arch.position = new Vector3(0f, 7.25f, 0f);
+                arch.SetParent(doorObject.transform, true);
+                var follow = root.AddComponent<CameraFollow>();
+                follow.enabled = false;
+                var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                foreach (var pair in new (string, object)[]
+                {
+                    ("roomFloor", floor), ("leftWall", left), ("rightWall", right), ("topWall", top),
+                    ("door", door), ("cameraFollow", follow), ("topDecorations", new[] { topDecor })
+                }) typeof(HistoryHeroes.Dungeon.DungeonRun).GetField(pair.Item1, flags).SetValue(run, pair.Item2);
+                var configure = typeof(HistoryHeroes.Dungeon.DungeonRun).GetMethod("ConfigureRoomGeometry", flags);
+
+                longLayout.longRoom = true;
+                configure.Invoke(run, new object[] { longLayout });
+                Assert.AreEqual(22f, floor.localScale.y, 0.001f);
+                Assert.AreEqual(4f, floor.position.y, 0.001f);
+                Assert.AreEqual(24f, left.localScale.y, 0.001f);
+                Assert.AreEqual(15.5f, top.position.y, 0.001f);
+                Assert.AreEqual(8f, topDecor.position.y, 0.001f);
+                Assert.AreEqual(14.7f, door.transform.position.y, 0.001f);
+                Assert.AreEqual(15.25f, arch.position.y, 0.001f);
+                Assert.IsTrue(follow.enabled);
+                Assert.IsTrue(follow.TrackingView.HasValue);
+                Assert.AreEqual(new Rect(-4f, -7f, 8f, 14f), follow.TrackingView.Value);
+                Assert.AreEqual(4f, follow.BoundsCenter.y, 0.001f);
+
+                configure.Invoke(run, new object[] { shortLayout });
+                Assert.AreEqual(14f, floor.localScale.y, 0.001f);
+                Assert.AreEqual(6.7f, door.transform.position.y, 0.001f);
+                Assert.AreEqual(0f, topDecor.position.y, 0.001f);
+                Assert.AreEqual(7.25f, arch.position.y, 0.001f);
+                Assert.IsFalse(follow.enabled);
+                Assert.IsFalse(follow.TrackingView.HasValue);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(longLayout);
+                Object.DestroyImmediate(shortLayout);
+            }
+        }
+
         [Test]
         public void StraightDown_MatchesOrthographicLikeFit()
         {

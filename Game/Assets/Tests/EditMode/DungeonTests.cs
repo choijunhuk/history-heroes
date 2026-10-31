@@ -135,6 +135,89 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void LongRooms_SelectOneOfSevenOrTwelve_InEachChapter()
+        {
+            var layouts = new List<RoomLayout>();
+            for (int chapter = 1; chapter <= 5; chapter++)
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    var layout = ScriptableObject.CreateInstance<RoomLayout>();
+                    layout.id = $"c{chapter}_long_{i}";
+                    layout.chapter = chapter;
+                    layout.longRoom = true;
+                    layout.kind = i == 0 ? LayoutKind.Pillars : LayoutKind.Corridor;
+                    layouts.Add(layout);
+                }
+            }
+            for (int i = 0; i < 12; i++)
+            {
+                var layout = ScriptableObject.CreateInstance<RoomLayout>();
+                layout.id = $"short_{i}";
+                layout.kind = (LayoutKind)(i % 6);
+                layouts.Add(layout);
+            }
+            try
+            {
+                for (int chapter = 1; chapter <= 5; chapter++)
+                {
+                    var random = new System.Random(100 + chapter);
+                    int selected = Encounter.PickLongRoom(random);
+                    Assert.That(selected, Is.EqualTo(7).Or.EqualTo(12));
+                    var plans = new List<RoomPlan>();
+                    for (int room = 1; room <= 15; room++)
+                    {
+                        RoomKind kind = room == 5 || room == 10 ? RoomKind.Elite : room == 6 || room == 11 ? RoomKind.Reward : room == 15 ? RoomKind.MidBoss : RoomKind.Normal;
+                        bool longRoom = Encounter.UsesLongRoom(room, selected, 15, kind, false, false, false);
+                        plans.Add(new RoomPlan { kind = kind, longRoom = longRoom });
+                    }
+                    Assert.AreEqual(1, plans.FindAll(p => p.longRoom).Count);
+                    List<RoomLayout> picked = Encounter.PickLayouts(plans, layouts, null, random, chapter);
+                    for (int i = 0; i < picked.Count; i++)
+                    {
+                        if (plans[i].kind != RoomKind.Normal) continue;
+                        Assert.IsNotNull(picked[i], $"{chapter}구간 {i + 1}번 방");
+                        Assert.AreEqual(plans[i].longRoom, picked[i].longRoom, $"{chapter}구간 {i + 1}번 방 크기");
+                        if (plans[i].longRoom) Assert.AreEqual(chapter, picked[i].chapter);
+                    }
+                }
+                Assert.IsFalse(Encounter.UsesLongRoom(7, 7, 6, RoomKind.Normal, true, false, false));
+                Assert.IsFalse(Encounter.UsesLongRoom(7, 7, 7, RoomKind.Normal, false, true, false));
+                Assert.IsFalse(Encounter.UsesLongRoom(7, 7, 15, RoomKind.Normal, false, false, true));
+                Assert.IsFalse(Encounter.NormalOptions(layouts, 3, null, null).Exists(l => l.longRoom), "무한의 균열도 기본 후보에서 긴 방을 빼야 한다");
+            }
+            finally { foreach (RoomLayout layout in layouts) Object.DestroyImmediate(layout); }
+        }
+
+        [Test]
+        public void LongRoomWaves_KeepEveryEnemyAndSplitAcrossLength()
+        {
+            var spawns = new List<SpawnEntry>
+            {
+                new SpawnEntry { prefab = _charger, count = 1 },
+                new SpawnEntry { prefab = _archer, count = 1 },
+                new SpawnEntry { prefab = _shield, count = 3 }
+            };
+            List<SpawnEntry>[] waves = Encounter.SplitWaves(spawns);
+            int Count(List<SpawnEntry> entries) { int total = 0; foreach (SpawnEntry entry in entries) total += entry.count; return total; }
+            Assert.AreEqual(3, Count(waves[0]));
+            Assert.AreEqual(2, Count(waves[1]));
+            Assert.AreEqual(5, Count(waves[0]) + Count(waves[1]));
+            Assert.AreEqual(3, spawns[2].count, "원래 적 편성은 바뀌지 않는다");
+
+            var layout = ScriptableObject.CreateInstance<RoomLayout>();
+            try
+            {
+                layout.longRoom = true;
+                Assert.IsFalse(layout.CanSpawnSecondWave(1.99f));
+                Assert.IsTrue(layout.CanSpawnSecondWave(2f));
+                layout.longRoom = false;
+                Assert.IsFalse(layout.CanSpawnSecondWave(10f));
+            }
+            finally { Object.DestroyImmediate(layout); }
+        }
+
+        [Test]
         public void RunRandom_SameSeedSameStreams_AndStreamsIndependent()
         {
             RunRandom.Begin(1234);

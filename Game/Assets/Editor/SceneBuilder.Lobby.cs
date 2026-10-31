@@ -92,6 +92,9 @@ namespace HistoryHeroes.EditorTools
             unsupported.gameObject.SetActive(false);
             using (var props = new Props(lobby)) props.Ref("unsupportedSaveNotice", unsupported.gameObject).Ref("reselect", reselect);
 
+            LobbyGuide firstUseGuide = BuildLobbyGuide(root, safe, main);
+            using (var props = new Props(lobby)) props.Ref("firstUseGuide", firstUseGuide);
+
             AddUiSounds(root);
             ApplyTypeScale();
             EditorSceneManager.SaveScene(scene, LobbyScenePath);

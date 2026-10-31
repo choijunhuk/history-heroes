@@ -45,6 +45,12 @@ namespace HistoryHeroes.Dungeon
         [SerializeField] private RewardRoomPanel rewardRoom;
         [Tooltip("레이아웃 장애물·함정을 놓는 곳")]
         [SerializeField] private Transform layoutRoot;
+        [SerializeField] private Transform roomFloor;
+        [SerializeField] private Transform leftWall;
+        [SerializeField] private Transform rightWall;
+        [SerializeField] private Transform topWall;
+        [SerializeField] private Transform[] topDecorations = new Transform[0];
+        [SerializeField] private CameraFollow cameraFollow;
         [Tooltip("무한의 균열 10층마다 나오는 보스맵 보스 (1~5구간 순서)")]
         [SerializeField] private List<Modes.BossData> riftBosses = new List<Modes.BossData>();
 
@@ -385,6 +391,15 @@ namespace HistoryHeroes.Dungeon
             }
 
             _plans = GameSession.CustomPlan != null ? new List<RoomPlan>(GameSession.CustomPlan) : new List<RoomPlan>(dungeon.plan);
+            bool standardDungeon = GameSession.Mode == BattleMode.Dungeon && GameSession.CustomPlan == null;
+            System.Random rooms = RunRandom.Rooms;
+            int longRoom = standardDungeon ? Encounter.PickLongRoom(rooms) : 0;
+            for (int i = 0; i < _plans.Count; i++)
+            {
+                RoomPlan copy = _plans[i].Copy();
+                copy.longRoom = standardDungeon && Encounter.UsesLongRoom(i + 1, longRoom, _plans.Count, copy.kind, GameSession.Tutorial, _daily, _rift);
+                _plans[i] = copy;
+            }
             if (_budgetScale != 1f)
             {
                 for (int i = 0; i < _plans.Count; i++)
@@ -395,7 +410,6 @@ namespace HistoryHeroes.Dungeon
                 }
             }
 
-            System.Random rooms = RunRandom.Rooms;
             _layouts = Encounter.PickLayouts(_plans, dungeon.layouts, dungeon.specialLayout, rooms, _chapter != null ? _chapter.chapter : 0); // 구간 전용 방 · 전용 모양 (확장 1차 1장)
             if (GameSession.Tutorial)
             {
@@ -443,6 +457,7 @@ namespace HistoryHeroes.Dungeon
             }
 
             door.SetOpen(false);
+            ConfigureRoomGeometry(_layouts[room - 1]);
             SaveSnapshot(room);
             var kinds = new List<RoomKind>();
             int first = _rift ? (room - 1) / 10 * 10 : 0; // 균열: 지금 10층 묶음만
@@ -463,6 +478,46 @@ namespace HistoryHeroes.Dungeon
             else if (StartChallenge(plan)) { } // 도전 방 (갈림길 오른쪽)
             else StartCoroutine(SpawnRoom(plan, _encounters[room - 1]));
             RoomEntered?.Invoke(room);
+        }
+
+        private void ConfigureRoomGeometry(RoomLayout layout)
+        {
+            Rect bounds = layout != null ? layout.Bounds : new Rect(-4f, -7f, 8f, 14f);
+            float centerY = bounds.center.y;
+            if (roomFloor != null)
+            {
+                roomFloor.position = new Vector3(roomFloor.position.x, centerY, roomFloor.position.z);
+                roomFloor.localScale = new Vector3(bounds.width, bounds.height, roomFloor.localScale.z);
+            }
+            foreach (Transform wall in new[] { leftWall, rightWall })
+            {
+                if (wall == null) continue;
+                wall.position = new Vector3(wall.position.x, centerY, wall.position.z);
+                wall.localScale = new Vector3(wall.localScale.x, bounds.height + 2f, wall.localScale.z);
+            }
+            if (topWall != null) topWall.position = new Vector3(topWall.position.x, bounds.yMax + 0.5f, topWall.position.z);
+            if (topDecorations != null)
+            {
+                foreach (Transform group in topDecorations)
+                    if (group != null) group.localPosition = new Vector3(0f, bounds.yMax - 7f, 0f);
+            }
+            float doorY = layout != null ? layout.DoorY : bounds.yMax - 0.3f;
+            if (door != null) door.transform.position = new Vector3(door.transform.position.x, doorY, door.transform.position.z);
+            if (forkGates != null)
+            {
+                foreach (ForkGate gate in forkGates)
+                    if (gate != null) gate.transform.position = new Vector3(gate.transform.position.x, doorY, gate.transform.position.z);
+            }
+            if (cameraFollow == null) return;
+            cameraFollow.TrackingView = layout != null && layout.longRoom ? new Rect(-4f, -7f, 8f, 14f) : (Rect?)null;
+            cameraFollow.enabled = layout != null && layout.longRoom;
+            if (cameraFollow.enabled)
+            {
+                cameraFollow.BoundsCenter = bounds.center;
+                cameraFollow.BoundsHalf = bounds.size * 0.5f;
+                cameraFollow.SnapToTarget();
+            }
+            else cameraFollow.transform.position = Vector3.zero;
         }
 
         /// <summary>균열 10층마다: 보스맵 보스 (균열 버전 — 2단계 패턴부터)</summary>
@@ -514,13 +569,31 @@ namespace HistoryHeroes.Dungeon
             if (midBoss) _alive++;
 
             if (midBoss) StartCoroutine(SpawnMidBoss());
-            foreach (SpawnEntry entry in spawns)
+            bool longRoom = CurrentLayout != null && CurrentLayout.longRoom;
+            List<SpawnEntry>[] waves = longRoom ? Encounter.SplitWaves(spawns) : null;
+            foreach (SpawnEntry entry in longRoom ? waves[0] : spawns)
             {
                 if (entry.prefab == null) continue;
                 for (int i = 0; i < entry.count; i++)
                 {
-                    StartCoroutine(SpawnOne(entry, PickSpawnPoint()));
+                    StartCoroutine(SpawnOne(entry, longRoom ? PickSpawnPoint(CurrentLayout.FirstWaveArea) : PickSpawnPoint()));
                     yield return new WaitForSeconds(spawnStagger);
+                }
+            }
+
+            if (longRoom)
+            {
+                int spawningRoom = _room;
+                while (!_finished && _room == spawningRoom && !CurrentLayout.CanSpawnSecondWave(player.transform.position.y)) yield return null;
+                if (_finished || _room != spawningRoom) yield break;
+                foreach (SpawnEntry entry in waves[1])
+                {
+                    if (entry.prefab == null) continue;
+                    for (int i = 0; i < entry.count; i++)
+                    {
+                        StartCoroutine(SpawnOne(entry, PickSpawnPoint(CurrentLayout.SecondWaveArea)));
+                        yield return new WaitForSeconds(spawnStagger);
+                    }
                 }
             }
 
@@ -743,10 +816,12 @@ namespace HistoryHeroes.Dungeon
             return fallback;
         }
 
-        private Vector2 PickSpawnPoint()
+        private Vector2 PickSpawnPoint() => PickSpawnPoint(spawnArea);
+
+        private Vector2 PickSpawnPoint(Rect area)
         {
             Vector2 from = player.transform.position;
-            Vector2 best = spawnArea.center;
+            Vector2 best = area.center;
             float bestDistance = -1f;
 
             // 플레이어와 충분히 떨어지고 장애물 위가 아닌 자리 (근접 도달 검사, Modes 2-2). 못 찾으면 그중 가장 먼 빈자리
@@ -754,7 +829,7 @@ namespace HistoryHeroes.Dungeon
             System.Random random = RunRandom.Enemies;
             for (int i = 0; i < 24; i++)
             {
-                var p = new Vector2(RunRandom.Range(random, spawnArea.xMin, spawnArea.xMax), RunRandom.Range(random, spawnArea.yMin, spawnArea.yMax));
+                var p = new Vector2(RunRandom.Range(random, area.xMin, area.xMax), RunRandom.Range(random, area.yMin, area.yMax));
                 if (Physics2D.OverlapCircle(p, 0.55f, _obstacleMask) != null) continue;
                 float d = Vector2.Distance(p, from);
                 if (d >= minDistanceFromPlayer) return p;

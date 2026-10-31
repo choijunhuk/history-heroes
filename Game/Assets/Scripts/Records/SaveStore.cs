@@ -443,12 +443,15 @@ namespace HistoryHeroes.Records
                 data.rift.checkpoint.meta = null;
             }
 
+            // 10 → 11: 예전 진행은 보존하고 첫 사용 안내만 아직 안 본 상태로 연다.
+            if (data.schemaVersion < 11) data.seenFirstUseHints = new List<string>();
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
         /// <summary>빠진 목록을 채우고 말이 안 되는 값을 바로잡는다 (손으로 고친 파일, 옛 파일 대비).</summary>
         private static void Normalize(SaveData data)
         {
+            data.seenFirstUseHints ??= new List<string>();
             data.records ??= new List<RunRecord>();
             data.discoveredRecipes ??= new List<string>();
             data.targetRecipes ??= new List<string>();
