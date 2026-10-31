@@ -493,6 +493,22 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>TrySkill 뒤: 남은 적, 액티브 피해, 플레이어 체력</summary>
+        /// <summary>
+        /// 새 영웅 실전 점검: 영웅을 바꾸고 그 영웅 전용 액티브 Lv5를 들고 TrySkill과 같은 적 12마리와 싸운다 (가만히 서서 = 멈춤 대표 효과 확인).
+        /// 결과는 TrySkillStatus()의 출처별 피해. 예: HeroCheck("thor")
+        /// </summary>
+        public static string HeroCheck(string heroId)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            var roster = UnityEditor.AssetDatabase.LoadAssetAtPath<Heroes.HeroRoster>("Assets/Data/Heroes/HeroRoster.asset");
+            Heroes.HeroData hero = roster != null ? roster.heroes.Find(h => h != null && h.id == heroId) : null;
+            var player = Object.FindAnyObjectByType<PlayerController>();
+            if (hero == null || player == null) return "없음: " + heroId;
+            player.SetHero(hero);
+            if (hero.exclusiveActive == null) return "전용 액티브 없음: " + heroId;
+            return TrySkill(hero.exclusiveActive.id, 5) + " · " + hero.displayName;
+        }
+
         public static string TrySkillStatus()
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
