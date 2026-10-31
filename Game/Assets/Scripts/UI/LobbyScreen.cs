@@ -55,6 +55,7 @@ namespace HistoryHeroes.UI
         [Tooltip("영웅 버튼 안의 3D 초상 (지금 영웅만 보인다, Art3D-Plan 7번)")]
         [SerializeField] private HeroPortraits heroButtonPortraits;
         [SerializeField] private HeroRoster roster;
+        [SerializeField] private TMP_Text heroUpgradeBadge;
 
         [Header("패널")]
         [SerializeField] private BossIntroPanel bossIntro;
@@ -87,6 +88,7 @@ namespace HistoryHeroes.UI
         [Header("v1.0 신규 7일 미션 · 출석 · 순찰")]
         [SerializeField] private Button newcomerButton;
         [SerializeField] private TMP_Text newcomerLabel;
+        [SerializeField] private TMP_Text newcomerBadge;
         [SerializeField] private NewcomerPanel newcomerPanel;
         [SerializeField] private Button patrolButton;
         [SerializeField] private TMP_Text patrolLabel;
@@ -483,6 +485,7 @@ namespace HistoryHeroes.UI
             int found = data.discoveredRecipes.Count;
             codexButtonLabel.text = $"조합 도감  {found}/{codex.RecipeCount}";
             HeroData hero = HeroUnlock.Selected(data, roster);
+            if (heroUpgradeBadge != null) heroUpgradeBadge.text = UpgradeNotice.HasHeroUpgrade(data, metaTable, roster) ? "●" : string.Empty;
             heroButtonLabel.text = hero != null ? $"{hero.displayName} · {hero.ClassLabel}" : "영웅"; // 가운데 무대 영웅 이름표
             if (heroButtonPortraits != null && hero != null) heroButtonPortraits.ShowOnly(roster.heroes.IndexOf(hero));
             if (diorama != null) diorama.Show(_chapter, hero); // 고른 구간의 섬 + 지금 영웅
@@ -514,6 +517,7 @@ namespace HistoryHeroes.UI
             bool attendance = Missions.Attendance.Unlocked(data);
             newcomerButton.gameObject.SetActive(attendance);
             if (!attendance) return;
+            if (newcomerBadge != null) newcomerBadge.text = UpgradeNotice.HasNewcomerReward(data, Clock.Now()) ? "●" : string.Empty;
             if (!Missions.Newcomer.Visible(data, Clock.Now()))
             {
                 newcomerLabel.text = "출석부"; // 7일 미션이 끝나도 출석부는 계속

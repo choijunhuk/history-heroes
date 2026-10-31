@@ -400,6 +400,69 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Premium_RareGuaranteeAccumulatesAcrossSinglesTicketsAndTenPulls()
+        {
+            SaveData save = Unlocked();
+            GachaTable g = Gacha();
+            GachaService.Open(save, g, g.premium, 4, 0, Always(0.1f));
+            Assert.AreEqual(6, GachaService.PullsUntilRareGuarantee(save, g));
+            GachaService.Open(save, g, g.premium, 5, 0, Always(0.1f));
+            Assert.AreEqual(1, GachaService.PullsUntilRareGuarantee(save, g));
+            save.AddItem(Wallet.Ticket, 1);
+            Assert.IsTrue(GachaService.TryPay(save, g, g.premium, 1, GachaService.Pay.Ticket, "2026-10-31"));
+            GachaService.Pull tenth = GachaService.Open(save, g, g.premium, 1, 0, Always(0.1f))[0];
+            Assert.IsTrue(tenth.FromTenGuarantee);
+            Assert.AreEqual(EquipRarity.Rare, tenth.Data.rarity);
+            Assert.AreEqual(10, GachaService.PullsUntilRareGuarantee(save, g));
+
+            GachaService.Open(save, g, g.premium, 6, 0, Always(0.1f));
+            List<GachaService.Pull> batch = GachaService.Open(save, g, g.premium, 10, 0, Always(0.1f));
+            Assert.IsTrue(batch[3].FromTenGuarantee, "묶음의 네 번째가 누적 열 번째");
+            Assert.IsFalse(batch[9].FromTenGuarantee, "다음 누적 열 번째 전까지 중복 보장은 없다");
+        }
+
+        [Test]
+        public void Premium_RareGuaranteeSurvivesNormalLogTrimmingAndJsonRoundtrip()
+        {
+            SaveData save = Unlocked();
+            GachaTable g = Gacha();
+            GachaService.Open(save, g, g.premium, 9, 0, Always(0.1f));
+            for (int i = 0; i < 110; i++) GachaService.Open(save, g, g.normal, 1, i, Always(0.1f));
+            Assert.LessOrEqual(save.gacha.log.Count, g.logLimit);
+            SaveData loaded = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(save));
+            Assert.AreEqual(1, GachaService.PullsUntilRareGuarantee(loaded, g));
+            Assert.IsTrue(GachaService.Open(loaded, g, g.premium, 1, 0, Always(0.1f))[0].FromTenGuarantee);
+        }
+
+        [Test]
+        public void Premium_RareGuaranteeUnknownLegacyItemResetsStreak_AndPityWins()
+        {
+            SaveData save = Unlocked();
+            GachaTable g = Gacha();
+            save.gacha.log.Add(new GachaLogEntry { box = g.premium.id, dataId = "missing_old_item" });
+            Assert.AreEqual(10, GachaService.PullsUntilRareGuarantee(save, g));
+            GachaService.Open(save, g, g.premium, 9, 0, Always(0.1f));
+            save.gacha.premiumPity = 49;
+            GachaService.Pull fiftieth = GachaService.Open(save, g, g.premium, 1, 0, Always(0.1f))[0];
+            Assert.IsTrue(fiftieth.FromPity);
+            Assert.IsFalse(fiftieth.FromTenGuarantee);
+            Assert.AreEqual(EquipRarity.Legendary, fiftieth.Data.rarity);
+            Assert.AreEqual(10, GachaService.PullsUntilRareGuarantee(save, g));
+        }
+
+        [Test]
+        public void Premium_NextLegendaryRateReflectsOrdinaryRareGuaranteeAndPity()
+        {
+            SaveData save = Unlocked();
+            GachaTable g = Gacha();
+            Assert.AreEqual(0.02f, GachaService.NextLegendaryRate(save, g), 1e-6f);
+            GachaService.Open(save, g, g.premium, 9, 0, Always(0.1f));
+            Assert.AreEqual(0.13305f, GachaService.NextLegendaryRate(save, g), 1e-6f);
+            save.gacha.premiumPity = 49;
+            Assert.AreEqual(1f, GachaService.NextLegendaryRate(save, g), 1e-6f);
+        }
+
+        [Test]
         public void Normal_NoPity_NoLegendary_FreeOncePerDay()
         {
             SaveData save = Unlocked();

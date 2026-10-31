@@ -79,6 +79,7 @@ namespace HistoryHeroes.EditorTools
                     .Ref("choice", choicePanel)
                     .Ref("riftButton", rift).Ref("riftButtonLabel", riftLabel).Ref("dailyButton", daily).Ref("dailyButtonLabel", dailyLabel).Ref("modeInfo", modeInfo)
                     .Ref("newcomerButton", newcomerButton).Ref("newcomerLabel", newcomerLabel).Ref("newcomerPanel", newcomerPanel)
+                    .Ref("heroUpgradeBadge", m.HeroBadge).Ref("newcomerBadge", m.NewcomerBadge)
                     .Ref("patrolButton", patrolButton).Ref("patrolLabel", patrolLabel).Ref("opening", opening)
                     .Ref("homeMissionButton", m.HomeMission).Ref("homeMissionLabel", m.HomeMissionLabel).Ref("homeMissionFill", m.HomeMissionFill).Ref("goldLabel", m.Gold).Ref("gemLabel", m.Gem).Ref("heartLabel", m.Heart).Ref("levelLabel", m.Level).Ref("diorama", m.Diorama);
             }
@@ -397,9 +398,9 @@ namespace HistoryHeroes.EditorTools
                 backgrounds[i] = buttons[i].GetComponent<Image>();
                 RectTransform lr = label.rectTransform;
                 lr.anchorMin = new Vector2(0f, 0f);
-                lr.anchorMax = new Vector2(1f, 0.27f);
-                lr.offsetMin = new Vector2(6f, 12f);
-                lr.offsetMax = new Vector2(-6f, 0f);
+                lr.anchorMax = new Vector2(1f, 0.30f);
+                lr.offsetMin = new Vector2(6f, 2f);
+                lr.offsetMax = new Vector2(-6f, -2f);
                 label.margin = Vector4.zero;
                 label.fontSize = 28f;
                 label.enableAutoSizing = true;
@@ -409,7 +410,7 @@ namespace HistoryHeroes.EditorTools
                 labels[i] = label;
 
                 // 3D 초상 (Art3D-Plan 7번): 끌면 돈다. 누르면 칸 버튼이 받는다
-                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(120f, 168f));
+                RectTransform portrait = Rect($"Portrait{i + 1}", buttons[i].transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(120f, 130f));
                 portraits[i] = portrait.gameObject.AddComponent<RawImage>();
                 portraits[i].color = new Color(1f, 1f, 1f, 0f); // 그림이 생기기 전에는 투명
                 portraits[i].raycastTarget = true;
@@ -608,60 +609,6 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
-        private static CodexPanel BuildCodexPanel(Transform parent, SkillDatabase database)
-        {
-            RectTransform panel = Overlay(parent, "CodexPanel", out GameObject holder);
-            var screen = holder.AddComponent<CodexPanel>();
 
-            TMP_Text title = Label("Title", panel, "조합 도감", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 790f), new Vector2(900f, 100f));
-            TMP_Text progress = Label("Progress", panel, "발견 0 / 0", 36, TextAlignmentOptions.Center);
-            Place(progress.rectTransform, Center, Center, new Vector2(0f, 690f), new Vector2(900f, 60f));
-            TMP_Text message = Label("Message", panel, "", 27, TextAlignmentOptions.Center);
-            Place(message.rectTransform, Center, Center, new Vector2(0f, 610f), new Vector2(900f, 60f));
-            // 조합 14개 + 스킬별 조합 수가 한 화면을 넘어서 위아래로 밀어 본다
-            RectTransform viewport = Rect("Viewport", panel, Center, Center, Center, new Vector2(0f, -20f), new Vector2(920f, 1120f));
-            Img(viewport, new Color(0f, 0f, 0f, 0.001f), null).raycastTarget = true; // 끌기를 받는 판
-            viewport.gameObject.AddComponent<RectMask2D>();
-            RectTransform content = Rect("Content", viewport, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 100f));
-            var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 12f;
-            layout.padding = new RectOffset(12, 12, 12, 24);
-            layout.childControlHeight = true;
-            layout.childControlWidth = true;
-            layout.childForceExpandHeight = false;
-            var labels = new TMP_Text[database.recipes.Count];
-            var buttons = new Button[database.recipes.Count];
-            for (int i = 0; i < labels.Length; i++)
-            {
-                RectTransform row = Rect($"Recipe{i}", content, Center, Center, Center, Vector2.zero, new Vector2(896f, 120f));
-                row.gameObject.AddComponent<LayoutElement>().preferredHeight = 120f;
-                labels[i] = Label("Recipe", row, "", 30, TextAlignmentOptions.MidlineLeft);
-                Place(labels[i].rectTransform, Center, Center, new Vector2(-114f, 0f), new Vector2(650f, 110f));
-                buttons[i] = Btn("Target", row, "목표", new Vector2(350f, 0f), new Vector2(180f, 90f), ButtonBlue, out TMP_Text targetLabel);
-                targetLabel.fontSize = 27f;
-                buttons[i].gameObject.SetActive(false);
-            }
-            TMP_Text list = Label("List", content, "", 32, TextAlignmentOptions.TopLeft);
-            list.lineSpacing = 6f;
-            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.content = content;
-            scroll.horizontal = false;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 40f;
-            Button relicButton = Btn("Relics", panel, "유물 도감", new Vector2(-220f, -720f), new Vector2(400f, 110f), new Color(0.45f, 0.32f, 0.12f), out _);
-            Button back = Btn("Back", panel, "뒤로", new Vector2(220f, -720f), new Vector2(400f, 110f), ButtonGray, out _);
-
-            using (var props = new Props(screen))
-            {
-                props.Ref("root", panel.gameObject).Ref("progressLabel", progress).Ref("listLabel", list).Ref("messageLabel", message)
-                    .Refs("recipeLabels", labels).Refs("recipeButtons", buttons).Ref("scroll", scroll)
-                    .Ref("backButton", back).Ref("database", database);
-            }
-
-            return screen;
-        }
     }
 }

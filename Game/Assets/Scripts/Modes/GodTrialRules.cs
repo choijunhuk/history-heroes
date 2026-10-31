@@ -161,6 +161,7 @@ namespace HistoryHeroes.Modes
                     trials.firstRecordId = record.id;
                     trials.firstActives = new List<string>(actives);
                     trials.goalLocked = true;
+                    result.Lines.Add("주간 목표 1/2 · 다른 본인 기록으로 이기고 액티브를 2개 이상 다르게 쓰세요");
                 }
                 else if (trials.weeklyWins.Exists(w => w.recordId != record.id && DifferentActives(w.actives, actives)))
                 {
@@ -173,10 +174,19 @@ namespace HistoryHeroes.Modes
 
                     trials.weeklyShards = WeeklyShards;
                 }
+                else if (!trials.weeklyWins.Exists(w => w.recordId != record.id))
+                    result.Lines.Add("주간 목표 미완료 · 이미 이긴 기록이에요. 다른 본인 기록으로 이기세요");
+                else
+                    result.Lines.Add("주간 목표 미완료 · 두 승리의 액티브 구성이 2개 이상 달라야 해요");
 
                 if (!trials.weeklyWins.Exists(w => w.recordId == record.id && new HashSet<string>(w.actives).SetEquals(actives)))
                     trials.weeklyWins.Add(new GodTrialWin { recordId = record.id, actives = actives });
             }
+            else if (trial.HeroId != null && !IsHeroUnlocked(save, trial.HeroId)
+                && trials.weeklyShards < WeeklyShards)
+                result.Lines.Add(trials.goalTrialId == null
+                    ? "주간 목표 미집계 · 도전 전에 주간 목표를 고르세요"
+                    : "주간 목표 미집계 · 선택한 신의 시련에서 이겨야 해요");
 
             return result;
         }

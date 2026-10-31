@@ -4,6 +4,8 @@
     "references": [
         "HistoryHeroes.Runtime",
         "HistoryHeroes.Editor",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

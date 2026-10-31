@@ -21,7 +21,7 @@ namespace HistoryHeroes.EditorTools
             public TMP_Text Wallet, Notice, Gold, Gem, Heart, Level, Chapter, ChapterInfo, HeroName;
             public Button Prev, Next, Dungeon, Boss, Survival, Rift, Daily, Archive, Codex, Hero, Settings, Shop, Missions, Newcomer, Patrol, HomeMission;
             public Image HomeMissionFill;
-            public TMP_Text BossLabel, SurvivalLabel, RiftLabel, DailyLabel, ArchiveLabel, CodexLabel, MissionLabel, NewcomerLabel, PatrolLabel, HomeMissionLabel;
+            public TMP_Text BossLabel, SurvivalLabel, RiftLabel, DailyLabel, ArchiveLabel, CodexLabel, MissionLabel, NewcomerLabel, PatrolLabel, HomeMissionLabel, HeroBadge, NewcomerBadge;
             public LobbyDiorama Diorama;
         }
 
@@ -363,6 +363,9 @@ namespace HistoryHeroes.EditorTools
             // ----- 양옆 작은 버튼 -----
             Color side = new Color(0.32f, 0.38f, 0.55f);
             ui.Newcomer = IconButton("Newcomer", main, "gift7", "7일 미션", new Vector2(-455f, 690f), new Vector2(150f, 140f), new Color(1f, 0.55f, 0.25f), out ui.NewcomerLabel);
+            ui.NewcomerBadge = Label("ReadyBadge", ui.Newcomer.transform, "", 40, TextAlignmentOptions.Center, new Color(1f, 0.28f, 0.25f));
+            Place(ui.NewcomerBadge.rectTransform, Center, Center, new Vector2(62f, 52f), new Vector2(40f, 40f));
+            ui.NewcomerBadge.raycastTarget = false;
             ui.Codex = IconButton("Codex", main, "codex", "조합 도감", new Vector2(-455f, 535f), new Vector2(150f, 140f), new Color(0.6f, 0.4f, 0.9f), out ui.CodexLabel);
             ui.Settings = IconButton("Settings", main, "settings", "설정", new Vector2(455f, 690f), new Vector2(150f, 140f), side, out _);
             ui.Patrol = IconButton("Patrol", main, "patrol", "순찰", new Vector2(455f, 535f), new Vector2(150f, 140f), side, out ui.PatrolLabel); // 부가 메뉴는 차분하게 (전체 UI 검토 7번: 던전 시작 단추와 다투지 않게)
@@ -447,6 +450,9 @@ namespace HistoryHeroes.EditorTools
             const float tabY = 84f;
             ui.Shop = IconButton("Shop", main, "shop", "상점", new Vector2(-424f, tabY), new Vector2(196f, 150f), tab, out _);
             ui.Hero = IconButton("Hero", main, "hero", "영웅", new Vector2(-212f, tabY), new Vector2(196f, 150f), tab, out _);
+            ui.HeroBadge = Label("UpgradeBadge", ui.Hero.transform, "", 40, TextAlignmentOptions.Center, new Color(1f, 0.28f, 0.25f));
+            Place(ui.HeroBadge.rectTransform, Center, Center, new Vector2(78f, 58f), new Vector2(40f, 40f));
+            ui.HeroBadge.raycastTarget = false;
             Button home = IconButton("HomeTab", main, "sword", "전투", new Vector2(0f, tabY + 22f), new Vector2(210f, 180f), LobbyYellow, out _);
             home.image.color = Vivid(LobbyYellow); // 지금 고른 탭 = 노랑 (단추 역할이 아니라 "고름" 상태 색이라 세 가지 규칙에서 뺀다)
             home.interactable = false; // 지금 화면 (고른 탭은 높고 노랗게)

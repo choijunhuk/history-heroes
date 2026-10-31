@@ -234,9 +234,11 @@ namespace HistoryHeroes.UI
                     GodTrialDefinition selectedGoal = GodTrialRules.Find(goal.goalTrialId);
                     weeklyGoalButton.interactable = !goal.goalLocked && goal.weeklyShards < GodTrialRules.WeeklyShards
                         && (selectedGoal == null || candidates.Count > 1);
+                    string rule = "\n서로 다른 본인 기록 2개 · 액티브 2개 이상 다르게";
                     weeklyGoalLabel.text = goal.weeklyShards >= GodTrialRules.WeeklyShards ? "이번 주 신 조각 5개 받음"
                         : selectedGoal == null ? "주간 목표 선택 · 열린 신의 시련"
                         : $"주간 목표: {selectedGoal.DisplayName} {(string.IsNullOrEmpty(goal.firstRecordId) ? 0 : 1)}/2 기록 · {(goal.goalLocked ? "이번 주 고정" : candidates.Count > 1 ? "눌러서 목표 변경" : "선택 완료")}";
+                    if (goal.weeklyShards < GodTrialRules.WeeklyShards) weeklyGoalLabel.text += rule;
                 }
             }
             for (int i = 0; i < slotButtons.Length; i++)

@@ -7,7 +7,7 @@ namespace HistoryHeroes.Equipment
 {
     /// <summary>
     /// 상자 열기 (Gacha 2·6장). 처리 순서: 재화 차감 → 추첨 → 결과·천장 카운터를 한 번에 → (부르는 쪽이 저장) → 연출.
-    /// - 고급 상자: 50회째 전설 확정 (전설이 나오면 0으로), 10연은 희귀 이상 1개 보장 (천장이 먼저)
+    /// - 고급 상자: 50회째 전설 확정, 희귀 이상 없이 9회 열면 다음 회차에 희귀 이상 확정 (천장이 먼저)
     /// - 일반 상자: 천장 없음, 하루 1번 광고 보고 무료
     /// - 같은 등급 안에서는 장비를 균등하게 고른다
     /// v0.4는 기기 안 추첨이다 (서버 추첨은 Monetization 8장 결정 때).
@@ -50,7 +50,7 @@ namespace HistoryHeroes.Equipment
         }
 
         /// <summary>
-        /// 열 수 있는 상자인가: 보통 확률·천장(전설)·10연 보장 표에서 나올 수 있는 등급마다 장비가 1개 이상 (Codex v0.4 4번).
+        /// 열 수 있는 상자인가: 보통 확률·천장(전설)·누적 희귀 보장 표에서 나올 수 있는 등급마다 장비가 1개 이상 (Codex v0.4 4번).
         /// 데이터가 빠져 빈 등급이 뽑히면 값만 치르고 장비가 안 나오는 일을 막는다.
         /// </summary>
         public static bool CanOpen(GachaTable table, BoxRates box)
@@ -88,6 +88,36 @@ namespace HistoryHeroes.Equipment
         /// <summary>"전설 확정까지 n회" (천장이 없으면 -1)</summary>
         public static int PullsUntilPity(SaveData save, BoxRates box) => box.pity > 0 ? box.pity - save.gacha.premiumPity : -1;
 
+        /// <summary>마지막 희귀 이상 이후 고급 상자를 몇 번 열었는지 뽑기 기록에서 복원한다.</summary>
+        public static int PullsUntilRareGuarantee(SaveData save, GachaTable table)
+        {
+            if (save == null || table == null || table.equipment == null || table.premium == null) return -1;
+            int misses = 0;
+            for (int i = save.gacha.log.Count - 1; i >= 0 && misses < 9; i--)
+            {
+                GachaLogEntry entry = save.gacha.log[i];
+                if (entry.box != table.premium.id) continue;
+                EquipmentData data = table.equipment.Find(entry.dataId);
+                // 삭제되거나 이름이 바뀐 정의는 이전 결과를 알 수 없으므로 연속 실패로 세지 않는다.
+                if (data == null || data.rarity >= EquipRarity.Rare) break;
+                misses++;
+            }
+
+            return 10 - misses;
+        }
+
+        /// <summary>다음 고급 상자 한 회의 전설 확률. 천장과 누적 희귀 이상 보장을 모두 반영한다.</summary>
+        public static float NextLegendaryRate(SaveData save, GachaTable table)
+        {
+            if (save == null || table == null || table.premium == null) return 0f;
+            BoxRates box = table.premium;
+            if (PullsUntilPity(save, box) == 1) return 1f;
+            float ordinary = box.rarity[(int)EquipRarity.Legendary];
+            if (PullsUntilRareGuarantee(save, table) != 1) return ordinary;
+            float low = box.rarity[(int)EquipRarity.Common] + box.rarity[(int)EquipRarity.Uncommon];
+            return ordinary + low * table.tenPullGuarantee[(int)EquipRarity.Legendary];
+        }
+
         public static bool CanFreeNormal(SaveData save, string today) => save.gacha.freeNormalDate != today;
 
         /// <summary>값을 치를 수 있는지 보고 치른다 (실패하면 아무것도 안 바뀜)</summary>
@@ -122,8 +152,6 @@ namespace HistoryHeroes.Equipment
             rng ??= () => UnityEngine.Random.value;
             var pulls = new List<Pull>(count);
             bool premium = box.pity > 0;
-            bool anyRarePlus = false;
-
             for (int i = 0; i < count; i++)
             {
                 int pityBefore = save.gacha.premiumPity;
@@ -132,21 +160,20 @@ namespace HistoryHeroes.Equipment
 
                 if (premium && save.gacha.premiumPity + 1 >= box.pity)
                 {
-                    rarity = EquipRarity.Legendary; // 천장 회차 (10연 보장보다 먼저)
+                    rarity = EquipRarity.Legendary; // 천장 회차 (희귀 이상 보장보다 먼저)
                     fromPity = true;
                 }
                 else
                 {
                     rarity = RollRarity(box.rarity, rng());
-                    if (count == 10 && i == 9 && !anyRarePlus && rarity < EquipRarity.Rare)
+                    if (premium && PullsUntilRareGuarantee(save, table) == 1 && rarity < EquipRarity.Rare)
                     {
-                        rarity = RollRarity(table.tenPullGuarantee, rng()); // 10연 보장 회차
+                        rarity = RollRarity(table.tenPullGuarantee, rng()); // 누적 보장 회차
                         fromTen = true;
                     }
                 }
 
                 if (premium) save.gacha.premiumPity = rarity == EquipRarity.Legendary ? 0 : save.gacha.premiumPity + 1;
-                if (rarity >= EquipRarity.Rare) anyRarePlus = true;
 
                 EquipmentData data = PickUniform(table.equipment, rarity, rng());
                 var pull = new Pull { Data = data, FromPity = fromPity, FromTenGuarantee = fromTen };
@@ -156,9 +183,27 @@ namespace HistoryHeroes.Equipment
                 save.gacha.log.Add(new GachaLogEntry { at = now, box = box.id, dataId = data != null ? data.id : "", pityBefore = pityBefore });
             }
 
-            int over = save.gacha.log.Count - table.logLimit;
-            if (over > 0) save.gacha.log.RemoveRange(0, over);
+            TrimLog(save.gacha.log, table.premium.id, table.logLimit);
             return pulls;
+        }
+
+        private static void TrimLog(List<GachaLogEntry> log, string premiumId, int limit)
+        {
+            // 일반 상자를 오래 열어도 희귀 보장에 필요한 마지막 고급 9회는 보존한다.
+            int keepPremium = 0;
+            var protectedEntries = new HashSet<GachaLogEntry>();
+            for (int i = log.Count - 1; i >= 0 && keepPremium < 9; i--)
+            {
+                if (log[i].box != premiumId) continue;
+                protectedEntries.Add(log[i]);
+                keepPremium++;
+            }
+
+            for (int i = 0; log.Count > Math.Max(9, limit) && i < log.Count;)
+            {
+                if (protectedEntries.Contains(log[i])) i++;
+                else log.RemoveAt(i);
+            }
         }
 
         private static EquipmentData PickUniform(EquipmentTable equipment, EquipRarity rarity, float r)
@@ -199,8 +244,9 @@ namespace HistoryHeroes.Equipment
                     sb.Append($"  {EquipmentText.SlotName(data.slot)} · {data.displayName}: {rate:0.######}%");
                     if (box.pity > 0 && data.rarity >= EquipRarity.Rare)
                     {
-                        float tenRate = table.tenPullGuarantee[r] * 100f / Math.Max(1, pool.Count);
-                        sb.Append($" (10연 보장 {tenRate:0.######}%");
+                        float lowRate = box.rarity[(int)EquipRarity.Common] + box.rarity[(int)EquipRarity.Uncommon];
+                        float guaranteedRate = (box.rarity[r] + lowRate * table.tenPullGuarantee[r]) * 100f / Math.Max(1, pool.Count);
+                        sb.Append($" (누적 10회 실제 {guaranteedRate:0.######}%");
                         if (data.rarity == EquipRarity.Legendary) sb.Append($", 천장 {100f / Math.Max(1, pool.Count):0.######}%");
                         sb.Append(")");
                     }
@@ -212,7 +258,7 @@ namespace HistoryHeroes.Equipment
             if (box.pity > 0)
             {
                 sb.AppendLine($"보장: {box.pity}번째 상자는 전설 확정 (전설이 나오면 다시 1부터). 보석·소환권으로 연 고급 상자가 같은 횟수를 씁니다");
-                sb.AppendLine($"10연: 희귀 이상이 하나도 없으면 10번째를 희귀 {table.tenPullGuarantee[2] * 100f:0.#}% · 전설 {table.tenPullGuarantee[3] * 100f:0.#}%로 다시 뽑습니다 (천장이 먼저)");
+                sb.AppendLine($"누적 10회: 희귀 이상 없이 고급 상자를 9회 열면 다음 회차를 희귀 {table.tenPullGuarantee[2] * 100f:0.#}% · 전설 {table.tenPullGuarantee[3] * 100f:0.#}%로 다시 뽑습니다 (천장이 먼저)");
             }
             else
             {

@@ -90,7 +90,7 @@ namespace HistoryHeroes.UI
             if (s.FirstClear)
             {
                 sb.AppendLine();
-                sb.AppendLine(s.IsGodTrial ? $"첫 시련을 통과했어요. {KoreanText.Josa(s.BossName, "이", "가")} 기록을 인정했어요." : $"처음 격파! {s.UnlockedChapter}구간이 열렸어요");
+                sb.AppendLine(FirstBossClearText(s));
             }
 
             AppendRewards(sb, s.RewardLines);
@@ -220,6 +220,15 @@ namespace HistoryHeroes.UI
             int m = Mathf.FloorToInt(seconds / 60f);
             int sec = Mathf.FloorToInt(seconds % 60f);
             return $"{m:00}:{sec:00}";
+        }
+
+        public static string FirstBossClearText(BossSummary summary)
+        {
+            if (summary.IsGodTrial)
+                return $"첫 시련을 통과했어요. {KoreanText.Josa(summary.BossName, "이", "가")} 기록을 인정했어요.";
+            if (summary.UnlockedChapter == 6 && summary.BossName == "망각의 왕")
+                return "처음 격파! 신의 시련이 열렸어요";
+            return $"처음 격파! {summary.UnlockedChapter}구간이 열렸어요";
         }
     }
 }

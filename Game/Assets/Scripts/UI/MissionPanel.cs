@@ -28,6 +28,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text[] tabLabels;
         [SerializeField] private Button[] chestButtons;
         [SerializeField] private TMP_Text[] chestLabels;
+        [SerializeField] private Image[] chestGlows;
         [SerializeField] private ButtonList list;
         [SerializeField] private TMP_Text messageLabel;
         [SerializeField] private Button rerollButton;
@@ -149,13 +150,13 @@ namespace HistoryHeroes.UI
                 MissionProgress m = ms.daily[i];
                 bool canPick = i >= table.dailyFixed.Count && !m.done && !ms.rerollUsed;
                 Color bg = m.done ? RowDone : i == _selected ? RowSelected : RowNormal;
-                rows.Add(new ButtonList.Row(MissionText(m), bg, canPick ? () => Select(index) : (Action)null, canPick));
+                rows.Add(new ButtonList.Row(MissionText(m), bg, canPick ? () => Select(index) : (Action)null, canPick, ProgressAmount(m)));
             }
 
             list.Show(rows);
             rerollButton.gameObject.SetActive(true);
             rerollButton.interactable = !ms.rerollUsed && _selected >= table.dailyFixed.Count && _selected < ms.daily.Count && !ms.daily[_selected].done;
-            rerollLabel.text = ms.rerollUsed ? "오늘 바꾸기를 썼어요" : _selected < 0 ? "바꿀 미션을 누르세요 (하루 1번)" : "이 미션 바꾸기";
+            rerollLabel.text = ms.rerollUsed ? "오늘 교체 완료" : _selected < 0 ? "미션 교체: 미완료 줄 선택" : "선택한 미션 교체 (하루 1회)";
         }
 
         private void RenderWeekly(SaveData save, MissionTable table)
@@ -166,7 +167,7 @@ namespace HistoryHeroes.UI
             RenderChests(table.weeklyChests, c => MissionService.CanClaimWeekly(save, c), c => ms.weeklyChests.Contains(c.points), ms.weeklyPoints);
 
             var rows = new List<ButtonList.Row>();
-            foreach (MissionProgress m in ms.weekly) rows.Add(new ButtonList.Row(MissionText(m), m.done ? RowDone : RowNormal, null, false));
+            foreach (MissionProgress m in ms.weekly) rows.Add(new ButtonList.Row(MissionText(m), m.done ? RowDone : RowNormal, null, false, ProgressAmount(m)));
             list.Show(rows);
             rerollButton.gameObject.SetActive(false);
         }
@@ -200,11 +201,11 @@ namespace HistoryHeroes.UI
                 if (can)
                 {
                     AchievementDef def = a;
-                    claimable.Add(new ButtonList.Row(text + "  <color=#FFD966>(눌러서 받기)</color>", RowClaim, () => ClaimAchievement(def)));
+                    claimable.Add(new ButtonList.Row(text + "  <color=#FFD966>[받기]</color>", RowClaim, () => ClaimAchievement(def), true, target > 0 ? Mathf.Clamp01((float)progress / target) : 1f));
                 }
                 else
                 {
-                    rows.Add(new ButtonList.Row(text, RowNormal, null, false));
+                    rows.Add(new ButtonList.Row(text, RowNormal, null, false, target > 0 ? Mathf.Clamp01((float)progress / target) : 0f));
                 }
             }
 
@@ -220,11 +221,13 @@ namespace HistoryHeroes.UI
             ? $"{m.progress / 60}분/{m.target / 60}분"
             : $"{m.progress}/{m.target}";
 
+        public static float ProgressAmount(MissionProgress m) => m.done ? 1f : m.target > 0 ? Mathf.Clamp01((float)m.progress / m.target) : 0f;
+
         private static string MissionText(MissionProgress m)
         {
             string progress = Progress(m);
             string mark = m.done ? "<color=#7CE38B>[완료]</color> " : string.Empty;
-            return $"{mark}<b>{m.title}</b>\n<size=88%>{progress}  ·  +{m.points}</size>";
+            return $"{mark}<b>{m.title}</b>\n<size=88%>{progress}  ·  활동 +{m.points}{(m.done ? " (받음)" : string.Empty)}</size>";
         }
 
         private void RenderChests(List<ChestDef> chests, Func<ChestDef, bool> canClaim, Func<ChestDef, bool> taken, int points)
@@ -240,7 +243,8 @@ namespace HistoryHeroes.UI
                 bool done = taken(c);
                 chestButtons[i].interactable = ready;
                 chestButtons[i].GetComponent<Image>().color = done ? ChestTaken : ready ? ChestReady : ChestLocked;
-                string state = done ? " <color=#7CE38B>받음</color>" : ready ? " <color=#FFD966>열기!</color>" : string.Empty;
+                if (chestGlows != null && i < chestGlows.Length && chestGlows[i] != null) chestGlows[i].gameObject.SetActive(ready);
+                string state = done ? " <color=#7CE38B>[받음]</color>" : ready ? " <color=#FFD966>[받기]</color>" : " <color=#A9B4C2>[잠김]</color>";
                 chestLabels[i].text = $"<b>{c.points}</b>{state}\n<size=70%>{MissionService.RewardText(c, hero)}</size>";
             }
         }

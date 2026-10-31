@@ -23,6 +23,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button normalFreeButton;
         [SerializeField] private TMP_Text normalFreeLabel;
         [SerializeField] private TMP_Text premiumInfoLabel;
+        [SerializeField] private TMP_Text premiumPityLabel;
         [SerializeField] private Button premium1Button;
         [SerializeField] private TMP_Text premium1Label;
         [SerializeField] private Button premium10Button;
@@ -75,6 +76,11 @@ namespace HistoryHeroes.UI
         private bool _waitingForAd;
         private bool _relicMode;
         private bool _payWithGems;
+        private Color _relicTabColor;
+        private Color _relic1Color;
+        private Color _relic10Color;
+        private Color _relicPayColor;
+        private Color _relicFreeColor;
         private List<ButtonList.Row> _lastResults = new List<ButtonList.Row>();
         private System.Action _onClosed;
 
@@ -82,6 +88,11 @@ namespace HistoryHeroes.UI
 
         private void Awake()
         {
+            _relicTabColor = relicTabButton.image.color;
+            _relic1Color = relic1Button.image.color;
+            _relic10Color = relic10Button.image.color;
+            _relicPayColor = relicPayButton.image.color;
+            _relicFreeColor = relicFreeButton.image.color;
             root.SetActive(false);
             if (ratesRoot != null) ratesRoot.SetActive(false);
             if (relicResultsRoot != null) relicResultsRoot.SetActive(false);
@@ -165,27 +176,32 @@ namespace HistoryHeroes.UI
             equipmentSection.SetActive(!_relicMode);
             equipmentTabButton.interactable = _relicMode;
             relicTabButton.interactable = !_relicMode;
+            relicTabButton.image.color = RelicService.Unlocked(save) ? _relicTabColor : RowDisabled;
             if (_relicMode)
             {
                 RenderRelics(save, today);
                 return;
             }
 
-            normalBuyLabel.text = $"일반 상자 · 골드 {gacha.normal.goldCost:N0}";
+            normalBuyLabel.text = $"일반 상자 · 골드 {gacha.normal.goldCost:N0}\n<size=75%>희귀 {gacha.normal.rarity[(int)EquipRarity.Rare] * 100f:0.##}% · 보장 없음</size>";
             normalBuyButton.interactable = unlocked && save.gold >= gacha.normal.goldCost;
             bool free = GachaService.CanFreeNormal(save, today);
             normalFreeButton.interactable = unlocked && free && !_waitingForAd;
             normalFreeLabel.text = _waitingForAd ? "광고 보는 중…" : free ? "광고 보고 무료 (오늘 1번)" : "오늘 무료는 받았어요";
 
+            int legendaryLeft = GachaService.PullsUntilPity(save, gacha.premium);
+            int rareLeft = GachaService.PullsUntilRareGuarantee(save, gacha);
+            string legendaryRate = $"전설 {GachaService.NextLegendaryRate(save, gacha) * 100f:0.###}%";
             premiumInfoLabel.text = unlocked
-                ? $"고급 상자 · 전설 2% · <color=#FFC94A>전설 확정까지 {GachaService.PullsUntilPity(save, gacha.premium)}회</color>"
-                : "<color=#FFB347>1구간 보스를 깨면 장비와 상자가 열려요</color>";
-            premium1Label.text = $"1회 · 보석 {gacha.premium.gemCost:N0}";
-            premium10Label.text = $"10연 · 보석 {gacha.premium.gem10Cost:N0}";
+                ? $"고급 상자 · 희귀 이상까지 {rareLeft}회"
+                : "<color=#FFB347>1구간 보스를 깨면 장비 상자가 열려요</color>";
+            premiumPityLabel.text = unlocked ? $"전설 확정까지 {legendaryLeft}회 · 희귀 이상 확정까지 {rareLeft}회" : "";
+            premium1Label.text = $"보석 {gacha.premium.gemCost:N0}\n<size=75%>{legendaryRate} · 확정 {legendaryLeft}회</size>";
+            premium10Label.text = $"10회 {gacha.premium.gem10Cost:N0}\n<size=75%>첫회 {legendaryRate} · {legendaryLeft}회</size>";
             premium1Button.interactable = unlocked && Wallet.Gems(save) >= gacha.premium.gemCost;
             premium10Button.interactable = unlocked && Wallet.Gems(save) >= gacha.premium.gem10Cost;
             int tickets = save.ItemCount(Wallet.Ticket);
-            ticketLabel.text = $"소환권 1장 (가진 것 {tickets})";
+            ticketLabel.text = $"소환권 1장 ({tickets})\n<size=75%>{legendaryRate} · 확정 {legendaryLeft}회</size>";
             ticketButton.interactable = unlocked && tickets > 0;
             exchangeButton.interactable = unlocked;
             exchangeLabel.text = _exchangeMode ? "상자 결과" : "조각 교환소";
@@ -200,13 +216,19 @@ namespace HistoryHeroes.UI
         {
             return new List<ButtonList.Row>
             {
-                new ButtonList.Row("<color=#A9B4C2>상자에서 나온 장비가 여기 보여요. 희귀·전설 중복은 장비 조각이 돼요 (장비 화면에서 끌 수 있어요)</color>", RowDisabled, null, false),
+                new ButtonList.Row("<color=#A9B4C2>상자에서 나온 장비가 여기에 표시됩니다.</color>", RowDisabled, null, false),
+                new ButtonList.Row("<color=#A9B4C2>고급 상자는 한 번씩 열어도 희귀 이상 보장 횟수가 이어집니다.</color>", RowDisabled, null, false),
+                new ButtonList.Row("<color=#A9B4C2>희귀·전설 중복은 장비 조각으로 바뀝니다. 장비 화면에서 설정할 수 있습니다.</color>", RowDisabled, null, false),
             };
         }
 
         private void RenderRelics(SaveData save, string today)
         {
             bool unlocked = RelicService.Unlocked(save) && RelicGachaService.CanOpen(relics);
+            relic1Button.image.color = unlocked ? _relic1Color : RowDisabled;
+            relic10Button.image.color = unlocked ? _relic10Color : RowDisabled;
+            relicPayButton.image.color = unlocked ? _relicPayColor : RowDisabled;
+            relicFreeButton.image.color = unlocked ? _relicFreeColor : RowDisabled;
             int shards = RelicService.Shards(save);
             int gems = Wallet.Gems(save);
             int missing = 0;
@@ -217,19 +239,22 @@ namespace HistoryHeroes.UI
             relicInfoLabel.text = !RelicService.Unlocked(save)
                 ? "2구간 보스를 깨면 유물 뽑기가 열려요. 첫 클리어 유물은 보관돼요."
                 : $"유물 뽑기 · 없는 유물 {missing}종 · 고대 파편 {shards:N0}\n누적 {save.relicGacha.totalPulls}회 · {(pityLeft > 0 ? $"새 유물 보장까지 {pityLeft}회" : "24종 모두 보유: 새 유물 보장 종료")}";
-            if (relics == null)
+            if (!RelicGachaService.CanOpen(relics))
             {
                 relicInfoLabel.text = "유물 데이터가 없어 뽑기를 열 수 없어요.";
                 relicPayButton.interactable = relic1Button.interactable = relic10Button.interactable = relicFreeButton.interactable = relicRatesButton.interactable = false;
                 return;
             }
-            relicPayLabel.text = _payWithGems ? $"결제: 보석 {gems:N0} (눌러서 파편으로)" : $"결제: 고대 파편 {shards:N0} (눌러서 보석으로)";
+            relicPayLabel.text = _payWithGems ? $"사용 재화: 보석 {gems:N0} · 눌러서 파편으로 변경" : $"사용 재화: 고대 파편 {shards:N0} · 눌러서 보석으로 변경";
             int oneCost = _payWithGems ? relics.pullGemCost : relics.pullShardCost;
             int tenCost = _payWithGems ? relics.tenPullGemCost : relics.tenPullShardCost;
             string icon = _payWithGems ? "gem" : "ancient_shard";
             int balance = _payWithGems ? gems : shards;
-            relic1Label.text = $"1회 · <sprite name={icon}>{oneCost:N0}";
-            relic10Label.text = $"10회 · <sprite name={icon}>{tenCost:N0}";
+            string relicOdds = pityLeft > 0
+                ? $"각 유물 {100f / relics.relics.Count:0.##}% · 새것 {pityLeft}회"
+                : $"각 유물 {100f / relics.relics.Count:0.##}% · 보장 종료";
+            relic1Label.text = $"1회 · <sprite name={icon}>{oneCost:N0}\n<size=70%>{relicOdds}</size>";
+            relic10Label.text = $"10회 · <sprite name={icon}>{tenCost:N0}\n<size=70%>{relicOdds}</size>";
             relic1Button.interactable = unlocked && balance >= oneCost;
             relic10Button.interactable = unlocked && balance >= tenCost;
             bool free = RelicGachaService.CanFree(save, today);
@@ -395,7 +420,7 @@ namespace HistoryHeroes.UI
             {
                 if (p.Data == null) continue;
                 best = Mathf.Max(best, (int)p.Data.rarity);
-                string note = p.FromPity ? "  <color=#FFC94A>[천장]</color>" : p.FromTenGuarantee ? "  <color=#6FA8FF>[10연 보장]</color>" : string.Empty;
+                string note = p.FromPity ? "  <color=#FFC94A>[천장]</color>" : p.FromTenGuarantee ? "  <color=#6FA8FF>[희귀 이상 보장]</color>" : string.Empty;
                 string line = EquipmentInventory.AddLine(p.Added, p.Data).Replace("장비  ", string.Empty);
                 _lastResults.Add(new ButtonList.Row(line + note, RowNormal, null, false));
             }

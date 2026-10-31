@@ -49,15 +49,17 @@ namespace HistoryHeroes.UI
         public void Open(Action<int> onStart)
         {
             _onStart = onStart;
-            SaveData d = SaveSystem.Data;
-            int last = 0;
-            for (int i = 0; i < maps.Length; i++)
-            {
-                if (GameSession.SurvivalMapUnlocked(d, i)) last = i;
-            }
-
             root.SetActive(true);
-            Show(last);
+            Show(DefaultMapIndex(SaveSystem.Data, maps.Length));
+        }
+
+        /// <summary>개발용 입장 허용과 별개로 저장된 진행만 보고 첫 카드를 고른다.</summary>
+        public static int DefaultMapIndex(SaveData save, int mapCount)
+        {
+            int last = 0;
+            for (int i = 0; i < mapCount && i < SurvivalProgress.MapIds.Length; i++)
+                if (SurvivalProgress.Unlocked(save, i)) last = i;
+            return last;
         }
 
         public void Close() => root.SetActive(false);

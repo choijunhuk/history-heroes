@@ -77,6 +77,6 @@
 - **소품:** 맥에 Blender 설치 → 스크립트로 검 · 깃발 · 망치 · 머리장식 · 가면 · 창 · 투구 · 어깨 덧갑 · 관 · 실험병 · 발우 · 목봉. 좌표: 블렌더 (X, Y, Z) = Unity (−x, −z, y), 얼굴 = +Y, 등 = −Y. 여자 머리 소품은 `Art3DProps.Basis`에 `Superhero_Female_FullBody`
 - **작업 방식:** 큰 구현은 Codex (`codex exec --sandbox workspace-write -c model_reasoning_effort=xhigh`)를 git worktree에서 → Claude가 합치고 컴파일 · `Art3DCharacters.BuildAll` → `SceneBuilder.BuildAll` · 테스트 · 화면 확인 → Codex 읽기 전용 리뷰 (`Docs/Reviews/2026-10-29-codex-*.md`) → 고침
 - **알아 둘 것:** `PlayerController`의 멈춤 · 이동 대표 효과 초기화는 `ResetStopSignatures(bool moved)` 한 곳에만. 보호막은 출처별 (`Health.SetShieldFrom`, 합산 없이 큰 것 하나, 방패 연출은 `GuardShield`). 글꼴에 이모지(🔒 ✔)가 없으니 UI 글에 쓰지 말 것. `M_Prop_Copper.mat`은 3D → 장면 순서로 만들어야 빛(_EMISSION)이 유지됨
-- **경제:** 21명 기준 재계산 [Economy 9장](../Design/Economy.md#economy-21), 재현 `python3 Tools/economy_21.py`. 결정 항목은 TODO "21명 경제 — 개발자 결정"
+- **경제:** 21명 기준 재계산 [Economy 9장](../Design/Economy.md#economy-21), 재현 `python3 Tools/economy_21.py`. 2026-10-31 결정: 조각 상점 영웅 합산 하루 5개, 보석 수입 기준은 구현된 약 104/일, 첫 출시는 한국
 - **Codex 한도:** 2026-10-29 소진 (11월 4일 16:03 재개). 그 전까지 큰 구현은 Claude sonnet 서브에이전트로
-- **사람이 할 것:** 폰 확인 · 시련 난이도(2~3분) 벤치 · 상점 조각 하루 한도(3 → 5) 결정 · **첫 출시 국가** (종교 인물 표현 · 등급)
+- **사람이 할 것:** 폰 확인 · 시련 난이도(2~3분) 벤치 · 한국 출시 전 종교 인물 표현과 등급 심사 확인
