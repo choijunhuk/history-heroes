@@ -12,7 +12,7 @@ namespace HistoryHeroes.Meta
     public static class HeroGrowth
     {
         public const int ShardPrice = 500;
-        public const int ShardsPerDay = 3;
+        public const int ShardsPerDay = 5; // 2026-10-31 개발자 결정 (추천안): 영웅 21명이라 3개면 전원 ★5까지 약 788일 → 5개 약 470일 (Economy 9장)
         public const int TrainingCount = 6;
 
         public static int Shards(SaveData save, string heroId) => save.ItemCount(Wallet.HeroShard(heroId));

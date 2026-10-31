@@ -252,7 +252,7 @@ namespace HistoryHeroes.UI
                 string state = !focusUnlocked ? "<color=#FFB347>잠김</color>" : focus == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"<color=#9FD8FF>Lv {fp.level}</color> <color=#FFD966>{new string('★', fp.stars)}{new string('☆', 5 - fp.stars)}</color>";
                 if (detailName != null) detailName.text = $"{focus.displayName}  <size=55%>{focus.ClassLabel} · {state}</size>";
                 string lockText = focusUnlocked ? string.Empty : GodTrialRules.IsGod(focus.id)
-                    ? $"\n<color=#FFB347>{focus.displayName} 조각 {Meta.HeroGrowth.Shards(d, focus.id)}/{GodTrialRules.UnlockShards} · 신의 시련에서 획득</color>"
+                    ? $"\n<color=#FFB347>{focus.displayName} 조각 {Meta.HeroGrowth.Shards(d, focus.id)}/{GodTrialRules.UnlockShards} · 신의 시련 첫 격파 10 + 주간 목표 5씩 (약 3~4주)</color>" // 2026-10-31 결정: 횟수 기준 안내
                     : $"\n<color=#FFB347>{HeroUnlock.LockText(focus)}</color>";
                 detailBody.text =
                     $"<color=#FFD966><b>{focus.signatureName}</b></color>  {focus.signatureDescription}\n" +

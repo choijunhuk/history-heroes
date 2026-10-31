@@ -491,16 +491,17 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void GoldShop_HeroShards_ThreePerDay()
+        public void GoldShop_HeroShards_FivePerDay()
         {
+            // 2026-10-31 개발자 결정: 하루 3 → 5개 (영웅 21명, Economy 9장)
             var save = new SaveData { gold = 10_000 };
-            for (int i = 0; i < 3; i++) Assert.IsTrue(HeroGrowth.TryBuyHeroShard(save, "guan", "2026-10-26"));
-            Assert.IsFalse(HeroGrowth.TryBuyHeroShard(save, "khan", "2026-10-26"), "하루 3개 (영웅 합쳐서)");
+            for (int i = 0; i < 5; i++) Assert.IsTrue(HeroGrowth.TryBuyHeroShard(save, "guan", "2026-10-26"));
+            Assert.IsFalse(HeroGrowth.TryBuyHeroShard(save, "khan", "2026-10-26"), "하루 5개 (영웅 합쳐서)");
             Assert.AreEqual(0, HeroGrowth.ShardsLeftToday(save, "2026-10-26"));
-            Assert.AreEqual(3, HeroGrowth.ShardsLeftToday(save, "2026-10-27"));
+            Assert.AreEqual(5, HeroGrowth.ShardsLeftToday(save, "2026-10-27"));
             Assert.IsTrue(HeroGrowth.TryBuyHeroShard(save, "khan", "2026-10-27"));
-            Assert.AreEqual(3, HeroGrowth.Shards(save, "guan"));
-            Assert.AreEqual(10_000 - 4 * 500, save.gold);
+            Assert.AreEqual(5, HeroGrowth.Shards(save, "guan"));
+            Assert.AreEqual(10_000 - 6 * 500, save.gold);
         }
 
         [Test]
