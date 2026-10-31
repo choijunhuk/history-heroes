@@ -80,3 +80,14 @@
 - **경제:** 21명 기준 재계산 [Economy 9장](../Design/Economy.md#economy-21), 재현 `python3 Tools/economy_21.py`. 2026-10-31 결정: 조각 상점 영웅 합산 하루 5개, 보석 수입 기준은 구현된 약 104/일, 첫 출시는 한국
 - **Codex 한도:** 2026-10-29 소진 (11월 4일 16:03 재개). 그 전까지 큰 구현은 Claude sonnet 서브에이전트로
 - **사람이 할 것:** 폰 확인 · 시련 난이도(2~3분) 벤치 · 한국 출시 전 종교 인물 표현과 등급 심사 확인
+
+## 8. 2026-11-01 맥북: 출시 준비 · APK 배포 · 계정 콘솔
+
+- **APK 내려받기:** GitHub 릴리스 `v1.0.0-beta.1`부터. README의 "APK 받기"는 `releases/latest/download/HistoryHeroes.apk` → 새 릴리스를 올리면 자동으로 새 판. 올리기: 에디터를 연 채로 `bash Tools/dev/release.sh <버전> "바뀐 점"` (구글 플레이용은 `--aab`, 폰 시험만은 `--no-upload`)
+- **비밀 파일은 저장소 밖 `~/.history-heroes/`** (윈도우는 `C:\Users\<이름>\.history-heroes\`): `release.keystore` + `signing.properties` (출시 서명 키 · 비밀번호), `kakao.properties` (카카오 네이티브 앱 키). **다른 컴퓨터에서 빌드하려면 이 폴더를 통째로 복사**한다. 없으면 디버그 키로 서명돼서 이미 깐 폰에 업데이트가 안 된다. 잃어버리면 복구 불가 → 따로 백업
+- **키 해시 (카카오 · 구글 등록용):** 출시 키 SHA-1 `D5:E4:26:BD:EC:B3:53:43:FA:7A:8B:11:1D:9B:4C:B0:A5:C6:57:C1` = 카카오 키 해시 `1eQmveyzU0P6eosRHZtMsKXGV8E=`, 맥 디버그 키 해시 `ChUP1yBDR7PS0eEQNtmJTL2nDcc=`. 플레이 앱 서명 키 해시는 첫 AAB를 올린 뒤 Play Console에서 받아 카카오에 추가
+- **카카오 디벨로퍼스 (앱 "herohistory", ID 1632287):** 안드로이드 패키지 `com.choijunhuk.historyheroes` · 키 해시 2개 등록, 카카오 로그인 ON, OpenID Connect ON (2026-11-01, Claude가 화면 조작으로). 동의항목은 일부러 안 켬 (회원 번호만 씀)
+- **Play Console:** 개인 계정 "megasonics" 가입됨. **본인 인증(신분증) · 안드로이드 기기 확인 · 전화번호 인증**이 끝나야 "앱 만들기"가 열린다 (개발자 본인만). 그다음 앱 만들기 → 비공개 테스트 (테스터 12명 × 14일) — [점검표](../Release/GooglePlay-Checklist.md)
+- **Unity 클라우드:** 아직 연결 안 됨 (`CloudProjectSettings.projectId` 비어 있음). 에디터 Project Settings → Services에서 연결 (게스트 로그인 · 클라우드 저장 · 카카오 OIDC 공급자 설정에 필요)
+- **화면 조작:** `orca computer ...` (computer-use 스킬)로 크롬 · 에디터 창을 직접 누를 수 있다. 크롬 입력칸은 `type-text`가 두 번 들어가는 일이 있어 `set-value` 뒤 스페이스 · 지우기 키로 확정하고, 저장 뒤 다시 열어 값 확인
+- **글씨 점검:** Play 중 `QaTools.TextAudit()` → 칸 밖 · 화면 밖 · 작은 글씨 · 겹침을 한 줄씩 ([기록](../Reviews/2026-11-01-ui-text-audit.md))
