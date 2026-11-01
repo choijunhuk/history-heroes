@@ -29,6 +29,8 @@ namespace HistoryHeroes.Account
 
         /// <summary>진행 고르기를 끝내기 전에 앱이 꺼졌다는 표시 (다음 실행에서 카카오 계정에 이어 붙어 클라우드를 덮지 않게)</summary>
         private const string PendingChoiceKey = "hh.account.pendingChoice";
+        /// <summary>게스트 결제를 새 계정으로 옮길 이전권 (PrepareTransfer가 준 것 — 가져갈 때까지 기기에만, 7일)</summary>
+        private const string TransferTicketKey = "hh.iap.transferTicket";
         /// <summary>+ UGS 플레이어 ID: 이 기기가 마지막으로 올리거나 받은 클라우드 저장의 올린 번호</summary>
         private const string SyncedKeyPrefix = "hh.account.synced.";
 
@@ -162,6 +164,7 @@ namespace HistoryHeroes.Account
                 if (!auth.IsSignedIn) await auth.SignInAnonymouslyAsync();
                 await RefreshLinked();
                 Debug.Log($"[Account] 로그인: {State} ({auth.PlayerId})");
+                await ClaimPendingTransferAsync(); // 지난번 계정 바꾸기에서 못 가져간 게스트 결제
             }
             catch (Exception e)
             {
@@ -280,27 +283,41 @@ namespace HistoryHeroes.Account
             PlayerPrefs.Save();
             try
             {
-                // 지금 게스트 플레이어는 클라우드에 올린 게 없다 (게스트는 이 기기에만 저장). 다른 계정으로 들어가면 되찾을 수 없으니 지우고 들어간다.
-                // 지우는 계정은 언제나 서버 결제 장부를 먼저 보관하고 닫는다 (계정 삭제와 같은 길 — 이 기기의 결제는 이 기기 저장에 그대로 남는다).
-                // 보관이 실패하면 지우지 않고 로그아웃만 한다 (장부가 지운 계정 밑에 남지 않게)
+                // 게스트의 서버 결제는 버리지 않고 새 계정으로 옮긴다 (환불 회수가 새 계정을 따라간다): 게스트로 이전권을 받아 두고(서버는 게스트를 닫는다),
+                // 진행을 고른 뒤 새 계정에서 가져간다. 이전권을 못 받으면 계정을 바꾸지 않는다 (게스트 그대로, 다음에 다시).
+                // 게스트 계정은 지우지 않고 로그아웃만 한다 — 가져가기 전에 지우면 다시 시도할 곳이 없다. 서버에서 닫히고 결제가 빠져 비어 있는 익명 계정으로 남는다
+                Economy.PurchaseServer.Transfer prepared;
                 try
                 {
-                    string archived = await Economy.PurchaseServer.ArchiveAndDeleteAsync();
-                    if (archived != "ok") throw new InvalidOperationException("결제 기록 보관 실패: " + (archived ?? "빈 답"));
-                    await auth.DeleteAccountAsync();
+                    prepared = await Economy.PurchaseServer.PrepareTransferAsync();
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning("[Account] 게스트 플레이어를 지우지 못함 (로그아웃만): " + e.Message);
-                    auth.SignOut(true);
+                    Debug.LogWarning("[Account] 결제 이전권을 받지 못함: " + e.Message);
+                    prepared = null;
                 }
 
+                if (prepared?.status != "ok" && prepared?.status != "none")
+                {
+                    ClearPending();
+                    Set(AccountState.Guest, "서버에 연결하지 못해 계정을 바꾸지 않았어요. 잠시 뒤에 다시 해 주세요");
+                    return;
+                }
+
+                if (!string.IsNullOrEmpty(prepared.ticket))
+                {
+                    PlayerPrefs.SetString(TransferTicketKey, prepared.ticket);
+                    PlayerPrefs.Save();
+                }
+
+                auth.SignOut(true);
                 await provider.SignIn(token);
                 CloudCopy cloud = await LoadCloud(true);
                 if (!cloud.HasSave)
                 {
                     // 연결된 계정이지만 클라우드 저장이 없다 → 이 기기 진행을 올린다 (처음 만들기, 동시에 만든 기기가 있으면 다시 고르기)
                     await FinishWithDevice(provider, cloud);
+                    await ClaimPendingTransferAsync();
                     return;
                 }
 
@@ -326,6 +343,7 @@ namespace HistoryHeroes.Account
                         return;
                     }
                     await FinishWithDevice(provider, cloud);
+                    await ClaimPendingTransferAsync();
                     return;
                 }
 
@@ -338,6 +356,7 @@ namespace HistoryHeroes.Account
                 ClearPending();
                 LinkedName = provider.DisplayName;
                 Set(AccountState.Linked, $"{provider.DisplayName} 계정의 진행을 불러왔어요");
+                await ClaimPendingTransferAsync();
                 Common.GameSession.ToLobby(); // 바뀐 저장으로 로비를 다시 그린다
             }
             catch (Exception e)
@@ -375,12 +394,37 @@ namespace HistoryHeroes.Account
                 LinkedName = null;
                 await auth.SignInAnonymouslyAsync();
                 Set(AccountState.Guest, message);
+                await ClaimPendingTransferAsync(); // 바꾸기를 그만둬도 결제는 이 기기 진행을 따라 새 게스트로
             }
             catch (Exception e)
             {
                 Debug.LogWarning("[Account] 게스트로 돌아가지 못함: " + e.Message);
                 ClearPending();
                 Set(AccountState.Offline, message);
+            }
+        }
+
+        /// <summary>
+        /// 남은 결제 이전권이 있으면 지금 계정으로 가져간다 (서버가 게스트 결제를 이 계정 장부로 옮긴다). 끝났거나 더는 쓸 수 없는 이전권(기한 · 다른 계정 · 모름)은 지운다 —
+        /// 아무도 못 가져간 게스트 결제는 서버 정리 작업이 기한 뒤 보관본으로 옮긴다. 서버 오류면 남겨 두고 다음 로그인에 다시
+        /// </summary>
+        private static async Task ClaimPendingTransferAsync()
+        {
+            string ticket = PlayerPrefs.GetString(TransferTicketKey, string.Empty);
+            if (string.IsNullOrEmpty(ticket) || PlayerId == null) return;
+            try
+            {
+                Economy.PurchaseServer.Transfer claimed = await Economy.PurchaseServer.ClaimTransferAsync(ticket);
+                bool keep = claimed == null || claimed.status == "retry" || claimed.reason == "self" || claimed.reason == "account_closed";
+                Debug.Log($"[Account] 결제 이전: {claimed?.status} {claimed?.reason} 옮김 {claimed?.moved ?? 0}");
+                if (keep) return;
+                PlayerPrefs.DeleteKey(TransferTicketKey);
+                PlayerPrefs.Save();
+                if (claimed.status == "ok" && claimed.moved > 0) Economy.IapService.InvalidateServerSync(); // 서버 장부가 바뀌었다 → 다시 맞춘다
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Account] 결제 이전권을 가져가지 못함 (다음에 다시): " + e.Message);
             }
         }
 
@@ -651,17 +695,9 @@ namespace HistoryHeroes.Account
         public static bool ReadUploadFile(out string json, out SaveData saved)
         {
             if (!ReadSavedFile(out json, out saved)) return false;
-            if (FileMatchesParsed(json, saved)) return true;
+            if (!saved.purchaseIdsMigrated) return true; // 읽을 때 바꾼 거래 번호가 하나도 없다 (파싱한 칸을 하나하나 본 결과)
             Debug.Log("[Account] 저장 파일에 옛 거래 번호가 남아 먼저 다시 저장한 뒤 올림");
-            return SaveSystem.Save() && ReadSavedFile(out json, out saved) && FileMatchesParsed(json, saved);
-        }
-
-        /// <summary>파일 글에 읽은 데이터의 거래 번호가 그대로 들어 있나 (읽을 때 바꾼 칸이 없나)</summary>
-        private static bool FileMatchesParsed(string json, SaveData saved)
-        {
-            foreach (PurchaseEntry e in saved.purchases.ledger)
-                if (!json.Contains("\"" + e.transactionId + "\"")) return false;
-            return true;
+            return SaveSystem.Save() && ReadSavedFile(out json, out saved) && !saved.purchaseIdsMigrated;
         }
 
         private static bool ReadSavedFile(out string json, out SaveData saved)

@@ -365,6 +365,27 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Upload_MixedRawAndHashedSameToken_DecidedStructurally_ResavedFirst()
+        {
+            // 같은 토큰이 원문 칸과 해시 칸으로 둘 다 있는 파일: 글자 찾기로는 "다 바뀜"처럼 보인다 → 파싱한 칸마다 보고 다시 저장해야 한다 (3차 리뷰 3)
+            var mixed = new SaveData { gemsPaid = 200 };
+            mixed.purchases.ledger.Add(new PurchaseEntry { transactionId = "raw-token", productId = "gems_t1", paidGems = 100 });
+            mixed.purchases.ledger.Add(new PurchaseEntry { transactionId = IapLedger.IdOf("raw-token"), productId = "gems_t1", paidGems = 100 });
+            Directory.CreateDirectory(_folder);
+            var store = new SaveStore(_folder);
+            File.WriteAllText(store.MainPath, SaveStore.Serialize(mixed));
+            SaveSystem.Use(store);
+            Assert.IsTrue(SaveSystem.Data.purchaseIdsMigrated, "읽을 때 바꾼 칸이 있었다");
+
+            Assert.IsTrue(Account.AccountService.ReadUploadFile(out string json, out SaveData uploaded));
+            StringAssert.DoesNotContain("raw-token", json);
+            StringAssert.DoesNotContain("raw-token", File.ReadAllText(store.MainPath));
+            Assert.IsFalse(uploaded.purchaseIdsMigrated, "올리는 파일은 이미 바꾼 모양");
+            Assert.IsTrue(uploaded.purchases.ledger.All(e => e.transactionId == IapLedger.IdOf("raw-token")));
+            StringAssert.DoesNotContain("purchaseIdsMigrated", json, "표시는 저장하지 않는다");
+        }
+
+        [Test]
         public void SaveLoad_MigratesRawTokenIdsToHashes()
         {
             var d = new SaveData();

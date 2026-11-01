@@ -532,7 +532,13 @@ namespace HistoryHeroes.Records
             data.purchases.ledger ??= new List<PurchaseEntry>();
             data.purchases.ledger.RemoveAll(e => e == null || string.IsNullOrEmpty(e.transactionId));
             // 거래 번호는 "sha256:<해시>"로만 둔다 (구매 토큰 원문을 기기 · 클라우드 저장에 남기지 않는다 — 개인정보 처리방침). 옛 저장의 원문 토큰은 읽을 때 바꾼다
-            foreach (PurchaseEntry e in data.purchases.ledger) e.transactionId = Economy.IapLedger.IdOf(e.transactionId);
+            foreach (PurchaseEntry e in data.purchases.ledger)
+            {
+                string id = Economy.IapLedger.IdOf(e.transactionId);
+                if (id == e.transactionId) continue;
+                e.transactionId = id;
+                data.purchaseIdsMigrated = true; // 파일은 아직 옛 모양 — 올리기 전에 다시 저장해야 한다 (AccountService.ReadUploadFile)
+            }
             data.purchases.firstBought ??= new List<string>();
             data.records ??= new List<RunRecord>();
             data.discoveredRecipes ??= new List<string>();

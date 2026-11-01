@@ -14,7 +14,9 @@ namespace HistoryHeroes.Server;
 /// 저장 방식 (교차 리뷰 2차): 결제 한 건 = 키 하나(p_{토큰 해시}), 판정은 머리(iap_head)의 lock으로 한 줄로 세운다 —
 /// "머리 lock 읽기 → 결제 전부 읽기 → 판정 → [머리(그 lock) + 새 결제 키] 한 batch". 그사이 다른 판정이 끼면 batch 전체가 거절되고 처음부터 다시.
 /// 머리의 처음 값은 늘 같아서 두 호출이 동시에 lock 없이 만들어도 무해하고, 판정은 머리 내용이 아니라 결제 키들로만 하므로 늦게 다시 만들어져도 잃는 것이 없다.
-/// 진짜 내용은 lock 없이 덮어쓰지 않는다 (lock 없이 쓰는 키는 모두 토큰 · 플레이어마다 하나뿐).
+/// 닫기(계정 삭제 · 결제 이전): 먼저 서버 전용 닫힘 표시(한 방향)를 쓰고, 머리를 읽은 lock으로 "닫힘"으로 바꾼다 → 그 전에 lock을 읽은 결제 batch는 모두 거절되고,
+/// 판정은 머리 lock을 읽은 **뒤** 닫힘 표시를 보므로 닫힌 뒤에 더해지는 결제가 없다. 그 다음에 찍은 결제 목록은 빠짐이 없다. 머리는 지우지 않는다.
+/// 진짜 내용은 lock 없이 덮어쓰지 않는다 (lock 없이 쓰는 키는 모두 토큰 · 플레이어 · 이전권마다 하나뿐, 또는 늘 같은 처음 값, 또는 한 방향 닫힘 표시).
 /// 모든 호출은 한 함수 안에서 Budget(12초) 안에 끝낸다 (Cloud Code 한도 15초). 토큰 · 비밀값은 기록에 남기지 않는다 (토큰 해시 앞 8자만).
 /// </summary>
 public sealed class PurchaseVerifier
@@ -37,6 +39,10 @@ public sealed class PurchaseVerifier
     /// <summary>결제 기록이 끝내 생기지 않은 확정 대기(지급 전에 실패)는 이만큼 뒤 지운다</summary>
     public static readonly TimeSpan OrphanAckAge = TimeSpan.FromHours(1);
     private static readonly TimeSpan VoidedOverlap = TimeSpan.FromHours(1);
+    /// <summary>결제 이전권 유효 기간 (게스트 → 카카오 계정으로 바꿀 때. 그동안 다음 실행에서 다시 가져갈 수 있다)</summary>
+    public static readonly TimeSpan TransferLife = TimeSpan.FromDays(7);
+    /// <summary>한 batch에 옮기는 결제 수 (Cloud Save batch 20칸 = 머리 1 + 결제 19)</summary>
+    private const int MovePerBatch = 19;
     /// <summary>구글이 받는 가장 오래된 startTime은 30일 전</summary>
     private static readonly TimeSpan VoidedMaxLookback = TimeSpan.FromDays(29);
 
@@ -77,10 +83,11 @@ public sealed class PurchaseVerifier
         string tag = tokenHash[..8];
         using var budget = new CancellationTokenSource(_budget);
         CancellationToken ct = budget.Token;
+        bool reserved = false;
         try
         {
             if (await _store.IsClosedAsync(context, playerId, ct)) return VerifyResult.Of(VerifyResult.Invalid, "account_closed");
-            string headLock = await HeadLockAsync(context, playerId, ct); // 머리 먼저: 그 뒤에 읽은 결제 목록만 이 lock과 맞는다
+            (string headLock, bool headClosed) = await HeadAsync(context, playerId, ct); // 머리 먼저: 그 뒤에 읽은 것만 이 lock과 맞는다
             (PurchaseRecord? known, _) = await _store.LoadPurchaseAsync(context, playerId, tokenHash, ct);
             if (known != null) return await AnswerKnownAsync(context, playerId, known, ct);
 
@@ -112,19 +119,33 @@ public sealed class PurchaseVerifier
                 return VerifyResult.Of(VerifyResult.Invalid, problem);
             }
 
-            // 지급 전에: 색인(토큰 → 이 플레이어, 토큰마다 하나뿐인 키 · 이 플레이어만 통과하므로 늘 같은 내용)과 확정 대기(토큰 원문, 서버 전용)
-            if (owner == null) await _store.SetIndexAsync(context, tokenHash, new IndexEntry { Player = playerId }, ct);
+            // 지급 전에: 이 플레이어의 "색인에 적은 토큰" 목록 → 색인(토큰 → 이 플레이어) → 확정 대기(토큰 원문, 서버 전용).
+            // 목록을 먼저 적어 두어, 지급이 안 된 토큰도 계정을 지울 때 색인의 플레이어 ID를 지울 수 있다
+            if (owner == null)
+            {
+                await _store.AddReservedAsync(context, playerId, tokenHash, ct);
+                await _store.SetIndexAsync(context, tokenHash, new IndexEntry { Player = playerId }, ct);
+                reserved = true;
+            }
+
             if (!found.Settled)
                 await _store.SetAckAsync(context, tokenHash, new PendingAck { Player = playerId, ProductId = item.Id, Token = purchaseToken, Utc = Utc(_utcNow()) }, ct);
 
             for (int attempt = 1; attempt <= MaxAttempts; attempt++)
             {
-                if (attempt > 1) headLock = await HeadLockAsync(context, playerId, ct);
+                if (attempt > 1) (headLock, headClosed) = await HeadAsync(context, playerId, ct);
+                // 머리 lock을 읽은 뒤에 닫힘을 본다: 닫기는 "닫힘 표시 → 머리 바꾸기" 순서라, 여기서 안 닫혔으면 이 lock으로 쓰는 batch는 닫기보다 먼저다
+                if (headClosed || await _store.IsClosedAsync(context, playerId, ct))
+                {
+                    await DropTokenAsync(context, playerId, tokenHash, reserved, ct);
+                    return VerifyResult.Of(VerifyResult.Invalid, "account_closed");
+                }
+
                 List<PurchaseRecord> ledger = await _store.LoadPurchasesAsync(context, playerId, ct);
                 known = ledger.Find(p => p.TokenHash == tokenHash);
                 if (known != null) return await AnswerKnownAsync(context, playerId, known, ct);
 
-                // 계정당 1번 상품: 이 계정 장부에 이미 있으면 지급하지 않는다 (토큰이 달라도, 환불된 것이라도)
+                // 계정당 1번 상품: 이 계정 장부에 이미 있으면 지급하지 않는다 (토큰이 달라도, 환불된 것 · 옮겨 온 것이라도)
                 if (item.OncePerAccount && ledger.Exists(p => p.ProductId == item.Id))
                 {
                     await _store.DeleteAckAsync(context, tokenHash, ct); // 확정하지 않는다 → 구글이 환불
@@ -133,9 +154,9 @@ public sealed class PurchaseVerifier
 
                 PurchaseRecord record = Decide(ledger, item, tokenHash, found, _utcNow());
                 record.Acknowledged = found.Settled;
-                if (!await _store.TryAddPurchaseAsync(context, playerId, headLock, record, ct))
+                if (!await _store.TryAddPurchasesAsync(context, playerId, headLock, new[] { record }, ct))
                 {
-                    _log.LogInformation("다른 판정이 먼저 끝남 → 다시 판정 {Tag} ({Attempt})", tag, attempt);
+                    _log.LogInformation("다른 판정 · 닫기가 먼저 끝남 → 다시 판정 {Tag} ({Attempt})", tag, attempt);
                     continue;
                 }
 
@@ -157,17 +178,27 @@ public sealed class PurchaseVerifier
         }
     }
 
-    /// <summary>
-    /// 머리의 lock. 없으면 처음 값으로 lock 없이 만들고 다시 읽는다.
-    /// ponytail: 두 호출이 동시에 처음 만들면 늦은 쪽이 머리를 처음 값으로 되돌릴 수 있다 — 머리 내용은 판정에 쓰지 않고(판정은 결제 키들로) lock만 바뀌므로,
-    /// 그사이 판정 중이던 쪽은 batch가 거절돼 다시 할 뿐 잃는 결제가 없다
-    /// </summary>
-    private async Task<string> HeadLockAsync(IExecutionContext context, string playerId, CancellationToken ct)
+    /// <summary>닫힌 계정에 지급하지 못한 토큰: 이번에 색인에 적었으면 플레이어 ID를 지우고(지운 계정 표시), 확정 대기도 지운다 (확정하지 않음 → 구글 환불)</summary>
+    private async Task DropTokenAsync(IExecutionContext context, string playerId, string tokenHash, bool reserved, CancellationToken ct)
     {
-        string? headLock = await _store.LoadHeadLockAsync(context, playerId, ct);
-        if (headLock != null) return headLock;
+        await _store.DeleteAckAsync(context, tokenHash, ct);
+        if (!reserved) return;
+        await _store.SetIndexAsync(context, tokenHash, new IndexEntry { ArchiveId = ArchiveId(playerId) }, ct);
+        await _store.DeleteReservedAsync(context, playerId, new[] { tokenHash }, ct);
+    }
+
+    /// <summary>
+    /// 머리의 lock과 닫혔는지. 없으면 처음 값으로 lock 없이 만들고 다시 읽는다.
+    /// ponytail: 두 호출이 동시에 처음 만들면 늦은 쪽이 머리를 처음 값으로 되돌릴 수 있다 — 머리 내용은 판정에 쓰지 않고(판정은 결제 키들로),
+    /// 닫힘은 따로 둔 한 방향 닫힘 표시가 지키므로(판정마다 머리 lock을 읽은 뒤 확인) 되살아나는 계정도, 잃는 결제도 없다. 그사이 판정 중이던 쪽은 batch가 거절돼 다시 할 뿐
+    /// </summary>
+    private async Task<(string writeLock, bool closed)> HeadAsync(IExecutionContext context, string playerId, CancellationToken ct)
+    {
+        (string? headLock, bool closed) = await _store.LoadHeadAsync(context, playerId, ct);
+        if (headLock != null) return (headLock, closed);
         await _store.CreateHeadAsync(context, playerId, ct);
-        return await _store.LoadHeadLockAsync(context, playerId, ct) ?? throw new InvalidOperationException("head_create");
+        (headLock, closed) = await _store.LoadHeadAsync(context, playerId, ct);
+        return headLock != null ? (headLock, closed) : throw new InvalidOperationException("head_create");
     }
 
     /// <summary>이미 장부에 있는 토큰: 환불됐으면 voided, 아니면 already (확정을 못 했으면 이참에 다시)</summary>
@@ -279,11 +310,242 @@ public sealed class PurchaseVerifier
         return null;
     }
 
+    // ------------------------------------------------------------------ 계정 닫기 · 삭제 보관
+
+    /// <summary>
+    /// 이 플레이어를 결제에서 닫는다: (1) 서버 전용 닫힘 표시 (한 방향) → (2) 머리를 읽은 lock으로 "닫힘"으로.
+    /// (2) 뒤로는 그 전에 머리 lock을 읽은 결제 batch가 모두 거절되고, 그 뒤에 머리를 읽은 판정은 (1)을 보고 거절한다 → 이 뒤에 찍은 결제 목록에 빠짐이 없다
+    /// </summary>
+    private async Task CloseForPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct)
+    {
+        await _store.CloseAsync(context, playerId, _utcNow(), ct);
+        for (int attempt = 0; attempt < MaxAttempts; attempt++)
+        {
+            (string headLock, _) = await HeadAsync(context, playerId, ct);
+            if (await _store.TryCloseHeadAsync(context, playerId, headLock, ct)) return;
+        }
+
+        throw new InvalidOperationException("head_close");
+    }
+
+    /// <summary>
+    /// 계정 삭제 (게임이 Cloud Save · UGS 계정을 지우기 직전에만 부른다 — 설정의 계정 삭제): 닫기 → 결제 목록 찍기 → 보관본에 합쳐 쓰기(되돌릴 수 없는 ID, 5년 뒤 지움) →
+    /// 색인의 이 플레이어 칸(지급 안 된 토큰 포함)을 "지운 계정"으로 → 장부의 결제 키 지우기 (머리는 닫힌 채로 남긴다).
+    /// 닫힌 플레이어는 그 뒤 VerifyPurchase · GetPurchases가 모두 거절된다. 다시 불러도 같은 결과(빠진 것만 마저) — 보관본은 합쳐 쓰므로 줄지 않는다.
+    /// 실패하면 retry — 게임은 계정 삭제를 멈춘다
+    /// </summary>
+    public async Task<ArchiveResult> ArchiveAndDeleteAsync(IExecutionContext context)
+    {
+        string? playerId = context.PlayerId;
+        if (string.IsNullOrEmpty(playerId)) return new ArchiveResult { Status = VerifyResult.Invalid };
+        using var budget = new CancellationTokenSource(_budget);
+        CancellationToken ct = budget.Token;
+        try
+        {
+            bool wasClosed = await _store.IsClosedAsync(context, playerId, ct);
+            int archived = await ArchiveCoreAsync(context, playerId, ct);
+            _log.LogInformation("계정 삭제: 결제 {Count}건 보관 · 장부 지움 · 닫음", archived);
+            return new ArchiveResult { Archived = archived, AlreadyArchived = wasClosed };
+        }
+        catch (Exception e)
+        {
+            _log.LogError("결제 기록 보관 오류: {Error}", Describe(e));
+            return new ArchiveResult { Status = VerifyResult.Retry };
+        }
+    }
+
+    /// <summary>닫고, 남은 결제를 보관본에 합쳐 쓰고, 이 플레이어의 색인 칸을 익명으로 바꾸고, 결제 키 · 목록을 지운다. 돌려주는 값: 이번에 보관한 결제 수</summary>
+    private async Task<int> ArchiveCoreAsync(IExecutionContext context, string playerId, CancellationToken ct)
+    {
+        await CloseForPurchasesAsync(context, playerId, ct);
+        List<PurchaseRecord> ledger = await _store.LoadPurchasesAsync(context, playerId, ct); // 닫은 뒤에 찍는다 → 빠짐 없음
+        List<string> reserved = await _store.ListReservedAsync(context, playerId, ct);
+        string archiveId = ArchiveId(playerId);
+        if (ledger.Count > 0) await MergeArchiveAsync(context, archiveId, ledger, ct);
+
+        var hashes = ledger.Select(p => p.TokenHash).Concat(reserved).Distinct().ToList();
+        if (hashes.Count > 0)
+        {
+            // 색인은 지우지 않는다 (같은 토큰을 다시 받지 못하게). 지금 이 플레이어 것인 칸만 익명으로 (옮겨 간 토큰은 새 주인 것)
+            Dictionary<string, IndexEntry> owners = await _store.FindIndexAsync(context, hashes, ct);
+            foreach (string[] batch in owners.Where(o => o.Value.Player == playerId).Select(o => o.Key).Chunk(10))
+                await Task.WhenAll(batch.Select(h => _store.SetIndexAsync(context, h, new IndexEntry { ArchiveId = archiveId }, ct)));
+            Dictionary<string, PendingAck> acks = await _store.FindAcksAsync(context, hashes, ct);
+            foreach ((string hash, PendingAck ack) in acks)
+                if (ack.Player == playerId) await _store.DeleteAckAsync(context, hash, ct);
+        }
+
+        await _store.DeletePurchasesAsync(context, playerId, ledger.ConvertAll(p => p.TokenHash), ct);
+        await _store.DeleteReservedAsync(context, playerId, reserved, ct);
+        return ledger.Count;
+    }
+
+    /// <summary>보관본에 합쳐 쓴다 (이미 있으면 그 결제들 + 이번 결제들, 지운 날 · 기한은 처음 것 그대로). lock으로 고친다</summary>
+    private async Task MergeArchiveAsync(IExecutionContext context, string archiveId, List<PurchaseRecord> ledger, CancellationToken ct)
+    {
+        DateTime now = _utcNow();
+        for (int attempt = 0; attempt < MaxAttempts; attempt++)
+        {
+            (ArchivedPlayer? existing, string? writeLock) = await _store.LoadArchiveAsync(context, archiveId, ct);
+            var merged = new Dictionary<string, PurchaseRecord>();
+            foreach (PurchaseRecord p in existing?.Purchases ?? new List<PurchaseRecord>()) merged[p.TokenHash] = p;
+            foreach (PurchaseRecord p in ledger) merged[p.TokenHash] = p;
+            var archive = new ArchivedPlayer
+            {
+                Id = archiveId,
+                DeletedUtc = existing?.DeletedUtc ?? Utc(now),
+                DeleteAfterUtc = existing?.DeleteAfterUtc ?? Utc(now.AddYears(RetentionYears)),
+                Purchases = merged.Values.OrderBy(p => p.Utc, StringComparer.Ordinal).ToList(),
+            };
+            if (await _store.TrySetArchiveAsync(context, archive, writeLock, ct)) return;
+        }
+
+        throw new InvalidOperationException("archive_conflict");
+    }
+
+    // ------------------------------------------------------------------ 결제 이전 (게스트 → 이미 있는 카카오 계정)
+
+    /// <summary>
+    /// 게스트가 이미 있는 카카오 계정으로 바꾸기 직전에 부른다: 게스트를 닫고(그 뒤 게스트 결제 판정은 모두 거절) 결제 목록을 고정한 이전권을 만든다.
+    /// 이전권 원문은 게임에만 돌려주고 서버에는 해시로 둔다 (무작위 32바이트). 옮길 결제가 없으면 none. 닫힌 게스트가 다시 불러도 남은 결제로 새 이전권을 준다
+    /// </summary>
+    public async Task<TransferResult> PrepareTransferAsync(IExecutionContext context)
+    {
+        string? source = context.PlayerId;
+        if (string.IsNullOrEmpty(source)) return TransferResult.Of(VerifyResult.Invalid, "no_player");
+        using var budget = new CancellationTokenSource(_budget);
+        CancellationToken ct = budget.Token;
+        try
+        {
+            await CloseForPurchasesAsync(context, source, ct);
+            List<PurchaseRecord> ledger = await _store.LoadPurchasesAsync(context, source, ct); // 닫은 뒤에 찍는다 → 빠짐 없음
+            if (ledger.Count == 0) return TransferResult.Of(TransferResult.None);
+            string ticket = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            var record = new TransferTicket { Source = source, Hashes = ledger.ConvertAll(p => p.TokenHash), ExpiresUtc = Utc(_utcNow() + TransferLife) };
+            if (await _store.TrySetTransferAsync(context, TicketKey(ticket), record, null, ct) == null) return TransferResult.Of(VerifyResult.Retry, "busy");
+            _log.LogInformation("결제 이전권: 결제 {Count}건", ledger.Count);
+            return new TransferResult { Ticket = ticket, Moved = 0 };
+        }
+        catch (Exception e)
+        {
+            _log.LogError("결제 이전 준비 오류: {Error}", Describe(e));
+            return TransferResult.Of(VerifyResult.Retry, e is OperationCanceledException ? "timeout" : "error");
+        }
+    }
+
+    /// <summary>
+    /// 새 계정이 이전권을 가져간다: 처음 가져가는 플레이어에 묶이고(다른 플레이어 · 게스트 자신은 거절, 기한이 지났으면 거절),
+    /// 게스트의 결제 키를 새 계정 장부로 옮긴다(새 계정 머리 lock으로 — 새 계정 판정이 옮겨 온 결제를 본다, 둘 다 진짜 결제라 패키지 · 2배 기록도 그대로),
+    /// 색인 주인 · 확정 대기를 새 계정으로 바꾸고 게스트 쪽 결제 키를 지운다. 같은 플레이어가 다시 불러도 같은 결과 (옮긴 것은 건너뛴다)
+    /// </summary>
+    public async Task<TransferResult> ClaimTransferAsync(IExecutionContext context, string? ticket)
+    {
+        string? target = context.PlayerId;
+        if (string.IsNullOrEmpty(target)) return TransferResult.Of(VerifyResult.Invalid, "no_player");
+        if (string.IsNullOrEmpty(ticket) || ticket.Length > 200) return TransferResult.Of(VerifyResult.Invalid, "bad_ticket");
+        using var budget = new CancellationTokenSource(_budget);
+        CancellationToken ct = budget.Token;
+        try
+        {
+            if (await _store.IsClosedAsync(context, target, ct)) return TransferResult.Of(VerifyResult.Invalid, "account_closed");
+            string key = TicketKey(ticket);
+            TransferTicket? record = null;
+            string? writeLock = null;
+            for (int attempt = 0; attempt < MaxAttempts && record?.Target != target; attempt++)
+            {
+                (record, writeLock) = await _store.LoadTransferAsync(context, key, ct);
+                if (record == null) return TransferResult.Of(VerifyResult.Invalid, "ticket_unknown");
+                if (record.Source == target) return TransferResult.Of(VerifyResult.Invalid, "self");
+                if (record.Target != null && record.Target != target) return TransferResult.Of(VerifyResult.Invalid, "ticket_other");
+                if (record.Target == target) break;
+                if (_utcNow() > ParseUtc(record.ExpiresUtc)) return TransferResult.Of(VerifyResult.Invalid, "expired");
+                record.Target = target; // 처음 가져가는 플레이어에 묶는다 (lock — 둘이 동시에 가져가면 하나만)
+                string? next = await _store.TrySetTransferAsync(context, key, record, writeLock, ct);
+                if (next == null) record.Target = null;
+                else writeLock = next;
+            }
+
+            if (record?.Target != target) return TransferResult.Of(VerifyResult.Retry, "busy");
+            int moved = await MoveAsync(context, record, target, ct);
+            if (record.ClaimedUtc == null)
+            {
+                record.ClaimedUtc = Utc(_utcNow());
+                await _store.TrySetTransferAsync(context, key, record, writeLock, ct); // 기록용 (못 써도 옮기기는 끝났다)
+            }
+
+            _log.LogInformation("결제 이전: {Moved}건 옮김", moved);
+            return new TransferResult { Moved = moved };
+        }
+        catch (Exception e)
+        {
+            _log.LogError("결제 이전 오류: {Error}", Describe(e));
+            return TransferResult.Of(VerifyResult.Retry, e is OperationCanceledException ? "timeout" : "error");
+        }
+    }
+
+    private static string TicketKey(string ticket) => Hash("transfer:" + ticket);
+
+    /// <summary>
+    /// 이전권의 결제를 게스트 → 새 계정으로 옮긴다 (다시 불러도 안전): ① 새 계정에 없는 결제를 머리 lock batch로 더하고 ② 색인 주인을 새 계정으로
+    /// ③ 게스트 쪽 결제를 다시 읽어 그사이 붙은 환불 표시를 새 계정 쪽에도 ④ 확정 대기 주인 바꾸기 ⑤ 게스트 쪽 결제 키 · 목록 지우기. 돌려주는 값: 이번에 더한 수
+    /// </summary>
+    private async Task<int> MoveAsync(IExecutionContext context, TransferTicket record, string target, CancellationToken ct)
+    {
+        var wanted = new HashSet<string>(record.Hashes);
+        List<PurchaseRecord> source = (await _store.LoadPurchasesAsync(context, record.Source, ct)).FindAll(p => wanted.Contains(p.TokenHash));
+        int moved = 0;
+        foreach (PurchaseRecord[] chunk in source.Chunk(MovePerBatch))
+        {
+            bool done = false;
+            for (int attempt = 0; attempt < MaxAttempts && !done; attempt++)
+            {
+                (string headLock, bool headClosed) = await HeadAsync(context, target, ct);
+                if (headClosed || await _store.IsClosedAsync(context, target, ct)) throw new InvalidOperationException("target_closed");
+                var have = new HashSet<string>((await _store.LoadPurchasesAsync(context, target, ct)).Select(p => p.TokenHash));
+                List<PurchaseRecord> add = chunk.Where(p => !have.Contains(p.TokenHash)).ToList();
+                if (add.Count == 0 || await _store.TryAddPurchasesAsync(context, target, headLock, add, ct))
+                {
+                    moved += add.Count;
+                    done = true;
+                }
+            }
+
+            if (!done) throw new InvalidOperationException("move_conflict");
+        }
+
+        Dictionary<string, IndexEntry> owners = await _store.FindIndexAsync(context, record.Hashes, ct);
+        foreach (string hash in record.Hashes)
+        {
+            await _store.AddReservedAsync(context, target, hash, ct); // 새 계정을 지울 때 이 색인 칸도 익명으로 바꾸게
+            if (owners.TryGetValue(hash, out IndexEntry? owner) && (owner.Player == record.Source || owner.Player == target))
+                await _store.SetIndexAsync(context, hash, new IndexEntry { Player = target }, ct);
+        }
+
+        // 옮기는 사이 게스트 쪽에 붙은 환불 표시를 놓치지 않는다 (환불 정리는 색인 주인을 다시 보며 따라온다 — MarkVoidedAsync)
+        foreach (PurchaseRecord p in (await _store.LoadPurchasesAsync(context, record.Source, ct)).FindAll(p => wanted.Contains(p.TokenHash) && p.Voided))
+            await UpdateAsync(context, target, p.TokenHash, r =>
+            {
+                r.Voided = true;
+                r.VoidedUtc ??= p.VoidedUtc;
+            }, ct);
+
+        foreach ((string hash, PendingAck ack) in await _store.FindAcksAsync(context, record.Hashes, ct))
+        {
+            if (ack.Player != record.Source) continue;
+            ack.Player = target;
+            await _store.SetAckAsync(context, hash, ack, ct);
+        }
+
+        await _store.DeletePurchasesAsync(context, record.Source, record.Hashes, ct);
+        await _store.DeleteReservedAsync(context, record.Source, record.Hashes, ct);
+        return moved;
+    }
+
     // ------------------------------------------------------------------ 정리 작업 (RunMaintenance · GetPurchases 대비)
 
     /// <summary>
     /// 예약 실행(UGS Scheduler → Trigger → RunMaintenance) 전용. 플레이어가 부르면 거절한다 (부른 사람이 없는 서버 호출만).
-    /// 하는 일: 환불 목록 반영 · 확정 대기 다시 확정/3일 지난 토큰 지우기 · 기한 지난 보관본 지우기
+    /// 하는 일: 환불 목록 반영 · 확정 대기 다시 확정/3일 지난 토큰 지우기 · 기한 지난 보관본 지우기 · 기한 지난 결제 이전권 정리
     /// </summary>
     public async Task<MaintenanceResult> RunMaintenanceAsync(IExecutionContext context)
     {
@@ -301,8 +563,8 @@ public sealed class PurchaseVerifier
     }
 
     /// <summary>
-    /// 게임 전체 정리 작업. 작업 상태에 lock으로 "잡기"를 써서 동시에 두 번 돌지 않는다 (상태의 처음 값은 늘 같아 lock 없이 만들어도 무해).
-    /// jobCt가 끝나면(시간 절반) 조용히 멈추고, 바깥 ct가 끝났으면 밖으로 올린다
+    /// 게임 전체 정리 작업. 작업 상태는 문지기(늘 같은 내용) lock으로 지킨 batch 안에서만 쓴다 — 문지기를 늦게 lock 없이 다시 만들어도 상태는 덮이지 않고,
+    /// 문지기 lock을 읽은 뒤 상태를 읽고 lock batch로 "잡기"를 쓰므로 동시에 두 번 돌지 않는다. jobCt가 끝나면(시간 절반) 조용히 멈추고, 바깥 ct가 끝났으면 밖으로 올린다
     /// </summary>
     internal async Task<MaintenanceResult> RunJobAsync(IExecutionContext context, TimeSpan minInterval, CancellationToken jobCt, CancellationToken ct)
     {
@@ -311,25 +573,28 @@ public sealed class PurchaseVerifier
         {
             DateTime now = _utcNow();
             long nowMs = new DateTimeOffset(now).ToUnixTimeMilliseconds();
-            (JobState? state, string? writeLock) = await _store.LoadJobAsync(context, jobCt);
-            if (state == null || writeLock == null)
+            string? gate = await _store.LoadJobGateAsync(context, jobCt);
+            if (gate == null)
             {
-                await _store.CreateJobAsync(context, jobCt);
-                (state, writeLock) = await _store.LoadJobAsync(context, jobCt);
-                if (state == null || writeLock == null) return result;
+                await _store.CreateJobGateAsync(context, jobCt);
+                gate = await _store.LoadJobGateAsync(context, jobCt);
+                if (gate == null) return result;
             }
 
+            JobState state = await _store.LoadJobStateAsync(context, jobCt) ?? new JobState(); // 문지기 lock을 읽은 뒤에
             if (state.LastRunMs > 0 && nowMs - state.LastRunMs < (long)minInterval.TotalMilliseconds) return result;
             state.LastRunMs = nowMs;
-            string? claimed = await _store.TrySaveJobAsync(context, state, writeLock, jobCt);
+            string? claimed = await _store.TrySaveJobAsync(context, gate, state, jobCt);
             if (claimed == null) return result; // 다른 호출이 먼저 잡았다
 
             result.Status = PurchaseList.Ok;
             result.Voided = await SyncVoidedAsync(context, state, now, jobCt);
             result.AcksDone = await SweepAcksAsync(context, now, jobCt);
             result.ArchivesDeleted = await PurgeArchivesAsync(context, state, now, jobCt);
-            await _store.TrySaveJobAsync(context, state, claimed, jobCt);
-            _log.LogInformation("정리 작업: 환불 표시 {Voided} · 확정 대기 정리 {Acks} · 보관본 지움 {Archives}", result.Voided, result.AcksDone, result.ArchivesDeleted);
+            result.TransfersDone = await SweepTransfersAsync(context, now, jobCt);
+            await SaveJobResultAsync(context, claimed, state, jobCt);
+            _log.LogInformation("정리 작업: 환불 표시 {Voided} · 확정 대기 정리 {Acks} · 보관본 지움 {Archives} · 이전권 정리 {Transfers}",
+                result.Voided, result.AcksDone, result.ArchivesDeleted, result.TransfersDone);
         }
         catch (Exception e) when (!ct.IsCancellationRequested)
         {
@@ -338,6 +603,19 @@ public sealed class PurchaseVerifier
         }
 
         return result;
+    }
+
+    /// <summary>작업 결과(체크포인트 · 칸 순서)를 쓴다. 문지기가 바뀌었으면(늦은 문지기 만들기) 다시 읽어, 그사이 다른 호출이 잡지 않았을 때만 다시 쓴다</summary>
+    private async Task SaveJobResultAsync(IExecutionContext context, string claimed, JobState state, CancellationToken ct)
+    {
+        string? gate = claimed;
+        for (int attempt = 0; attempt < 3 && gate != null; attempt++)
+        {
+            if (await _store.TrySaveJobAsync(context, gate, state, ct) != null) return;
+            gate = await _store.LoadJobGateAsync(context, ct);
+            JobState? now = await _store.LoadJobStateAsync(context, ct);
+            if (now?.LastRunMs != state.LastRunMs) return; // 다른 호출이 그 뒤 잡았다 → 그쪽 결과를 덮지 않는다
+        }
     }
 
     /// <summary>
@@ -354,14 +632,12 @@ public sealed class PurchaseVerifier
         var times = new Dictionary<string, long>();
         foreach (VoidedPurchase v in voided)
             if (!string.IsNullOrEmpty(v.PurchaseToken)) times[Hash(v.PurchaseToken)] = v.VoidedTimeMillis;
-        Dictionary<string, IndexEntry> owners = times.Count == 0 ? new() : await _store.FindIndexAsync(context, times.Keys.ToList(), ct);
         int marked = 0;
         long? oldestUnapplied = null;
-        foreach ((string tokenHash, IndexEntry owner) in owners)
+        foreach ((string tokenHash, long at) in times)
         {
-            if (owner.Player == null) continue; // 지운 계정: 보관본은 지운 때의 기록 그대로
-            int result = await MarkVoidedAsync(context, owner.Player, tokenHash, now, ct);
-            if (result < 0) oldestUnapplied = Math.Min(oldestUnapplied ?? long.MaxValue, times[tokenHash]);
+            int result = await MarkVoidedAsync(context, tokenHash, now, ct);
+            if (result < 0) oldestUnapplied = Math.Min(oldestUnapplied ?? long.MaxValue, at);
             else marked += result;
         }
 
@@ -371,18 +647,32 @@ public sealed class PurchaseVerifier
         return marked;
     }
 
-    /// <summary>결제 하나에 voided를 붙인다 (확정 대기도 지운다). 1 붙임 · 0 할 일 없음(없거나 이미) · -1 계속 충돌</summary>
-    private async Task<int> MarkVoidedAsync(IExecutionContext context, string playerId, string tokenHash, DateTime now, CancellationToken ct)
+    /// <summary>
+    /// 결제 하나에 voided를 붙인다 — 색인의 지금 주인을 따라간다 (결제 이전 중이면 옮겨 간 쪽까지: 붙인 뒤 주인이 바뀌었으면 새 주인 쪽에도).
+    /// 1 붙임 · 0 할 일 없음(우리 결제 아님 · 지운 계정 · 이미) · -1 계속 충돌
+    /// </summary>
+    private async Task<int> MarkVoidedAsync(IExecutionContext context, string tokenHash, DateTime now, CancellationToken ct)
     {
-        for (int attempt = 0; attempt < MaxAttempts; attempt++)
+        int marked = 0;
+        string? done = null;
+        for (int attempt = 0; attempt < MaxAttempts * 2; attempt++)
         {
-            (PurchaseRecord? record, string? writeLock) = await _store.LoadPurchaseAsync(context, playerId, tokenHash, ct);
-            if (record == null || writeLock == null || record.Voided) return 0;
+            Dictionary<string, IndexEntry> index = await _store.FindIndexAsync(context, new[] { tokenHash }, ct);
+            string? owner = index.TryGetValue(tokenHash, out IndexEntry? entry) ? entry.Player : null;
+            if (owner == null || owner == done) return marked; // 지운 계정 · 우리 결제 아님 · 지금 주인까지 끝
+            (PurchaseRecord? record, string? writeLock) = await _store.LoadPurchaseAsync(context, owner, tokenHash, ct);
+            if (record == null || writeLock == null || record.Voided)
+            {
+                done = owner; // 이 주인 쪽은 할 일 없음 — 주인이 그사이 바뀌었으면 다음 바퀴에 새 주인
+                continue;
+            }
+
             record.Voided = true;
             record.VoidedUtc = Utc(now);
-            if (!await _store.TryUpdatePurchaseAsync(context, playerId, record, writeLock, ct)) continue;
+            if (!await _store.TryUpdatePurchaseAsync(context, owner, record, writeLock, ct)) continue;
             await _store.DeleteAckAsync(context, tokenHash, ct);
-            return 1;
+            marked = 1;
+            done = owner;
         }
 
         return -1;
@@ -433,57 +723,22 @@ public sealed class PurchaseVerifier
         return deleted;
     }
 
-    // ------------------------------------------------------------------ 계정 삭제
-
     /// <summary>
-    /// 계정 삭제 (게임이 Cloud Save · UGS 계정을 지우기 직전에만 부른다 — 설정의 계정 삭제, 카카오 계정으로 바꿀 때 지우는 게스트):
-    /// 결제를 보관본(되돌릴 수 없는 ID, 5년 뒤 지움)에 쓰고 → 색인을 "지운 계정"으로 바꾸고(지우지 않는다 — 같은 토큰을 다시 받지 못하게) →
-    /// 서버 전용 닫힘 표시를 남긴 뒤 → 장부를 지운다. 닫힌 플레이어는 그 뒤 VerifyPurchase · GetPurchases가 모두 거절된다 (되돌릴 수 없다).
-    /// 이미 닫혔으면 다시 보관하지 않고, 덜 지운 장부만 마저 지운다. 실패하면 retry — 게임은 계정 삭제를 멈춘다
+    /// 기한이 지난 결제 이전권: 누가 가져갔으면 덜 옮긴 것을 마저 옮기고 지운다. 아무도 안 가져갔으면 게스트 결제를 보관본으로 옮기고(계정 삭제와 같게) 지운다. 돌려주는 값: 정리한 수
     /// </summary>
-    public async Task<ArchiveResult> ArchiveAndDeleteAsync(IExecutionContext context)
+    private async Task<int> SweepTransfersAsync(IExecutionContext context, DateTime now, CancellationToken ct)
     {
-        string? playerId = context.PlayerId;
-        if (string.IsNullOrEmpty(playerId)) return new ArchiveResult { Status = VerifyResult.Invalid };
-        using var budget = new CancellationTokenSource(_budget);
-        CancellationToken ct = budget.Token;
-        try
+        int done = 0;
+        foreach ((string key, TransferTicket ticket) in await _store.ListTransfersAsync(context, ct))
         {
-            if (await _store.IsClosedAsync(context, playerId, ct))
-            {
-                await _store.DeletePlayerPurchasesAsync(context, playerId, ct);
-                return new ArchiveResult { AlreadyArchived = true };
-            }
-
-            List<PurchaseRecord> ledger = await _store.LoadPurchasesAsync(context, playerId, ct);
-            DateTime now = _utcNow();
-            string archiveId = ArchiveId(playerId);
-            if (ledger.Count > 0)
-            {
-                await _store.SetArchiveAsync(context, new ArchivedPlayer
-                {
-                    Id = archiveId,
-                    DeletedUtc = Utc(now),
-                    DeleteAfterUtc = Utc(now.AddYears(RetentionYears)),
-                    Purchases = ledger,
-                }, ct);
-                foreach (PurchaseRecord[] batch in ledger.Chunk(10))
-                {
-                    await Task.WhenAll(batch.Select(p => _store.SetIndexAsync(context, p.TokenHash, new IndexEntry { ArchiveId = archiveId }, ct)));
-                    await Task.WhenAll(batch.Select(p => _store.DeleteAckAsync(context, p.TokenHash, ct)));
-                }
-            }
-
-            await _store.CloseAsync(context, playerId, now, ct);
-            await _store.DeletePlayerPurchasesAsync(context, playerId, ct);
-            _log.LogInformation("계정 삭제: 결제 {Count}건 보관 · 장부 지움 · 닫음", ledger.Count);
-            return new ArchiveResult { Archived = ledger.Count };
+            if (now <= ParseUtc(ticket.ExpiresUtc)) continue;
+            if (ticket.Target != null) await MoveAsync(context, ticket, ticket.Target, ct);
+            else await ArchiveCoreAsync(context, ticket.Source, ct);
+            await _store.DeleteTransferAsync(context, key, ct);
+            done++;
         }
-        catch (Exception e)
-        {
-            _log.LogError("결제 기록 보관 오류: {Error}", Describe(e));
-            return new ArchiveResult { Status = VerifyResult.Retry };
-        }
+
+        return done;
     }
 
     // ------------------------------------------------------------------ 판정

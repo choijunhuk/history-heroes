@@ -436,14 +436,41 @@ public sealed class PurchaseVerifierTests
     public async Task JobStateFirstCreation_ConcurrentCaller_OnlyOneRuns()
     {
         // 작업 상태가 없어 처음 값을 만든 직후, 다른 호출도 만들고 먼저 잡았다 → 우리는 그 잡기를 보고 돌지 않는다 (구글을 두 번 부르지 않음)
-        _store.AfterCreateJob = s =>
+        _store.AfterCreateGate = s =>
         {
-            s.AfterCreateJob = null;
-            s.PutJob(new JobState { LastRunMs = Make.Ms(Make.Now) });
+            s.AfterCreateGate = null;
+            s.PutJobState(new JobState { LastRunMs = Make.Ms(Make.Now), VoidedCheckpointMs = 123 });
         };
         MaintenanceResult r = await _verifier.RunMaintenanceAsync(_scheduler);
         Assert.That(r.Status, Is.EqualTo("skipped"));
         Assert.That(_google.VoidedStarts, Is.Empty);
+        Assert.That(_store.Job!.VoidedCheckpointMs, Is.EqualTo(123), "먼저 잡은 쪽의 상태를 덮지 않는다");
+    }
+
+    [Test]
+    public async Task JobGateLateRecreation_NeverResetsState_ResultStillSaved()
+    {
+        // 다 돈 뒤에 다른 호출이 문지기를 늦게 다시 만들어도(lock 없이) 상태는 그대로
+        _google.Voided = new List<VoidedPurchase> { Void("x", Make.Now.AddMinutes(-5)) };
+        await _verifier.RunMaintenanceAsync(_scheduler);
+        long checkpoint = _store.Job!.VoidedCheckpointMs;
+        await _store.CreateJobGateAsync(new FakeContext(null), default);
+        Assert.That(_store.Job!.VoidedCheckpointMs, Is.EqualTo(checkpoint));
+
+        // 도는 도중(잡기 뒤 · 결과 쓰기 전) 문지기가 다시 만들어져도, 그사이 아무도 안 잡았으면 결과를 다시 써서 남긴다
+        _now = Make.Now.AddMinutes(5);
+        _google.Voided = new List<VoidedPurchase> { Void("y", Make.Now.AddMinutes(4)) };
+        var seen = new List<int>();
+        _store.BeforeJobSave = (s, n) =>
+        {
+            seen.Add(n);
+            if (seen.Count != 2) return; // 이번 차례: 1번째 쓰기 = 잡기, 2번째 = 결과 → 결과 쓰기 직전에
+            s.GateLock = "late-gate"; // 늦은 문지기 만들기 (lock만 바뀐다)
+        };
+        MaintenanceResult second = await _verifier.RunMaintenanceAsync(_scheduler);
+        Assert.That(second.Status, Is.EqualTo(PurchaseList.Ok));
+        Assert.That(seen, Has.Count.EqualTo(3), "잡기 · 결과(거절) · 결과 다시 쓰기");
+        Assert.That(_store.Job!.VoidedCheckpointMs, Is.EqualTo(Make.Ms(Make.Now.AddMinutes(4))));
     }
 
     // ------------------------------------------------------------------ 계정 닫기 · 보관 (2차 A · C)
@@ -458,10 +485,11 @@ public sealed class PurchaseVerifierTests
 
         ArchiveResult r = await _verifier.ArchiveAndDeleteAsync(_player);
         Assert.That((r.Status, r.Archived, r.AlreadyArchived), Is.EqualTo((PurchaseList.Ok, 2, false)));
-        Assert.That(_store.Protected.ContainsKey(Make.Player), Is.False, "장부를 지웠다");
+        Assert.That(_store.Purchases(), Is.Empty, "장부의 결제 키를 지웠다");
+        Assert.That(_store.HeadClosed(), Is.True, "머리는 닫힌 채로 남는다 (지우지 않는다)");
         Assert.That(_store.Closed, Does.Contain(Make.Player));
         string archiveId = PurchaseVerifier.ArchiveId(Make.Player);
-        ArchivedPlayer archived = JsonConvert.DeserializeObject<ArchivedPlayer>(_store.Archives[archiveId])!;
+        ArchivedPlayer archived = _store.ArchiveOf(archiveId)!;
         Assert.That(archived.Id, Does.Not.Contain(Make.Player));
         Assert.That(DateTime.Parse(archived.DeleteAfterUtc).ToUniversalTime(), Is.EqualTo(Make.Now.AddYears(5)));
         Assert.That(archived.Purchases.Select(p => p.ProductId), Is.EquivalentTo(new[] { "gems_t1", IapCatalog.StarterPack }));
@@ -506,7 +534,7 @@ public sealed class PurchaseVerifierTests
         await _verifier.ArchiveAndDeleteAsync(_player);
         await _verifier.ArchiveAndDeleteAsync(second);
         Assert.That(_store.Archives.Keys, Is.EquivalentTo(new[] { PurchaseVerifier.ArchiveId(Make.Player), PurchaseVerifier.ArchiveId("player-2") }));
-        Assert.That(_store.Archives.Values.Select(a => JsonConvert.DeserializeObject<ArchivedPlayer>(a)!.Purchases.Single().ProductId),
+        Assert.That(_store.Archives.Values.Select(a => JsonConvert.DeserializeObject<ArchivedPlayer>(a.json)!.Purchases.Single().ProductId),
             Is.EquivalentTo(new[] { "gems_t1", "gems_t2" }), "같은 날 지워도 서로 덮지 않는다");
     }
 
@@ -519,15 +547,179 @@ public sealed class PurchaseVerifierTests
         int shard = Convert.ToInt32(id[..2], 16);
 
         _now = Make.Now.AddYears(5).AddDays(-1);
-        _store.PutJob(new JobState { PurgeShard = shard });
+        _store.PutJobState(new JobState { PurgeShard = shard });
         await _verifier.RunMaintenanceAsync(_scheduler);
         Assert.That(_store.Archives.ContainsKey(id), Is.True, "5년 전에는 남는다");
 
         _now = Make.Now.AddYears(5).AddMinutes(1);
-        _store.PutJob(new JobState { PurgeShard = shard, LastRunMs = 1 });
+        _store.PutJobState(new JobState { PurgeShard = shard, LastRunMs = 1 });
         MaintenanceResult m = await _verifier.RunMaintenanceAsync(_scheduler);
         Assert.That((m.ArchivesDeleted, _store.Archives.ContainsKey(id)), Is.EqualTo((1, false)));
         Assert.That(_store.Job!.PurgeShard, Is.EqualTo((shard + PurchaseVerifier.ArchiveShardsPerRun) % PurchaseVerifier.ArchiveShards));
+    }
+
+    // ------------------------------------------------------------------ 닫기와 결제가 겹칠 때 (3차 1)
+
+    [Test]
+    public async Task PurchaseCommittedJustBeforeArchiveCloses_IsArchived_NotLost()
+    {
+        await Verify("gems_t1", "early");
+        bool injected = false;
+        _store.BeforeCloseHead = s =>
+        {
+            if (injected) return;
+            injected = true;
+            s.AddDirect(Make.Record("racing", "gems_t2", utc: "2026-11-01T03:00:01.0000000Z")); // 닫기가 머리를 바꾸기 직전에 다른 판정의 batch가 들어왔다
+        };
+
+        ArchiveResult r = await _verifier.ArchiveAndDeleteAsync(_player);
+        Assert.That(r.Archived, Is.EqualTo(2), "닫은 뒤 찍은 목록에 들어 있다");
+        Assert.That(_store.ArchiveOf(PurchaseVerifier.ArchiveId(Make.Player))!.Purchases.Select(p => p.TokenHash),
+            Is.EquivalentTo(new[] { PurchaseVerifier.Hash("early"), PurchaseVerifier.Hash("racing") }));
+        Assert.That(_store.Purchases(), Is.Empty);
+    }
+
+    [Test]
+    public async Task ArchiveClosesBetweenDecisionAndCommit_PurchaseRefused_NothingLost()
+    {
+        await Verify("gems_t1", "early");
+        bool archived = false;
+        _store.BeforeAdd = s =>
+        {
+            if (archived) return false;
+            archived = true;
+            // 판정이 머리 lock을 읽은 뒤 · batch 전에 계정 삭제가 끝났다 → 이 batch의 lock은 옛것이라 거절된다
+            Assert.That(_verifier.ArchiveAndDeleteAsync(_player).GetAwaiter().GetResult().Archived, Is.EqualTo(1));
+            return false;
+        };
+
+        VerifyResult r = await Verify("gems_t2", "late");
+        Assert.That((r.Status, r.Reason), Is.EqualTo((VerifyResult.Invalid, "account_closed")));
+        Assert.That(_store.Purchases(), Is.Empty, "닫힌 계정에 결제가 생기지 않는다");
+        Assert.That(_store.ArchiveOf(PurchaseVerifier.ArchiveId(Make.Player))!.Purchases.Single().TokenHash, Is.EqualTo(PurchaseVerifier.Hash("early")));
+        IndexEntry late = _store.IndexOf(PurchaseVerifier.Hash("late"))!;
+        Assert.That((late.Player, late.ArchiveId), Is.EqualTo(((string?)null, PurchaseVerifier.ArchiveId(Make.Player))), "지급 못 한 토큰의 색인도 익명으로");
+        Assert.That(_store.Acks, Is.Empty);
+    }
+
+    [Test]
+    public async Task VerifyRetryAfterArchive_HeadStaysClosed_NeverRevived()
+    {
+        await Verify("gems_t1", "a");
+        await _verifier.ArchiveAndDeleteAsync(_player);
+        _store.ResetHead(); // 머리가 늦게 처음 값으로 다시 만들어져도
+        VerifyResult r = await Verify("gems_t2", "b");
+        Assert.That((r.Status, r.Reason), Is.EqualTo((VerifyResult.Invalid, "account_closed")), "닫힘 표시가 지킨다");
+        Assert.That(_store.Purchases(), Is.Empty);
+        Assert.That((await _verifier.GetPurchasesAsync(_player)).Status, Is.EqualTo(PurchaseList.Closed));
+    }
+
+    [Test]
+    public async Task Archive_AnonymizesReservedButNotGrantedTokens()
+    {
+        // 계정당 1번 상품을 두 번 사서 두 번째는 지급하지 않았다 → 그 토큰의 색인 칸도 계정을 지울 때 플레이어 ID를 지운다 (3차 4)
+        await Verify(IapCatalog.StarterPack, "s-1");
+        Assert.That((await Verify(IapCatalog.StarterPack, "s-2")).Status, Is.EqualTo(VerifyResult.AlreadyClaimed));
+        Assert.That(_store.IndexOf(PurchaseVerifier.Hash("s-2"))!.Player, Is.EqualTo(Make.Player));
+
+        await _verifier.ArchiveAndDeleteAsync(_player);
+        foreach (string token in new[] { "s-1", "s-2" })
+            Assert.That(_store.IndexOf(PurchaseVerifier.Hash(token))!.Player, Is.Null, token);
+        Assert.That(_store.Reserved[Make.Player], Is.Empty);
+        Assert.That(JsonConvert.SerializeObject(_store.Index), Does.Not.Contain(Make.Player));
+    }
+
+    // ------------------------------------------------------------------ 결제 이전: 게스트 → 카카오 계정 (3차 2)
+
+    private readonly FakeContext _guest = new("guest-1");
+    private readonly FakeContext _kakao = new("kakao-1");
+
+    private async Task<string> GuestBuysAndPrepares(params (string product, string token)[] buys)
+    {
+        _google.Next = new GoogleCheck { Result = GoogleCheck.Kind.Ok, Found = FakeGoogle.Paid("guest-1") };
+        foreach ((string product, string token) in buys)
+            Assert.That((await _verifier.VerifyAsync(_guest, product, token)).Status, Is.EqualTo(VerifyResult.Granted));
+        TransferResult prepared = await _verifier.PrepareTransferAsync(_guest);
+        Assert.That(prepared.Status, Is.EqualTo(PurchaseList.Ok));
+        return prepared.Ticket!;
+    }
+
+    [Test]
+    public async Task Transfer_MovesPurchases_ThenRefundClawsBackOnNewAccount()
+    {
+        _google.AckResult = false; // 확정 대기도 따라간다
+        string ticket = await GuestBuysAndPrepares(("gems_t2", "g-1"));
+        Assert.That((await _verifier.VerifyAsync(_guest, "gems_t1", "g-2")).Reason, Is.EqualTo("account_closed"), "준비하면 게스트는 닫힌다");
+
+        TransferResult claimed = await _verifier.ClaimTransferAsync(_kakao, ticket);
+        Assert.That((claimed.Status, claimed.Moved), Is.EqualTo((PurchaseList.Ok, 1)));
+        Assert.That(_store.Purchases("kakao-1").Single().FreeGems, Is.EqualTo(550), "지급 내역 그대로");
+        Assert.That(_store.Purchases("guest-1"), Is.Empty);
+        Assert.That(_store.IndexOf(PurchaseVerifier.Hash("g-1"))!.Player, Is.EqualTo("kakao-1"));
+        Assert.That(_store.AckOf(PurchaseVerifier.Hash("g-1"))!.Player, Is.EqualTo("kakao-1"));
+        Assert.That(_store.Transfers.Values.Single().json, Does.Not.Contain(ticket), "이전권 원문은 서버에 없다");
+
+        _google.Voided = new List<VoidedPurchase> { Void("g-1", Make.Now.AddHours(1)) };
+        _now = Make.Now.AddHours(2);
+        await _verifier.RunMaintenanceAsync(_scheduler);
+        PurchaseList list = await _verifier.GetPurchasesAsync(_kakao);
+        Assert.That(list.Purchases.Single().Voided, Is.True, "환불이 새 계정에서 회수된다");
+    }
+
+    [Test]
+    public async Task Transfer_NewAccountDecisionsSeeMovedPurchases_BothRealPurchasesKept()
+    {
+        // 카카오 계정도 따로 2배를 썼고, 게스트도 패키지 · 2배를 썼다 → 옮긴 뒤 둘 다 남고, 새 계정 판정이 본다
+        _google.Next = new GoogleCheck { Result = GoogleCheck.Kind.Ok, Found = FakeGoogle.Paid("kakao-1") };
+        await _verifier.VerifyAsync(_kakao, "gems_t1", "k-1");
+        string ticket = await GuestBuysAndPrepares((IapCatalog.StarterPack, "g-s"), ("gems_t1", "g-1"));
+        await _verifier.ClaimTransferAsync(_kakao, ticket);
+        Assert.That(_store.Purchases("kakao-1").Select(p => (p.ProductId, p.FirstBonus)),
+            Is.EquivalentTo(new[] { ("gems_t1", true), (IapCatalog.StarterPack, false), ("gems_t1", true) }));
+
+        _google.Next = new GoogleCheck { Result = GoogleCheck.Kind.Ok, Found = FakeGoogle.Paid("kakao-1") };
+        Assert.That((await _verifier.VerifyAsync(_kakao, IapCatalog.StarterPack, "k-s")).Status, Is.EqualTo(VerifyResult.AlreadyClaimed));
+        Assert.That((await _verifier.VerifyAsync(_kakao, "gems_t1", "k-2")).Purchase!.FirstBonus, Is.False);
+    }
+
+    [Test]
+    public async Task Transfer_ReplaySameTarget_Idempotent_OtherPlayerOrSelfRejected()
+    {
+        string ticket = await GuestBuysAndPrepares(("gems_t2", "g-1"));
+        Assert.That((await _verifier.ClaimTransferAsync(_kakao, ticket)).Moved, Is.EqualTo(1));
+        TransferResult again = await _verifier.ClaimTransferAsync(_kakao, ticket);
+        Assert.That((again.Status, again.Moved), Is.EqualTo((PurchaseList.Ok, 0)), "같은 계정이 다시 불러도 두 번 옮기지 않는다");
+        Assert.That(_store.Purchases("kakao-1"), Has.Count.EqualTo(1));
+
+        TransferResult other = await _verifier.ClaimTransferAsync(new FakeContext("someone"), ticket);
+        Assert.That((other.Status, other.Reason), Is.EqualTo((VerifyResult.Invalid, "ticket_other")), "처음 가져간 계정에 묶인다");
+        Assert.That(_store.Purchases("someone"), Is.Empty);
+        Assert.That((await _verifier.ClaimTransferAsync(_guest, ticket)).Status, Is.EqualTo(VerifyResult.Invalid), "게스트 자신은 못 가져간다");
+        Assert.That((await _verifier.ClaimTransferAsync(_kakao, "made-up")).Reason, Is.EqualTo("ticket_unknown"));
+    }
+
+    [Test]
+    public async Task Transfer_Expired_Rejected_ThenMaintenanceArchivesGuestPurchases()
+    {
+        string ticket = await GuestBuysAndPrepares(("gems_t3", "g-1"));
+        _now = Make.Now + PurchaseVerifier.TransferLife + TimeSpan.FromMinutes(1);
+        Assert.That((await _verifier.ClaimTransferAsync(_kakao, ticket)).Reason, Is.EqualTo("expired"));
+        Assert.That(_store.Purchases("kakao-1"), Is.Empty);
+
+        await _verifier.RunMaintenanceAsync(_scheduler);
+        Assert.That(_store.Transfers, Is.Empty);
+        Assert.That(_store.ArchiveOf(PurchaseVerifier.ArchiveId("guest-1"))!.Purchases.Single().TokenHash, Is.EqualTo(PurchaseVerifier.Hash("g-1")),
+            "아무도 안 가져간 게스트 결제는 계정 삭제처럼 보관본으로");
+        Assert.That(_store.Purchases("guest-1"), Is.Empty);
+        Assert.That(_store.IndexOf(PurchaseVerifier.Hash("g-1"))!.Player, Is.Null);
+    }
+
+    [Test]
+    public async Task PrepareTransfer_NoPurchases_None_GuestClosed()
+    {
+        TransferResult r = await _verifier.PrepareTransferAsync(_guest);
+        Assert.That((r.Status, r.Ticket), Is.EqualTo((TransferResult.None, (string?)null)));
+        Assert.That(_store.Closed, Does.Contain("guest-1"));
     }
 
     // ------------------------------------------------------------------ 오류 · 시간 한도

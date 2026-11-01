@@ -82,6 +82,31 @@ namespace HistoryHeroes.Economy
             return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<Ledger>(json);
         }
 
+        /// <summary>PrepareTransfer · ClaimTransfer의 답 (서버 TransferResult와 같은 이름)</summary>
+        [Serializable]
+        public sealed class Transfer
+        {
+            public string status;
+            public string reason;
+            /// <summary>PrepareTransfer: 새 계정이 가져갈 이전권 (기기에만 잠깐)</summary>
+            public string ticket;
+            public int moved;
+        }
+
+        /// <summary>게스트가 이미 있는 카카오 계정으로 바꾸기 직전 (게스트로 부른다): 서버가 게스트를 닫고 결제 이전권을 준다. status: ok(ticket) · none(옮길 결제 없음) · 그 밖은 실패</summary>
+        public static async Task<Transfer> PrepareTransferAsync()
+        {
+            string json = await CloudCodeService.Instance.CallModuleEndpointAsync(Module, "PrepareTransfer", new Dictionary<string, object>());
+            return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<Transfer>(json);
+        }
+
+        /// <summary>바꾼 계정으로 이전권을 가져간다 (게스트 결제가 이 계정 서버 장부로 옮겨진다). 다시 불러도 안전</summary>
+        public static async Task<Transfer> ClaimTransferAsync(string ticket)
+        {
+            string json = await CloudCodeService.Instance.CallModuleEndpointAsync(Module, "ClaimTransfer", new Dictionary<string, object> { ["ticket"] = ticket });
+            return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<Transfer>(json);
+        }
+
         [Serializable]
         private sealed class StatusOnly
         {
