@@ -208,7 +208,9 @@ namespace HistoryHeroes.UI
             if (player != null && player.Health != null)
             {
                 float max = Mathf.Max(1f, player.Health.Max);
-                hpFill.fillAmount = player.Health.Current / max;
+                float ratio = player.Health.Current / max;
+                hpFill.fillAmount = ratio;
+                hpFill.color = HeroHpBar.ColorFor(ratio); // 머리 위 막대와 같은 색 규칙 (초록 · 노랑 · 빨강)
 
                 int hp = Mathf.CeilToInt(player.Health.Current), maxHp = Mathf.CeilToInt(max);
                 if (hp != _hp || maxHp != _maxHp)

@@ -609,10 +609,10 @@ namespace HistoryHeroes.EditorTools
 
         /// <summary>
         /// 화면의 모든 TMP 글자를 훑어 문제 목록을 만든다 (Play 중에만).
-        /// 종류: 칸밖(OVF) · 잘림(CLIP) · 화면밖(OFF) · 작음(SMALL &lt;15) · 자동축소 바닥(MIN) · 겹침(OVL).
+        /// 종류: 칸밖(OVF) · 잘림(CLIP) · 화면밖(OFF) · 작음(SMALL &lt;22, <size=%> 글자 포함) · 자동축소 바닥(MIN) · 겹침(OVL).
         /// 측정은 1080 기준 해상도 픽셀. 예: TextAudit() 또는 TextAudit("overlay") 로 겹침만 줄이기.
         /// </summary>
-        public static string TextAudit(float minSize = 15f)
+        public static string TextAudit(float minSize = 22f)
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
             KeepRunning();
@@ -641,6 +641,14 @@ namespace HistoryHeroes.EditorTools
                 float scaleToRef = rt.lossyScale.x / Mathf.Max(0.0001f, canvas.transform.lossyScale.x);
                 float eff = t.fontSize * scaleToRef * 1080f / Mathf.Max(1f, refW);
                 if (eff < minSize) lines.Add($"SMALL {eff:0}px | {head}");
+                else if (t.text.IndexOf("<size=", System.StringComparison.Ordinal) >= 0)
+                {
+                    // <size=70%> 같은 줄임 태그가 하한 밑으로 내려가는지 (글자 크기 × 가장 작은 %)
+                    float lowest = 100f;
+                    foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(t.text, @"<size=(\d+(?:\.\d+)?)%>"))
+                        lowest = Mathf.Min(lowest, float.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture));
+                    if (eff * lowest / 100f < minSize) lines.Add($"SMALL(태그 {lowest:0}%) {eff * lowest / 100f:0}px | {head}");
+                }
                 if (t.enableAutoSizing && t.fontSize <= t.fontSizeMin + 0.01f && t.preferredHeight > rt.rect.height + 1f)
                     lines.Add($"MIN {t.fontSize:0}px 바닥에서도 넘침 | {head}");
 

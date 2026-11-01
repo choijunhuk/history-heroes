@@ -171,6 +171,7 @@ namespace HistoryHeroes.EditorTools
             }
 
             using (var props = new Props(ui.Hud)) props.Ref("player", player).Ref("experience", experience);
+            using (var props = new Props(ui.HeroBar)) props.Ref("player", player);
             using (var props = new Props(ui.Pause)) props.Ref("player", player);
             using (var props = new Props(ui.LevelUp)) props.Ref("experience", experience).Ref("skills", skills);
 
@@ -438,6 +439,7 @@ namespace HistoryHeroes.EditorTools
         {
             public FloatingJoystick Joystick;
             public HudView Hud;
+            public HeroHpBar HeroBar;
             public LevelUpScreen LevelUp;
             public RunResultScreen Result;
             public RecordSaveScreen RecordSave;
@@ -486,9 +488,9 @@ namespace HistoryHeroes.EditorTools
             RectTransform expBg = Rect("ExpBar", hudRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(-40f, 24f));
             Fill(expBg, new Color(0.1f, 0.1f, 0.12f, 0.85f), new Color(0.3f, 0.85f, 1f), out Image expFill);
 
-            RectTransform hpBg = Rect("HpBar", hudRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -50f), new Vector2(560f, 46f));
+            RectTransform hpBg = Rect("HpBar", hudRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -42f), new Vector2(580f, 58f));
             Fill(hpBg, new Color(0.1f, 0.1f, 0.12f, 0.85f), new Color(0.85f, 0.22f, 0.25f), out Image hpFill);
-            TMP_Text hpLabel = Label("HpLabel", hpBg, "1000 / 1000", 28, TextAlignmentOptions.Center);
+            TMP_Text hpLabel = Label("HpLabel", hpBg, "1000 / 1000", 36, TextAlignmentOptions.Center);
             Stretch(hpLabel.rectTransform);
             if (_kit != null)
             {
@@ -540,6 +542,9 @@ namespace HistoryHeroes.EditorTools
             TMP_Text hitsLabel = Label("HitsLabel", hudRect, "맞음 0/15", 30, TextAlignmentOptions.TopRight, new Color(1f, 1f, 1f, 0.8f));
             Place(hitsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -160f), new Vector2(300f, 46f));
             hitsLabel.gameObject.SetActive(false);
+
+            // 영웅 머리 위 체력 막대 (실기기 시험 "체력이 잘 안 보인다"). 위치는 HeroHpBar가 매 프레임 따라간다
+            ui.HeroBar = BuildHeroHpBar(hudRect);
 
             using (var props = new Props(ui.Hud))
             {
@@ -617,6 +622,45 @@ namespace HistoryHeroes.EditorTools
             return guide;
         }
 
+        /// <summary>영웅 머리 위 체력 막대 (160×20, 1080 기준). 잔상(흰색) → 채움 → 보호막(하늘색 띠) 순으로 겹친다</summary>
+        private static HeroHpBar BuildHeroHpBar(RectTransform hud)
+        {
+            RectTransform bar = Rect("HeroHpBar", hud, Center, Center, new Vector2(0.5f, 0f), Vector2.zero, new Vector2(160f, 20f));
+            var group = bar.gameObject.AddComponent<CanvasGroup>();
+            group.interactable = false;
+            group.blocksRaycasts = false;
+            var bar3 = bar.gameObject.AddComponent<HeroHpBar>();
+            Image back = Img(bar, new Color(0.04f, 0.05f, 0.08f, 0.85f), _square);
+            var outline = bar.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            Image Layer(string name, Color color, RectTransform parent, float inset)
+            {
+                RectTransform r = Rect(name, parent, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+                r.offsetMin = new Vector2(inset, inset);
+                r.offsetMax = new Vector2(-inset, -inset);
+                Image img = Img(r, color, _square);
+                img.type = Image.Type.Filled;
+                img.fillMethod = Image.FillMethod.Horizontal;
+                img.fillOrigin = (int)Image.OriginHorizontal.Left;
+                return img;
+            }
+
+            Image trail = Layer("Trail", new Color(1f, 1f, 1f, 0.9f), bar, 3f);
+            Image fill = Layer("Fill", HeroHpBar.High, bar, 3f);
+            // 보호막: 막대 윗부분 6px 띠
+            Image shield = Layer("Shield", new Color(0.45f, 0.85f, 1f, 0.95f), bar, 3f);
+            var shieldRect = (RectTransform)shield.transform;
+            shieldRect.anchorMin = new Vector2(0f, 1f);
+            shieldRect.offsetMin = new Vector2(3f, -9f);
+            shieldRect.offsetMax = new Vector2(-3f, -3f);
+            shield.enabled = false;
+            back.raycastTarget = false;
+            using (var props = new Props(bar3)) props.Ref("parentRect", hud).Ref("group", group).Ref("trail", trail).Ref("fill", fill).Ref("shield", shield);
+            return bar3;
+        }
+
         /// <summary>v1.0 일시정지: HUD 왼쪽 위 버튼 + 계속 / 설정 / 판 포기</summary>
         private static PauseMenu BuildPauseMenu(Transform root, RectTransform hud, SettingsPanel settings)
         {
@@ -633,7 +677,7 @@ namespace HistoryHeroes.EditorTools
             var openRect = (RectTransform)open.transform;
             openRect.anchorMin = openRect.anchorMax = new Vector2(0f, 1f);
             openRect.pivot = new Vector2(0f, 1f);
-            openRect.anchoredPosition = new Vector2(40f, -110f);
+            openRect.anchoredPosition = new Vector2(40f, -120f);
 
             // 일시정지는 어두워진 전투 위 창 (전체 UI 검토: 배경을 통째로 바꾸면 전투 맥락이 끊긴다)
             RectTransform panel = Overlay(root, "PauseMenu", out GameObject holder, new Color(0.02f, 0.03f, 0.06f, 0.72f));

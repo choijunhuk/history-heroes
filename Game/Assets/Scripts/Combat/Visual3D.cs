@@ -69,6 +69,9 @@ namespace HistoryHeroes.Combat
         /// <summary>움직이지 않을 때 바라볼 대상 (적 → 영웅)</summary>
         public Transform LookTarget { get; set; }
 
+        /// <summary>모델 키 (월드). 머리 위 표시(체력 막대)가 모델 머리 위치를 구할 때 쓴다. 오브젝트 배율을 곱한다</summary>
+        public float Height => height * transform.lossyScale.y;
+
         public bool HasModel => _model != null;
         public Transform Model => _model;
 

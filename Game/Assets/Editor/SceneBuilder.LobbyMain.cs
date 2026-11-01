@@ -48,7 +48,7 @@ namespace HistoryHeroes.EditorTools
             const float pitch = 24f;
             float aspect = 9f / 19.5f;
             float halfTan = Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
-            float distance = 5.6f / aspect / (2f * halfTan); // 섬을 크게 (재평가: 작은 덩어리로 보인다)
+            float distance = 4.9f / aspect / (2f * halfTan); // 섬을 크게 (재평가: 작은 덩어리로 보인다)
             Quaternion rotation = Quaternion.Euler(pitch, 0f, 0f);
             Vector3 up = rotation * Vector3.up;
             float visibleHeight = 2f * distance * halfTan;
@@ -212,8 +212,8 @@ namespace HistoryHeroes.EditorTools
             Sprite icon = Icon(iconKey);
             if (icon != null)
             {
-                float s = Mathf.Min(size.x, size.y) * 0.5f;
-                RectTransform iconRect = Rect("Icon", rt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -size.y * 0.1f), new Vector2(s, s));
+                float s = Mathf.Min(size.x, size.y) * 0.56f;
+                RectTransform iconRect = Rect("Icon", rt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -size.y * 0.08f), new Vector2(s, s));
                 Image image = Img(iconRect, Color.white, icon);
                 image.preserveAspect = true;
                 var shadow = iconRect.gameObject.AddComponent<Shadow>();
@@ -223,14 +223,14 @@ namespace HistoryHeroes.EditorTools
 
             RectTransform lr = label.rectTransform;
             lr.anchorMin = new Vector2(0f, 0f);
-            lr.anchorMax = new Vector2(1f, icon != null ? 0.42f : 1f);
-            lr.offsetMin = new Vector2(4f, 6f);
+            lr.anchorMax = new Vector2(1f, icon != null ? Mathf.Max(0.42f, 76f / size.y) : 1f);
+            lr.offsetMin = new Vector2(4f, 8f);
             lr.offsetMax = new Vector2(-4f, 0f);
             label.margin = Vector4.zero;
-            label.fontSize = 24f;
+            label.fontSize = 28f;
             label.enableAutoSizing = true;
-            label.fontSizeMin = 14f;
-            label.fontSizeMax = 24f;
+            label.fontSizeMin = 24f;
+            label.fontSizeMax = 30f;
             label.textWrappingMode = TextWrappingModes.NoWrap;
             return button;
         }
@@ -262,10 +262,41 @@ namespace HistoryHeroes.EditorTools
             return button;
         }
 
+        /// <summary>보조 모드 칸: 위에 큰 아이콘 · 아래에 이름(+설명 둘째 줄). 칸 3개가 한 줄에 들어간다</summary>
+        private static Button ModeTile(string name, Transform parent, string iconKey, string text, Vector2 bottomPosition, Vector2 size, Color color, out TMP_Text label)
+        {
+            Button button = Btn(name, parent, text, Vector2.zero, size, color, out label);
+            Bottom(button, bottomPosition.x, bottomPosition.y);
+            var rt = (RectTransform)button.transform;
+            Sprite icon = Icon(iconKey);
+            if (icon != null)
+            {
+                RectTransform iconRect = Rect("Icon", rt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(84f, 84f));
+                Image image = Img(iconRect, Color.white, icon);
+                image.preserveAspect = true;
+                var shadow = iconRect.gameObject.AddComponent<Shadow>();
+                shadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+                shadow.effectDistance = new Vector2(0f, -4f);
+            }
+
+            RectTransform lr = label.rectTransform;
+            lr.anchorMin = Vector2.zero;
+            lr.anchorMax = new Vector2(1f, icon != null ? 0.5f : 1f);
+            lr.offsetMin = new Vector2(8f, 10f);
+            lr.offsetMax = new Vector2(-8f, 0f);
+            label.margin = Vector4.zero;
+            label.fontSize = 36f;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 24f;
+            label.fontSizeMax = 38f;
+            label.lineSpacing = -6f;
+            return button;
+        }
+
         /// <summary>재화 칸 (위): 어두운 둥근 칸 + 아이콘 + 숫자</summary>
         private static TMP_Text Pill(Transform parent, string iconKey, Color iconColor, Vector2 position, float width)
         {
-            RectTransform pill = Rect("Pill_" + iconKey, parent, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Center, position, new Vector2(width, 64f));
+            RectTransform pill = Rect("Pill_" + iconKey, parent, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Center, position, new Vector2(width, 96f));
             Image bg = Img(pill, new Color(0.04f, 0.06f, 0.12f, 0.88f), _kit != null ? _kit.Badge : null);
             if (_kit != null) bg.type = Image.Type.Sliced;
             Sprite reward = RewardIcon(iconKey); // 컬러 보상 그림이 있으면 그것 (금화 · 보석 · 하트)
@@ -273,7 +304,7 @@ namespace HistoryHeroes.EditorTools
             if (reward != null) iconColor = Color.white;
             if (icon != null)
             {
-                RectTransform iconRect = Rect("Icon", pill, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(26f, 2f), new Vector2(58f, 58f));
+                RectTransform iconRect = Rect("Icon", pill, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(14f + 40f, 2f), new Vector2(76f, 76f));
                 Image image = Img(iconRect, iconColor, icon);
                 image.preserveAspect = true;
                 var outline = iconRect.gameObject.AddComponent<Outline>();
@@ -281,13 +312,13 @@ namespace HistoryHeroes.EditorTools
                 outline.effectDistance = new Vector2(2f, -2f);
             }
 
-            TMP_Text label = Label("Value", pill, "0", 30, TextAlignmentOptions.MidlineLeft);
+            TMP_Text label = Label("Value", pill, "0", 40, TextAlignmentOptions.MidlineLeft);
             Stretch(label.rectTransform);
-            label.rectTransform.offsetMin = new Vector2(62f, 0f);
-            label.rectTransform.offsetMax = new Vector2(-10f, 0f);
+            label.rectTransform.offsetMin = new Vector2(100f, 0f);
+            label.rectTransform.offsetMax = new Vector2(-12f, 0f);
             label.enableAutoSizing = true;
-            label.fontSizeMin = 18f;
-            label.fontSizeMax = 30f;
+            label.fontSizeMin = 28f;
+            label.fontSizeMax = 40f;
             label.textWrappingMode = TextWrappingModes.NoWrap;
             return label;
         }
@@ -306,12 +337,12 @@ namespace HistoryHeroes.EditorTools
             var ui = new LobbyMainUi();
             ui.Diorama = BuildLobbyDiorama(camera);
 
-            // ----- 위: 계정 레벨 · 골드 · 보석 · 하트 -----
-            RectTransform topBar = Rect("TopBar", main, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -26f), new Vector2(1040f, 80f)); // 위 가장자리에서 26 (레벨 글자가 화면 밖으로 안 나가게)
-            RectTransform levelBadge = Rect("Level", topBar, Center, Center, Center, new Vector2(-462f, 0f), new Vector2(92f, 92f));
+            // ----- 위: 계정 레벨 · 골드 · 보석 · 하트 (96 높이, 안전 영역 전체 폭) -----
+            RectTransform topBar = Rect("TopBar", main, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -26f), new Vector2(1032f, 108f)); // 위 가장자리에서 26 (레벨 글자가 화면 밖으로 안 나가게)
+            RectTransform levelBadge = Rect("Level", topBar, Center, Center, Center, new Vector2(-462f, 0f), new Vector2(108f, 108f));
             Image levelImage = Img(levelBadge, new Color(0.3f, 0.6f, 1f), _kit != null ? _kit.Slot : null);
             if (_kit != null) levelImage.type = Image.Type.Sliced;
-            ui.Level = Label("Value", levelBadge, "1", 40, TextAlignmentOptions.Center);
+            ui.Level = Label("Value", levelBadge, "1", 48, TextAlignmentOptions.Center);
             Stretch(ui.Level.rectTransform);
             if (_titleFont != null)
             {
@@ -319,40 +350,40 @@ namespace HistoryHeroes.EditorTools
                 if (_buttonMat != null) ui.Level.fontSharedMaterial = _buttonMat;
             }
 
-            TMP_Text lv = Label("Lv", levelBadge, "Lv", 20, TextAlignmentOptions.Top, new Color(1f, 0.95f, 0.7f));
+            TMP_Text lv = Label("Lv", levelBadge, "Lv", 24, TextAlignmentOptions.Top, new Color(1f, 0.95f, 0.7f));
             Stretch(lv.rectTransform);
-            lv.rectTransform.offsetMax = new Vector2(0f, 16f);
-            ui.Gold = Pill(topBar, "gold", new Color(1f, 0.84f, 0.3f), new Vector2(-230f, 0f), 280f);
-            ui.Gem = Pill(topBar, "gem", new Color(0.55f, 0.85f, 1f), new Vector2(70f, 0f), 280f);
-            ui.Heart = Pill(topBar, "heart", new Color(1f, 0.4f, 0.45f), new Vector2(370f, 0f), 300f);
+            lv.rectTransform.offsetMax = new Vector2(0f, 18f);
+            ui.Gold = Pill(topBar, "gold", new Color(1f, 0.84f, 0.3f), new Vector2(-244f, 0f), 296f);
+            ui.Gem = Pill(topBar, "gem", new Color(0.55f, 0.85f, 1f), new Vector2(64f, 0f), 296f);
+            ui.Heart = Pill(topBar, "heart", new Color(1f, 0.4f, 0.45f), new Vector2(372f, 0f), 296f);
             ui.Wallet = null;
 
             // ----- 홈 미션 띠 (2026-10-29 개발자: "미션이 홈에 없고 따로 있어서 불편") — 누르면 미션 창 -----
-            ui.HomeMission = Btn("HomeMission", main, "", Vector2.zero, new Vector2(1040f, 88f), ButtonBlue, out ui.HomeMissionLabel);
+            ui.HomeMission = Btn("HomeMission", main, "", Vector2.zero, new Vector2(1032f, 108f), ButtonBlue, out ui.HomeMissionLabel);
             var missionRect = (RectTransform)ui.HomeMission.transform;
             missionRect.anchorMin = missionRect.anchorMax = new Vector2(0.5f, 1f);
             missionRect.pivot = new Vector2(0.5f, 1f);
-            missionRect.anchoredPosition = new Vector2(0f, -106f);
+            missionRect.anchoredPosition = new Vector2(0f, -144f);
             Sprite missionIcon = Icon("mission");
             if (missionIcon != null)
             {
-                RectTransform mi = Rect("Icon", missionRect, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(18f, 4f), new Vector2(56f, 56f));
+                RectTransform mi = Rect("Icon", missionRect, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(20f, 6f), new Vector2(72f, 72f));
                 Img(mi, Color.white, missionIcon).preserveAspect = true;
             }
 
             ui.HomeMissionLabel.font = _font;
             if (_bodyMat != null) ui.HomeMissionLabel.fontSharedMaterial = _bodyMat;
             ui.HomeMissionLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            ui.HomeMissionLabel.margin = new Vector4(90f, 0f, 24f, 14f);
-            ui.HomeMissionLabel.fontSize = 30f;
+            ui.HomeMissionLabel.margin = new Vector4(112f, 0f, 24f, 20f);
+            ui.HomeMissionLabel.fontSize = 34f;
             ui.HomeMissionLabel.enableAutoSizing = true;
-            ui.HomeMissionLabel.fontSizeMin = 22f;
-            ui.HomeMissionLabel.fontSizeMax = 30f;
+            ui.HomeMissionLabel.fontSizeMin = 26f;
+            ui.HomeMissionLabel.fontSizeMax = 34f;
             ui.HomeMissionLabel.textWrappingMode = TextWrappingModes.NoWrap;
             // 오늘 활동 점수 막대 (띠 아래쪽에 얇게)
             RectTransform missionBar = Rect("Progress", missionRect, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(-120f, 10f));
-            missionBar.offsetMin = new Vector2(90f, 14f);
-            missionBar.offsetMax = new Vector2(-30f, 24f);
+            missionBar.offsetMin = new Vector2(112f, 14f);
+            missionBar.offsetMax = new Vector2(-30f, 26f);
             Fill(missionBar, new Color(0f, 0f, 0f, 0.35f), new Color(1f, 0.82f, 0.3f), out ui.HomeMissionFill);
             ui.HomeMissionFill.fillAmount = 0f;
 
@@ -362,83 +393,76 @@ namespace HistoryHeroes.EditorTools
 
             // ----- 양옆 작은 버튼 -----
             Color side = new Color(0.32f, 0.38f, 0.55f);
-            ui.Newcomer = IconButton("Newcomer", main, "gift7", "7일 미션", new Vector2(-455f, 690f), new Vector2(150f, 140f), new Color(1f, 0.55f, 0.25f), out ui.NewcomerLabel);
+            ui.Newcomer = IconButton("Newcomer", main, "gift7", "7일 미션", new Vector2(-430f, 410f), new Vector2(170f, 200f), new Color(1f, 0.55f, 0.25f), out ui.NewcomerLabel);
             ui.NewcomerBadge = Label("ReadyBadge", ui.Newcomer.transform, "", 40, TextAlignmentOptions.Center, new Color(1f, 0.28f, 0.25f));
-            Place(ui.NewcomerBadge.rectTransform, Center, Center, new Vector2(62f, 52f), new Vector2(40f, 40f));
+            Place(ui.NewcomerBadge.rectTransform, Center, Center, new Vector2(68f, 70f), new Vector2(48f, 48f));
             ui.NewcomerBadge.raycastTarget = false;
-            ui.Codex = IconButton("Codex", main, "codex", "조합 도감", new Vector2(-455f, 535f), new Vector2(150f, 140f), new Color(0.6f, 0.4f, 0.9f), out ui.CodexLabel);
-            ui.Settings = IconButton("Settings", main, "settings", "설정", new Vector2(455f, 690f), new Vector2(150f, 140f), side, out _);
-            ui.Patrol = IconButton("Patrol", main, "patrol", "순찰", new Vector2(455f, 535f), new Vector2(150f, 140f), side, out ui.PatrolLabel); // 부가 메뉴는 차분하게 (전체 UI 검토 7번: 던전 시작 단추와 다투지 않게)
+            ui.Codex = IconButton("Codex", main, "codex", "조합 도감", new Vector2(-430f, 195f), new Vector2(170f, 200f), new Color(0.6f, 0.4f, 0.9f), out ui.CodexLabel);
+            ui.Settings = IconButton("Settings", main, "settings", "설정", new Vector2(430f, 410f), new Vector2(170f, 200f), side, out _);
+            ui.Patrol = IconButton("Patrol", main, "patrol", "순찰", new Vector2(430f, 195f), new Vector2(170f, 200f), side, out ui.PatrolLabel); // 부가 메뉴는 차분하게 (전체 UI 검토 7번: 던전 시작 단추와 다투지 않게)
 
             // ----- 가운데: 섬 무대 위 영웅 이름표 -----
-            RectTransform plate = Rect("HeroPlate", main, Center, Center, Center, Vector2.zero, new Vector2(420f, 60f));
-            Bottom(plate, 0f, 905f);
+            RectTransform plate = Rect("HeroPlate", main, Center, Center, Center, Vector2.zero, new Vector2(520f, 76f));
+            Bottom(plate, 0f, 1030f);
             Image plateImage = Img(plate, new Color(0.04f, 0.06f, 0.12f, 0.8f), _kit != null ? _kit.Badge : null);
             if (_kit != null) plateImage.type = Image.Type.Sliced;
-            ui.HeroName = Label("Name", plate, "영웅", 30, TextAlignmentOptions.Center);
+            ui.HeroName = Label("Name", plate, "영웅", 38, TextAlignmentOptions.Center);
             Stretch(ui.HeroName.rectTransform);
             ui.HeroName.enableAutoSizing = true;
-            ui.HeroName.fontSizeMin = 18f;
-            ui.HeroName.fontSizeMax = 30f;
+            ui.HeroName.fontSizeMin = 28f;
+            ui.HeroName.fontSizeMax = 38f;
 
             // ----- 구간 카드: 리본 이름 · < > · 별과 보스 상태 · 보스 도전 -----
-            RectTransform card = Rect("ChapterCard", main, Center, Center, Center, Vector2.zero, new Vector2(1000f, 230f));
-            Bottom(card, 0f, 700f);
+            RectTransform card = Rect("ChapterCard", main, Center, Center, Center, Vector2.zero, new Vector2(1032f, 270f));
+            Bottom(card, 0f, 820f);
             Image cardImage = Img(card, new Color(0.13f, 0.17f, 0.3f, 0.94f), _kit != null ? _kit.Panel : null);
             if (_kit != null) cardImage.type = Image.Type.Sliced;
             if (_kit != null)
             {
-                RectTransform ribbon = Rect("Ribbon", main, Center, Center, Center, Vector2.zero, new Vector2(680f, 120f));
-                Bottom(ribbon, 0f, 808f);
+                RectTransform ribbon = Rect("Ribbon", main, Center, Center, Center, Vector2.zero, new Vector2(700f, 130f));
+                Bottom(ribbon, 0f, 944f);
                 Image ribbonImage = Img(ribbon, new Color(0.86f, 0.26f, 0.24f), _kit.Ribbon);
                 ribbonImage.type = Image.Type.Sliced;
             }
 
-            ui.Chapter = Label("Chapter", main, "1구간 · 균열의 초원", 44, TextAlignmentOptions.Center);
-            Place(ui.Chapter.rectTransform, Center, Center, Vector2.zero, new Vector2(520f, 80f));
-            Bottom(ui.Chapter, 0f, 816f);
+            ui.Chapter = Label("Chapter", main, "1구간 · 균열의 초원", 50, TextAlignmentOptions.Center);
+            Place(ui.Chapter.rectTransform, Center, Center, Vector2.zero, new Vector2(540f, 90f));
+            Bottom(ui.Chapter, 0f, 952f);
             ui.Chapter.enableAutoSizing = true;
-            ui.Chapter.fontSizeMin = 26f;
-            ui.Chapter.fontSizeMax = 44f;
+            ui.Chapter.fontSizeMin = 32f;
+            ui.Chapter.fontSizeMax = 50f;
             if (_titleFont != null)
             {
                 ui.Chapter.font = _titleFont;
                 if (_buttonMat != null) ui.Chapter.fontSharedMaterial = _buttonMat;
             }
 
-            ui.Prev = Btn("PrevChapter", main, "<", Vector2.zero, new Vector2(110f, 110f), side, out TMP_Text prevLabel);
-            Bottom(ui.Prev, -430f, 808f);
-            prevLabel.fontSize = 56;
-            ui.Next = Btn("NextChapter", main, ">", Vector2.zero, new Vector2(110f, 110f), side, out TMP_Text nextLabel);
-            Bottom(ui.Next, 430f, 808f);
-            nextLabel.fontSize = 56;
-            ui.ChapterInfo = Label("ChapterInfo", card, "", 26, TextAlignmentOptions.MidlineLeft, new Color(1f, 1f, 1f, 0.85f));
-            Place(ui.ChapterInfo.rectTransform, Center, Center, new Vector2(-150f, -40f), new Vector2(620f, 120f));
+            ui.Prev = Btn("PrevChapter", main, "<", Vector2.zero, new Vector2(120f, 120f), side, out TMP_Text prevLabel);
+            Bottom(ui.Prev, -430f, 944f);
+            prevLabel.fontSize = 60;
+            ui.Next = Btn("NextChapter", main, ">", Vector2.zero, new Vector2(120f, 120f), side, out TMP_Text nextLabel);
+            Bottom(ui.Next, 430f, 944f);
+            nextLabel.fontSize = 60;
+            ui.ChapterInfo = Label("ChapterInfo", card, "", 30, TextAlignmentOptions.MidlineLeft, new Color(1f, 1f, 1f, 0.9f));
+            Place(ui.ChapterInfo.rectTransform, Center, Center, new Vector2(-170f, -36f), new Vector2(620f, 150f));
             ui.ChapterInfo.enableAutoSizing = true;
-            ui.ChapterInfo.fontSizeMin = 18f;
-            ui.ChapterInfo.fontSizeMax = 26f;
-            ui.Boss = ModeCard("Boss", card, "boss", "보스 도전", new Vector2(320f, -40f), new Vector2(300f, 120f), new Color(0.9f, 0.25f, 0.35f), out ui.BossLabel);
-            ui.BossLabel.fontSizeMax = 34f;
+            ui.ChapterInfo.fontSizeMin = 26f;
+            ui.ChapterInfo.fontSizeMax = 30f;
+            ui.Boss = ModeCard("Boss", card, "boss", "보스 도전", new Vector2(330f, -36f), new Vector2(340f, 150f), new Color(0.9f, 0.25f, 0.35f), out ui.BossLabel);
+            ui.BossLabel.fontSizeMax = 40f;
 
-            // ----- 큰 모드 2개 -----
-            ui.Dungeon = ModeCard("Dungeon", main, "dungeon", "던전\n<size=55%>15방 · 하트 1</size>", Vector2.zero, new Vector2(480f, 220f), LobbyYellow, out TMP_Text dungeonLabel);
-            Bottom(ui.Dungeon, -250f, 452f);
-            ui.Survival = ModeCard("Survival", main, "survival", "서바이벌", Vector2.zero, new Vector2(480f, 220f), LobbyOrange, out ui.SurvivalLabel);
-            Bottom(ui.Survival, 250f, 452f);
-            ui.SurvivalLabel.textWrappingMode = TextWrappingModes.NoWrap; // "하트 1"의 1만 셋째 줄로 넘어가지 않게
+            // ----- 주 행동: 던전 (전체 폭 · 260 높이) -----
+            ui.Dungeon = ModeCard("Dungeon", main, "dungeon", "던전\n<size=55%>15방 · 하트 1</size>", Vector2.zero, new Vector2(1032f, 260f), LobbyYellow, out TMP_Text dungeonLabel);
+            Bottom(ui.Dungeon, 0f, 528f);
+            dungeonLabel.fontSizeMax = 84f;
 
-            // ----- 도전 줄 -----
-            ui.Rift = ModeCard("Rift", main, "rift", "무한의 균열", Vector2.zero, new Vector2(480f, 120f), new Color(0.5f, 0.32f, 0.9f), out ui.RiftLabel);
-            Bottom(ui.Rift, -250f, 262f);
-            ui.RiftLabel.fontSizeMax = 34f;
-            ui.RiftLabel.textWrappingMode = TextWrappingModes.NoWrap; // 둘째 줄이 길면 접지 말고 줄여서 (접히면 제목이 단추 위로 넘친다)
-            ui.Daily = ModeCard("Daily", main, "daily", "일일 도전", Vector2.zero, new Vector2(480f, 120f), new Color(0.2f, 0.7f, 0.75f), out ui.DailyLabel);
-            Bottom(ui.Daily, 250f, 262f);
-            ui.DailyLabel.fontSizeMax = 34f;
-            ui.DailyLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            // ----- 보조 모드 3칸: 서바이벌 · 무한의 균열 · 일일 도전 (아이콘 위 · 글 아래) -----
+            ui.Survival = ModeTile("Survival", main, "survival", "서바이벌", new Vector2(-348f, 306f), new Vector2(336f, 180f), LobbyOrange, out ui.SurvivalLabel);
+            ui.Rift = ModeTile("Rift", main, "rift", "무한의 균열", new Vector2(0f, 306f), new Vector2(336f, 180f), new Color(0.5f, 0.32f, 0.9f), out ui.RiftLabel);
+            ui.Daily = ModeTile("Daily", main, "daily", "일일 도전", new Vector2(348f, 306f), new Vector2(336f, 180f), new Color(0.2f, 0.7f, 0.75f), out ui.DailyLabel);
 
             // ----- 아래 탭 5개: 상점 · 영웅 · [전투] · 미션 · 기록 -----
-            RectTransform bar = Rect("TabBar", main, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 170f));
+            RectTransform bar = Rect("TabBar", main, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 200f));
             Img(bar, new Color(0.07f, 0.09f, 0.17f, 0.97f), null);
             if (_kit != null)
             {
@@ -447,22 +471,22 @@ namespace HistoryHeroes.EditorTools
             }
 
             Color tab = new Color(0.22f, 0.28f, 0.45f);
-            const float tabY = 84f;
-            ui.Shop = IconButton("Shop", main, "shop", "상점", new Vector2(-424f, tabY), new Vector2(196f, 150f), tab, out _);
-            ui.Hero = IconButton("Hero", main, "hero", "영웅", new Vector2(-212f, tabY), new Vector2(196f, 150f), tab, out _);
+            const float tabY = 100f;
+            ui.Shop = IconButton("Shop", main, "shop", "상점", new Vector2(-428f, tabY), new Vector2(200f, 172f), tab, out _);
+            ui.Hero = IconButton("Hero", main, "hero", "영웅", new Vector2(-214f, tabY), new Vector2(200f, 172f), tab, out _);
             ui.HeroBadge = Label("UpgradeBadge", ui.Hero.transform, "", 40, TextAlignmentOptions.Center, new Color(1f, 0.28f, 0.25f));
-            Place(ui.HeroBadge.rectTransform, Center, Center, new Vector2(78f, 58f), new Vector2(40f, 40f));
+            Place(ui.HeroBadge.rectTransform, Center, Center, new Vector2(80f, 70f), new Vector2(48f, 48f));
             ui.HeroBadge.raycastTarget = false;
-            Button home = IconButton("HomeTab", main, "sword", "전투", new Vector2(0f, tabY + 22f), new Vector2(210f, 180f), LobbyYellow, out _);
+            Button home = IconButton("HomeTab", main, "sword", "전투", new Vector2(0f, tabY + 26f), new Vector2(224f, 206f), LobbyYellow, out _);
             home.image.color = Vivid(LobbyYellow); // 지금 고른 탭 = 노랑 (단추 역할이 아니라 "고름" 상태 색이라 세 가지 규칙에서 뺀다)
             home.interactable = false; // 지금 화면 (고른 탭은 높고 노랗게)
             ColorBlock homeColors = home.colors;
             homeColors.disabledColor = Color.white;
             home.colors = homeColors;
-            ui.Missions = IconButton("Missions", main, "mission", "미션", new Vector2(212f, tabY), new Vector2(196f, 150f), tab, out ui.MissionLabel);
-            ui.Archive = IconButton("Archive", main, "archive", "기록", new Vector2(424f, tabY), new Vector2(196f, 150f), tab, out ui.ArchiveLabel);
+            ui.Missions = IconButton("Missions", main, "mission", "미션", new Vector2(214f, tabY), new Vector2(200f, 172f), tab, out ui.MissionLabel);
+            ui.Archive = IconButton("Archive", main, "archive", "기록", new Vector2(428f, tabY), new Vector2(200f, 172f), tab, out ui.ArchiveLabel);
             foreach (Button b in new[] { ui.Shop, ui.Hero, ui.Missions, ui.Archive }) Bottom(b, ((RectTransform)b.transform).anchoredPosition.x, tabY);
-            Bottom(home, 0f, tabY + 22f);
+            Bottom(home, 0f, tabY + 26f);
             return ui;
         }
     }

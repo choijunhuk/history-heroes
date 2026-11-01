@@ -7,70 +7,63 @@ namespace HistoryHeroes.UI
 {
     /// <summary>
     /// 설정 (UX 5장 접근성, 조사 A9): 화면 흔들림 끄기/약하게/보통, 피해 숫자 켜기/끄기, 번쩍임 줄이기.
-    /// 버튼을 누를 때마다 다음 값으로 바뀌고 바로 저장한다 (판 밖 설정).
+    /// 2026-11-01 화면 채우기 개편: 카드(묶음) 안의 전체 폭 줄 — 켜기/끄기는 스위치, 여러 값은 고르기 칸 (SettingRow).
+    /// 값이 바뀌면 바로 저장한다 (판 밖 설정). 저장 값과 적용 로직은 예전 그대로.
     /// </summary>
     public sealed class SettingsPanel : MonoBehaviour
     {
         [SerializeField] private GameObject root;
-        [SerializeField] private Button shakeButton;
-        [SerializeField] private TMP_Text shakeLabel;
-        [SerializeField] private Button numbersButton;
-        [SerializeField] private TMP_Text numbersLabel;
-        [SerializeField] private Button flashButton;
-        [SerializeField] private TMP_Text flashLabel;
         [SerializeField] private Button backButton;
-        [Header("v1.0 소리")]
-        [SerializeField] private Button musicButton;
-        [SerializeField] private TMP_Text musicLabel;
-        [SerializeField] private Button sfxButton;
-        [SerializeField] private TMP_Text sfxLabel;
-        [SerializeField] private Button vibrationButton;
-        [SerializeField] private TMP_Text vibrationLabel;
-        [Header("v1.0 프레임 · 조이스틱")]
-        [SerializeField] private Button frameButton;
-        [SerializeField] private TMP_Text frameLabel;
+        [Tooltip("오른쪽 위 X (뒤로와 같다)")]
+        [SerializeField] private Button closeButton;
+        [Header("줄 (오른쪽 조절 칸). 줄을 누르면 값이 바로 저장된다")]
+        [SerializeField] private SettingRow musicRow;
+        [SerializeField] private SettingRow sfxRow;
+        [SerializeField] private SettingRow vibrationRow;
         [Tooltip("그래픽 품질 3단 (낮음 · 보통 · 높음)")]
-        [SerializeField] private Button graphicsButton;
-        [SerializeField] private TMP_Text graphicsLabel;
-        [SerializeField] private Button joystickModeButton;
-        [SerializeField] private TMP_Text joystickModeLabel;
-        [SerializeField] private Button joystickSizeButton;
-        [SerializeField] private TMP_Text joystickSizeLabel;
-        [SerializeField] private Button joystickOpacityButton;
-        [SerializeField] private TMP_Text joystickOpacityLabel;
+        [SerializeField] private SettingRow graphicsRow;
+        [SerializeField] private SettingRow shakeRow;
+        [SerializeField] private SettingRow numbersRow;
+        [SerializeField] private SettingRow flashRow;
+        [SerializeField] private SettingRow frameRow;
+        [SerializeField] private SettingRow joystickModeRow;
+        [SerializeField] private SettingRow joystickSizeRow;
+        [SerializeField] private SettingRow joystickOpacityRow;
+        [SerializeField] private SettingRow heartsRow;
+        [SerializeField] private SettingRow patrolRow;
         [Header("v1.0 튜토리얼 다시 보기 · 정보 (로비에만)")]
         [SerializeField] private Button replayTutorialButton;
         [SerializeField] private Button infoButton;
         [SerializeField] private InfoPanel info;
-        [Header("v1.0 알림")]
-        [SerializeField] private Button heartsButton;
-        [SerializeField] private TMP_Text heartsLabel;
-        [SerializeField] private Button patrolButton;
-        [SerializeField] private TMP_Text patrolLabel;
-
-        private static readonly string[] ShakeNames = { "끄기", "약하게", "보통" };
 
         public bool IsOpen => root.activeSelf;
 
         private void Awake()
         {
             root.SetActive(false);
-            shakeButton.onClick.AddListener(() => Change(s => s.shake = (s.shake + 2) % 3)); // 보통 → 약하게 → 끄기 → 보통
-            numbersButton.onClick.AddListener(() => Change(s => s.damageNumbers = !s.damageNumbers));
-            flashButton.onClick.AddListener(() => Change(s => s.reduceFlashes = !s.reduceFlashes));
-            backButton.onClick.AddListener(() => root.SetActive(false));
-            if (musicButton != null) musicButton.onClick.AddListener(() => Change(s => s.musicVolume = (s.musicVolume + 1) % 5));
-            if (sfxButton != null) sfxButton.onClick.AddListener(() => Change(s => s.sfxVolume = (s.sfxVolume + 1) % 5));
-            if (vibrationButton != null) vibrationButton.onClick.AddListener(() => Change(s => s.vibration = !s.vibration));
-            if (frameButton != null) frameButton.onClick.AddListener(() => Change(s => s.frame60 = !s.frame60));
-            if (graphicsButton != null) graphicsButton.onClick.AddListener(() => Change(s => s.graphics = (Mathf.Clamp(s.graphics, 0, 2) + 1) % 3));
-            if (joystickModeButton != null) joystickModeButton.onClick.AddListener(() => Change(s => s.joystickFixed = !s.joystickFixed));
-            if (joystickSizeButton != null) joystickSizeButton.onClick.AddListener(() => Change(s => s.joystickSize = (s.joystickSize + 1) % 3));
-            if (joystickOpacityButton != null) joystickOpacityButton.onClick.AddListener(() => Change(s => s.joystickOpacity = (s.joystickOpacity + 1) % 3));
+            backButton.onClick.AddListener(Close);
+            if (closeButton != null) closeButton.onClick.AddListener(Close);
+            // 값 번호는 저장 값 그대로: 흔들림 0끄기 1약하게 2보통 · 음량 0~4(×25%) · 그래픽 0~2 · 크기/진하기 0~2
+            Bind(musicRow, v => Change(s => s.musicVolume = v));
+            Bind(sfxRow, v => Change(s => s.sfxVolume = v));
+            Bind(vibrationRow, v => Change(s => s.vibration = v != 0));
+            Bind(graphicsRow, v => Change(s => s.graphics = v));
+            Bind(shakeRow, v => Change(s => s.shake = v));
+            Bind(numbersRow, v => Change(s => s.damageNumbers = v != 0));
+            Bind(flashRow, v => Change(s => s.reduceFlashes = v != 0));
+            Bind(frameRow, v => Change(s => s.frame60 = v == 1));
+            Bind(joystickModeRow, v => Change(s => s.joystickFixed = v == 1));
+            Bind(joystickSizeRow, v => Change(s => s.joystickSize = v));
+            Bind(joystickOpacityRow, v => Change(s => s.joystickOpacity = v));
+            Bind(heartsRow, v => ChangeNotice(s => s.notifyHearts = v != 0));
+            Bind(patrolRow, v => ChangeNotice(s => s.notifyPatrol = v != 0));
             if (infoButton != null) infoButton.onClick.AddListener(() => info?.Open());
             if (replayTutorialButton != null) replayTutorialButton.onClick.AddListener(() => Common.GameSession.StartTutorial(true));
-            if (heartsButton != null) heartsButton.onClick.AddListener(() => ChangeNotice(s => s.notifyHearts = !s.notifyHearts));
-            if (patrolButton != null) patrolButton.onClick.AddListener(() => ChangeNotice(s => s.notifyPatrol = !s.notifyPatrol));
+        }
+
+        private static void Bind(SettingRow row, System.Action<int> onChosen)
+        {
+            if (row != null) row.Chosen += onChosen;
         }
 
         public void Open()
@@ -96,9 +89,6 @@ namespace HistoryHeroes.UI
             Render();
         }
 
-        private static readonly string[] Steps3 = { "작게", "보통", "크게" };
-        private static readonly string[] Opacity3 = { "연하게", "보통", "진하게" };
-
         private void Change(System.Action<GameSettings> change)
         {
             change(SaveSystem.Data.settings);
@@ -108,22 +98,27 @@ namespace HistoryHeroes.UI
             Render();
         }
 
+        private static void Show(SettingRow row, int value)
+        {
+            if (row != null) row.Show(value);
+        }
+
         private void Render()
         {
             GameSettings s = SaveSystem.Data.settings;
-            shakeLabel.text = $"화면 흔들림: {ShakeNames[Mathf.Clamp(s.shake, 0, 2)]}";
-            numbersLabel.text = $"피해 숫자: {(s.damageNumbers ? "켜기" : "끄기")}";
-            flashLabel.text = $"번쩍임 줄이기: {(s.reduceFlashes ? "켜기" : "끄기")}";
-            if (musicLabel != null) musicLabel.text = $"배경음: {s.musicVolume * 25}%";
-            if (sfxLabel != null) sfxLabel.text = $"효과음: {s.sfxVolume * 25}%";
-            if (vibrationLabel != null) vibrationLabel.text = $"진동: {(s.vibration ? "켜기" : "끄기")}";
-            if (frameLabel != null) frameLabel.text = $"프레임: {(s.frame60 ? "60 (부드럽게)" : "30 (배터리 절약)")}";
-            if (graphicsLabel != null) graphicsLabel.text = $"그래픽: {Common.SettingsApplier.GraphicsName(s.graphics)}";
-            if (joystickModeLabel != null) joystickModeLabel.text = $"조이스틱: {(s.joystickFixed ? "고정" : "누른 자리")}";
-            if (joystickSizeLabel != null) joystickSizeLabel.text = $"조이스틱 크기: {Steps3[Mathf.Clamp(s.joystickSize, 0, 2)]}";
-            if (joystickOpacityLabel != null) joystickOpacityLabel.text = $"조이스틱 진하기: {Opacity3[Mathf.Clamp(s.joystickOpacity, 0, 2)]}";
-            if (heartsLabel != null) heartsLabel.text = $"하트가 다 차면: {(s.notifyHearts ? "켜기" : "끄기")}";
-            if (patrolLabel != null) patrolLabel.text = $"순찰이 가득 차면: {(s.notifyPatrol ? "켜기" : "끄기")}";
+            Show(musicRow, Mathf.Clamp(s.musicVolume, 0, 4));
+            Show(sfxRow, Mathf.Clamp(s.sfxVolume, 0, 4));
+            Show(vibrationRow, s.vibration ? 1 : 0);
+            Show(graphicsRow, Mathf.Clamp(s.graphics, 0, 2));
+            Show(shakeRow, Mathf.Clamp(s.shake, 0, 2));
+            Show(numbersRow, s.damageNumbers ? 1 : 0);
+            Show(flashRow, s.reduceFlashes ? 1 : 0);
+            Show(frameRow, s.frame60 ? 1 : 0);
+            Show(joystickModeRow, s.joystickFixed ? 1 : 0);
+            Show(joystickSizeRow, Mathf.Clamp(s.joystickSize, 0, 2));
+            Show(joystickOpacityRow, Mathf.Clamp(s.joystickOpacity, 0, 2));
+            Show(heartsRow, s.notifyHearts ? 1 : 0);
+            Show(patrolRow, s.notifyPatrol ? 1 : 0);
         }
     }
 }
