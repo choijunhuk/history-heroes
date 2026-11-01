@@ -72,17 +72,26 @@ namespace HistoryHeroes.Account
             FinishGuestCleanup,
             /// <summary>② 그 계정 세션 그대로: 진행 고르기를 다시 연다 (새 게스트를 만들지 않는다)</summary>
             ResumeTarget,
-            /// <summary>건드리지 않고 기다린다 (로그인 전 · 그 계정에 들어간 뒤인데 세션이 없음 — 새 게스트를 만들면 그 계정 진행이 새 게스트로 샌다)</summary>
+            /// <summary>건드리지 않고 기다린다 (로그인 전 · 그 계정에 들어간 뒤인데 그 계정 세션이 없음 — 새 게스트 · 다른 플레이어로 이어 가면 그 계정 진행이 샌다)</summary>
             Hold,
         }
 
-        /// <summary>① prepGuest: 정리하던 게스트 ID, current: 지금 로그인한 플레이어 (로그인 전이면 null)</summary>
-        public static SwitchStep DecideSwitchPrep(string prepGuest, string current)
+        /// <summary>
+        /// ① prepGuest: 정리하던 게스트 ID, current: 지금 로그인한 플레이어 (로그인 전이면 null),
+        /// anonymous: 지금 플레이어에 연결된 외부 계정이 하나도 없나 (모르면 null). 지우는 것은 표시의 그 게스트이고 익명일 때만 —
+        /// 연결된 계정이면 표시만 지우고 아무것도 지우지 않는다, 확인하지 못하면 기다린다
+        /// </summary>
+        public static SwitchStep DecideSwitchPrep(string prepGuest, string current, bool? anonymous)
         {
             if (prepGuest == null) return SwitchStep.Nothing;
             if (string.IsNullOrEmpty(current)) return SwitchStep.Hold;
-            return current == prepGuest ? SwitchStep.FinishGuestCleanup : SwitchStep.Clear;
+            if (current != prepGuest) return SwitchStep.Clear;
+            if (anonymous == null) return SwitchStep.Hold;
+            return anonymous.Value ? SwitchStep.FinishGuestCleanup : SwitchStep.Clear;
         }
+
+        /// <summary>UGS 플레이어 정보로 본 익명 게스트: 외부 계정(카카오 · 구글 …)도 사용자 이름도 없다</summary>
+        public static bool IsAnonymous(int identityCount, string username) => identityCount == 0 && string.IsNullOrEmpty(username);
 
         /// <summary>
         /// ② target: 바꾸려는 계정 ID ("" = 그 계정 로그인 직전에 남긴 표시, null = 표시 없음), current: 이 기기 세션의 플레이어 (세션이 없으면 null).
@@ -92,7 +101,8 @@ namespace HistoryHeroes.Account
         {
             if (target == null) return SwitchStep.Nothing;
             if (string.IsNullOrEmpty(current)) return target.Length == 0 ? SwitchStep.Clear : SwitchStep.Hold;
-            return target.Length == 0 || current == target ? SwitchStep.ResumeTarget : SwitchStep.Clear;
+            // 그 계정에 들어간 뒤인데 다른 플레이어 세션: 이 기기 저장에 그 계정 진행이 있을 수 있다 → 그 플레이어로 이어 가지 않는다
+            return target.Length == 0 || current == target ? SwitchStep.ResumeTarget : SwitchStep.Hold;
         }
 
         /// <summary>

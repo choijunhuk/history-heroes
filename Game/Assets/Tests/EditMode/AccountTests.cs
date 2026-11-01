@@ -3,7 +3,10 @@ using System.IO;
 using HistoryHeroes.Account;
 using HistoryHeroes.Progress;
 using HistoryHeroes.Records;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace HistoryHeroes.Tests
 {
@@ -390,10 +393,10 @@ namespace HistoryHeroes.Tests
         {
             const string guest = "guest-1", target = "kakao-b";
             // ① 게스트 정리: 닫기 전 · 닫은 뒤 · 보관 뒤 어디서 꺼져도 같은 게스트 세션이면 닫기 · 보관 · 지우기를 마저 한다 (다시 열지 않는다)
-            Assert.AreEqual(AccountRules.SwitchStep.Nothing, AccountRules.DecideSwitchPrep(null, guest));
-            Assert.AreEqual(AccountRules.SwitchStep.FinishGuestCleanup, AccountRules.DecideSwitchPrep(guest, guest));
-            Assert.AreEqual(AccountRules.SwitchStep.Clear, AccountRules.DecideSwitchPrep(guest, "guest-2"), "지운 뒤 꺼짐: 세션도 지워져 새 게스트 — 지운 게스트는 아무것도 없다");
-            Assert.AreEqual(AccountRules.SwitchStep.Hold, AccountRules.DecideSwitchPrep(guest, null), "로그인 전 (오프라인)");
+            Assert.AreEqual(AccountRules.SwitchStep.Nothing, AccountRules.DecideSwitchPrep(null, guest, true));
+            Assert.AreEqual(AccountRules.SwitchStep.FinishGuestCleanup, AccountRules.DecideSwitchPrep(guest, guest, true));
+            Assert.AreEqual(AccountRules.SwitchStep.Clear, AccountRules.DecideSwitchPrep(guest, "guest-2", null), "지운 뒤 꺼짐: 세션도 지워져 새 게스트 — 지운 게스트는 아무것도 없다");
+            Assert.AreEqual(AccountRules.SwitchStep.Hold, AccountRules.DecideSwitchPrep(guest, null, null), "로그인 전 (오프라인)");
 
             // ② 그 계정 진행 고르기
             Assert.AreEqual(AccountRules.SwitchStep.Nothing, AccountRules.DecideSwitchTarget(null, guest));
@@ -401,11 +404,72 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(AccountRules.SwitchStep.ResumeTarget, AccountRules.DecideSwitchTarget(string.Empty, target), "로그인 직후 꺼짐: 남은 세션은 그 계정뿐");
             Assert.AreEqual(AccountRules.SwitchStep.ResumeTarget, AccountRules.DecideSwitchTarget(target, target), "고르기 전 · 그 계정 진행을 받은 뒤 표시를 지우기 전: 그 계정 세션 그대로");
             Assert.AreEqual(AccountRules.SwitchStep.Hold, AccountRules.DecideSwitchTarget(target, null), "그 계정에 들어간 뒤 세션이 없음: 새 게스트를 만들지 않는다");
-            Assert.AreEqual(AccountRules.SwitchStep.Clear, AccountRules.DecideSwitchTarget(target, "someone-else"));
+            Assert.AreEqual(AccountRules.SwitchStep.Hold, AccountRules.DecideSwitchTarget(target, "someone-else"), "다른 플레이어 세션으로 이어 가지 않는다 (7차 3)");
 
-            // 어느 단계에서도 "그 계정에 들어간 뒤(②, 대상 기록됨)"에 새 게스트로 가는 답은 없다
-            foreach (string current in new[] { null, target })
+            // 어느 단계에서도 "그 계정에 들어간 뒤(②, 대상 기록됨)"에 새 게스트 · 다른 플레이어로 가는 답은 없다
+            foreach (string current in new[] { null, target, "someone-else" })
                 Assert.AreNotEqual(AccountRules.SwitchStep.Clear, AccountRules.DecideSwitchTarget(target, current));
+        }
+
+        [TestCase("temp")]
+        [TestCase("backup")]
+        [TestCase("promote")]
+        public void Replace_IoFailureAtEachStep_RollsBackMemoryAndDisk_NoOtherAccountTempLeft(string step)
+        {
+            // 7차 3: 계정 바꾸기에서 B 진행으로 바꾸다 어느 단계에서 입출력 오류가 나도 → 메모리 · 디스크 모두 A 그대로,
+            // B 글의 임시 파일이 남지 않는다 (남으면 다음 실행이 "교체 도중 꺼져 남은 완성본"으로 읽어 다른 플레이어의 진행이 된다)
+            var store = new SaveStore(_folder);
+            SaveSystem.Use(store);
+            SaveData a = Progressed(3, 10, 0, 5, 100);
+            Assert.IsTrue(SaveSystem.Replace(a));
+            string aOnDisk = File.ReadAllText(store.MainPath);
+            SaveData b = Progressed(9, 999, 50, 40, 200);
+
+            store.FaultBeforeStep = s => { if (s == step) throw new IOException("흉내: " + s); };
+            LogAssert.Expect(LogType.Error, new Regex("저장"));
+            Assert.IsFalse(SaveSystem.Replace(b));
+            store.FaultBeforeStep = null;
+
+            Assert.AreEqual(3, SaveSystem.Data.unlockedChapter, "메모리는 A");
+            Assert.IsTrue(File.Exists(store.MainPath), "본 파일이 있다");
+            Assert.AreEqual(aOnDisk, File.ReadAllText(store.MainPath), "디스크도 A");
+            Assert.IsFalse(File.Exists(store.TempPath), "B 임시 파일이 남지 않는다");
+            SaveData next = new SaveStore(_folder).Load();
+            Assert.AreEqual((3, 10), (next.unlockedChapter, next.gemsFree), "다음 실행도 A");
+        }
+
+        [Test]
+        public void Save_PromoteFails_ThenRestoreAlsoFails_TempStillRemoved_LoadsOlderCopyNotB()
+        {
+            // 되돌리기까지 실패해 본 파일이 없더라도 B 임시 파일은 지운다 → 다음 실행은 백업(A)을 읽는다 (B를 완성본으로 올리지 않는다)
+            var store = new SaveStore(_folder);
+            store.Save(Progressed(3, 10, 0, 5, 100));
+            store.FaultBeforeStep = s =>
+            {
+                if (s != "promote") return;
+                File.Move(store.BackupPath, store.BackupPath + ".away"); // 되돌릴 백업이 사라진 흉내
+                throw new IOException("흉내: promote");
+            };
+            Assert.Throws<IOException>(() => store.Save(Progressed(9, 999, 50, 40, 200)));
+            Assert.IsFalse(File.Exists(store.TempPath));
+            File.Move(store.BackupPath + ".away", store.BackupPath);
+            SaveData next = new SaveStore(_folder).Load();
+            Assert.AreEqual(3, next.unlockedChapter);
+        }
+
+        [Test]
+        public void SwitchPrep_NeverDeletesALinkedOrUnverifiedAccount()
+        {
+            // 7차 2: 정리 표시가 남은 채 그 게스트에 새 카카오 계정을 연결했다 (같은 플레이어 ID) → 다음 정리가 그 계정을 지우면 안 된다
+            const string guest = "guest-1";
+            Assert.AreEqual(AccountRules.SwitchStep.Clear, AccountRules.DecideSwitchPrep(guest, guest, false), "연결된 계정: 표시만 지우고 아무것도 지우지 않는다");
+            Assert.AreEqual(AccountRules.SwitchStep.Hold, AccountRules.DecideSwitchPrep(guest, guest, null), "플레이어 정보를 못 받음: 지우지 않고 기다린다");
+            Assert.AreEqual(AccountRules.SwitchStep.FinishGuestCleanup, AccountRules.DecideSwitchPrep(guest, guest, true));
+
+            Assert.IsTrue(AccountRules.IsAnonymous(0, null));
+            Assert.IsTrue(AccountRules.IsAnonymous(0, string.Empty));
+            Assert.IsFalse(AccountRules.IsAnonymous(1, null), "외부 계정(카카오 등)이 붙음");
+            Assert.IsFalse(AccountRules.IsAnonymous(0, "player"), "사용자 이름이 있음");
         }
 
         [Test]

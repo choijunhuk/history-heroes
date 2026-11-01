@@ -100,6 +100,9 @@ namespace HistoryHeroes.Records
             Folder = folder;
         }
 
+        /// <summary>시험용: 저장 단계("temp" 임시 파일 쓰기 · "backup" 본 파일 → 백업 · "promote" 임시 파일 → 본 파일) 직전에 불린다 (던지면 그 단계의 입출력 오류 흉내)</summary>
+        public Action<string> FaultBeforeStep;
+
         public static SaveStore ForDevice() => new SaveStore(Application.persistentDataPath);
 
         public void Save(SaveData data)
@@ -124,41 +127,76 @@ namespace HistoryHeroes.Records
                 _mainIsValid = true;
             }
 
-            // 1) 임시 파일에 끝까지 쓰고 디스크까지 내려보낸다
-            using (var stream = new FileStream(TempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
-            using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+            bool mainToBackup = false;
+            try
             {
-                writer.Write(json);
-                writer.Flush();
-                stream.Flush(true);
-            }
-
-            // 2) 다 써졌으면 교체: 지금 파일 → 백업, 임시 파일 → 본 파일
-            //    (두 단계 사이에 꺼지면 본 파일이 없고 임시 파일이 완성본이다 → Load가 임시 파일을 읽는다)
-            if (File.Exists(MainPath))
-            {
-                if (_mainIsValid)
+                // 1) 임시 파일에 끝까지 쓰고 디스크까지 내려보낸다
+                FaultBeforeStep?.Invoke("temp");
+                using (var stream = new FileStream(TempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+                using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
                 {
-                    if (File.Exists(BackupPath)) File.Delete(BackupPath);
-                    File.Move(MainPath, BackupPath);
+                    writer.Write(json);
+                    writer.Flush();
+                    stream.Flush(true);
                 }
-                else
+
+                // 2) 다 써졌으면 교체: 지금 파일 → 백업, 임시 파일 → 본 파일
+                //    (두 단계 사이에 꺼지면 본 파일이 없고 임시 파일이 완성본이다 → Load가 임시 파일을 읽는다)
+                if (File.Exists(MainPath))
                 {
-                    // 망가진 본 파일: 정상 백업은 그대로 두고, 망가진 파일은 사본으로 남긴 뒤 치운다.
-                    // 사본을 못 남기면 지우지 않고 저장 실패로 돌린다 (원본 보존이 먼저)
-                    if (!_brokenMainPreserved && PreserveBroken(MainPath) == null)
+                    if (_mainIsValid)
                     {
-                        File.Delete(TempPath);
-                        throw new IOException("망가진 저장 파일을 보존하지 못해서 저장을 멈춤");
+                        if (File.Exists(BackupPath)) File.Delete(BackupPath);
+                        FaultBeforeStep?.Invoke("backup");
+                        File.Move(MainPath, BackupPath);
+                        mainToBackup = true;
                     }
+                    else
+                    {
+                        // 망가진 본 파일: 정상 백업은 그대로 두고, 망가진 파일은 사본으로 남긴 뒤 치운다.
+                        // 사본을 못 남기면 지우지 않고 저장 실패로 돌린다 (원본 보존이 먼저)
+                        if (!_brokenMainPreserved && PreserveBroken(MainPath) == null)
+                            throw new IOException("망가진 저장 파일을 보존하지 못해서 저장을 멈춤");
 
-                    File.Delete(MainPath);
-                    _brokenMainPreserved = false;
+                        File.Delete(MainPath);
+                        _brokenMainPreserved = false;
+                    }
                 }
+
+                FaultBeforeStep?.Invoke("promote");
+                File.Move(TempPath, MainPath);
+                _mainIsValid = true;
+            }
+            catch
+            {
+                RollBack(mainToBackup);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 저장이 실패했다 → 디스크도 저장 전으로: 백업으로 옮긴 본 파일을 되돌리고 새 임시 파일을 지운다.
+        /// 실패를 알린 저장의 글이 다음 실행에서 "교체 도중 꺼져 남은 완성본"으로 읽히지 않게 (예: 계정 바꾸기에서 받다 만 다른 계정 진행)
+        /// </summary>
+        private void RollBack(bool mainToBackup)
+        {
+            try
+            {
+                if (mainToBackup && !File.Exists(MainPath) && File.Exists(BackupPath)) File.Move(BackupPath, MainPath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[SaveStore] 저장 실패 뒤 본 파일을 되돌리지 못함: " + e.Message);
             }
 
-            File.Move(TempPath, MainPath);
-            _mainIsValid = true;
+            try
+            {
+                if (File.Exists(TempPath)) File.Delete(TempPath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[SaveStore] 저장 실패 뒤 임시 파일을 지우지 못함: " + e.Message);
+            }
         }
 
         /// <summary>저장 파일과 똑같은 글 (해시 포함). 파일 쓰기와 클라우드 올리기가 같이 쓴다 → 클라우드에서 받은 글도 같은 해시로 검사된다</summary>

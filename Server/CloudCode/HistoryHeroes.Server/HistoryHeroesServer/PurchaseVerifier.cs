@@ -124,7 +124,7 @@ public sealed class PurchaseVerifier
             {
                 for (int attempt = 1; ; attempt++)
                 {
-                    // 머리 lock을 읽은 뒤에 닫힘을 본다 (닫기는 "닫힘 표시 → 머리 바꾸기")
+                    // 머리 lock과 함께 읽은 닫힘(표시 포함)을 보고, 옛 private 표시도 본다 (닫기는 "표시 → 머리" 또는 [머리 + 표시] 한 batch)
                     if (headClosed || await _store.IsClosedAsync(context, playerId, ct)) return VerifyResult.Of(VerifyResult.Invalid, "account_closed");
                     if (await _store.TryReserveAsync(context, playerId, headLock, tokenHash, ct)) break;
                     if (attempt >= MaxAttempts) return VerifyResult.Of(VerifyResult.Retry, "busy");
@@ -144,7 +144,7 @@ public sealed class PurchaseVerifier
             for (int attempt = 1; attempt <= MaxAttempts; attempt++)
             {
                 if (attempt > 1) (headLock, headClosed) = await HeadAsync(context, playerId, ct);
-                // 머리 lock을 읽은 뒤에 닫힘을 본다: 닫기는 "닫힘 표시 → 머리 바꾸기" 순서라, 여기서 안 닫혔으면 이 lock으로 쓰는 batch는 닫기보다 먼저다
+                // 머리 lock과 닫힘 표시를 함께 읽었다: 닫기는 "표시 → 머리" 또는 [머리 + 표시] 한 batch라, 여기서 안 닫혔으면 이 lock으로 쓰는 batch는 닫기보다 먼저다 (늦으면 lock이 바뀌어 거절)
                 if (headClosed || await _store.IsClosedAsync(context, playerId, ct))
                 {
                     await DropTokenAsync(context, playerId, tokenHash, reserved, ct);
@@ -229,7 +229,8 @@ public sealed class PurchaseVerifier
     /// <summary>
     /// 머리의 lock과 닫혔는지. 없으면 처음 값으로 lock 없이 만들고 다시 읽는다.
     /// ponytail: 두 호출이 동시에 처음 만들면 늦은 쪽이 머리를 처음 값으로 되돌릴 수 있다 — 머리 내용은 판정에 쓰지 않고(판정은 결제 키들로),
-    /// 닫힘은 따로 둔 한 방향 닫힘 표시가 지키므로(판정마다 머리 lock을 읽은 뒤 확인) 되살아나는 계정도, 잃는 결제도 없다. 그사이 판정 중이던 쪽은 batch가 거절돼 다시 할 뿐
+    /// 닫힘은 따로 둔 한 방향 닫힘 표시가 지키므로(머리 만들기는 표시를 쓰지 않고, 머리와 표시를 한 번에 읽는다 · 머리 닫기는 표시와 한 batch) 되살아나는 계정도, 잃는 결제도 없다.
+    /// 그사이 판정 중이던 쪽은 batch가 거절돼 다시 할 뿐
     /// </summary>
     private async Task<(string writeLock, bool closed)> HeadAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
@@ -361,7 +362,7 @@ public sealed class PurchaseVerifier
         for (int attempt = 0; attempt < MaxAttempts; attempt++)
         {
             (string headLock, _) = await HeadAsync(context, playerId, ct);
-            if (await _store.TryCloseHeadAsync(context, playerId, headLock, ct)) return;
+            if (await _store.TryCloseHeadAsync(context, playerId, headLock, _utcNow(), ct)) return;
         }
 
         throw new InvalidOperationException("head_close");
@@ -431,9 +432,10 @@ public sealed class PurchaseVerifier
 
     /// <summary>
     /// 게스트를 지우기 전에(게스트로 부른다): 결제 · 예약이 하나도 없을 때만 게스트를 닫는다 — **한 방향, 다시 여는 함수는 없다.**
-    /// 이미 닫혔으면(지난 시도 · 계정 삭제) ok. 아니면 머리 lock을 읽고 → 결제 키 · 예약(옛 private 예약 포함)을 보고 → 하나라도 있으면 아무것도 쓰지 않고 has_purchases →
-    /// 없으면 머리를 그 lock으로 닫고(그사이 예약 · 지급이 들어왔으면 lock이 바뀌어 거절 → 다시 확인) 닫힘 표시를 쓴다.
-    /// 진행 중이던 VerifyPurchase는 닫기 전에 들어가 has_purchases가 되거나, 뒤에 와서 거절된다. 끊겼다 다시 불러도 된다 (닫힌 뒤에는 늘 ok → 게임은 보관 · 삭제를 마저 한다)
+    /// 머리 lock과 닫힘 표시를 한 번에 읽고 → 이미 닫혔으면 ok (머리만 닫힌 옛 상태면 표시를 마저) → 결제 키 · 예약(옛 private 예약 포함)이 하나라도 있으면
+    /// 아무것도 쓰지 않고 has_purchases → 없으면 [머리를 그 lock으로 닫기 + 닫힘 표시] 한 batch (그사이 예약 · 지급 · 머리 다시 만들기가 있었으면 lock이 바뀌어 거절 → 다시 확인).
+    /// 결제 판정은 모두 머리 lock과 닫힘 표시를 함께 읽은 뒤 그 lock으로만 쓴다 → 닫기 뒤의 판정은 표시를 보고 거절되고, 늦은 머리 만들기가 닫힌 머리를 덮어도 표시가 남는다.
+    /// 끊겼다 다시 불러도 된다 (닫힌 뒤에는 늘 ok → 게임은 보관 · 삭제를 마저 한다)
     /// </summary>
     public async Task<SwitchResult> CloseForSwitchAsync(IExecutionContext context)
     {
@@ -445,12 +447,10 @@ public sealed class PurchaseVerifier
         {
             for (int attempt = 0; attempt < MaxAttempts; attempt++)
             {
-                (string headLock, bool headClosed) = await HeadAsync(context, playerId, ct);
-                bool marked = await _store.IsClosedAsync(context, playerId, ct);
-                if (headClosed || marked)
+                (string headLock, bool closed) = await HeadAsync(context, playerId, ct);
+                if (closed || await _store.IsClosedAsync(context, playerId, ct))
                 {
-                    // 머리만 닫히고 표시를 못 쓴 채 끊겼을 수 있다 → 표시를 마저 (머리가 늦은 처음 만들기로 되돌아가도 표시가 지킨다)
-                    if (!marked) await _store.CloseAsync(context, playerId, _utcNow(), ct);
+                    await _store.CloseAsync(context, playerId, _utcNow(), ct); // 이미 있으면 같은 내용 (옛 상태 · 옛 private 표시만 있으면 지금 표시로)
                     return SwitchResult.Of(PurchaseList.Ok);
                 }
 
@@ -459,9 +459,8 @@ public sealed class PurchaseVerifier
                            || (await _store.ListLegacyReservedAsync(context, playerId, ct)).Count > 0;
                 if (any) return SwitchResult.Of(SwitchResult.HasPurchases); // 아무것도 쓰지 않았다 — 게스트 그대로
 
-                if (await _store.TryCloseHeadAsync(context, playerId, headLock, ct))
+                if (await _store.TryCloseHeadAsync(context, playerId, headLock, _utcNow(), ct))
                 {
-                    await _store.CloseAsync(context, playerId, _utcNow(), ct);
                     _log.LogInformation("계정 바꾸기: 결제 없는 게스트를 닫음");
                     return SwitchResult.Of(PurchaseList.Ok);
                 }

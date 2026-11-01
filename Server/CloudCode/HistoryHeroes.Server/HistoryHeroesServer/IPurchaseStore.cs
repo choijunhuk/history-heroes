@@ -11,14 +11,14 @@ public interface IPurchaseStore
 {
     // ---- 플레이어 결제 장부 (protected: 게임은 자기 것을 읽기만)
 
-    /// <summary>머리의 lock과 닫혔는지. 없으면 (null, false)</summary>
+    /// <summary>머리의 lock과 닫혔는지 (머리가 닫힘 또는 닫힘 표시가 있음 — 한 번에 읽는다). 머리가 없으면 (null, 표시 여부)</summary>
     Task<(string? writeLock, bool closed)> LoadHeadAsync(IExecutionContext context, string playerId, CancellationToken ct);
 
     /// <summary>머리를 처음 값으로 만든다 (lock 없이 — 처음 값은 늘 같아서 동시에 만들어도 무해. 닫힘은 따로 둔 닫힘 표시가 지킨다)</summary>
     Task CreateHeadAsync(IExecutionContext context, string playerId, CancellationToken ct);
 
-    /// <summary>머리를 읽은 lock으로 "닫힘"으로 바꾼다 (그 뒤 옛 lock을 든 batch는 모두 거절). 충돌이면 false</summary>
-    Task<bool> TryCloseHeadAsync(IExecutionContext context, string playerId, string headLock, CancellationToken ct);
+    /// <summary>[머리를 읽은 lock으로 "닫힘" + 닫힘 표시] 한 batch (그 뒤 옛 lock을 든 batch는 모두 거절, 머리가 닫히면 표시도 반드시 있다). 충돌이면 false</summary>
+    Task<bool> TryCloseHeadAsync(IExecutionContext context, string playerId, string headLock, DateTime utcNow, CancellationToken ct);
 
     /// <summary>이 플레이어의 결제 전부 (키 p_*)</summary>
     Task<List<PurchaseRecord>> LoadPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct);
@@ -54,11 +54,12 @@ public interface IPurchaseStore
 
     Task DeleteLegacyReservedAsync(IExecutionContext context, string playerId, IReadOnlyCollection<string> tokenHashes, CancellationToken ct);
 
-    // ---- 플레이어 서버 전용 (private): 닫힘 표시
+    // ---- 닫힘 표시 (protected iap_closed — 옛 배포는 private에): 한 방향, 지우는 함수가 없다
 
+    /// <summary>닫힘 표시가 있나 (지금 표시 + 옛 private 표시)</summary>
     Task<bool> IsClosedAsync(IExecutionContext context, string playerId, CancellationToken ct);
 
-    /// <summary>닫힘 표시 (한 방향: 쓰면 다시 열리지 않는다 — 지우는 함수가 없다)</summary>
+    /// <summary>닫힘 표시만 쓴다 (계정 삭제: 표시 먼저 → 머리 닫기). 머리 만들기는 이 키를 쓰지 않는다</summary>
     Task CloseAsync(IExecutionContext context, string playerId, DateTime utcNow, CancellationToken ct);
 
     // ---- 게임 전체 (private custom: 서버만)

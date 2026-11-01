@@ -187,8 +187,15 @@ namespace HistoryHeroes.Account
 
                 // 저장된 세션이 있으면 그 플레이어(게스트든 카카오든)로 돌아온다
                 if (!auth.IsSignedIn) await auth.SignInAnonymouslyAsync();
-                if (ChoicePending) ResumeSwitchTarget(auth);
-                else if (PlayerPrefs.HasKey(SwitchPrepKey)) await ResumeSwitchPrepAsync(auth);
+                if (ChoicePending && !ResumeSwitchTarget(auth))
+                {
+                    Debug.LogWarning("[Account] 바꾸려던 계정이 아닌 세션 → 그 플레이어로 이어 가지 않음");
+                    auth.SignOut(); // 세션 정보는 남긴다 (지우지 않는다)
+                    Set(AccountState.Offline, SwitchLostText);
+                    return;
+                }
+
+                if (!ChoicePending && PlayerPrefs.HasKey(SwitchPrepKey)) await ResumeSwitchPrepAsync(auth);
                 await RefreshLinked();
                 // ② 그 계정 세션 그대로: 로비가 한가할 때 진행 고르기를 다시 연다 (그동안 올리기 · 결제는 멈춤)
                 if (ChoicePending && State == AccountState.Linked) ConflictPending = true;
@@ -250,6 +257,18 @@ namespace HistoryHeroes.Account
         public static async Task LinkAsync(LoginProvider provider)
         {
             if (State != AccountState.Guest) return;
+            if (PlayerPrefs.HasKey(SwitchPrepKey))
+            {
+                // ① 지난 계정 바꾸기의 게스트 정리가 남았다: 새 연결 전에 마무리한다 (그대로 연결하면 다음 실행의 정리가 연결된 계정을 게스트로 알고 지울 수 있다)
+                Set(AccountState.Busy, "지난 계정 바꾸기를 마무리하는 중…");
+                await ResumeSwitchPrepAsync(AuthenticationService.Instance);
+                if (PlayerPrefs.HasKey(SwitchPrepKey))
+                {
+                    Set(AccountState.Guest, SwitchRetryText);
+                    return;
+                }
+            }
+
             Set(AccountState.Busy, $"{provider.DisplayName} 로그인 중…");
             LoginProvider.Result login = await provider.Login();
             if (login.Status == LoginProvider.Status.Cancelled)
@@ -314,6 +333,13 @@ namespace HistoryHeroes.Account
                 return;
             }
 
+            // 지우는 것은 연결이 하나도 없는 익명 게스트뿐 (확인하지 못하면 바꾸지 않는다)
+            if (await IsAnonymousAsync() != true)
+            {
+                Set(AccountState.Guest, SwitchRetryText);
+                return;
+            }
+
             // ① 게스트 정리 중 표시를 먼저 (게스트 세션은 그대로) → 바꾸기가 끝날 때까지 결제는 멈춘다
             PlayerPrefs.SetString(SwitchPrepKey, auth.PlayerId ?? string.Empty);
             PlayerPrefs.Save();
@@ -365,6 +391,7 @@ namespace HistoryHeroes.Account
         private static async Task ChooseSwitchAsync(string name, bool resumed)
         {
             bool committed = false;
+            bool touched = false; // 이 기기 저장을 그 계정 진행으로 바꾸려 했다 → 결과와 상관없이 게스트로 돌아가지 않는다 (그 계정 표시 · 세션 유지)
             try
             {
                 Set(AccountState.Busy, "클라우드 진행을 확인하는 중…");
@@ -411,9 +438,12 @@ namespace HistoryHeroes.Account
                     return;
                 }
 
+                touched = true;
                 if (!ApplyCloud(cloud, mergeDevicePurchases: false))
                 {
-                    await StopSwitchAsync("저장하지 못했어요. 기기 저장 공간을 확인하고 다시 해 주세요", resumed);
+                    // 교체가 실패했다 (메모리 · 디스크 모두 되돌림 — SaveStore.RollBack). 그래도 게스트로 돌아가지 않고 그 계정에 머문다:
+                    // 되돌리기까지 실패해 그 계정 진행의 임시 파일이 남았어도, 다음 실행은 그 계정 세션으로 열려 다른 플레이어의 진행이 되지 않는다
+                    await StopSwitchAsync("저장하지 못했어요. 기기 저장 공간을 확인하고 다시 해 주세요", resumed: true);
                     return;
                 }
 
@@ -429,7 +459,7 @@ namespace HistoryHeroes.Account
                 string text = e is RequestFailedException r ? AccountRules.ErrorText(r.ErrorCode, r.Message) : "문제가 생겼어요. 잠시 뒤에 다시 해 주세요";
                 if (!committed)
                 {
-                    await StopSwitchAsync(text, resumed);
+                    await StopSwitchAsync(text, resumed || touched);
                     return;
                 }
 
@@ -540,7 +570,10 @@ namespace HistoryHeroes.Account
         {
             try
             {
-                AccountRules.SwitchStep step = AccountRules.DecideSwitchPrep(PlayerPrefs.GetString(SwitchPrepKey, string.Empty), auth.PlayerId);
+                string prep = PlayerPrefs.GetString(SwitchPrepKey, string.Empty);
+                // 지우기 전에: 표시의 그 게스트이고, 연결된 계정이 하나도 없는 익명 게스트인지 (연결됐으면 표시만 지우고 아무것도 지우지 않는다)
+                bool? anonymous = prep.Length > 0 && prep == auth.PlayerId ? await IsAnonymousAsync() : null;
+                AccountRules.SwitchStep step = AccountRules.DecideSwitchPrep(prep, auth.PlayerId, anonymous);
                 Debug.Log($"[Account] 게스트 정리 이어 받기: {step}");
                 if (step == AccountRules.SwitchStep.Hold) return;
                 if (step == AccountRules.SwitchStep.FinishGuestCleanup && await PrepareGuestForSwitchAsync() == SwitchRetryText) return;
@@ -557,23 +590,39 @@ namespace HistoryHeroes.Account
             }
         }
 
-        /// <summary>② 지난 실행이 바꾸려는 계정의 진행 고르기 전에 꺼졌다 (로그인된 뒤): 그 계정 세션이면 그대로 두고 대상을 기록, 아니면 표시만 지운다</summary>
-        private static void ResumeSwitchTarget(IAuthenticationService auth)
+        /// <summary>지금 플레이어에 외부 계정 · 사용자 이름이 하나도 없나 (서버에서 받은 정보로). 못 받으면 null</summary>
+        private static async Task<bool?> IsAnonymousAsync()
+        {
+            try
+            {
+                PlayerInfo info = await AuthenticationService.Instance.GetPlayerInfoAsync();
+                if (info == null) return null;
+                return AccountRules.IsAnonymous(info.Identities?.Count ?? 0, info.Username);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Account] 플레이어 정보를 못 받아 익명 게스트인지 모름: " + e.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// ② 지난 실행이 바꾸려는 계정의 진행 고르기 전에 꺼졌다 (로그인된 뒤): 그 계정 세션이면 그대로 두고 대상을 기록 (true).
+        /// 그 계정이 아닌 세션이면 false — 그 플레이어로 이어 가지 않는다 (이 기기 저장에 그 계정 진행이 있을 수 있다)
+        /// </summary>
+        private static bool ResumeSwitchTarget(IAuthenticationService auth)
         {
             string target = PlayerPrefs.GetString(SwitchTargetKey, string.Empty);
             AccountRules.SwitchStep step = AccountRules.DecideSwitchTarget(target, auth.PlayerId);
             Debug.Log($"[Account] 계정 바꾸기 이어 받기: {step}");
-            if (step != AccountRules.SwitchStep.ResumeTarget)
-            {
-                ClearPending();
-                return;
-            }
-
+            if (step != AccountRules.SwitchStep.ResumeTarget) return false;
             if (target.Length == 0)
             {
                 PlayerPrefs.SetString(SwitchTargetKey, auth.PlayerId); // 그 계정 로그인 직후 꺼졌다 (게스트는 지워져 남은 세션은 그 계정뿐)
                 PlayerPrefs.Save();
             }
+
+            return true;
         }
 
         // ------------------------------------------------------------------ 클라우드 읽기 · 고르기

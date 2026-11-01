@@ -1,6 +1,7 @@
 using HistoryHeroes.Economy;
 using HistoryHeroes.Server;
 using Newtonsoft.Json;
+using Unity.Services.CloudCode.Core;
 
 namespace HistoryHeroesServer.Tests;
 
@@ -833,6 +834,130 @@ public sealed class PurchaseVerifierTests
         _store.ResetHead();
         Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
         Assert.That((await Verify("gems_t1", "after-reset")).Reason, Is.EqualTo("account_closed"));
+    }
+
+    /// <summary>
+    /// 두 호출을 한 줄로 번갈아 돌린다: first가 자기 firstPause번째 저장소 호출 직전에 멈추면 second가 secondPause번째 호출 직전까지 가고,
+    /// first가 끝까지, 그다음 second가 끝까지 (second가 먼저 끝나면 first가 이어서). 저장소 호출 사이의 코드는 한 쪽만 돈다
+    /// </summary>
+    private sealed class Interleave
+    {
+        private readonly object _lock = new();
+        private readonly IExecutionContext _first, _second;
+        private readonly int _firstPause, _secondPause;
+        private int _firstOps, _secondOps;
+        private IExecutionContext _turn;
+        private bool _firstDone, _secondDone;
+
+        public Interleave(IExecutionContext first, int firstPause, IExecutionContext second, int secondPause)
+        {
+            (_first, _firstPause, _second, _secondPause) = (first, firstPause, second, secondPause);
+            _turn = first;
+        }
+
+        public void OnOp(IExecutionContext ctx)
+        {
+            lock (_lock)
+            {
+                if (ReferenceEquals(ctx, _first) && ++_firstOps == _firstPause) Hand(_second);
+                else if (ReferenceEquals(ctx, _second) && ++_secondOps == _secondPause) Hand(_first);
+                while (!ReferenceEquals(_turn, ctx) && !OtherDone(ctx)) Monitor.Wait(_lock);
+            }
+        }
+
+        public void Done(IExecutionContext ctx)
+        {
+            lock (_lock)
+            {
+                if (ReferenceEquals(ctx, _first)) _firstDone = true;
+                else _secondDone = true;
+                Hand(ReferenceEquals(ctx, _first) ? _second : _first);
+            }
+        }
+
+        private void Hand(IExecutionContext to)
+        {
+            _turn = to;
+            Monitor.PulseAll(_lock);
+        }
+
+        private bool OtherDone(IExecutionContext ctx) => ReferenceEquals(ctx, _first) ? _secondDone : _firstDone;
+    }
+
+    [Test]
+    public void CloseForSwitch_VsFirstVerify_EveryInterleaving_NeverClosesAGuestWithAPurchase()
+    {
+        // 7차 1: (V: 표시 읽기 · 머리 없음 · 머리 만들기 · lock 읽기 · 예약/지급) 대 (C: 머리 만들기/읽기 · 결제 확인 · [머리 닫기 + 표시])를
+        // 양쪽 순서로, 한쪽이 멈추는 모든 저장소 호출 위치 × 다른 쪽이 멈추는 모든 위치에서 돌린다 (늦은 머리 만들기가 닫힌 머리를 덮는 순서 포함)
+        int runs = 0;
+        foreach (bool verifyFirst in new[] { true, false })
+        for (int a = 1; a <= 26; a++)
+        for (int b = 1; b <= 12; b++)
+        {
+            var store = new FakeStore();
+            var verifier = Make.Verifier(store, new FakeGoogle(), () => Make.Now);
+            var v = new FakeContext(Make.Player);
+            var c = new FakeContext(Make.Player);
+            var turns = verifyFirst ? new Interleave(v, a, c, b) : new Interleave(c, a, v, b);
+            store.OnOp = turns.OnOp;
+            Task<VerifyResult> vt = Task.Run(async () => { try { return await verifier.VerifyAsync(v, "gems_t1", "first"); } finally { turns.Done(v); } });
+            Task<SwitchResult> ct = Task.Run(async () => { try { return await verifier.CloseForSwitchAsync(c); } finally { turns.Done(c); } });
+            Assert.That(Task.WaitAll(new Task[] { vt, ct }, TimeSpan.FromSeconds(10)), Is.True, $"멈춤 ({verifyFirst}, {a}, {b})");
+            store.OnOp = null;
+            string at = $"(verifyFirst={verifyFirst}, {a}, {b}) close={ct.Result.Status} verify={vt.Result.Status}/{vt.Result.Reason}";
+            bool hasAny = store.Purchases().Count > 0 || store.ReservedOf().Count > 0;
+            if (ct.Result.Status == PurchaseList.Ok)
+            {
+                Assert.That(store.Closed, Does.Contain(Make.Player), at);
+                Assert.That(hasAny, Is.False, "닫았는데 결제 · 예약이 있다 → 결제한 게스트를 지우게 된다 " + at);
+                Assert.That(vt.Result.Status, Is.Not.EqualTo(VerifyResult.Granted), at);
+            }
+            else
+            {
+                Assert.That(ct.Result.Status, Is.EqualTo(SwitchResult.HasPurchases), at);
+                Assert.That((store.Closed.Contains(Make.Player), hasAny), Is.EqualTo((false, true)), at);
+            }
+
+            runs++;
+        }
+
+        Assert.That(runs, Is.EqualTo(2 * 26 * 12));
+    }
+
+    [Test]
+    public async Task LateHeadCreate_AfterSwitchClose_SeesMarker_NoCommit()
+    {
+        // 7차 1의 그 순서: V가 "머리 없음"을 읽은 뒤 C가 [머리 닫기 + 표시]까지 끝내고, V의 늦은 머리 만들기가 닫힌 머리를 처음 값으로 덮는다
+        var v = new FakeContext(Make.Player);
+        var c = new FakeContext(Make.Player);
+        bool ran = false;
+        int vOps = 0;
+        SwitchResult? closed = null;
+        _store.OnOp = ctx =>
+        {
+            // V의 저장소 호출: ① 닫힘 표시 ② 머리 읽기(없음) ③ 머리 만들기 ← 그 직전에 C 전체
+            if (ran || !ReferenceEquals(ctx, v) || ++vOps != 3) return;
+            ran = true;
+            Assert.That(_store.Protected.ContainsKey(Make.Player) && _store.Protected[Make.Player].ContainsKey("iap_head"), Is.False, "V는 머리 없음을 읽었다");
+            closed = _verifier.CloseForSwitchAsync(c).GetAwaiter().GetResult();
+        };
+        VerifyResult r = await _verifier.VerifyAsync(v, "gems_t1", "late");
+        _store.OnOp = null;
+        Assert.That(ran, Is.True);
+        Assert.That(closed!.Status, Is.EqualTo(PurchaseList.Ok));
+        Assert.That(_store.HeadClosed(), Is.False, "늦은 만들기가 머리를 열린 처음 값으로 덮었다");
+        Assert.That(r.Reason, Is.EqualTo("account_closed"), "그래도 함께 읽은 표시를 보고 거절");
+        Assert.That((_store.Purchases().Count, _store.ReservedOf().Count), Is.EqualTo((0, 0)));
+    }
+
+    [Test]
+    public async Task LegacyPrivateMarker_StillClosed_SwitchCloseMovesItToProtected()
+    {
+        _store.LegacyClosed.Add(Make.Player);
+        Assert.That((await Verify("gems_t1", "x")).Reason, Is.EqualTo("account_closed"));
+        Assert.That((await _verifier.GetPurchasesAsync(_player)).Status, Is.EqualTo(PurchaseList.Closed));
+        Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
+        Assert.That(_store.Closed, Does.Contain(Make.Player));
     }
 
     [Test]

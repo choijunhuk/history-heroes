@@ -12,8 +12,9 @@ namespace HistoryHeroes.Server;
 /// 서버 저장소 = Cloud Save (모두 서버 토큰으로만 쓴다). Cloud Save에는 "없을 때만 만들기"가 없어서, 진짜 내용은 lock으로 고치거나 lock으로 지킨 batch 안에서,
 /// 또는 겹칠 수 없는 새 키에만 쓴다. batch는 한 접근 등급 안에서 전부 되거나 전부 안 된다
 /// (Cloud Save Data API: "The batch set operation is considered atomic and if any of the set key operation fails, the entire operation is failed", 충돌 409).
-/// - 결제 장부 (protected 플레이어 데이터, 게임은 자기 것을 읽기만): iap_head(머리) · p_{토큰 해시}(결제 한 건) · r_{토큰 해시}(예약 — 색인에 이 플레이어를 적을 수 있는 토큰)
-/// - 플레이어 서버 전용 (private 플레이어 데이터): iap_closed(닫힘 표시, 한 방향) · 옛 배포의 예약 r_*(읽고 지우기만)
+/// - 결제 장부 (protected 플레이어 데이터, 게임은 자기 것을 읽기만): iap_head(머리) · p_{토큰 해시}(결제 한 건) · r_{토큰 해시}(예약 — 색인에 이 플레이어를 적을 수 있는 토큰) ·
+///   iap_closed(닫힘 표시, 한 방향 — 머리 닫기와 한 batch로 쓰고 머리와 한 번에 읽는다. 머리 만들기는 이 키를 쓰지 않는다)
+/// - 플레이어 서버 전용 (private 플레이어 데이터): 옛 배포의 닫힘 표시 iap_closed · 예약 r_* (읽고 지우기만)
 /// - 게임 전체 (private custom, 게임은 못 읽는다): 토큰 색인 iap_index_{해시 앞 2자}/{해시} · 확정 대기 iap_ack/{해시} · 작업 iap_jobs/gate · state ·
 ///   지운 계정 보관본 iap_archive_{ID 앞 2자}/{ID} · 계정 삭제 마무리 iap_closing/{보관본 ID}
 /// </summary>
@@ -98,12 +99,14 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
 
     public async Task<(string? writeLock, bool closed)> LoadHeadAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
+        // 머리와 닫힘 표시를 한 번에 읽는다: 늦은 머리 만들기가 닫힌 머리를 처음 값으로 덮어도 표시가 남아 닫힘으로 보인다
         ApiResponse<GetItemsResponse> response = await _api.CloudSaveData.GetProtectedItemsAsync(
-            context, context.ServiceToken, context.ProjectId, playerId, new List<string> { HeadKey }, cancellationToken: ct);
+            context, context.ServiceToken, context.ProjectId, playerId, new List<string> { HeadKey, ClosedKey }, cancellationToken: ct);
+        bool marked = response.Data?.Results?.Exists(i => i.Key == ClosedKey) == true;
         Item? item = response.Data?.Results?.Find(i => i.Key == HeadKey);
-        if (item == null) return (null, false);
+        if (item == null) return (null, marked);
         var head = JObject.FromObject(item.Value ?? new JObject());
-        return (item.WriteLock, (string?)head["s"] == "closed");
+        return (item.WriteLock, marked || (string?)head["s"] == "closed");
     }
 
     public async Task CreateHeadAsync(IExecutionContext context, string playerId, CancellationToken ct)
@@ -111,9 +114,14 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
         await _api.CloudSaveData.SetProtectedItemAsync(context, context.ServiceToken, context.ProjectId, playerId, new SetItemBody(HeadKey, Head("")), ct);
     }
 
-    public Task<bool> TryCloseHeadAsync(IExecutionContext context, string playerId, string headLock, CancellationToken ct) =>
-        NotConflict(() => _api.CloudSaveData.SetProtectedItemAsync(context, context.ServiceToken, context.ProjectId, playerId,
-            new SetItemBody(HeadKey, Head("closed", closed: true), headLock), ct));
+    public Task<bool> TryCloseHeadAsync(IExecutionContext context, string playerId, string headLock, DateTime utcNow, CancellationToken ct) =>
+        NotConflict(() => _api.CloudSaveData.SetProtectedItemBatchAsync(context, context.ServiceToken, context.ProjectId, playerId, new SetItemBatchBody(new List<SetItemBody>
+        {
+            new(HeadKey, Head("closed", closed: true), headLock),
+            new(ClosedKey, Marker(utcNow)), // 한 batch: 머리가 닫히면 표시도 반드시 있다 (사이에 끼어들 틈이 없다)
+        }), ct));
+
+    private static JObject Marker(DateTime utcNow) => new() { ["utc"] = utcNow.ToString("o") };
 
     public async Task<List<PurchaseRecord>> LoadPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
@@ -192,15 +200,17 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
 
     public async Task<bool> IsClosedAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
-        ApiResponse<GetItemsResponse> response = await _api.CloudSaveData.GetPrivateItemsAsync(
-            context, context.ServiceToken, context.ProjectId, playerId, new List<string> { ClosedKey }, cancellationToken: ct);
-        return response.Data?.Results?.Exists(i => i.Key == ClosedKey) == true;
+        // 지금 표시(protected) + 옛 배포가 private에 쓴 표시를 함께 읽는다
+        var keys = new List<string> { ClosedKey };
+        Task<ApiResponse<GetItemsResponse>> current = _api.CloudSaveData.GetProtectedItemsAsync(context, context.ServiceToken, context.ProjectId, playerId, keys, cancellationToken: ct);
+        Task<ApiResponse<GetItemsResponse>> legacy = _api.CloudSaveData.GetPrivateItemsAsync(context, context.ServiceToken, context.ProjectId, playerId, keys, cancellationToken: ct);
+        await Task.WhenAll(current, legacy);
+        return current.Result.Data?.Results?.Exists(i => i.Key == ClosedKey) == true || legacy.Result.Data?.Results?.Exists(i => i.Key == ClosedKey) == true;
     }
 
     public async Task CloseAsync(IExecutionContext context, string playerId, DateTime utcNow, CancellationToken ct)
     {
-        await _api.CloudSaveData.SetPrivateItemAsync(context, context.ServiceToken, context.ProjectId, playerId,
-            new SetItemBody(ClosedKey, new JObject { ["utc"] = utcNow.ToString("o") }), ct);
+        await _api.CloudSaveData.SetProtectedItemAsync(context, context.ServiceToken, context.ProjectId, playerId, new SetItemBody(ClosedKey, Marker(utcNow)), ct);
     }
 
     // ------------------------------------------------------------------ 토큰 색인 · 확정 대기
