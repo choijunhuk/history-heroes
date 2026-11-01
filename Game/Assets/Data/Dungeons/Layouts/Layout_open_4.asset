@@ -14,6 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Dungeon.RoomLayout
   id: open_4
   kind: 0
+  use: 0
+  chapter: 0
+  longRoom: 0
   obstacles:
   - kind: 1
     circle: 0
@@ -36,3 +39,4 @@ MonoBehaviour:
     size: {x: 0.9, y: 0.9}
     hits: 0
   traps: []
+  devices: []

@@ -23,7 +23,7 @@ namespace HistoryHeroes.Skills
 
         [Header("뇌화 폭풍: 떨어진 자리에 장판")]
         [SerializeField] private bool leaveField;
-        [SerializeField] private float fieldDamagePerSecond = 0.3f;
+        [SerializeField] private float fieldDamagePerSecond = 0.45f; // v1.0 밸런스 1차 (2026-10-31): 0.3 → 0.45
         [SerializeField] private float fieldDuration = 2f;
         [SerializeField] private float fieldRadius = 1.2f;
         [SerializeField] private Color fieldColor = new Color(1f, 0.55f, 0.15f, 0.45f);
@@ -50,6 +50,7 @@ namespace HistoryHeroes.Skills
                     boltSize, new Vector2(0f, boltSize.y * 0.5f), boltColor, null, _bolts.Release);
 
                 enemy.Health.TryTakeDamage(RollDamage(data.DamageAt(level)));
+                HistoryHeroes.Combat.FxBursts.Explosion(point, 0.55f, new Color(0.65f, 0.85f, 1f)); // 그래픽 평가 5번: 떨어진 자리에 전기 불꽃 + 고리
                 if (chainTargets > 0) Chain(enemy);
 
                 if (leaveField)

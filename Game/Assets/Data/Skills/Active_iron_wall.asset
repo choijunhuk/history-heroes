@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "8\uCD08\uB9C8\uB2E4 \uCD5C\uB300\uCCB4\uB825 26% \uBCF4\uD638\uB9C9\n\uAE68\uC9C8
     \uB54C \uC8FC\uBCC0 \uD3ED\uBC1C 200%"
   warriorDescription: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: bb9ee1fa23fca384bb42f2bcc5114ae8, type: 3}
   rarity: 1
   tags: 1026
   role: 3
@@ -29,10 +29,21 @@ MonoBehaviour:
   cooldown: 8
   damageFirstLevel: 0.26
   damagePerLevel: 0
+  healFractionFirstLevel: 0
+  healFractionPerLevel: 0
   countFirstLevel: 1
   countPerLevel: 0
   radius: 1.5
   radiusPerLevel: 0
   duration: 0
   durationPerLevel: 0
+  slowFirstLevel: 0
+  slowPerLevel: 0
+  slowBossScale: 0.3
+  waveRadius: 0
+  returnImpactCoefficient: 0
+  waveLength: 0
+  waveSpeed: 0
+  waveInterval: 0
+  pushDistance: 0
   behaviourPrefab: {fileID: 3523157227588668129, guid: 1e78a8df11484b04dadeac4e9fc3d314, type: 3}

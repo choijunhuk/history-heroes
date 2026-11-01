@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c31a02d6e300bb54b80ef1a7d7f3d480, type: 3}
+  m_Name: Fusion_seondeok_constellation
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.FusionRecipe
+  id: seondeok_constellation
+  type: 0
+  materialA: {fileID: 11400000, guid: 72464ae7e51834db4af593c925ae36e8, type: 2}
+  materialB: {fileID: 11400000, guid: 84460324bc517d54d845083a0f97c91d, type: 2}
+  requiredLevelA: 5
+  requiredLevelB: 1
+  result: {fileID: 11400000, guid: 4bd4017a81ed0406aae38b4862574b1d, type: 2}
+  heroOnlyId: seondeok

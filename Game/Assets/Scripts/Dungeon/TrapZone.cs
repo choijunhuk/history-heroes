@@ -42,11 +42,23 @@ namespace HistoryHeroes.Dungeon
         private float _rootUntil;
         private float _nextTick;
         private SpriteRenderer _marker;
+        private ConveyorArrows _arrows;
         private Vector2 _rockAt;
         private bool _rockPending;
         private static int _mask = -1;
 
         public Effect Kind => _effect;
+
+        /// <summary>3구간 레버 (확장 1차 2장): 이때까지 컨베이어는 반대로, 증기는 멈춘다</summary>
+        private float _disruptUntil;
+        public bool Disrupted => Time.time < _disruptUntil;
+
+        /// <summary>영웅만 맞는다 (기믹 보스의 무너지는 바닥: 보스·수정 기둥은 다치지 않게)</summary>
+        public bool HeroOnly { get; set; }
+        private static int _heroMask = -1;
+        private int Mask => HeroOnly ? (_heroMask >= 0 ? _heroMask : (_heroMask = LayerMask.GetMask("Player"))) : _mask;
+
+        public void Disrupt(float seconds) => _disruptUntil = Mathf.Max(_disruptUntil, Time.time + seconds);
 
         public void SetArea(SpriteRenderer sr) => area = sr;
 
@@ -72,6 +84,7 @@ namespace HistoryHeroes.Dungeon
             _clock = 0f;
             _phaseOffset = phaseOffset;
             _rockPending = false;
+            _disruptUntil = 0f;
             _rootCooldown.Clear();
             transform.position = center;
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
@@ -79,6 +92,17 @@ namespace HistoryHeroes.Dungeon
             {
                 area.transform.localScale = new Vector3(size.x, size.y, 1f);
                 area.color = BaseColor(effect);
+            }
+
+            // 컨베이어: 미는 쪽으로 흐르는 꺾쇠 화살표 (화면 점검 5번의 남은 것). 다른 함정으로 다시 쓰이면 숨긴다
+            if (effect == Effect.Conveyor)
+            {
+                if (_arrows == null) _arrows = ConveyorArrows.Create(transform, area != null ? area.sortingOrder + 1 : 0);
+                _arrows.Setup(size);
+            }
+            else if (_arrows != null)
+            {
+                _arrows.gameObject.SetActive(false);
             }
 
             if (_mask < 0) _mask = LayerMask.GetMask("Player", "Enemy");
@@ -95,7 +119,7 @@ namespace HistoryHeroes.Dungeon
                 case Effect.Steam: return new Color(0.5f, 0.55f, 0.6f, 0.55f);
                 case Effect.Rockfall: return new Color(0.4f, 0.32f, 0.25f, 0.45f);
                 case Effect.Vines: return new Color(0.2f, 0.12f, 0.3f, 0.8f);
-                default: return new Color(0.3f, 0.15f, 0.4f, 0.55f);
+                default: return new Color(0.3f, 0.2f, 0.4f, 0.22f); // 화면 점검: 쉬는 칸은 옅게 → 금(밝게)·무너짐(검정)과 갈린다
             }
         }
 
@@ -111,7 +135,15 @@ namespace HistoryHeroes.Dungeon
                 case Effect.Thorns: TickThorns(); break;
                 case Effect.FireVent: TickCycle(t, period: 3f, telegraph: 0.8f, active: 1f, new Color(1f, 0.35f, 0.15f, 0.85f), Effect.FireVent); break;
                 case Effect.Conveyor: TickConveyor(dt); break;
-                case Effect.Steam: TickCycle(t, period: 4f, telegraph: 1f, active: 0.35f, new Color(0.95f, 0.95f, 1f, 0.8f), Effect.Steam); break;
+                case Effect.Steam:
+                    if (Disrupted)
+                    {
+                        if (area != null) area.color = new Color(0.35f, 0.5f, 0.75f, 0.45f); // 레버: 증기 멈춤 (파랗게 식는다)
+                        break;
+                    }
+
+                    TickCycle(t, period: 4f, telegraph: 1f, active: 0.35f, new Color(0.95f, 0.95f, 1f, 0.8f), Effect.Steam);
+                    break;
                 case Effect.Rockfall: TickRockfall(t); break;
                 case Effect.Vines: TickVines(); break;
                 case Effect.Oblivion: TickCycle(t, period: 6f, telegraph: 1.2f, active: 3f, new Color(0.05f, 0.02f, 0.08f, 0.95f), Effect.Oblivion); break;
@@ -162,7 +194,7 @@ namespace HistoryHeroes.Dungeon
             {
                 // 예고: 바닥이 깜빡인다 (화염 = 빨갛게, 증기 = 흰 연기, 균열 = 금이 감)
                 float blink = 0.5f + 0.5f * Mathf.Sin(local * 20f);
-                Color warn = effect == Effect.Oblivion ? new Color(0.7f, 0.4f, 1f, 0.6f) : effect == Effect.Steam ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0.25f, 0.2f, 0.6f);
+                Color warn = effect == Effect.Oblivion ? new Color(0.92f, 0.78f, 1f, 0.85f) : effect == Effect.Steam ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0.25f, 0.2f, 0.6f);
                 if (area != null) area.color = Color.Lerp(baseColor, warn, blink);
                 return;
             }
@@ -184,13 +216,16 @@ namespace HistoryHeroes.Dungeon
 
         private void TickConveyor(float dt)
         {
-            Vector2 dir = transform.right;
+            bool reversed = Disrupted; // 레버: 반대로 돈다
+            Vector2 dir = reversed ? -(Vector2)transform.right : (Vector2)transform.right;
             if (area != null)
             {
-                Color c = BaseColor(Effect.Conveyor);
+                Color c = reversed ? new Color(0.85f, 0.55f, 0.25f, 0.7f) : BaseColor(Effect.Conveyor);
                 c.a = 0.55f + 0.15f * Mathf.Sin(Time.time * 8f); // 움직이는 띠
                 area.color = c;
             }
+
+            if (_arrows != null) _arrows.Tick(reversed, ConveyorSpeed, dt);
 
             int n = Overlap(transform.position, _size, _angle);
             for (int i = 0; i < n; i++)
@@ -198,7 +233,7 @@ namespace HistoryHeroes.Dungeon
                 if (_hits[i].attachedRigidbody == null) continue;
                 // 적은 약하게 민다: 느린 적(방패병 1.3 · 증기 골렘 1.1)도 거슬러 건널 수 있게 (2.2로 밀면 띠 끝에 영영 붙는다)
                 bool enemy = _hits[i].TryGetComponent(out Health h) && h.Team == Team.Enemy;
-                _hits[i].attachedRigidbody.position += dir * ConveyorSpeed * (enemy ? EnemyConveyorScale : 1f) * dt;
+                RoomDevices.Push(_hits[i], dir * ConveyorSpeed * (enemy ? EnemyConveyorScale : 1f) * dt);
             }
         }
 
@@ -223,7 +258,7 @@ namespace HistoryHeroes.Dungeon
                 Telegraphs.Hide(_marker);
                 _marker = null;
                 AttackFx.Burst(_rockAt, 0.9f, new Color(0.6f, 0.5f, 0.4f, 0.8f), 0.18f);
-                int n = Physics2D.OverlapCircleNonAlloc(_rockAt, 0.9f, _hits, _mask);
+                int n = Physics2D.OverlapCircleNonAlloc(_rockAt, 0.9f, _hits, Mask);
                 for (int i = 0; i < n; i++)
                 {
                     if (_hits[i].TryGetComponent(out Health h)) h.TryTakeDamage(TrapDamage(_damage * 2.2f, h.Team == Team.Player, "trap_rock"));
@@ -243,7 +278,7 @@ namespace HistoryHeroes.Dungeon
                 {
                     _rooted = p;
                     _rootUntil = Time.time + 0.5f;
-                    p.Stats.Add(new StatModifier(StatType.MoveSpeed, ModifierKind.Percent, -1f, ModifierSource.Hero, _rootOwner));
+                    p.Root(0.5f); // 이동 속도 -100%는 하한 0.5에서 잘려서 묶이지 않았다
                     AttackFx.Burst(p.transform.position, 0.5f, new Color(0.4f, 0.2f, 0.6f, 0.7f), 0.5f);
                 }
                 else if (_hits[i].TryGetComponent(out EnemyBase e))
@@ -255,7 +290,7 @@ namespace HistoryHeroes.Dungeon
 
         // ---------------------------------------------------------------- 도우미
 
-        private int Overlap(Vector2 center, Vector2 size, float angle) => Physics2D.OverlapBoxNonAlloc(center, size, angle, _hits, _mask);
+        private int Overlap(Vector2 center, Vector2 size, float angle) => Physics2D.OverlapBoxNonAlloc(center, size, angle, _hits, Mask);
 
         private static DamageInfo TrapDamage(float amount, bool toPlayer, string source)
         {
@@ -271,7 +306,7 @@ namespace HistoryHeroes.Dungeon
             float dx = _size.x * 0.5f - Mathf.Abs(local.x);
             float dy = _size.y * 0.5f - Mathf.Abs(local.y);
             Vector2 push = dx < dy ? new Vector2(Mathf.Sign(local.x) * (dx + 0.5f), 0f) : new Vector2(0f, Mathf.Sign(local.y == 0f ? 1f : local.y) * (dy + 0.5f));
-            rb.position += (Vector2)(transform.rotation * push);
+            RoomDevices.Push(c, (Vector2)(transform.rotation * push));
         }
 
         private void Unslow()

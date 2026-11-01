@@ -101,15 +101,16 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void Unlock_AfterChapterTwoBoss()
+        public void Unlock_AfterChapterOneBoss()
         {
-            Assert.IsFalse(GameSession.SurvivalUnlockedByProgress(new SaveData { unlockedChapter = 2 }));
-            Assert.IsTrue(GameSession.SurvivalUnlockedByProgress(new SaveData { unlockedChapter = 3 }), "2구간 보스 격파 = 3구간 열림");
-            Assert.AreEqual(2, GameSession.SurvivalHearts, "Modes 8장: 하트 2개");
+            // 확장 1차 6-1장 (개발자 결정 2026-10-27): 2구간 → 1구간 보스, 하트 2 → 1
+            Assert.IsFalse(GameSession.SurvivalUnlockedByProgress(new SaveData { unlockedChapter = 1 }));
+            Assert.IsTrue(GameSession.SurvivalUnlockedByProgress(new SaveData { unlockedChapter = 2 }), "1구간 보스 격파 = 2구간 열림 = 서바이벌 맵 1");
+            Assert.AreEqual(1, GameSession.SurvivalHearts, "확장 1차: 하트 1개");
         }
 
         [Test]
-        public void Relics_SurvivalMilestones()
+        public void Relics_SurvivalMilestonesGrantShardsInsteadOfRelics()
         {
             var table = ScriptableObject.CreateInstance<RelicTable>();
             RelicData Add(string id, string value)
@@ -130,21 +131,26 @@ namespace HistoryHeroes.Tests
             var save = new SaveData();
             save.survival.longestSeconds = 299f;
             Assert.AreEqual(0, RelicService.CheckAll(save, table).Count, "5분이 안 됨");
+            Assert.AreEqual(0, RelicService.Shards(save));
 
             save.survival.longestSeconds = 300f;
             RelicService.CheckAll(save, table);
-            Assert.Greater(RelicService.Stars(save, "sundial"), 0);
+            Assert.AreEqual(table.sourceShards, RelicService.Shards(save));
+            Assert.AreEqual(0, RelicService.Stars(save, "sundial"));
             Assert.AreEqual(0, RelicService.Stars(save, "astrolabe"));
 
             save.survival.clears = 1;
             save.survival.clearHeroes.Add("khan");
             RelicService.CheckAll(save, table);
-            Assert.Greater(RelicService.Stars(save, "astrolabe"), 0);
+            Assert.AreEqual(2 * table.sourceShards, RelicService.Shards(save));
+            Assert.AreEqual(0, RelicService.Stars(save, "astrolabe"));
             Assert.AreEqual(0, RelicService.Stars(save, "galileo"), "영웅 1명");
 
             save.survival.clearHeroes.Add("guan");
             RelicService.CheckAll(save, table);
-            Assert.Greater(RelicService.Stars(save, "galileo"), 0);
+            Assert.AreEqual(3 * table.sourceShards, RelicService.Shards(save));
+            Assert.AreEqual(0, RelicService.Stars(save, "galileo"));
+            Assert.IsEmpty(RelicService.CheckAll(save, table));
         }
 
         [Test]

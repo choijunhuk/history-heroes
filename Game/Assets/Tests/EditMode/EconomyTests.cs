@@ -160,10 +160,30 @@ namespace HistoryHeroes.Tests
         [Test]
         public void DungeonGold_ScalesWithChapterAndRooms()
         {
-            Assert.AreEqual(500, RunRewards.Dungeon(1, 10, 10, true).Gold);
-            Assert.AreEqual(700, RunRewards.Dungeon(3, 10, 10, true).Gold);
+            Assert.AreEqual(500 + 1000, RunRewards.Dungeon(1, 10, 10, true).Gold, "완주 = 기본 + 완주 보너스");
+            Assert.AreEqual(700 + 1200, RunRewards.Dungeon(3, 10, 10, true).Gold);
             Assert.AreEqual(250, RunRewards.Dungeon(1, 5, 10, false).Gold);
             Assert.AreEqual(0, RunRewards.Dungeon(1, 0, 10, false).Gold);
+        }
+
+        [Test]
+        public void Survival_EarnsAtMost90PercentOfDungeonPerMinute()
+        {
+            // 전체 기획 검토 9번: 서바이벌(기본 + 주머니)은 같은 진행도 던전의 분당 수입 90% 이하.
+            // 던전 한 판 15방 = 8~10분 → 넉넉히 10분으로 나눈다 (Content 2장)
+            const float dungeonMinutes = 10f;
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:SurvivalData", new[] { "Assets/Data/Survival" });
+            Assert.Greater(guids.Length, 0);
+            foreach (string guid in guids)
+            {
+                var map = UnityEditor.AssetDatabase.LoadAssetAtPath<Survival.SurvivalData>(UnityEditor.AssetDatabase.GUIDToAssetPath(guid));
+                int survivalPerMinute = map.goldPerMinute + map.bagGoldPerMinute;
+                for (int chapter = 1; chapter <= 5; chapter++)
+                {
+                    float dungeonPerMinute = RunRewards.Dungeon(chapter, 15, 15, true).Gold / dungeonMinutes;
+                    Assert.LessOrEqual(survivalPerMinute, 0.9f * dungeonPerMinute, $"{map.name} · {chapter}구간");
+                }
+            }
         }
 
         [Test]

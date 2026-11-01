@@ -30,6 +30,13 @@ namespace HistoryHeroes.Enemy
         public EnemyData Data => data;
         public Health Health => health;
         public EnemyStatus Status => status;
+
+        /// <summary>밀침은 이걸로 (흡인과 겹쳐도 사라지지 않게 EnemyStatus가 한 걸음에 합친다)</summary>
+        public void Push(Vector2 offset)
+        {
+            if (status != null) status.Push(offset);
+            else if (TryGetComponent(out Rigidbody2D rb)) rb.MovePosition(rb.position + offset);
+        }
         public bool IsElite { get; private set; }
         public float Damage => data.damage * attackMultiplier;
 
@@ -60,6 +67,18 @@ namespace HistoryHeroes.Enemy
         /// <summary>지금 살아 있는 적 (액티브 스킬 표적 고르기용). 물리 검사보다 싸다.</summary>
         public static IReadOnlyList<EnemyBase> Alive => _alive;
 
+        /// <summary>교대하는 시험 형상의 닫힌 몸체를 자동 기술의 표적 목록에서 잠시 뺀다.</summary>
+        public void SetTargetable(bool targetable)
+        {
+            if (!targetable)
+            {
+                _alive.Remove(this);
+                return;
+            }
+
+            if (isActiveAndEnabled && health != null && !health.IsDead && !_alive.Contains(this)) _alive.Add(this);
+        }
+
         // "도메인 다시 불러오기"를 끈 Play 모드에서도 지난 판의 목록이 남지 않게
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -68,8 +87,21 @@ namespace HistoryHeroes.Enemy
             ChildSpawner = null;
         }
 
+        /// <summary>3D 모델 (Art3D-Plan 4번). 없으면 임시 도형 그대로</summary>
+        protected Combat.Visual3D visual;
+
+        /// <summary>3D 모델 (쏘는 쪽이 공격 동작을 부를 때. 없으면 null)</summary>
+        public Combat.Visual3D Visual => visual;
+
+        /// <summary>쫓는 대상 (영웅). 엘리트 속성이 쓴다</summary>
+        public Transform Target => player;
+
+        /// <summary>멈춰서 공격을 예고하는 중 (엘리트 "깜빡이는"이 이 시작을 센다)</summary>
+        public bool IsAiming => state == State.Telegraph;
+
         protected virtual void Awake()
         {
+            visual = GetComponent<Combat.Visual3D>();
             health = GetComponent<Health>();
             body = GetComponent<Rigidbody2D>();
             status = GetComponent<EnemyStatus>();
@@ -97,6 +129,7 @@ namespace HistoryHeroes.Enemy
             transform.localScale = Vector3.one * (data.scale > 0f ? data.scale : 1f) * (elite ? 1.5f : 1f);
             status.Clear();
             if (!_alive.Contains(this)) _alive.Add(this);
+            if (visual != null) visual.LookTarget = target;
             Enter(State.Approach);
         }
 
@@ -111,7 +144,8 @@ namespace HistoryHeroes.Enemy
                 return;
             }
 
-            stateTimer -= Time.deltaTime;
+            stateTimer -= Time.deltaTime * status.Haste; // 엘리트 "분노한": 예고·공격·쉬는 시간도 빨라진다
+            FadeTelegraphLine();
             Tick();
         }
 
@@ -120,13 +154,47 @@ namespace HistoryHeroes.Enemy
         protected void Enter(State next, float duration = 0f)
         {
             if (next == State.Telegraph && state != State.Telegraph) Audio.AudioManager.Play("telegraph", 0.3f, 0.05f); // 예고 소리 (같은 소리 4개까지)
+            ShowState(state, next, duration);
             state = next;
             stateTimer = duration;
             if (telegraphLine != null) telegraphLine.enabled = next == State.Telegraph;
+            if (next == State.Telegraph)
+            {
+                _telegraphTotal = Mathf.Max(0.01f, duration);
+                FadeTelegraphLine(); // 첫 프레임부터 옅게 (지난 공격의 진한 색이 남지 않게)
+            }
             if (next != State.Approach && next != State.Attack) body.linearVelocity = Vector2.zero;
         }
 
+        private float _telegraphTotal = 1f;
+
+        /// <summary>
+        /// 예고선: 처음엔 옅고 가늘게, 공격 직전에 진하고 두껍게 (전체 UI 검토 1번: 붉은 선은 곧 칠 적만 눈에 띄게).
+        /// 선은 예고 내내 보이므로 피할 시간은 그대로다
+        /// </summary>
+        private void FadeTelegraphLine()
+        {
+            if (telegraphLine == null || !telegraphLine.enabled) return;
+            float k = 1f - Mathf.Clamp01(stateTimer / _telegraphTotal);
+            k *= k;
+            Color c = telegraphLine.startColor;
+            c.a = Mathf.Lerp(0.2f, 0.95f, k);
+            telegraphLine.startColor = telegraphLine.endColor = c;
+            telegraphLine.widthMultiplier = Mathf.Lerp(0.04f, 0.11f, k);
+        }
+
         protected Vector2 ToPlayer => player.position - transform.position;
+
+        /// <summary>
+        /// 3D 동작: 예고 중에는 영웅을 겨누고(뒤로 물러나며 쏘는 궁병도 등을 보이지 않게 — Codex 3D 리뷰 8번),
+        /// 공격 상태로 들어가거나 예고가 끝나 바로 쏘면(궁병·투척병) 공격 동작
+        /// </summary>
+        private void ShowState(State from, State next, float duration)
+        {
+            if (visual == null || player == null) return;
+            if (next == State.Telegraph) visual.Aim(ToPlayer, duration + 0.15f);
+            else if (next == State.Attack || (from == State.Telegraph && next == State.Recover)) visual.Attack(ToPlayer, Mathf.Max(0.35f, duration));
+        }
 
         protected void MoveToward(Vector2 direction, float speed)
         {

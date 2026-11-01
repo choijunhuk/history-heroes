@@ -18,6 +18,8 @@ namespace HistoryHeroes.Enemy
         [Tooltip("졸개 체력·공격 배율 (보스맵 졸개는 구간마다 세져서 5구간이면 원래 체력 5.3배·공격 2.7배 — 졸개가 받은 피해의 2/3를 넣었다)")]
         [SerializeField] private float minionHpScale = 0.5f;
         [SerializeField] private float minionAttackScale = 0.55f;
+        [SerializeField] private bool athenaTrial;
+        [SerializeField] private float trialRecover = 1.8f;
 
         private readonly List<EnemyBase> _minions = new List<EnemyBase>();
         private int _step;
@@ -35,16 +37,22 @@ namespace HistoryHeroes.Enemy
                     int want = Mathf.Min(3, maxMinions - _minions.Count);
                     if (want > 0) yield return Summon(minion, want, 2.4f, 1f * Tele, minionHpScale, _minions, minionAttackScale);
 
-                    yield return Open(1.6f);
+                    yield return Open(athenaTrial ? trialRecover : 1.6f);
                     break;
                 }
 
                 case 1:
+                    if (athenaTrial && phase == 1)
+                    {
+                        // 첫 단계의 창 찌르기는 왕의 기존 예고 돌진을 한 번만 쓴다.
+                        yield return Dash(0.8f * Tele, 11f, 1f, 1.3f, "boss_king_dash", trialRecover, trialRecover);
+                        break;
+                    }
                     yield return Glow(0.9f * Tele, new Color(0.7f, 0.4f, 1f, 0.45f));
                     Ring(14, 4.5f, 0.8f, "boss_king_ring");
                     yield return Wait(0.3f);
                     Ring(14, 4.5f, 0.8f, "boss_king_ring", 0.5f);
-                    yield return Open(1.4f);
+                    yield return Open(athenaTrial ? trialRecover : 1.4f);
                     break;
 
                 case 2:
@@ -66,22 +74,28 @@ namespace HistoryHeroes.Enemy
                         yield return Wait(0.12f);
                     }
 
-                    yield return Open(1.5f);
+                    yield return Open(athenaTrial ? trialRecover : 1.5f);
                     break;
                 }
 
                 case 3:
                 {
+                    if (athenaTrial && phase == 2)
+                    {
+                        yield return Dash(0.8f * Tele, 11f, 1f, 1.3f, "boss_king_dash", trialRecover, trialRecover);
+                        break;
+                    }
                     Vector2 p = PlayerPos;
                     Vector2 side = new Vector2(-ToPlayer.normalized.y, ToPlayer.normalized.x) * 2.2f;
                     yield return CircleStrikes(new List<Vector2> { p, Inside(p + side), Inside(p - side) }, 1.4f, 1.2f * Tele, 1.3f, "boss_king_crack", new Color(0.55f, 0.3f, 0.85f, 0.5f));
-                    yield return Open(1f);
+                    yield return Open(athenaTrial ? trialRecover : 1f);
                     break;
                 }
 
                 default:
-                    yield return Dash(0.8f * Tele, 11f, 1f, 1.3f, "boss_king_dash", 0.3f, 0.3f);
-                    yield return Dash(0.6f * Tele, 11f, 1f, 1.3f, "boss_king_dash", 1.8f, 1.2f);
+                    if (!athenaTrial) yield return Dash(0.8f * Tele, 11f, 1f, 1.3f, "boss_king_dash", 0.3f, 0.3f);
+                    yield return Dash(athenaTrial ? 0.8f * Tele : 0.6f * Tele, 11f, 1f, 1.3f,
+                        "boss_king_dash", athenaTrial ? trialRecover : 1.8f, athenaTrial ? trialRecover : 1.2f);
                     break;
             }
         }

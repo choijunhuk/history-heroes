@@ -51,7 +51,12 @@ namespace HistoryHeroes.UI
             SaveData d = SaveSystem.Data;
             string body = $"<b>History Heroes (역사 영웅)</b>\n버전 {Application.version}\n\n" +
                           $"사용자 ID  <b>{d.userId}</b>\n<size=80%>문의할 때 이 번호를 알려 주세요 (이름·연락처와 연결되지 않은 무작위 번호)</size>\n\n" +
-                          "진행은 이 기기 안에만 저장돼요. 저장이 깨지면 백업(최근 판 3개)에서 되살려요.\n\n" +
+                          $"게임 계정 ID  <b>{Account.AccountService.PlayerId ?? "서버 연결 전"}</b>\n서버(Unity) 계정 번호. 계정 삭제를 메일로 요청할 때 위 사용자 ID와 함께 알려 주세요\n\n" +
+                          Progress.Consent.AgreedDateText(d) + "\n\n" +
+                          (Account.AccountService.State == Account.AccountState.Linked
+                              ? $"진행은 이 기기와 클라우드({Account.AccountService.LinkedName} 계정)에 저장돼요. "
+                              : "진행은 이 기기 안에만 저장돼요 (설정 → 계정에서 카카오 계정을 연결하면 클라우드에도). ") +
+                          "저장이 깨지면 백업(최근 판 3개)에서 되살려요.\n\n" +
                           "<size=80%>장비 상자 확률은 상점의 \"확률 보기\"에 있어요. 화면의 확률과 실제 추첨은 같은 표를 써요.</size>";
             Show("정보", body);
         }

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3bc6d1f39a0264c963774252ca5201, type: 3}
+  m_Name: Boss_susanoo_trial
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Modes.BossData
+  id: susanoo_trial
+  displayName: "\uC2A4\uC0AC\uB178\uC624"
+  chapter: 4
+  tests: "\uB450 \uC2DC\uD5D8 \uD615\uC0C1\uC774 \uAD50\uB300 \u2192 \uC5F4\uB9B0
+    \uD615\uC0C1\uC5D0 \uC9D1\uC911"
+  recommend: "\uC9E7\uC740 \uC21C\uAC04 \uD654\uB825 (\uACF5\uACA9\uC18D\uB3C4\xB7\uBA40\uD2F0\uC0F7)"
+  recommendedRole: 1
+  prefab: {fileID: 7751765508881875624, guid: c37feb196429144c6a225f2f37b0c3ad, type: 3}
+  hpMultiplier: 940
+  attackMultiplier: 2.55
+  star2MaxHits: 0

@@ -15,6 +15,7 @@ namespace HistoryHeroes.UI
         public struct Option
         {
             public string Text;
+            /// <summary>없으면 누를 수 없는 안내 줄 (구매 확인의 청약철회 · 미성년자 고지)</summary>
             public Action OnChosen;
         }
 
@@ -25,31 +26,66 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button laterButton;
 
         private static readonly Color Row = new Color(0.32f, 0.24f, 0.1f);
+        private static readonly Color InfoRow = new Color(0.1f, 0.1f, 0.12f);
+
+        /// <summary>"나중에"를 눌렀을 때 (고르기를 기다리는 쪽이 그만뒀다고 알아야 할 때)</summary>
+        private Action _onLater;
 
         public bool IsOpen => root.activeSelf;
 
+        private TMP_Text _laterLabel;
+        private string _laterDefault;
+
         private void Awake()
         {
+            _laterLabel = laterButton.GetComponentInChildren<TMP_Text>(true);
+            _laterDefault = _laterLabel != null ? _laterLabel.text : null;
             root.SetActive(false);
-            laterButton.onClick.AddListener(() => root.SetActive(false));
+            laterButton.onClick.AddListener(() =>
+            {
+                root.SetActive(false);
+                Later();
+            });
         }
 
-        public void Open(string title, string info, IReadOnlyList<Option> options)
+        /// <summary>기다리는 쪽에 "고르지 않았다"를 한 번만 알린다</summary>
+        private void Later()
         {
+            Action later = _onLater;
+            _onLater = null;
+            later?.Invoke();
+        }
+
+        /// <summary>장면이 바뀌어 창이 사라져도 기다리는 쪽이 답을 받는다 (계정 고르기가 "처리 중"에 갇히지 않게)</summary>
+        private void OnDestroy() => Later();
+
+        /// <summary>다른 고르기가 떠 있었으면 그 고르기는 "나중에"로 끝내고 새로 연다. laterText: 닫기 단추 글 (기본 "나중에")</summary>
+        public void Open(string title, string info, IReadOnlyList<Option> options, Action onLater = null, string laterText = null)
+        {
+            Later();
+            _onLater = onLater;
             titleLabel.text = title;
             infoLabel.text = info;
+            if (_laterLabel != null) _laterLabel.text = laterText ?? _laterDefault;
             var rows = new List<ButtonList.Row>();
             foreach (Option o in options)
             {
                 Option option = o;
+                if (o.OnChosen == null)
+                {
+                    rows.Add(new ButtonList.Row(o.Text, InfoRow, null, false));
+                    continue;
+                }
                 rows.Add(new ButtonList.Row(o.Text, Row, () =>
                 {
                     root.SetActive(false);
+                    _onLater = null;
                     option.OnChosen?.Invoke();
                 }));
             }
 
             list.Show(rows, scrollToTop: true);
+            transform.SetAsLastSibling(); // 상점처럼 열 때 맨 위로 오는 창 위에도 덮이게
             root.SetActive(true);
         }
     }

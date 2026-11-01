@@ -1,5 +1,6 @@
 using HistoryHeroes.Meta;
 using HistoryHeroes.Missions;
+using HistoryHeroes.Heroes;
 using HistoryHeroes.UI;
 using TMPro;
 using UnityEditor;
@@ -14,10 +15,17 @@ namespace HistoryHeroes.EditorTools
     /// </summary>
     public static partial class SceneBuilder
     {
-        private static MissionTable CreateMissions()
+        /// <summary>오늘의 영웅 순서는 로스터에서 복사해 영웅 추가 때 빠지는 일을 막는다.</summary>
+        public static System.Collections.Generic.List<string> MissionHeroOrder(HeroRoster roster) =>
+            roster.heroes.ConvertAll(hero => hero.id);
+
+        private static MissionTable CreateMissions(HeroRoster roster)
         {
             var t = AssetUtil.LoadOrCreate<MissionTable>($"{DataDir}/Missions/MissionTable.asset");
             const MissionDays all = MissionDays.All;
+
+            // 기존 미션 표 에셋도 다시 만들 때 새 영웅 순서를 받게 한다.
+            t.heroOrder = MissionHeroOrder(roster);
 
             t.dailyFixed.Clear();
             t.dailyFixed.Add(M("login", "게임 접속", MissionEvents.Login, 1, 10));
@@ -27,7 +35,7 @@ namespace HistoryHeroes.EditorTools
             t.dailyPool.Add(M("elite3", "엘리트 {0}마리 처치", MissionEvents.Elite, 3, 15));
             t.dailyPool.Add(M("kill300", "적 {0}마리 처치", MissionEvents.Kill, 300, 15));
             t.dailyPool.Add(M("nohit3", "피격 없이 방 {0}개 클리어", MissionEvents.NoHitRoom, 3, 20));
-            t.dailyPool.Add(M("basic150", "기본 공격으로 적 {0}마리 처치", MissionEvents.BasicKill, 150, 15));
+            t.dailyPool.Add(M("basic150", "기본 공격으로 적 {0}마리 처치", MissionEvents.BasicKill, 60, 15)); // 전체 검토 11번: 150은 하루 3판 → 60 (id는 저장 호환으로 그대로)
             t.dailyPool.Add(M("fusion1", "조합 스킬 {0}개 만들기", MissionEvents.Fusion, 1, 20));
             t.dailyPool.Add(M("actives3", "액티브 스킬 {0}개를 Lv3 이상으로", MissionEvents.ActivesLv3, 3, 15));
             t.dailyPool.Add(M("passives4", "패시브 {0}칸을 다 채우기", MissionEvents.PassivesFull, 4, 15));
@@ -123,9 +131,15 @@ namespace HistoryHeroes.EditorTools
 
             var chests = new Button[5];
             var chestLabels = new TMP_Text[5];
+            var chestGlows = new Image[5];
             for (int i = 0; i < 5; i++)
             {
                 chests[i] = Btn($"Chest{i + 1}", panel, "", new Vector2(-404f + i * 202f, 540f), new Vector2(194f, 150f), RowColor, out chestLabels[i]);
+                RectTransform glowRect = Rect("ReadyGlow", chests[i].transform, Vector2.zero, Vector2.one, Center, Vector2.zero, new Vector2(20f, 20f));
+                chestGlows[i] = Img(glowRect, new Color(1f, 0.8f, 0.25f, 0.38f), _kit != null ? _kit.Glow : null);
+                chestGlows[i].raycastTarget = false;
+                glowRect.SetAsFirstSibling();
+                glowRect.gameObject.SetActive(false);
                 chestLabels[i].fontSize = 30;
                 chestLabels[i].enableAutoSizing = true;
                 chestLabels[i].fontSizeMin = 16f;
@@ -135,6 +149,12 @@ namespace HistoryHeroes.EditorTools
             }
 
             ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, -80f), new Vector2(1000f, 1040f), 118f, 30f);
+            Transform template = list.transform.Find("Content/RowTemplate");
+            RectTransform track = Rect("ProgressTrack", template, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(-48f, 10f));
+            Img(track, new Color(0f, 0f, 0f, 0.45f), null).raycastTarget = false;
+            RectTransform fillRect = Rect("ProgressFill", track, Vector2.zero, new Vector2(0f, 1f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            Image progressFill = Img(fillRect, new Color(0.95f, 0.77f, 0.32f, 0.94f), null);
+            progressFill.raycastTarget = false;
             TMP_Text message = Label("Message", panel, "", 28, TextAlignmentOptions.Center);
             Place(message.rectTransform, Center, Center, new Vector2(0f, -650f), new Vector2(1000f, 90f));
 
@@ -145,7 +165,7 @@ namespace HistoryHeroes.EditorTools
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("metaTable", meta).Ref("roster", roster).Ref("titleLabel", title).Ref("infoLabel", info)
-                    .Refs("tabButtons", tabs).Refs("tabLabels", tabLabels).Refs("chestButtons", chests).Refs("chestLabels", chestLabels)
+                    .Refs("tabButtons", tabs).Refs("tabLabels", tabLabels).Refs("chestButtons", chests).Refs("chestLabels", chestLabels).Refs("chestGlows", chestGlows)
                     .Ref("list", list).Ref("messageLabel", message).Ref("rerollButton", reroll).Ref("rerollLabel", rerollLabel).Ref("backButton", back);
             }
 

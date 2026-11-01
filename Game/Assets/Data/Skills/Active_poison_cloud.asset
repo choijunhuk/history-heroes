@@ -15,10 +15,10 @@ MonoBehaviour:
   id: poison_cloud
   displayName: "\uB3C5 \uAD6C\uB984"
   description: "5\uCD08\uB9C8\uB2E4 \uC801 \uC790\uB9AC\uC5D0 \uB3C5 \uAD6C\uB984
-    4\uCD08\n(\uCD08\uB2F9 33%, \uACB9\uCE58\uBA74 \uC911\uCCA9)\n\uB808\uBCA8\uB9C8\uB2E4
+    4\uCD08\n(\uCD08\uB2F9 45%, \uACB9\uCE58\uBA74 \uC911\uCCA9)\n\uB808\uBCA8\uB9C8\uB2E4
     \uC9C0\uC18D +1\uCD08"
   warriorDescription: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: e229c44ef43ff9f4eba3a70328403f27, type: 3}
   rarity: 0
   tags: 128
   role: 2
@@ -28,12 +28,23 @@ MonoBehaviour:
   recordable: 1
   heroOnlyId: 
   cooldown: 5
-  damageFirstLevel: 0.33
+  damageFirstLevel: 0.45
   damagePerLevel: 0
+  healFractionFirstLevel: 0
+  healFractionPerLevel: 0
   countFirstLevel: 1
   countPerLevel: 0
   radius: 1.4
   radiusPerLevel: 0
   duration: 4
   durationPerLevel: 1
+  slowFirstLevel: 0
+  slowPerLevel: 0
+  slowBossScale: 0.3
+  waveRadius: 0
+  returnImpactCoefficient: 0
+  waveLength: 0
+  waveSpeed: 0
+  waveInterval: 0
+  pushDistance: 0
   behaviourPrefab: {fileID: 2442519993488647533, guid: 605eecefb9d5126449861a31dd5ab3d1, type: 3}

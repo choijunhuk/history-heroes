@@ -24,11 +24,11 @@ namespace HistoryHeroes.Combat
             _baseColor = target.color;
         }
 
-        private void OnEnable() => _health.Damaged += OnDamaged;
+        private void OnEnable() => _health.VisualDamaged += OnDamaged;
 
         private void OnDisable()
         {
-            _health.Damaged -= OnDamaged;
+            _health.VisualDamaged -= OnDamaged;
             _timeLeft = 0f;
             if (target != null) target.color = _baseColor;
         }

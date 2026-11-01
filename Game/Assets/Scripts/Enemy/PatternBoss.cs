@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
+using HistoryHeroes.Player;
 using UnityEngine;
 
 namespace HistoryHeroes.Enemy
@@ -307,13 +308,19 @@ namespace HistoryHeroes.Enemy
         {
             SpriteRenderer band = Show(Telegraphs.Box(Vector2.zero, new Vector2(30f, 30f), Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg, color, -9));
             Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
+            PlayerController pushedPlayer = rb != null ? rb.GetComponent<PlayerController>() : null;
             float end = bossTime + seconds;
             while (bossTime < end)
             {
                 Color c = color;
                 c.a = color.a * (0.6f + 0.4f * Mathf.Sin(bossTime * 10f));
                 band.color = c;
-                if (rb != null) rb.position += direction.normalized * speed * Time.deltaTime;
+                if (rb != null)
+                {
+                    Vector2 delta = direction.normalized * speed * Time.deltaTime;
+                    rb.position += delta;
+                    if (pushedPlayer != null) pushedPlayer.NoteExternalDisplacement(delta);
+                }
                 yield return null;
             }
 

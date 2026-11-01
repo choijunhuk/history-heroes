@@ -51,7 +51,7 @@ MonoBehaviour:
   chainFalloff: 0.2
   chainColor: {r: 1, g: 0.95, b: 0.5, a: 0.9}
   leaveField: 0
-  fieldDamagePerSecond: 0.3
+  fieldDamagePerSecond: 0.45
   fieldDuration: 2
   fieldRadius: 1.2
   fieldColor: {r: 1, g: 0.55, b: 0.15, a: 0.45}

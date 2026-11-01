@@ -75,3 +75,8 @@ Game/ProjectSettings/Packages/com.unity.pipeline/
 # 빌드 결과물
 Game/Builds/
 Game/.utmp/
+
+# 3D 그래픽 샘플 (Quaternius CC0) — 방향이 정해지기 전에는 올리지 않는다 (Docs/Reviews 그래픽 방향)
+Game/Assets/ThirdParty/Quaternius/
+Game/Assets/ThirdParty/Quaternius.meta
+Game/Assets/ThirdParty.meta

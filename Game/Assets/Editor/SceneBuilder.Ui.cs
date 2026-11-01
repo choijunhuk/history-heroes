@@ -87,12 +87,18 @@ namespace HistoryHeroes.EditorTools
             Button skip = Btn("Skip", panel, "저장 안 함", new Vector2(340f, -470f), new Vector2(300f, 110f), ButtonGray, out TMP_Text skipLabel);
             TMP_Text help = Label("Help", panel, "레벨을 일부만 남길 수 있어요. 진화는 통째로, 합체는 레벨을 낮춰서 남길 수 있어요.", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.55f));
             Place(help.rectTransform, Center, Center, new Vector2(0f, -580f), new Vector2(1000f, 80f));
+            // 저장되는 빌드 미리 보기: 단추 아래 늘 비어 있던 자리 (줄이 8개여도 겹치지 않는다)
+            TMP_Text preview = Label("Preview", panel, "", 30, TextAlignmentOptions.Top, new Color(1f, 1f, 1f, 0.9f));
+            Place(preview.rectTransform, Center, Center, new Vector2(0f, -790f), new Vector2(1000f, 320f));
+            preview.enableAutoSizing = true;
+            preview.fontSizeMin = 22f;
+            preview.fontSizeMax = 30f;
 
             // 칸 고르기 (빈 칸이 없을 때)
             RectTransform slotPanel = Rect("SlotPanel", holder, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             Img(slotPanel, new Color(0f, 0f, 0f, 0.92f), null).raycastTarget = true;
-            TMP_Text slotTitle = Label("Title", slotPanel, "바꿀 칸을 고르세요\n(그 칸의 기록은 지워져요)", 40, TextAlignmentOptions.Center);
-            Place(slotTitle.rectTransform, Center, Center, new Vector2(0f, 560f), new Vector2(1000f, 130f));
+            TMP_Text slotTitle = Label("Title", slotPanel, "바꿀 칸을 고르세요", 34, TextAlignmentOptions.Center);
+            Place(slotTitle.rectTransform, Center, Center, new Vector2(0f, 560f), new Vector2(1000f, 170f));
             var slotButtons = new Button[3];
             var slotLabels = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
@@ -105,15 +111,17 @@ namespace HistoryHeroes.EditorTools
                 slotLabels[i] = label;
             }
 
-            Button slotCancel = Btn("Cancel", slotPanel, "취소", new Vector2(0f, -500f), new Vector2(400f, 110f), ButtonGray, out _);
+            Button temp = Btn("Temp", slotPanel, "임시 칸에 두기", new Vector2(0f, -385f), new Vector2(720f, 100f), ButtonBlue, out TMP_Text tempLabel);
+            Button slotCancel = Btn("Cancel", slotPanel, "취소", new Vector2(0f, -545f), new Vector2(400f, 100f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("subtitleLabel", subtitle)
-                    .Ref("capacityLabel", capacity).Ref("capacityFill", capacityFill)
+                    .Ref("capacityLabel", capacity).Ref("capacityFill", capacityFill).Ref("previewLabel", preview)
                     .Ref("autoFitButton", autoFit).Ref("saveButton", save).Ref("saveLabel", saveLabel)
                     .Ref("skipButton", skip).Ref("skipLabel", skipLabel)
                     .Ref("slotPanel", slotPanel.gameObject).Refs("slotButtons", slotButtons).Refs("slotLabels", slotLabels).Ref("slotCancel", slotCancel)
+                    .Ref("slotTitleLabel", slotTitle).Ref("tempButton", temp).Ref("tempLabel", tempLabel)
                     .Ref("database", database);
             }
 

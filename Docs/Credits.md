@@ -14,11 +14,34 @@
 
 | 이름 | 쓰는 곳 | 라이선스 | 출처 |
 |---|---|---|---|
-| 나눔고딕 (NanumGothic Bold · ExtraBold) | 게임 안 모든 글자 | SIL Open Font License 1.1 (`Game/Assets/Fonts/OFL.txt`) | 네이버 나눔글꼴 — https://hangeul.naver.com/font |
+| 나눔고딕 (NanumGothic Bold · ExtraBold) | 게임 안 본문 글자 | SIL Open Font License 1.1 (`Game/Assets/Fonts/OFL.txt`) | 네이버 나눔글꼴 — https://hangeul.naver.com/font |
+| 검은고딕 (Black Han Sans) | 제목 · 버튼 · 카드 이름 | SIL Open Font License 1.1 (`Game/Assets/Fonts/OFL-BlackHanSans.txt`) | Zess Type — https://github.com/zesstype/Black-Han-Sans |
+
+## 아이콘
+
+- 유물 그림 24장 (`Game/Assets/Art/UI/Relics/relic_*.png`): **AI 이미지 생성** (OpenAI 이미지 생성, Codex CLI로 2026-10-29). 생성물은 만든 사람이 쓸 수 있다 (OpenAI 이용약관)
+- 보상 · 재화 컬러 그림 10장 (`Game/Assets/Art/UI/Rewards`: 금화 · 보석 · 영웅 조각 · 장비 조각 · 고대 파편 · 소환권 · 하트 · 경험치 · 일반/고급 상자): **AI 이미지 생성** (OpenAI 이미지 생성, Codex CLI로 2026-10-29). 생성물은 만든 사람이 쓸 수 있다 (OpenAI 이용약관). 글 속 아이콘 묶음 `RewardIcons.asset`은 이 그림으로 빌더가 만든다
+- 스킬 · 메뉴 · 재화 아이콘 85개 (`Game/Assets/Art/UI/Icons`): **game-icons.net**, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). 흰색으로 칠하고 크기만 맞췄다.
+- 만든 이: Lorc, Delapouite, Sbed, Guard13007, Skoll, Zeromancer, Heavenly Dog, DarkZaitzev, Caro Asercion, AussieSim, Badges. 아이콘마다 만든 이와 주소: `Game/Assets/Art/UI/Icons/CREDITS.txt`
+- 버튼 · 창 · 테두리 · 리본 · 막대 같은 UI 부품 그림: 이 게임을 만들면서 직접 코드로 그림 (`Tools/ui_kit.py`).
 
 ## 그림
 
-- 지금은 **임시 도형**만 쓴다 (게임이 직접 그린 원·사각형). 바깥 그림 에셋 없음.
+- 3D로 바꾸는 중 ([3D 전환 계획](Dev/Art3D-Plan.md)). 전투 화면의 영웅·적·바닥·벽·장애물은 3D, 투사체·이펙트·로비는 아직 임시 도형 (게임이 직접 그린 원·사각형).
+- 바닥·벽·상자·바위 무늬 (풀밭 · 돌바닥 · 돌벽 · 나무 상자 · 바위): 이 게임을 만들면서 직접 만든 그림 (노이즈로 그림, 외부 에셋 아님).
+- 영웅 상징 소품 9개 (몽골 털모자·활·화살통, 청룡언월도·두건, 이각모·권총, 콧수염·코일) · 방패병 나무 방패: 이 게임을 만들면서 Blender로 직접 만든 모델 (`Game/Assets/Art/3D/Props`).
+- 잔 다르크 검·등 깃발 · 부디카 켈트 검 · 토르 망치 · 클레오파트라 머리장식·넓은 목걸이 · 아누비스 자칼 가면 · 스사노오 검 · 아테나 창·투구 · 토모에 어깨 덧갑 · 무측천 관 · 퀴리 실험병 · 부처 발우 · 아담 목봉 (2026-10-29): Blender 스크립트로 직접 만든 모델 (`Tools/blender/hero_props.py` → `Game/Assets/Art/3D/Props`).
+- 펫 4마리 (사냥매 · 적토마 · 마렝고 · 흰 비둘기): 이 게임을 만들면서 Blender로 직접 만든 모델 (`Game/Assets/Art/3D/Pets`).
+- 가벼운 괴물 모델 `Puglin_LOD` · `Imp_LOD`: Quaternius Bestiary(CC0)의 Puglin · Imp를 Blender로 삼각형을 줄인 사본 (뼈·동작 그대로).
+- 나폴레옹 군복 무늬 `T_Ranger_Navy_BaseColor`: Quaternius Ranger 옷 무늬(CC0)의 초록을 파랗게 바꾼 사본.
+
+| 이름 | 쓰는 곳 | 라이선스 | 출처 |
+|---|---|---|---|
+| Modular Character Outfits - Fantasy (Ranger · Peasant 옷, 2026-10-29: v2.0 여자 옷 `Female_Ranger` · `Female_Peasant` 추가) | 영웅 · 사람 적의 몸과 옷 | CC0 | Quaternius — https://quaternius.com/packs/modularcharacteroutfitsfantasy.html |
+| Universal Base Characters (머리 · 눈 · 머리카락 · 수염, 2026-10-29: 여자 몸 `Superhero_Female_FullBody` · `Eyebrows_Female` · `Hair_Buns` · `Hair_BuzzedFemale` 추가) | 영웅 · 사람 적의 머리 (기본 몸에서 떼어 붙임) | CC0 | Quaternius — https://quaternius.com/packs/universalbasecharacters.html |
+| Bestiary - Dungeon Monsters Kit (Imp · Puglin) | 괴물 적 · 보스 | CC0 | Quaternius — https://quaternius.com/packs/bestiarydungeonmonsterskit.html |
+| Universal Animation Library 1 · 2 (동작 28개) | 모든 캐릭터의 동작 | CC0 | Quaternius — https://quaternius.com/packs/universalanimationlibrary.html |
+- 그래픽 방향 비교용 샘플 (게임 빌드에는 안 들어감, [비교](Reviews/2026-10-27-graphics-direction.md)): Kenney *Tiny Dungeon* (CC0, https://kenney.nl/assets/tiny-dungeon) · Quaternius *Modular Character Outfits - Fantasy* · *Bestiary - Dungeon Monsters* · *Universal Animation Library 1·2* (모두 CC0, https://quaternius.com)
 
 ## 소리 (모두 CC0 — 출처 표시 의무는 없지만 고맙게 적는다)
 

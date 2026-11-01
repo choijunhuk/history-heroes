@@ -92,6 +92,9 @@ namespace HistoryHeroes.Records
         /// <summary>읽은 임시 파일을 본 파일로 옮기지 못했다 → 그 임시 파일이 유일한 정상본이므로 덮어쓰면 안 된다</summary>
         private bool _tempIsOnlyCopy;
 
+        /// <summary>더 새 게임의 저장을 읽었으면 이 저장 장치에서는 어떤 파일도 바꾸지 않는다.</summary>
+        private bool _unsupportedNewerSchema;
+
         public SaveStore(string folder)
         {
             Folder = folder;
@@ -102,11 +105,13 @@ namespace HistoryHeroes.Records
         public void Save(SaveData data)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
+            if (_unsupportedNewerSchema || data.schemaVersion > SaveData.CurrentSchemaVersion
+                || HasNewerSchema(MainPath) || (!File.Exists(MainPath) && HasNewerSchema(TempPath)))
+                throw new InvalidOperationException("더 새 버전의 저장 파일이 있어 저장할 수 없어요");
 
             data.schemaVersion = SaveData.CurrentSchemaVersion;
             data.savedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            data.integrity = string.Empty;
-            string json = Sign(JsonUtility.ToJson(data, true));
+            string json = Serialize(data);
 
             Directory.CreateDirectory(Folder);
 
@@ -156,6 +161,60 @@ namespace HistoryHeroes.Records
             _mainIsValid = true;
         }
 
+        /// <summary>저장 파일과 똑같은 글 (해시 포함). 파일 쓰기와 클라우드 올리기가 같이 쓴다 → 클라우드에서 받은 글도 같은 해시로 검사된다</summary>
+        public static string Serialize(SaveData data)
+        {
+            data.integrity = string.Empty;
+            return Sign(JsonUtility.ToJson(data, true));
+        }
+
+        /// <summary>새 게임 저장 (빈 목록 채우기 · 사용자 ID까지). 처음 실행과 계정 삭제 뒤에 쓴다</summary>
+        public static SaveData NewGame()
+        {
+            var data = new SaveData();
+            Normalize(data);
+            return data;
+        }
+
+        public enum ParseResult
+        {
+            Ok,
+            /// <summary>읽었지만 해시가 틀렸다 (손으로 고친 글). 진행을 날리지 않게 쓰되 integrityFailures를 올렸다</summary>
+            Tampered,
+            /// <summary>더 새 게임이 만든 글: 읽지 않는다 (업데이트 필요)</summary>
+            NewerSchema,
+            Broken,
+        }
+
+        /// <summary>
+        /// 파일이 아닌 글(클라우드 저장)을 파일 읽기와 같은 검사로 읽는다: 해시 · 더 새 구조 · 옛 구조 옮기기 · 값 바로잡기.
+        /// 손으로 고친 글은 로컬 백업이 하나도 없을 때와 같이 쓰되 표시를 남긴다.
+        /// </summary>
+        public static ParseResult Parse(string json, out SaveData data, out string problem)
+        {
+            bool read = TryParse(json, out data, out problem, out bool hashFailed, out int newerSchema);
+            if (newerSchema > 0) return ParseResult.NewerSchema;
+            if (!read) return ParseResult.Broken;
+            if (!hashFailed) return ParseResult.Ok;
+            data.integrityFailures++;
+            return ParseResult.Tampered;
+        }
+
+        /// <summary>계정 삭제: 이 기기의 저장 파일을 백업 · 보존 사본까지 모두 지운다</summary>
+        public void DeleteAllFiles()
+        {
+            if (Directory.Exists(Folder))
+            {
+                foreach (string file in Directory.GetFiles(Folder, FileName + "*")) File.Delete(file);
+            }
+
+            _mainIsValid = true;
+            _brokenMainPreserved = false;
+            _tempIsOnlyCopy = false;
+            _unsupportedNewerSchema = false;
+            LastLoad = new LoadReport();
+        }
+
         /// <summary>저장 파일을 읽는다. 파일이 하나도 없거나 전부 읽지 못하면 새 데이터를 돌려준다 (기존 파일은 그대로 둔다).</summary>
         public SaveData Load()
         {
@@ -166,6 +225,7 @@ namespace HistoryHeroes.Records
             _mainIsValid = true;
             _brokenMainPreserved = false;
             _tempIsOnlyCopy = false;
+            _unsupportedNewerSchema = false;
             var candidates = new List<string> { MainPath };
             if (!mainExists) candidates.Add(TempPath); // 교체 도중에 꺼진 경우에만 임시 파일을 믿는다
             candidates.Add(BackupPath);
@@ -177,7 +237,19 @@ namespace HistoryHeroes.Records
             {
                 if (!File.Exists(path)) continue;
 
-                if (TryRead(path, out SaveData data, out string problem, out bool hashFailed) && hashFailed)
+                bool read = TryRead(path, out SaveData data, out string problem, out bool hashFailed, out int newerSchema);
+                if (newerSchema > 0)
+                {
+                    // 더 새 구조는 손상 파일이 아니다. 백업으로 진행하면 이후 자동저장이 최신본을 덮는다.
+                    _unsupportedNewerSchema = true;
+                    report.UnsupportedNewerSchema = true;
+                    report.NewerSchemaVersion = newerSchema;
+                    report.Source = path;
+                    report.Problems.Add($"{Path.GetFileName(path)}: {problem}");
+                    return new SaveData();
+                }
+
+                if (read && hashFailed)
                 {
                     // 읽히지만 해시가 틀렸다 (손으로 고친 파일): 다른 정상본을 먼저 찾는다. 하나도 없으면 이걸 쓴다 (진행을 날리지 않게)
                     report.Problems.Add($"{Path.GetFileName(path)}: 저장 파일이 바뀜 (해시 불일치)");
@@ -196,6 +268,8 @@ namespace HistoryHeroes.Records
                 {
                     report.Source = path;
                     report.FromBackup = path != MainPath;
+                    // 교체 도중 꺼져 남은 임시 파일은 같은 저장의 완성본이다. 그 밖의 백업(.bak · 판 백업)은 본 파일보다 오래됐다
+                    report.FromOlderCopy = path != MainPath && path != TempPath;
 
                     // 교체 도중에 꺼져서 임시 파일만 완성본으로 남았다 → 바로 본 파일로 확정한다.
                     // 그대로 두면 다음 저장이 임시 파일을 새로 쓰면서(잘라내며) 유일한 정상 파일을 지운다.
@@ -231,18 +305,20 @@ namespace HistoryHeroes.Records
             {
                 report.Source = tamperedPath;
                 report.FromBackup = tamperedPath != MainPath;
+                report.FromOlderCopy = tamperedPath != MainPath && tamperedPath != TempPath;
                 report.Tampered = true;
                 tampered.integrityFailures++;
                 return tampered;
             }
 
             report.IsFresh = true;
-            return new SaveData();
+            return NewGame();
         }
 
         /// <summary>판이 끝날 때: 지금 본 파일을 백업 1로, 1 → 2 → 3으로 민다 (Game 12-2 · LiveOps 20장 "최근 3개")</summary>
         public void RotateRunBackups()
         {
+            if (_unsupportedNewerSchema || HasNewerSchema(MainPath)) return;
             if (!File.Exists(MainPath) || !_mainIsValid) return;
             string last = RunBackupPath(RunBackups);
             if (File.Exists(last)) File.Delete(last);
@@ -254,20 +330,40 @@ namespace HistoryHeroes.Records
             File.Copy(MainPath, RunBackupPath(1), false);
         }
 
-        private static bool TryRead(string path, out SaveData data, out string problem, out bool hashFailed)
+        private static bool HasNewerSchema(string path)
+        {
+            if (!File.Exists(path)) return false;
+            return SchemaOf(File.ReadAllText(path, Encoding.UTF8)) > SaveData.CurrentSchemaVersion;
+        }
+
+        private static bool TryRead(string path, out SaveData data, out string problem, out bool hashFailed, out int newerSchema)
+        {
+            try
+            {
+                return TryParse(File.ReadAllText(path, Encoding.UTF8), out data, out problem, out hashFailed, out newerSchema);
+            }
+            catch (Exception e)
+            {
+                data = null;
+                hashFailed = false;
+                newerSchema = 0;
+                problem = e.GetType().Name + ": " + e.Message;
+                return false;
+            }
+        }
+
+        private static bool TryParse(string json, out SaveData data, out string problem, out bool hashFailed, out int newerSchema)
         {
             data = null;
             hashFailed = false;
+            newerSchema = 0;
             try
             {
-                string json = File.ReadAllText(path, Encoding.UTF8);
                 if (string.IsNullOrWhiteSpace(json))
                 {
                     problem = "빈 파일";
                     return false;
                 }
-
-                hashFailed = !IntegrityOk(json);
 
                 if (!json.Contains("\"schemaVersion\""))
                 {
@@ -275,17 +371,19 @@ namespace HistoryHeroes.Records
                     return false;
                 }
 
+                int schema = SchemaOf(json);
+                if (schema > SaveData.CurrentSchemaVersion)
+                {
+                    newerSchema = schema;
+                    problem = $"더 새 버전의 게임이 만든 파일 (구조 {schema} > {SaveData.CurrentSchemaVersion})";
+                    return false;
+                }
+
+                hashFailed = !IntegrityOk(json);
                 data = JsonUtility.FromJson<SaveData>(json);
                 if (data == null)
                 {
                     problem = "읽은 결과가 비어 있음";
-                    return false;
-                }
-
-                if (data.schemaVersion > SaveData.CurrentSchemaVersion)
-                {
-                    problem = $"더 새 버전의 게임이 만든 파일 (구조 {data.schemaVersion} > {SaveData.CurrentSchemaVersion})";
-                    data = null;
                     return false;
                 }
 
@@ -360,20 +458,122 @@ namespace HistoryHeroes.Records
                 data.titles = new List<string>();
             }
 
+            if (data.schemaVersion < 6)
+            {
+                // 5 → 6: 옛 판에는 빼기 이력이 없으므로 무료 횟수를 전부 준다.
+                data.targetRecipes = new List<string>();
+                data.run ??= new RunSnapshot();
+                data.run.bannedSkillIds = new List<string>();
+                data.run.bansLeft = Skills.SkillLoadout.BansPerRun;
+                data.rift ??= new RiftSave();
+                data.rift.checkpoint ??= new RiftCheckpoint();
+                data.rift.checkpoint.bannedSkillIds = new List<string>();
+                data.rift.checkpoint.bansLeft = Skills.SkillLoadout.BansPerRun;
+            }
+
+            // 6 → 7: 뽑기 횟수·날짜·중복 진행은 0/빈 값이 맞다. Normalize에서 빠진 묶음만 채우며 기존 별은 보존한다.
+            if (data.schemaVersion < 8)
+            {
+                // 7 → 8: 저장 번호 0·1·2는 그대로다. 장신구가 목걸이가 되고 새 세 칸만 열린다.
+                data.equipment ??= new EquipmentSave();
+                data.equipment.slotLevels ??= new List<int>();
+                while (data.equipment.slotLevels.Count < Equipment.EquipmentInventory.SlotCount)
+                    data.equipment.slotLevels.Add(1);
+                data.equipment.loadouts ??= new List<HeroLoadout>();
+                foreach (HeroLoadout loadout in data.equipment.loadouts)
+                {
+                    if (loadout == null) continue;
+                    loadout.uids ??= new List<string>();
+                    while (loadout.uids.Count < Equipment.EquipmentInventory.SlotCount)
+                        loadout.uids.Add("");
+                }
+            }
+
+            if (data.schemaVersion < 9)
+            {
+                // 8 → 9: 기존 보스 격파·기록은 그대로 두고 신의 시련 목표만 빈 상태로 연다.
+                data.godTrials = new GodTrialSave();
+            }
+
+            if (data.schemaVersion < 10)
+            {
+                // 9 → 10: 끝난 판의 미확정 기록은 예전 파일에 없고, 이전 판의 부활·룬 사용 이력은 알 수 없다.
+                data.pendingRecord = null;
+                data.pendingTutorialRecord = false;
+                data.run ??= new RunSnapshot();
+                data.run.reviveUsed = false;
+                if (data.run.meta != null)
+                {
+                    data.run.meta.hasRunes = false;
+                    data.run.meta.runes = new List<RuneLevel>();
+                }
+                data.rift ??= new RiftSave();
+                data.rift.checkpoint ??= new RiftCheckpoint();
+                data.rift.checkpoint.reviveUsed = false;
+                data.rift.checkpoint.hasMeta = false;
+                data.rift.checkpoint.meta = null;
+            }
+
+            // 10 → 11: 예전 진행은 보존하고 첫 사용 안내만 아직 안 본 상태로 연다.
+            if (data.schemaVersion < 11) data.seenFirstUseHints = new List<string>();
+            // 11 → 12: 옛 저장에는 동의 기록이 없다. 빈 기록으로 두면 다음 로비에서 한 번 묻는다.
+            if (data.schemaVersion < 12) data.consent = new ConsentRecord();
+            // 12 → 13: 실제 결제가 없던 저장이다. 빈 장부 = 결제한 적 없음 (첫 구매 2배 · 첫 결제 패키지 모두 남아 있다).
+            if (data.schemaVersion < 13) data.purchases = new PurchaseSave();
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
         /// <summary>빠진 목록을 채우고 말이 안 되는 값을 바로잡는다 (손으로 고친 파일, 옛 파일 대비).</summary>
         private static void Normalize(SaveData data)
         {
+            data.seenFirstUseHints ??= new List<string>();
+            data.consent ??= new ConsentRecord();
+            data.purchases ??= new PurchaseSave();
+            data.purchases.ledger ??= new List<PurchaseEntry>();
+            data.purchases.ledger.RemoveAll(e => e == null || string.IsNullOrEmpty(e.transactionId));
+            data.purchases.firstBought ??= new List<string>();
             data.records ??= new List<RunRecord>();
             data.discoveredRecipes ??= new List<string>();
+            data.targetRecipes ??= new List<string>();
+            var targetIds = new HashSet<string>();
+            data.targetRecipes.RemoveAll(id => string.IsNullOrEmpty(id) || !data.discoveredRecipes.Contains(id) || !targetIds.Add(id));
+            if (data.targetRecipes.Count > 2) data.targetRecipes.RemoveRange(2, data.targetRecipes.Count - 2);
             data.defeatedBosses ??= new List<string>();
             data.stars ??= new List<string>();
             data.items ??= new List<ItemCount>();
             data.daily ??= new DailyCounters();
             data.daily.heartRefunds ??= new List<ItemCount>();
             data.unlockedHeroes ??= new List<string>();
+            data.godTrials ??= new GodTrialSave();
+            data.godTrials.cleared ??= new List<string>();
+            data.godTrials.cleared.RemoveAll(id => Modes.GodTrialRules.Find(id) == null);
+            // 알 수 없는 목표만 정리한다. 목표 신을 해금해서 비운 경우(null)는 그 주 잠금을 지킨다 — 다시 불러오면 다른 신으로 바꿀 수 있었다 (Codex 리뷰)
+            if (!string.IsNullOrEmpty(data.godTrials.goalTrialId) && Modes.GodTrialRules.Find(data.godTrials.goalTrialId)?.HeroId == null)
+            {
+                data.godTrials.goalTrialId = null;
+                data.godTrials.firstRecordId = null;
+                data.godTrials.goalLocked = false;
+                data.godTrials.firstActives?.Clear();
+                data.godTrials.weeklyWins?.Clear();
+            }
+            data.godTrials.firstActives ??= new List<string>();
+            data.godTrials.firstActives.RemoveAll(string.IsNullOrEmpty);
+            data.godTrials.weeklyWins ??= new List<GodTrialWin>();
+            data.godTrials.weeklyWins.RemoveAll(w => w == null || string.IsNullOrEmpty(w.recordId));
+            foreach (GodTrialWin win in data.godTrials.weeklyWins)
+            {
+                win.actives ??= new List<string>();
+                win.actives.RemoveAll(string.IsNullOrEmpty);
+            }
+            data.godTrials.weeklyShards = Math.Clamp(data.godTrials.weeklyShards, 0, 5);
+            if (string.IsNullOrEmpty(data.godTrials.firstRecordId)) data.godTrials.goalLocked = false;
+            foreach (Modes.GodTrialDefinition trial in Modes.GodTrialRules.Trials)
+            {
+                if (trial.HeroId == null || data.unlockedHeroes.Contains(trial.HeroId)) continue;
+                string shardId = Economy.Wallet.HeroShard(trial.HeroId);
+                int excess = data.ItemCount(shardId) - Modes.GodTrialRules.UnlockShards;
+                if (excess > 0) data.AddItem(shardId, -excess);
+            }
             data.settings ??= new GameSettings();
             data.settings.shake = Math.Clamp(data.settings.shake, 0, 2);
 
@@ -382,14 +582,20 @@ namespace HistoryHeroes.Records
             data.equipment.items ??= new List<EquipmentItem>();
             data.equipment.items.RemoveAll(i => i == null || string.IsNullOrEmpty(i.uid) || string.IsNullOrEmpty(i.dataId));
             data.equipment.slotLevels ??= new List<int>();
-            while (data.equipment.slotLevels.Count < 3) data.equipment.slotLevels.Add(0);
+            while (data.equipment.slotLevels.Count < Equipment.EquipmentInventory.SlotCount) data.equipment.slotLevels.Add(1);
+            if (data.equipment.slotLevels.Count > Equipment.EquipmentInventory.SlotCount)
+                data.equipment.slotLevels.RemoveRange(Equipment.EquipmentInventory.SlotCount,
+                    data.equipment.slotLevels.Count - Equipment.EquipmentInventory.SlotCount);
             for (int i = 0; i < data.equipment.slotLevels.Count; i++) data.equipment.slotLevels[i] = Math.Clamp(data.equipment.slotLevels[i], 0, 40);
             data.equipment.loadouts ??= new List<HeroLoadout>();
             data.equipment.loadouts.RemoveAll(l => l == null || string.IsNullOrEmpty(l.heroId));
             foreach (HeroLoadout l in data.equipment.loadouts)
             {
                 l.uids ??= new List<string>();
-                while (l.uids.Count < 3) l.uids.Add("");
+                while (l.uids.Count < Equipment.EquipmentInventory.SlotCount) l.uids.Add("");
+                if (l.uids.Count > Equipment.EquipmentInventory.SlotCount)
+                    l.uids.RemoveRange(Equipment.EquipmentInventory.SlotCount,
+                        l.uids.Count - Equipment.EquipmentInventory.SlotCount);
                 for (int i = 0; i < l.uids.Count; i++) l.uids[i] ??= "";
             }
 
@@ -426,14 +632,26 @@ namespace HistoryHeroes.Records
             data.relics ??= new RelicSave();
             data.relics.owned ??= new List<RelicStar>();
             data.relics.owned.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id) || r.stars <= 0);
-            foreach (RelicStar r in data.relics.owned) r.stars = Math.Clamp(r.stars, 1, 3);
+            foreach (RelicStar r in data.relics.owned)
+            {
+                r.stars = Math.Clamp(r.stars, 1, 3);
+                r.duplicates = r.stars == 2 ? Math.Clamp(r.duplicates, 0, 1) : 0;
+            }
             data.relics.sourcesClaimed ??= new List<string>();
             data.relics.heroDungeonClears ??= new List<string>();
+            data.relicGacha ??= new RelicGachaSave();
+            data.relicGacha.newRelicPity = Math.Clamp(data.relicGacha.newRelicPity, 0, 19);
+            data.relicGacha.totalPulls = Math.Max(0, data.relicGacha.totalPulls);
+            data.relicGacha.log ??= new List<GachaLogEntry>();
             data.rift ??= new RiftSave();
             data.rift.rewardsClaimed ??= new List<int>();
             data.rift.checkpoint ??= new RiftCheckpoint();
             data.rift.checkpoint.skills ??= new List<RecordSkill>();
             data.rift.checkpoint.boosts ??= new List<int>();
+            data.rift.checkpoint.bannedSkillIds ??= new List<string>();
+            data.rift.checkpoint.bannedSkillIds.RemoveAll(string.IsNullOrEmpty);
+            data.rift.checkpoint.bansLeft = Math.Clamp(data.rift.checkpoint.bansLeft, 0, Skills.SkillLoadout.BansPerRun);
+            if (data.rift.checkpoint.meta != null) NormalizeMeta(data.rift.checkpoint.meta);
             data.attendance ??= new AttendanceSave();
             data.newcomer ??= new NewcomerSave();
             data.newcomer.counts ??= new List<NamedCount>();
@@ -450,6 +668,10 @@ namespace HistoryHeroes.Records
             data.run.consumed ??= new List<string>();
             data.run.completedFusions ??= new List<string>();
             data.run.hiddenFusions ??= new List<string>();
+            data.run.bannedSkillIds ??= new List<string>();
+            data.run.bannedSkillIds.RemoveAll(string.IsNullOrEmpty);
+            data.run.bansLeft = Math.Clamp(data.run.bansLeft, 0, Skills.SkillLoadout.BansPerRun);
+            if (data.run.meta != null) NormalizeMeta(data.run.meta);
             data.dailyChallenge ??= new DailySave();
             data.dailyChallenge.history ??= new List<DailyResult>();
             data.dailyChallenge.history.RemoveAll(h => h == null);
@@ -484,22 +706,82 @@ namespace HistoryHeroes.Records
             if (data.unlockedChapter < 1) data.unlockedChapter = 1;
 
             data.records.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id));
+            var slots = new HashSet<int>();
+            var misplaced = new List<RunRecord>();
+            for (int i = 0; i < data.records.Count; i++)
+            {
+                RunRecord record = data.records[i];
+                if (record.slot < 0 || record.slot >= data.recordSlots || !slots.Add(record.slot))
+                {
+                    misplaced.Add(record);
+                    data.records.RemoveAt(i--);
+                }
+            }
+
+            // 정상 칸을 먼저 남겨야 잘못된 칸의 기록이 정상 기록을 밀어내지 않는다.
+            // 기록은 절대 버리지 않는다: 빈 칸 → 임시 칸(비었으면) → 그래도 남으면 예전처럼 목록에 그대로 둔다 (Claude 검토)
+            data.tempRecords ??= new List<RunRecord>();
+            foreach (RunRecord record in misplaced)
+            {
+                int free = data.FirstFreeSlot();
+                if (free >= 0)
+                {
+                    record.slot = free;
+                    data.records.Add(record);
+                }
+                else if (data.tempRecords.Count == 0) data.tempRecords.Add(record);
+                else data.records.Add(record);
+            }
+
+            var recordIds = new HashSet<string>();
+            foreach (RunRecord record in data.records)
+            {
+                while (!recordIds.Add(record.id)) record.id = Guid.NewGuid().ToString("N");
+                NormalizeRecord(record);
+            }
+
+            data.tempRecords ??= new List<RunRecord>();
+            data.tempRecords.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id));
+            if (data.tempRecords.Count > 1) data.tempRecords.RemoveRange(1, data.tempRecords.Count - 1);
+            if (data.TempRecord != null)
+            {
+                RunRecord record = data.TempRecord;
+                // 번호 칸의 참조는 유지하고, 충돌한 임시 기록은 내용 그대로 새 ID를 붙인다.
+                while (!recordIds.Add(record.id)) record.id = Guid.NewGuid().ToString("N");
+                record.slot = -1;
+                record.locked = false;
+                NormalizeRecord(record);
+            }
+
+            // JsonUtility는 클래스 필드를 null로 못 남긴다 → 불러오면 id 없는 빈 기록이 생겨 "남은 기록 후보"가 유령처럼 떴다 (2026-10-31 Unity 테스트)
+            if (data.pendingRecord != null && string.IsNullOrEmpty(data.pendingRecord.id)) data.pendingRecord = null;
+            if (data.pendingRecord != null) NormalizeRecord(data.pendingRecord);
+
             if (!string.IsNullOrEmpty(data.tutorialRecordId) && data.FindRecord(data.tutorialRecordId) == null) data.tutorialRecordId = null;
             // 구조 5로 옮길 때 판 수를 안 봐서 끼어 버린 저장 (던전만 몇 판 한 v0.3 저장)도 여기서 풀린다
             if (!data.tutorialDone && data.ProgressedWithoutTutorial()) data.tutorialDone = true;
-            foreach (RunRecord r in data.records)
-            {
-                r.skills ??= new List<RecordSkill>();
-                r.bossesDefeated ??= new List<string>();
-                r.bossWins ??= new List<BossWin>();
-                r.meta ??= new MetaSnapshot();
-                r.meta.equipment ??= new List<EquippedItem>();
-                r.meta.training ??= new List<int>();
-                r.meta.relics ??= new List<RelicStar>();
-                if (r.meta.heroLevel < 1) r.meta.heroLevel = 1;
-                if (r.meta.heroStars < 1) r.meta.heroStars = 1;
-                r.skills.RemoveAll(s => s == null || string.IsNullOrEmpty(s.id));
-            }
+        }
+
+        private static void NormalizeRecord(RunRecord record)
+        {
+            record.skills ??= new List<RecordSkill>();
+            record.bossesDefeated ??= new List<string>();
+            record.bossWins ??= new List<BossWin>();
+            record.meta ??= new MetaSnapshot();
+            NormalizeMeta(record.meta);
+            record.skills.RemoveAll(s => s == null || string.IsNullOrEmpty(s.id));
+        }
+
+        private static void NormalizeMeta(MetaSnapshot meta)
+        {
+            meta.equipment ??= new List<EquippedItem>();
+            meta.training ??= new List<int>();
+            meta.relics ??= new List<RelicStar>();
+            meta.runes ??= new List<RuneLevel>();
+            meta.runes.RemoveAll(r => r == null || string.IsNullOrEmpty(r.id));
+            foreach (RuneLevel rune in meta.runes) rune.level = Math.Clamp(rune.level, 1, 3);
+            if (meta.heroLevel < 1) meta.heroLevel = 1;
+            if (meta.heroStars < 1) meta.heroStars = 1;
         }
 
         /// <summary>읽지 못한 파일을 지우지 않고 사본으로 남긴다. 이미 같은 이름이 있으면 번호를 붙인다.</summary>
@@ -525,7 +807,12 @@ namespace HistoryHeroes.Records
             /// <summary>실제로 읽은 파일 (새로 시작이면 null)</summary>
             public string Source;
             public bool FromBackup;
+            /// <summary>본 파일(또는 그 완성된 임시 파일) 대신 더 오래된 백업을 읽었다 → 최근 진행 일부가 빠졌을 수 있다</summary>
+            public bool FromOlderCopy;
             public bool IsFresh;
+            /// <summary>백업을 읽거나 새 계정을 시작하면 최신 저장을 덮을 수 있어서 로드를 멈췄다.</summary>
+            public bool UnsupportedNewerSchema;
+            public int NewerSchemaVersion;
             /// <summary>정상본이 없어서 해시가 틀린 파일을 썼다</summary>
             public bool Tampered;
             public readonly List<string> Problems = new List<string>();

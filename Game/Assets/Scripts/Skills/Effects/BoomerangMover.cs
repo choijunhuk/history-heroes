@@ -28,11 +28,12 @@ namespace HistoryHeroes.Skills
         private bool _returning;
         private float _returnSpeed;
         private Action<Vector2, Vector2> _onApex;
+        private Action<Vector2> _onReturn;
         private bool _endAtApex;
         private string _sourceId;
         private Action<BoomerangMover> _release;
 
-        public static ComponentPool<BoomerangMover> CreatePool(Transform root, Color color, Vector2 size)
+        public static ComponentPool<BoomerangMover> CreatePool(Transform root, Color color, Vector2 size, GameObject model = null)
         {
             var template = new GameObject("Boomerang");
             template.SetActive(false);
@@ -42,6 +43,16 @@ namespace HistoryHeroes.Skills
             sr.sprite = PlaceholderSprites.Square;
             sr.color = color;
             sr.sortingOrder = 5;
+            // 3D 나무 부메랑 + 빙글 도는 꼬리 빛 (그래픽 평가 2번). 모델이 없으면 예전 네모
+            SkillArt art = SkillArt.Get;
+            GameObject visual = model != null ? model : art != null ? art.boomerang : null;
+            if (visual != null)
+            {
+                SkillArt.Attach(visual, template.transform, model != null ? 0.8f : 1.25f);
+                SkillArt.Trail(template, model != null ? color : new Color(1f, 0.75f, 0.4f), 0.2f, 0.12f);
+                sr.enabled = false;
+            }
+
             return new ComponentPool<BoomerangMover>(template.AddComponent<BoomerangMover>(), root, prewarm: 4);
         }
 
@@ -51,7 +62,7 @@ namespace HistoryHeroes.Skills
         /// <param name="endAtApex">가장 멀리 가면 사라진다 (쌍 부메랑: 원본이 조각 2개로 바뀜)</param>
         public void Launch(Transform owner, StatSheet stats, LayerMask enemies, Vector2 origin, Vector2 direction, float distance, float outTime,
             float coefficient, bool startReturning, Action<Vector2, Vector2> onApex, Action<BoomerangMover> release,
-            float returnSpeed, bool endAtApex = false, string sourceId = null)
+            float returnSpeed, bool endAtApex = false, string sourceId = null, Action<Vector2> onReturn = null)
         {
             _endAtApex = endAtApex;
             _sourceId = sourceId;
@@ -67,9 +78,10 @@ namespace HistoryHeroes.Skills
             _returning = startReturning;
             _returnSpeed = Mathf.Max(1f, returnSpeed);
             _onApex = onApex;
+            _onReturn = onReturn;
             _release = release;
             _hitThisPass.Clear();
-            transform.position = origin;
+            transform.position = Lift(origin);
         }
 
         private void Update()
@@ -84,7 +96,7 @@ namespace HistoryHeroes.Skills
                 // 감속하며 나간다 (끝에서 잠깐 머무는 느낌)
                 float t = Mathf.Clamp01(_age / _outTime);
                 float eased = 1f - (1f - t) * (1f - t);
-                transform.position = _origin + _direction * (_distance * eased);
+                transform.position = Lift(_origin + _direction * (_distance * eased));
                 if (t >= 1f)
                 {
                     _returning = true;
@@ -106,13 +118,19 @@ namespace HistoryHeroes.Skills
                 }
 
                 Vector2 to = (Vector2)_owner.position - (Vector2)transform.position;
-                if (to.magnitude < 0.4f || _age > 4f)
+                if (to.magnitude < 0.4f)
+                {
+                    _onReturn?.Invoke(transform.position);
+                    _release?.Invoke(this);
+                    return;
+                }
+                if (_age > 4f)
                 {
                     _release?.Invoke(this);
                     return;
                 }
 
-                transform.position = (Vector2)transform.position + to.normalized * Mathf.Min(_returnSpeed * dt, to.magnitude);
+                transform.position = Lift((Vector2)transform.position + to.normalized * Mathf.Min(_returnSpeed * dt, to.magnitude));
             }
 
             HitAround();
@@ -128,5 +146,8 @@ namespace HistoryHeroes.Skills
                 h.TryTakeDamage(DamageCalculator.Roll(_stats, _coefficient, DamageKind.Active, false, _sourceId));
             }
         }
+
+        /// <summary>3D: 가슴 높이(-Z)로 띄운다 (판정은 XY 그대로, Art3D-Plan 6번)</summary>
+        private static Vector3 Lift(Vector2 p) => new Vector3(p.x, p.y, -0.75f);
     }
 }

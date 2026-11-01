@@ -70,6 +70,8 @@ namespace HistoryHeroes.Pets
             }
 
             if (marker != null) marker.gameObject.SetActive(false);
+            // 3D 모델 (없으면 임시 도형). 움직이는 쪽으로 몸을 돌린다
+            if (TryGetComponent(out Combat.Visual3D visual)) visual.SetModel(data.model3D, data.modelHeight);
             _behaviour = Create(data.kind);
             gameObject.SetActive(true);
         }

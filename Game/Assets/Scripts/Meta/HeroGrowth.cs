@@ -6,13 +6,13 @@ namespace HistoryHeroes.Meta
 {
     /// <summary>
     /// 영웅 성장 규칙 (Stats 4~7장, Economy 5장): 영웅 레벨(골드), 각성 ★(🧩 영웅 조각), 수련(계정 공용, 골드),
-    /// 골드 상점의 영웅 조각(하루 3개). 저장 데이터만 바꾸고 저장은 부르는 쪽이 한다.
+    /// 골드 상점의 영웅 조각(하루 5개). 저장 데이터만 바꾸고 저장은 부르는 쪽이 한다.
     /// 영웅 조각은 뽑기로도, 보석으로도 팔지 않는다 (Stats 6장).
     /// </summary>
     public static class HeroGrowth
     {
         public const int ShardPrice = 500;
-        public const int ShardsPerDay = 3;
+        public const int ShardsPerDay = 5; // 2026-10-31 개발자 결정 (추천안): 영웅 21명이라 3개면 전원 ★5까지 약 788일 → 5개 약 470일 (Economy 9장)
         public const int TrainingCount = 6;
 
         public static int Shards(SaveData save, string heroId) => save.ItemCount(Wallet.HeroShard(heroId));
@@ -21,6 +21,11 @@ namespace HistoryHeroes.Meta
 
         public static bool CanLevelUp(SaveData save, MetaTable table, string heroId, out int cost)
         {
+            if (!Modes.GodTrialRules.IsHeroUnlocked(save, heroId))
+            {
+                cost = 0;
+                return false;
+            }
             HeroProgress h = save.Hero(heroId);
             cost = table.HeroLevelCost(h.level);
             return h.level < table.maxHeroLevel;
@@ -28,6 +33,7 @@ namespace HistoryHeroes.Meta
 
         public static bool TryLevelUp(SaveData save, MetaTable table, string heroId)
         {
+            if (!Modes.GodTrialRules.IsHeroUnlocked(save, heroId)) return false;
             if (!CanLevelUp(save, table, heroId, out int cost) || !Wallet.TrySpendGold(save, cost)) return false;
             save.Hero(heroId).level++;
             return true;
@@ -40,6 +46,7 @@ namespace HistoryHeroes.Meta
 
         public static bool TryAwaken(SaveData save, MetaTable table, string heroId)
         {
+            if (!Modes.GodTrialRules.IsHeroUnlocked(save, heroId)) return false;
             int cost = AwakenCost(save, table, heroId);
             if (cost < 0 || Shards(save, heroId) < cost) return false;
             save.AddItem(Wallet.HeroShard(heroId), -cost);
@@ -89,7 +96,8 @@ namespace HistoryHeroes.Meta
 
         public static bool TryBuyHeroShard(SaveData save, string heroId, string today)
         {
-            if (string.IsNullOrEmpty(heroId) || ShardsLeftToday(save, today) <= 0) return false;
+            if (string.IsNullOrEmpty(heroId) || !Modes.GodTrialRules.CanReceiveNormalShards(save, heroId)
+                || ShardsLeftToday(save, today) <= 0) return false;
             if (!Wallet.TrySpendGold(save, ShardPrice)) return false;
             if (save.shop.date != today)
             {

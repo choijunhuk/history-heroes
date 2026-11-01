@@ -88,7 +88,7 @@ namespace HistoryHeroes.UI
             bool bonusReady = Newcomer.CanClaimBonus(s, now);
             rows.Add(new ButtonList.Row($"<b>전부 완료 보너스</b>  {Newcomer.Bonus}   {(s.newcomer.bonusClaimed ? "<color=#7FD17F>받음</color>" : bonusReady ? "<color=#FFD966>받기!</color>" : $"{s.newcomer.claimedDays.Count}/7")}",
                 bonusReady ? ReadyColor : OpenColor, ClaimBonus, bonusReady));
-            rows.Add(new ButtonList.Row($"<size=80%>시작한 날부터 {Newcomer.DeadlineDays}일 안에 받아야 해요 (남은 {Mathf.Max(0, Newcomer.DeadlineDays - index)}일)</size>", LockedColor, null, false));
+            rows.Add(new ButtonList.Row("<size=80%>들어온 날마다 한 칸씩 열려요. 기한은 없어요</size>", LockedColor, null, false)); // 전체 검토 11번
             list.Show(rows, scrollToTop);
         }
 

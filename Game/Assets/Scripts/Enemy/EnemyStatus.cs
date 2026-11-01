@@ -22,10 +22,10 @@ namespace HistoryHeroes.Enemy
         private EnemyBase _enemy;
         private Rigidbody2D _body;
         private SpriteRenderer _tint;
+        private HitFlash _hitFlash;
         private Color _baseColor;
 
-        private float _slowFraction;
-        private float _slowUntil;
+        private readonly SlowChannels _slow = new SlowChannels();
         private float _freezeUntil;
         private int _chillStacks;
         private float _chillUntil;
@@ -47,9 +47,13 @@ namespace HistoryHeroes.Enemy
         private Vector2 _pullCenter;
         private float _pullSpeed;
         private float _pullUntil;
+        private Vector2 _push; // 흡인 중에 들어온 밀침 (다음 물리 걸음에 흡인과 함께)
 
         public bool IsFrozen => Time.time < _freezeUntil;
-        public float SpeedMultiplier => Time.time < _slowUntil ? 1f - _slowFraction : 1f;
+        public float SpeedMultiplier => (1f - _slow.FractionAt(Time.time)) * Haste;
+
+        /// <summary>빨라짐 배수 (엘리트 "분노한" 속성: 1.3). 이동과 공격 시간이 함께 빨라진다</summary>
+        public float Haste { get; set; } = 1f;
         public bool IsPulled => Time.time < _pullUntil;
 
         private bool IsBoss => _enemy != null && !_enemy.CanBeKnockedBack && !_enemy.IsElite;
@@ -59,22 +63,26 @@ namespace HistoryHeroes.Enemy
             _enemy = GetComponent<EnemyBase>();
             _body = GetComponent<Rigidbody2D>();
             _tint = GetComponent<SpriteRenderer>();
+            _hitFlash = GetComponent<HitFlash>();
             if (_tint != null) _baseColor = _tint.color;
         }
 
         /// <summary>다시 나올 때 (오브젝트 풀) 상태를 비운다</summary>
         public void Clear()
         {
-            _slowUntil = _freezeUntil = _chillUntil = _pullUntil = 0f;
+            _slow.Clear();
+            _freezeUntil = _chillUntil = _pullUntil = 0f;
+            Haste = 1f;
             _chillStacks = 0;
             _poison.Clear();
+            _poisonTimer = 0f;
+            _push = Vector2.zero;
             if (_tint != null) _tint.color = _baseColor;
         }
 
-        public void ApplySlow(float fraction, float duration)
+        public void ApplySlow(float fraction, float duration, object source = null)
         {
-            if (Time.time >= _slowUntil || fraction >= _slowFraction) _slowFraction = Mathf.Clamp01(fraction);
-            _slowUntil = Mathf.Max(_slowUntil, Time.time + duration);
+            _slow.Apply(fraction, duration, Time.time, source);
         }
 
         /// <summary>서리 창: 둔화를 1번 쌓는다. stacksToFreeze번 쌓이면 빙결</summary>
@@ -142,6 +150,17 @@ namespace HistoryHeroes.Enemy
             _poison.Clear();
         }
 
+        /// <summary>
+        /// 밀침 (모든 밀침이 여기로 온다): 흡인 중이면 흡인과 같은 물리 걸음에 더한다.
+        /// MovePosition은 한 물리 걸음에 마지막 호출만 남아서, 따로 부르면 흡인이 밀침을 덮었다 (2026-10-29 Codex 리뷰).
+        /// </summary>
+        public void Push(Vector2 offset)
+        {
+            if (_body == null) return;
+            if (IsPulled) _push += offset;
+            else _body.MovePosition(_body.position + offset);
+        }
+
         public void Pull(Vector2 center, float speed, float duration)
         {
             if (IsBoss) speed *= 0.3f;
@@ -156,7 +175,10 @@ namespace HistoryHeroes.Enemy
             float now = Time.time;
 
             // 독: 0.5초마다, 지금 걸린 구름 중 가장 센 3개의 초당 피해 합 × 0.5
-            _poison.RemoveAll(p => now >= p.Until);
+            for (int i = _poison.Count - 1; i >= 0; i--)
+            {
+                if (now >= _poison[i].Until) _poison.RemoveAt(i);
+            }
             if (_poison.Count > 0)
             {
                 _poisonTimer -= Time.deltaTime;
@@ -191,20 +213,26 @@ namespace HistoryHeroes.Enemy
                 Color target = _baseColor;
                 if (IsFrozen) target = new Color(0.6f, 0.85f, 1f);
                 else if (_poison.Count > 0) target = Color.Lerp(_baseColor, new Color(0.45f, 0.9f, 0.35f), 0.5f);
-                else if (now < _slowUntil) target = Color.Lerp(_baseColor, new Color(0.6f, 0.8f, 1f), 0.4f);
+                else if (_slow.FractionAt(now) > 0f) target = Color.Lerp(_baseColor, new Color(0.6f, 0.8f, 1f), 0.4f);
                 if (_tint.color != target) _tint.color = target;
             }
         }
 
         private void FixedUpdate()
         {
-            if (GamePause.IsPaused || !IsPulled || _body == null) return;
-            Vector2 to = _pullCenter - _body.position;
-            if (to.sqrMagnitude < 0.04f) return;
-            _body.MovePosition(_body.position + to.normalized * Mathf.Min(_pullSpeed * Time.fixedDeltaTime, to.magnitude));
+            if (GamePause.IsPaused || _body == null) return;
+            Vector2 step = _push;
+            _push = Vector2.zero;
+            if (IsPulled)
+            {
+                Vector2 to = _pullCenter - _body.position;
+                if (to.sqrMagnitude >= 0.04f) step += to.normalized * Mathf.Min(_pullSpeed * Time.fixedDeltaTime, to.magnitude);
+            }
+
+            if (step != Vector2.zero) _body.MovePosition(_body.position + step);
         }
 
         /// <summary>맞았을 때 번쩍이는 중이면 색을 건드리지 않는다 (HitFlash가 원래 색으로 돌려놓는다)</summary>
-        private bool IsFlashing() => TryGetComponent(out HitFlash flash) && flash.IsFlashing;
+        private bool IsFlashing() => _hitFlash != null && _hitFlash.IsFlashing;
     }
 }

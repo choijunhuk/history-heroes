@@ -22,13 +22,15 @@ namespace HistoryHeroes.UI
             public Color Background;
             public Action OnClick;
             public bool Interactable;
+            public float Progress;
 
-            public Row(string text, Color background, Action onClick, bool interactable = true)
+            public Row(string text, Color background, Action onClick, bool interactable = true, float progress = -1f)
             {
                 Text = text;
                 Background = background;
                 OnClick = onClick;
                 Interactable = interactable;
+                Progress = progress;
             }
         }
 
@@ -53,6 +55,16 @@ namespace HistoryHeroes.UI
                 b.GetComponentInChildren<TMP_Text>(true).text = rows[i].Text;
                 Image image = b.GetComponent<Image>();
                 if (image != null) image.color = rows[i].Background;
+                Transform track = b.transform.Find("ProgressTrack");
+                if (track != null)
+                {
+                    track.gameObject.SetActive(rows[i].Progress >= 0f);
+                    if (rows[i].Progress >= 0f)
+                    {
+                        RectTransform fill = (RectTransform)track.Find("ProgressFill");
+                        fill.anchorMax = new Vector2(Mathf.Clamp01(rows[i].Progress), 1f);
+                    }
+                }
                 _actions[i] = rows[i].OnClick;
             }
 

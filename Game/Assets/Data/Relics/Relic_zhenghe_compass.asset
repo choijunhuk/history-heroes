@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: zhenghe_compass
   displayName: "\uC815\uD654 \uD568\uB300\uC758 \uB098\uCE68\uBC18"
+  icon: {fileID: 21300000, guid: 5c0ae5d4460d54ee7957f481783d07a5, type: 3}
   set: 2
   fact: "\uBA85\uB098\uB77C \uC815\uD654\uC758 \uB300\uADDC\uBAA8 \uC6D0\uC815 \uD56D\uD574"
+  story: 
   source: 2
   sourceChapter: 2
   sourceValue: 
-  howToGet: "2\uAD6C\uAC04 \uBCC4 6\uAC1C"
+  howToGet: "\uC720\uBB3C \uBF51\uAE30"

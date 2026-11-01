@@ -2,6 +2,7 @@ using System;
 using HistoryHeroes.Common;
 using HistoryHeroes.Economy;
 using HistoryHeroes.Heroes;
+using HistoryHeroes.Modes;
 using HistoryHeroes.Records;
 using TMPro;
 using UnityEngine;
@@ -20,11 +21,20 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button[] heroButtons;
         [SerializeField] private Image[] heroBackgrounds;
         [SerializeField] private TMP_Text[] heroLabels;
+        [SerializeField] private ScrollRect heroScroll;
         [SerializeField] private Button selectButton;
         [SerializeField] private TMP_Text selectLabel;
         [SerializeField] private Button unlockButton;
         [SerializeField] private TMP_Text unlockLabel;
+        [SerializeField] private Button trialButton;
         [SerializeField] private Button backButton;
+        [Header("2026-10-29 탕탕특공대식: 장비 6칸 · 펫/룬/유물 · 공격력/체력")]
+        [SerializeField] private Button[] gearSlots;
+        [SerializeField] private TMP_Text[] gearLabels;
+        [SerializeField] private Button relicButton;
+        [SerializeField] private TMP_Text relicLabel;
+        [SerializeField] private RelicPanel relics;
+        [SerializeField] private TMP_Text powerLabel;
         [Header("v0.4 장비")]
         [SerializeField] private Button equipButton;
         [SerializeField] private TMP_Text equipLabel;
@@ -44,17 +54,23 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button petButton;
         [SerializeField] private TMP_Text petLabel;
         [SerializeField] private PetPanel pets;
+        [Header("그래픽 재평가 3번: 고른 영웅을 크게 · 이름·역할·고유 능력 먼저 (있으면 줄 글은 짧게)")]
+        [SerializeField] private RawImage bigPortrait;
+        [SerializeField] private TMP_Text detailName;
+        [SerializeField] private TMP_Text detailBody;
 
-        private static readonly Color Normal = new Color(0.16f, 0.18f, 0.24f);
-        private static readonly Color Focused = new Color(0.25f, 0.42f, 0.7f);
-        private static readonly Color Locked = new Color(0.12f, 0.12f, 0.14f);
+        private static readonly Color Normal = new Color(0.32f, 0.4f, 0.6f);
+        private static readonly Color Focused = new Color(1f, 0.78f, 0.25f);
+        private static readonly Color Locked = new Color(0.2f, 0.21f, 0.26f);
 
         private int _focus;
         private Action _onChanged;
+        private HeroPortraits _portraits;
 
         private void Awake()
         {
             root.SetActive(false);
+            _portraits = root.GetComponent<HeroPortraits>(); // 3D 초상 (Art3D-Plan 7번, 없으면 글만)
             for (int i = 0; i < heroButtons.Length; i++)
             {
                 int index = i;
@@ -63,6 +79,10 @@ namespace HistoryHeroes.UI
 
             selectButton.onClick.AddListener(SelectFocused);
             unlockButton.onClick.AddListener(UnlockFocused);
+            if (trialButton != null) trialButton.onClick.AddListener(() =>
+            {
+                if (!HeroUnlock.IsUnlocked(SaveSystem.Data, FocusHero)) GameSession.StartHeroTrial(FocusHero.id);
+            });
             backButton.onClick.AddListener(() => root.SetActive(false));
             if (equipButton != null) equipButton.onClick.AddListener(OpenEquipment);
             if (levelButton != null) levelButton.onClick.AddListener(LevelUpFocused);
@@ -70,6 +90,53 @@ namespace HistoryHeroes.UI
             if (trainingButton != null) trainingButton.onClick.AddListener(() => training.Open(Render));
             if (runeButton != null) runeButton.onClick.AddListener(() => runes.Open(FocusHero.id, FocusHero.displayName, Render));
             if (petButton != null) petButton.onClick.AddListener(() => pets.Open(FocusHero.id, FocusHero.displayName, Render));
+            if (gearSlots != null)
+            {
+                for (int i = 0; i < gearSlots.Length; i++)
+                {
+                    int slotIndex = i;
+                    if (gearSlots[i] != null) gearSlots[i].onClick.AddListener(() => OpenEquipment((Equipment.EquipSlot)slotIndex));
+                }
+            }
+
+            if (relicButton != null && relics != null) relicButton.onClick.AddListener(() => relics.Open(Render));
+        }
+
+        /// <summary>판 밖 성장을 다 더한 공격력 · 체력 (StatSheet 규칙: (기본 + 고정) × (1 + %))</summary>
+        private (float attack, float hp) Power(SaveData d, HeroData h)
+        {
+            if (metaTable == null) return (h.attack, h.maxHp);
+            var mods = Meta.MetaStats.Build(Meta.MetaStats.FromAccount(d, metaTable, h.id), metaTable, this);
+            float Total(Stats.StatType stat, float baseValue) =>
+                (baseValue + Meta.MetaStats.Sum(mods, stat, Stats.ModifierKind.Flat)) * (1f + Meta.MetaStats.Sum(mods, stat, Stats.ModifierKind.Percent));
+            return (Total(Stats.StatType.Attack, h.attack), Total(Stats.StatType.MaxHp, h.maxHp));
+        }
+
+        /// <summary>양옆 여섯 칸 글: 지금 낀 장비 (등급 색) · 공격력/체력</summary>
+        private void RenderGear(SaveData d, HeroData focus, bool focusUnlocked)
+        {
+            bool gear = Equipment.EquipmentInventory.Unlocked(d);
+            if (gearSlots != null && gearLabels != null)
+            {
+                for (int i = 0; i < gearSlots.Length && i < gearLabels.Length; i++)
+                {
+                    string slotName = Equipment.EquipmentText.SlotName((Equipment.EquipSlot)i);
+                    gearSlots[i].interactable = focusUnlocked && gear;
+                    Records.EquipmentItem item = focusUnlocked ? Equipment.EquipmentInventory.Equipped(d, focus.id, (Equipment.EquipSlot)i) : null;
+                    Equipment.EquipmentData data = item != null && metaTable != null ? metaTable.equipment.Find(item.dataId) : null;
+                    gearLabels[i].text = !gear ? $"{slotName} 잠김"
+                        : data != null ? $"{slotName}\n<color={Equipment.EquipmentText.RarityColor(data.rarity)}>{data.displayName}</color>"
+                        : $"<color=#A9B4C2>{slotName} 비어 있음</color>";
+                }
+            }
+
+            if (relicLabel != null && metaTable != null && metaTable.relics != null)
+                relicLabel.text = $"유물 {d.relics.owned.Count}";
+            if (powerLabel != null)
+            {
+                (float attack, float hp) = Power(d, focus);
+                powerLabel.text = $"<color=#FF9B7A>공격력</color> <b>{attack:N0}</b>      <color=#7CE38B>체력</color> <b>{hp:N0}</b>";
+            }
         }
 
         private HeroData FocusHero => roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
@@ -101,23 +168,47 @@ namespace HistoryHeroes.UI
         /// <summary>고른 영웅의 장비 화면 (장비는 영웅마다 따로 낀다)</summary>
         private void OpenEquipment()
         {
-            HeroData focus = roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
-            if (equipment != null) equipment.Open(focus.id, focus.displayName, Render);
+            OpenEquipment(Equipment.EquipSlot.Weapon);
         }
 
-        public void Open(Action onChanged)
+        private void OpenEquipment(Equipment.EquipSlot slot)
+        {
+            HeroData focus = roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
+            if (equipment != null) equipment.Open(focus.id, focus.displayName, Render, slot);
+        }
+
+        /// <summary>체험 ID가 있을 때만 그 영웅을 보여 준다. 보통 열기는 계정에서 고른 영웅이다.</summary>
+        public static HeroData HeroToFocus(HeroRoster roster, SaveData save, string focusHeroId = null)
+        {
+            HeroData focused = string.IsNullOrEmpty(focusHeroId) ? null : roster.heroes.Find(h => h != null && h.id == focusHeroId);
+            return focused != null ? focused : HeroUnlock.Selected(save, roster);
+        }
+
+        public void Open(Action onChanged, string focusHeroId = null)
         {
             _onChanged = onChanged;
-            HeroData selected = HeroUnlock.Selected(SaveSystem.Data, roster);
+            HeroData selected = HeroToFocus(roster, SaveSystem.Data, focusHeroId);
             _focus = Mathf.Max(0, roster.heroes.IndexOf(selected));
             root.SetActive(true);
             Render();
+            ScrollToFocus();
         }
 
         private void Focus(int index)
         {
             _focus = index;
             Render();
+            ScrollToFocus();
+        }
+
+        private void ScrollToFocus()
+        {
+            if (heroScroll == null || heroScroll.content == null) return;
+            float available = heroScroll.content.rect.width - heroScroll.viewport.rect.width;
+            if (available <= 0f) return;
+            const float tileStep = 160f;
+            float centered = (_focus + 0.5f) * tileStep - heroScroll.viewport.rect.width * 0.5f;
+            heroScroll.horizontalNormalizedPosition = Mathf.Clamp01(centered / available);
         }
 
         private void Render()
@@ -134,11 +225,25 @@ namespace HistoryHeroes.UI
                 HeroData h = roster.heroes[i];
                 bool unlocked = HeroUnlock.IsUnlocked(d, h);
                 heroBackgrounds[i].color = i == _focus ? Focused : unlocked ? Normal : Locked;
+                if (_portraits != null)
+                {
+                    _portraits.SetLocked(i, !unlocked);
+                    _portraits.SetFocus(_focus); // 고른 영웅 초상만 계속 움직인다
+                }
                 string mark = h == selected ? "  <color=#7CFC9A>(지금 영웅)</color>" : string.Empty;
                 Records.HeroProgress progress = d.Hero(h.id);
                 string growth = unlocked ? $"  <size=80%><color=#9FD8FF>Lv {progress.level}</color> <color=#FFD966>{new string('★', progress.stars)}{new string('☆', 5 - progress.stars)}</color></size>" : string.Empty;
                 mark = growth + mark;
-                string lockText = unlocked ? string.Empty : $"\n<color=#FFB347>잠김 · {HeroUnlock.Condition(h)} (또는 보석 {Wallet.Format(h.unlockGems)})</color>";
+                string lockText = unlocked ? string.Empty : $"\n<color=#FFB347>잠김 · {HeroUnlock.LockText(h)}</color>";
+                if (detailBody != null)
+                {
+                    // 칸에는 이름과 레벨만 (자세한 것은 위 큰 카드)
+                    string state = !unlocked ? "<color=#FFB347>잠김</color>" : h == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"Lv {progress.level} <color=#FFD966>{new string('★', progress.stars)}</color>";
+                    string tileName = h.id == "davinci" ? "다빈치" : h.id == "tesla" ? "테슬라" : h.displayName;
+                    heroLabels[i].text = $"<b>{tileName}</b>\n<size=70%>{state}</size>";
+                    continue;
+                }
+
                 heroLabels[i].text =
                     $"<b>{h.displayName}</b>  <size=80%>{h.ClassLabel}</size>{mark}\n" +
                     $"<size=78%>체력 {h.maxHp:0} · 공격 {h.attack:0} · 공속 {h.attackSpeed:0.0} · 사거리 {h.range:0.#} · 이동 {h.moveSpeed:0.#}</size>\n" +
@@ -148,10 +253,32 @@ namespace HistoryHeroes.UI
 
             HeroData focus = roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
             bool focusUnlocked = HeroUnlock.IsUnlocked(d, focus);
+            if (detailBody != null)
+            {
+                Records.HeroProgress fp = d.Hero(focus.id);
+                string state = !focusUnlocked ? "<color=#FFB347>잠김</color>" : focus == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"<color=#9FD8FF>Lv {fp.level}</color> <color=#FFD966>{new string('★', fp.stars)}{new string('☆', 5 - fp.stars)}</color>";
+                if (detailName != null) detailName.text = $"{focus.displayName}  <size=55%>{focus.ClassLabel} · {state}</size>";
+                string lockText = focusUnlocked ? string.Empty : GodTrialRules.IsGod(focus.id)
+                    ? $"\n<color=#FFB347>{focus.displayName} 조각 {Meta.HeroGrowth.Shards(d, focus.id)}/{GodTrialRules.UnlockShards} · 신의 시련 첫 격파 10 + 주간 목표 5씩 (약 3~4주)</color>" // 2026-10-31 결정: 횟수 기준 안내
+                    : $"\n<color=#FFB347>{HeroUnlock.LockText(focus)}</color>";
+                detailBody.text =
+                    $"<color=#FFD966><b>{focus.signatureName}</b></color>  {focus.signatureDescription}\n" +
+                    $"<size=80%><color=#A9B4C2>{Heroes.HeroSignature.StarText(focus)}</color></size>\n" +
+                    $"<size=80%>체력 {focus.maxHp:0} · 공격 {focus.attack:0} · 공속 {focus.attackSpeed:0.0} · 사거리 {focus.range:0.#} · 이동 {focus.moveSpeed:0.#}</size>" + lockText;
+                if (bigPortrait != null && _portraits != null)
+                {
+                    bigPortrait.texture = _portraits.TextureOf(_focus);
+                    bigPortrait.color = bigPortrait.texture == null ? new Color(1f, 1f, 1f, 0f) : focusUnlocked ? Color.white : new Color(0.66f, 0.66f, 0.74f, 1f); // 잠긴 영웅도 얼굴·옷이 보이게 (새 영웅 화면 점검 1번: "흰옷과 얼굴이 어둡다")
+                }
+            }
+
+            selectButton.gameObject.SetActive(focusUnlocked);
+            if (trialButton != null) trialButton.gameObject.SetActive(!focusUnlocked);
             selectButton.interactable = focusUnlocked && focus != selected;
             selectLabel.text = !focusUnlocked ? "잠긴 영웅" : focus == selected ? "지금 영웅" : KoreanText.Josa(focus.displayName, "으로", "로") + " 하기";
 
-            if (equipButton != null)
+            RenderGear(d, focus, focusUnlocked);
+            if (equipButton != null && gearSlots == null)
             {
                 bool gear = Equipment.EquipmentInventory.Unlocked(d);
                 equipButton.gameObject.SetActive(focusUnlocked);
@@ -161,19 +288,19 @@ namespace HistoryHeroes.UI
 
             if (runeButton != null && metaTable != null && metaTable.runes != null)
             {
-                runeButton.gameObject.SetActive(focusUnlocked);
+                runeButton.interactable = focusUnlocked;
                 int slots = Runes.RuneService.SlotCount(d, metaTable.runes);
                 bool pendingChoice = Runes.RuneService.PendingChoice(d, metaTable.runes) != null;
-                runeLabel.text = slots == 0 ? "룬 (2구간 보스 뒤)" : pendingChoice ? "룬 <color=#FFD966>(보상!)</color>" : $"룬 ({slots}칸)";
+                runeLabel.text = slots == 0 ? "룬 잠김" : pendingChoice ? "룬 <color=#FFD966>보상!</color>" : $"룬 {slots}칸";
             }
 
             if (petButton != null && metaTable != null && metaTable.pets != null)
             {
-                petButton.gameObject.SetActive(focusUnlocked);
+                petButton.interactable = focusUnlocked;
                 Pets.PetData pet = metaTable.pets.Find(Pets.PetService.Equipped(d, focus.id));
                 bool bond = Pets.PetService.IsBond(pet, focus.id);
-                petLabel.text = !Pets.PetService.Unlocked(d) ? "펫 (첫 던전 클리어 뒤)"
-                    : pet != null ? $"펫 · {pet.displayName}{(bond ? " <color=#FF7A8A>♥</color>" : "")}" : "펫 (비어 있음)";
+                petLabel.text = !Pets.PetService.Unlocked(d) ? "펫 잠김"
+                    : pet != null ? $"펫 {pet.displayName}{(bond ? " <color=#FF7A8A>♥</color>" : "")}" : "펫 없음";
             }
 
             if (levelButton != null && metaTable != null)
@@ -192,9 +319,20 @@ namespace HistoryHeroes.UI
             }
 
             unlockButton.gameObject.SetActive(!focusUnlocked);
+            if (GodTrialRules.IsGod(focus.id))
+            {
+                int godShards = Meta.HeroGrowth.Shards(d, focus.id);
+                unlockButton.interactable = godShards >= GodTrialRules.UnlockShards
+                    && GodTrialRules.IsUnlocked(d, GodTrialRules.ForHero(focus.id).Id);
+                unlockLabel.text = $"{focus.displayName} 조각으로 해금\n<size=80%>{godShards}/{GodTrialRules.UnlockShards} · Lv1 ★1</size>";
+                return;
+            }
+            bool free = HeroUnlock.CanClaimFree(d, focus);
             bool enough = Wallet.Gems(d) >= focus.unlockGems;
-            unlockButton.interactable = enough;
-            unlockLabel.text = enough ? $"보석 {Wallet.Format(focus.unlockGems)}로 바로 해금" : $"보석이 모자라요 ({Wallet.Format(Wallet.Gems(d))}/{Wallet.Format(focus.unlockGems)})";
+            unlockButton.interactable = free || enough;
+            unlockLabel.text = free ? $"던전 {HeroUnlock.FreePickRuns}판 기념 무료로 열기\n<size=80%>(보석 영웅 중 한 명만)</size>"
+                : enough ? $"보석 {Wallet.Format(focus.unlockGems)}로 바로 해금"
+                : $"보석이 모자라요 ({Wallet.Format(Wallet.Gems(d))}/{Wallet.Format(focus.unlockGems)})";
         }
 
         private void SelectFocused()
@@ -210,7 +348,20 @@ namespace HistoryHeroes.UI
         private void UnlockFocused()
         {
             HeroData focus = roster.heroes[_focus];
-            if (!HeroUnlock.TryBuy(SaveSystem.Data, focus)) return;
+            if (GodTrialRules.IsGod(focus.id))
+            {
+                SaveSystem.CommitResult result = SaveSystem.Commit(() =>
+                {
+                    if (!GodTrialRules.TryUnlockHero(SaveSystem.Data, focus.id)) return false;
+                    SaveSystem.Data.selectedHero = focus.id;
+                    return true;
+                });
+                if (result == SaveSystem.CommitResult.SaveFailed && messageLabel != null) messageLabel.text = SaveSystem.SaveFailedText;
+                Render();
+                if (result == SaveSystem.CommitResult.Saved) _onChanged?.Invoke();
+                return;
+            }
+            if (!HeroUnlock.TryClaimFree(SaveSystem.Data, focus) && !HeroUnlock.TryBuy(SaveSystem.Data, focus)) return;
             SaveSystem.Data.selectedHero = focus.id;
             SaveSystem.Save();
             Render();

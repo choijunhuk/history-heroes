@@ -55,9 +55,16 @@ namespace HistoryHeroes.EditorTools
                 return "처치 | " + State();
             }
 
-            var door = Object.FindAnyObjectByType<Door>();
-            if (door != null && door.IsOpen)
+            // 확장 1차 갈림길: 카드 번호로 문을 고른다 (0 왼쪽 평범 · 1 오른쪽 특별)
+            if (run.ForkOpen)
             {
+                run.DevChooseFork(Mathf.Clamp(cardIndex, 0, 1));
+                return "갈림길 | " + State();
+            }
+
+            foreach (Door door in Object.FindObjectsByType<Door>(FindObjectsSortMode.None))
+            {
+                if (!door.IsOpen) continue;
                 Object.FindAnyObjectByType<PlayerController>().Teleport(door.transform.position);
                 return "문 | " + State();
             }
@@ -284,7 +291,7 @@ namespace HistoryHeroes.EditorTools
 
         /// <summary>
         /// 판 밖 성장 스냅샷 예시: "none" 판 밖 0 / "week" 무과금 1주 (Stats 4장 ×1.2 근처: 영웅 Lv8, 1구간 보스 희귀 무기 Lv10, 일반 갑옷 Lv5)
-        /// / "month" 1개월 (×1.4 근처) / "max" 전부 최대 (영웅 Lv30 ★5, 전설 3칸 Lv40, 수련 최대, 유물 20개 ★3)
+        /// / "month" 1개월 (×1.4 근처) / "max" 전부 최대 (영웅 Lv30 ★5, 전설 6칸 Lv40, 수련 최대, 유물 24개 ★3)
         /// </summary>
         public static Records.MetaSnapshot MetaPreset(string name)
         {
@@ -296,6 +303,9 @@ namespace HistoryHeroes.EditorTools
                     s.heroLevel = 8;
                     Equip(0, "weapon_general_r", 10);
                     Equip(1, "armor_recruit_c", 5);
+                    Equip(3, "gloves_general_r", 10);
+                    Equip(4, "belt_recruit_c", 5);
+                    Equip(5, "boots_recruit_c", 5);
                     break;
                 case "month":
                     s.heroLevel = 15;
@@ -303,6 +313,9 @@ namespace HistoryHeroes.EditorTools
                     Equip(0, "weapon_general_r", 20);
                     Equip(1, "armor_general_r", 20);
                     Equip(2, "acc_signet_r", 15);
+                    Equip(3, "gloves_general_r", 20);
+                    Equip(4, "belt_general_r", 20);
+                    Equip(5, "boots_general_r", 20);
                     s.training = new List<int> { 5, 5, 3, 2, 2, 0 };
                     break;
                 case "max":
@@ -311,6 +324,9 @@ namespace HistoryHeroes.EditorTools
                     Equip(0, "weapon_conqueror_l", 40);
                     Equip(1, "armor_timeguard_l", 40);
                     Equip(2, "acc_hourglass_l", 40);
+                    Equip(3, "gloves_conqueror_l", 40);
+                    Equip(4, "belt_timeguard_l", 40);
+                    Equip(5, "boots_timeguard_l", 40);
                     s.training = new List<int> { 20, 20, 20, 20, 20, 10 };
                     var relics = UnityEditor.AssetDatabase.LoadAssetAtPath<Relics.RelicTable>("Assets/Data/Relics/RelicTable.asset");
                     foreach (Relics.RelicData r in relics.relics) s.relics.Add(new Records.RelicStar { id = r.id, stars = 3 });
@@ -477,6 +493,22 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>TrySkill 뒤: 남은 적, 액티브 피해, 플레이어 체력</summary>
+        /// <summary>
+        /// 새 영웅 실전 점검: 영웅을 바꾸고 그 영웅 전용 액티브 Lv5를 들고 TrySkill과 같은 적 12마리와 싸운다 (가만히 서서 = 멈춤 대표 효과 확인).
+        /// 결과는 TrySkillStatus()의 출처별 피해. 예: HeroCheck("thor")
+        /// </summary>
+        public static string HeroCheck(string heroId)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            var roster = UnityEditor.AssetDatabase.LoadAssetAtPath<Heroes.HeroRoster>("Assets/Data/Heroes/HeroRoster.asset");
+            Heroes.HeroData hero = roster != null ? roster.heroes.Find(h => h != null && h.id == heroId) : null;
+            var player = Object.FindAnyObjectByType<PlayerController>();
+            if (hero == null || player == null) return "없음: " + heroId;
+            player.SetHero(hero);
+            if (hero.exclusiveActive == null) return "전용 액티브 없음: " + heroId;
+            return TrySkill(hero.exclusiveActive.id, 5) + " · " + hero.displayName;
+        }
+
         public static string TrySkillStatus()
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
@@ -539,6 +571,133 @@ namespace HistoryHeroes.EditorTools
             return ready ? "ready" : "wait";
         }
 
+        /// <summary>
+        /// 확장 1차 장치·방 점검: 지금 방에 레이아웃 하나를 바로 깐다 (적은 그대로, 판정·장치·함정 새로).
+        /// id = 레이아웃 id (예: "c2_portcullis"). Play 중에만
+        /// </summary>
+        public static string ShowLayout(string id)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var run = Object.FindAnyObjectByType<DungeonRun>();
+            if (run == null) return "던전 아님";
+            string path = $"Assets/Data/Dungeons/Layouts/Layout_{id}.asset";
+            var layout = UnityEditor.AssetDatabase.LoadAssetAtPath<RoomLayout>(path);
+            if (layout == null) return "레이아웃 없음: " + path;
+            typeof(DungeonRun).GetMethod("ApplyLayout", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(run, new object[] { layout });
+            int devices = layout.devices != null ? layout.devices.Count : 0;
+            return $"{id}: 장애물 {layout.obstacles.Count} · 함정 {layout.traps.Count} · 장치 {devices}";
+        }
+
+        // ───── 글자 점검 (TextAudit) ─────
+
+        private static string Path(Transform t)
+        {
+            string n = t.name;
+            for (int i = 0; i < 2 && t.parent != null && t.parent.GetComponent<Canvas>() == null; i++) { t = t.parent; n = t.name + "/" + n; }
+            return n;
+        }
+
+        // 캔버스 로컬 좌표 사각형 (에디터 Game 창 크기와 상관없이 1080 기준 단위)
+        private static Rect ScreenBounds(RectTransform rt, Bounds local, Canvas canvas)
+        {
+            var root = (RectTransform)canvas.transform;
+            Vector3 a = root.InverseTransformPoint(rt.TransformPoint(local.min)), b = root.InverseTransformPoint(rt.TransformPoint(local.max));
+            return Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
+        }
+
+        /// <summary>
+        /// 화면의 모든 TMP 글자를 훑어 문제 목록을 만든다 (Play 중에만).
+        /// 종류: 칸밖(OVF) · 잘림(CLIP) · 화면밖(OFF) · 작음(SMALL &lt;15) · 자동축소 바닥(MIN) · 겹침(OVL).
+        /// 측정은 1080 기준 해상도 픽셀. 예: TextAudit() 또는 TextAudit("overlay") 로 겹침만 줄이기.
+        /// </summary>
+        public static string TextAudit(float minSize = 15f)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var lines = new List<string>();
+            var items = new List<(TMPro.TMP_Text t, Rect r, Canvas c)>();
+            int total = 0;
+            foreach (TMPro.TMP_Text t in Object.FindObjectsByType<TMPro.TMP_Text>(FindObjectsSortMode.None))
+            {
+                if (!t.gameObject.activeInHierarchy || string.IsNullOrWhiteSpace(t.text)) continue;
+                Canvas canvas = t.canvas;
+                if (canvas == null || !canvas.isActiveAndEnabled || canvas.renderMode == RenderMode.WorldSpace) continue;
+                canvas = canvas.rootCanvas;
+                if (t.color.a < 0.02f) continue;
+                float cg = 1f;
+                foreach (CanvasGroup g in t.GetComponentsInParent<CanvasGroup>()) cg *= g.alpha;
+                if (cg < 0.02f) continue;
+                t.ForceMeshUpdate();
+                total++;
+                var rt = t.rectTransform;
+                string head = $"{Path(t.transform)} \"{Trim(t.text)}\"";
+                Bounds tb = t.textBounds;
+                Rect sr = ScreenBounds(rt, tb, canvas);
+                if (tb.size.x < 0.01f && tb.size.y < 0.01f) continue;
+
+                float refW = canvas.GetComponent<RectTransform>().rect.width;
+                float scaleToRef = rt.lossyScale.x / Mathf.Max(0.0001f, canvas.transform.lossyScale.x);
+                float eff = t.fontSize * scaleToRef * 1080f / Mathf.Max(1f, refW);
+                if (eff < minSize) lines.Add($"SMALL {eff:0}px | {head}");
+                if (t.enableAutoSizing && t.fontSize <= t.fontSizeMin + 0.01f && t.preferredHeight > rt.rect.height + 1f)
+                    lines.Add($"MIN {t.fontSize:0}px 바닥에서도 넘침 | {head}");
+
+                Rect r = rt.rect;
+                float ow = tb.size.x - r.width, oh = tb.size.y - r.height;
+                if (ow > 2f || oh > 2f || t.isTextTruncated)
+                    lines.Add($"OVF 글 {tb.size.x:0}x{tb.size.y:0} 칸 {r.width:0}x{r.height:0}{(t.isTextTruncated ? " 잘림" : "")} | {head}");
+
+                // 화면 · 안전영역 밖
+                Rect screen = ((RectTransform)canvas.transform).rect;
+                bool inScroll = t.GetComponentInParent<UnityEngine.UI.ScrollRect>() != null; // 스크롤 목록은 가장자리에서 잘려 보이는 게 정상
+                if (!inScroll && screen.Overlaps(sr) && (sr.xMin < screen.xMin - 1f || sr.xMax > screen.xMax + 1f || sr.yMin < screen.yMin - 1f || sr.yMax > screen.yMax + 1f))
+                    lines.Add($"OFF 화면밖 {sr.xMin - screen.xMin:0},{sr.yMin - screen.yMin:0}-{sr.xMax - screen.xMin:0},{sr.yMax - screen.yMin:0} | {head}");
+
+                // 마스크 밖으로 잘림 (스크롤 중 완전히 가려진 건 무시)
+                bool hidden = false;
+                foreach (UnityEngine.UI.RectMask2D m in t.GetComponentsInParent<UnityEngine.UI.RectMask2D>())
+                {
+                    Rect mr = ScreenBounds(m.rectTransform, new Bounds(m.rectTransform.rect.center, m.rectTransform.rect.size), canvas);
+                    if (!mr.Overlaps(sr)) { hidden = true; break; }
+                    if (!inScroll && (sr.xMin < mr.xMin - 2f || sr.xMax > mr.xMax + 2f || sr.yMin < mr.yMin - 2f || sr.yMax > mr.yMax + 2f))
+                        lines.Add($"CLIP 마스크에 걸림 | {head}");
+                    break;
+                }
+                if (!hidden && screen.Overlaps(sr)) items.Add((t, sr, canvas));
+            }
+
+            for (int i = 0; i < items.Count; i++)
+                for (int j = i + 1; j < items.Count; j++)
+                {
+                    var a = items[i]; var b = items[j];
+                    if (a.t.transform.IsChildOf(b.t.transform) || b.t.transform.IsChildOf(a.t.transform)) continue;
+                    if (a.c != b.c || PanelRoot(a.t.transform) != PanelRoot(b.t.transform)) continue; // 뒤에 깔린 다른 화면과는 비교하지 않는다
+                    float ix = Mathf.Min(a.r.xMax, b.r.xMax) - Mathf.Max(a.r.xMin, b.r.xMin);
+                    float iy = Mathf.Min(a.r.yMax, b.r.yMax) - Mathf.Max(a.r.yMin, b.r.yMin);
+                    if (ix <= 0f || iy <= 0f) continue;
+                    float small = Mathf.Min(a.r.width * a.r.height, b.r.width * b.r.height);
+                    if (small > 1f && ix * iy / small > 0.25f)
+                        lines.Add($"OVL {(ix * iy / small):P0} | {Path(a.t.transform)} \"{Trim(a.t.text)}\" <> {Path(b.t.transform)} \"{Trim(b.t.text)}\"");
+                }
+
+            return $"글자 {total}개 · 문제 {lines.Count}\n" + string.Join("\n", lines);
+        }
+
+        // 캔버스(또는 Safe) 바로 아래 가지: 같은 화면인지 가르는 기준
+        private static Transform PanelRoot(Transform t)
+        {
+            while (t.parent != null && t.parent.GetComponent<Canvas>() == null && t.parent.name != "Safe") t = t.parent;
+            return t;
+        }
+
+        private static string Trim(string s)
+        {
+            s = s.Replace("\n", " ");
+            return s.Length > 20 ? s.Substring(0, 20) : s;
+        }
+
         public static string State()
         {
             if (!Application.isPlaying) return "Play 모드가 아님";
@@ -555,7 +714,147 @@ namespace HistoryHeroes.EditorTools
 
             return $"방 {run.Room}/{run.RoomCount} Lv{exp.Level.Level} 처치{exp.Kills} 적{EnemyBase.Alive.Count} " +
                    $"HP{Mathf.CeilToInt(player.Health.Current)}/{Mathf.CeilToInt(player.Health.Max)} " +
-                   $"멈춤={GamePause.IsPaused} 끝={run.IsFinished} [{string.Join(",", owned)}]";
+                   $"멈춤={GamePause.IsPaused} 끝={run.IsFinished} 특수={run.CurrentSpecial} 갈림길={run.ForkOpen} [{string.Join(",", owned)}]";
+        }
+
+        // ───── 결제 (Unity IAP · 에디터는 가짜 상점, Play 중에만) ─────
+
+        /// <summary>상점 상태 · 상품별 가격 · 지갑(유료/무료) · 장부 한 줄</summary>
+        public static string IapStatus()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            Records.SaveData d = Records.SaveSystem.Data;
+            var prices = new List<string>();
+            foreach (Economy.IapCatalog.Item item in Economy.IapCatalog.All)
+                prices.Add($"{item.Id}={Economy.IapService.Price(item.Id) ?? "-"}{(Economy.IapLedger.FirstBonusLeft(d, item) ? "*" : "")}");
+            return $"{Economy.IapService.State} 구매중={Economy.IapService.BuyingId ?? "-"} 보석 유료{d.gemsPaid} 무료{d.gemsFree} 골드{d.gold} 소환권{d.ItemCount(Economy.Wallet.Ticket)} " +
+                   $"장부{d.purchases.ledger.Count} 패키지받음={d.purchases.starterClaimed} | {string.Join(" ", prices)} (*=첫 구매 2배 남음)";
+        }
+
+        /// <summary>가짜 상점 결제 창(IMGUI)의 [Buy] 또는 [Cancel]을 누른다</summary>
+        public static string IapFakeStore(bool buy)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            GameObject window = GameObject.Find("UIFakeStoreWindow");
+            Component dialog = window != null ? window.GetComponent("UIFakeStoreWindow") : null;
+            if (dialog == null) return "가짜 상점 창이 없음";
+            var method = dialog.GetType().GetMethod(buy ? "OnOkClicked" : "OnCancelClicked",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+            if (method == null) return "가짜 상점 창 단추를 못 찾음 (패키지 버전이 바뀜?)";
+            method.Invoke(dialog, null);
+            return (buy ? "구매" : "취소") + " 누름";
+        }
+
+        /// <summary>
+        /// 같은 거래를 상점이 다시 보낸 것처럼 지급 → 저장을 한 번 더 (결제가 올 때와 같은 길). 장부가 막아야 한다.
+        /// transactionId를 비우면 장부의 마지막 거래를 쓴다.
+        /// </summary>
+        public static string IapRedeliver(string productId = null, string transactionId = null)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            Records.SaveData d = Records.SaveSystem.Data;
+            if (string.IsNullOrEmpty(transactionId))
+            {
+                if (d.purchases.ledger.Count == 0) return "장부가 비어 있음";
+                Records.PurchaseEntry last = d.purchases.ledger[d.purchases.ledger.Count - 1];
+                transactionId = last.transactionId;
+                productId ??= last.productId;
+            }
+            string before = $"유료{d.gemsPaid} 무료{d.gemsFree} 장부{d.purchases.ledger.Count}";
+            Economy.IapLedger.Result result = Economy.IapService.GrantAndSave(productId, transactionId, out _, out Records.SaveSystem.CommitResult saved);
+            d = Records.SaveSystem.Data;
+            return $"{productId} 다시 받기 → {result} / {saved} | 전 {before} → 후 유료{d.gemsPaid} 무료{d.gemsFree} 장부{d.purchases.ledger.Count}";
+        }
+
+        /// <summary>디스크의 저장 파일을 다시 읽어 장부가 들어 있는지 본다</summary>
+        public static string IapSaveCheck()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            string json = System.IO.File.ReadAllText(Records.SaveSystem.Store.MainPath);
+            var parsed = Records.SaveStore.Parse(json, out Records.SaveData disk, out string problem);
+            if (disk == null) return $"못 읽음: {parsed} {problem}";
+            var lines = new List<string>();
+            foreach (Records.PurchaseEntry e in disk.purchases.ledger)
+                lines.Add($"{e.productId}(유료{e.paidGems}+무료{e.freeGems}{(e.firstBonus ? " 첫구매" : "")}{(e.tickets > 0 ? $" 소환권{e.tickets}" : "")}{(e.gold > 0 ? $" 골드{e.gold}" : "")})");
+            return $"{Records.SaveSystem.Store.MainPath} 검사={parsed} 구조={disk.schemaVersion} 장부{disk.purchases.ledger.Count}: {string.Join(", ", lines)} | 첫구매 [{string.Join(",", disk.purchases.firstBought)}] 패키지={disk.purchases.starterClaimed}";
+        }
+
+        // ───── 계정 · 클라우드 저장 (진짜 UGS 서버, Play 중에만) ─────
+
+        private static string _accountCheck = "아직 안 함";
+
+        /// <summary>계정 상태 한 줄: 상태 · 연결 이름 · UGS 플레이어 ID · 마지막 안내</summary>
+        public static string AccountStatus()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            return $"{Account.AccountService.State} 연결={Account.AccountService.LinkedName ?? "-"} 플레이어={Account.AccountService.PlayerId ?? "-"} " +
+                   $"시험={Account.AccountService.SandboxLinked} 안내={Account.AccountService.Message ?? "-"} | 클라우드 점검: {_accountCheck}";
+        }
+
+        /// <summary>에디터 게스트를 연결된 계정처럼 (올리기 · 받기 · 삭제 시험). 끄면 다시 게스트</summary>
+        public static string AccountSandbox(bool on)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            Account.AccountService.SetSandbox(on);
+            return AccountStatus();
+        }
+
+        /// <summary>설정의 "지금 클라우드에 저장"과 같은 일 (결과는 AccountStatus의 안내)</summary>
+        public static string AccountUpload()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            _ = Account.AccountService.UploadNowAsync();
+            return "올리는 중 → AccountStatus()";
+        }
+
+        /// <summary>
+        /// 클라우드 왕복 점검: "save"를 받아 이 기기 본 저장 파일 글과 같은지, 해시 검사(Parse)가 Ok인지, "meta"가 읽히는지 본다.
+        /// replace면 받은 저장으로 SaveSystem.Replace까지 (계정 전환 길과 같다, 백업이 남는다). 결과는 AccountStatus 끝에.
+        /// </summary>
+        public static string AccountCloudCheck(bool replace = false)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            _accountCheck = "받는 중";
+            CloudCheck(replace);
+            return "받는 중 → AccountStatus()";
+        }
+
+        private static async void CloudCheck(bool replace)
+        {
+            try
+            {
+                var items = await Unity.Services.CloudSave.CloudSaveService.Instance.Data.Player.LoadAsync(
+                    new HashSet<string> { Account.AccountService.SaveKey, Account.AccountService.MetaKey });
+                if (!items.TryGetValue(Account.AccountService.SaveKey, out var save))
+                {
+                    _accountCheck = "클라우드에 save 없음";
+                    return;
+                }
+
+                string cloudJson = save.Value.GetAs<string>();
+                string localJson = System.IO.File.ReadAllText(Records.SaveSystem.Store.MainPath);
+                var parsed = Records.SaveStore.Parse(cloudJson, out Records.SaveData data, out string problem);
+                string meta = items.TryGetValue(Account.AccountService.MetaKey, out var m) ? m.Value.GetAs<string>() : null;
+                var summary = meta != null ? JsonUtility.FromJson<Account.AccountSummary>(meta) : null;
+                string result = $"글 {cloudJson.Length:N0}자 파일과같음={cloudJson == localJson} 검사={parsed} {problem} meta={(summary != null ? $"{summary.Text(null)} 번호={summary.uploadId} 플레이어={summary.playerId} 사용자={summary.userId}" : "없음")}";
+                if (replace && data != null) result += $" 바꾸기={Records.SaveSystem.Replace(data)} 구간={Records.SaveSystem.Data.unlockedChapter} 사용자ID={Records.SaveSystem.Data.userId}";
+                _accountCheck = result;
+            }
+            catch (System.Exception e)
+            {
+                _accountCheck = "실패: " + e.Message;
+            }
+        }
+
+        /// <summary>계정 삭제 (설정의 확인 뒤와 같은 일): 클라우드 · UGS 계정 · 이 기기 저장을 지우고 로비로</summary>
+        public static string AccountDelete()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            _ = Account.AccountService.DeleteAsync();
+            return "지우는 중 → AccountStatus()";
         }
     }
 }

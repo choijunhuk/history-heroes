@@ -1,5 +1,6 @@
 using System;
 using HistoryHeroes.Common;
+using HistoryHeroes.Economy;
 using HistoryHeroes.Records;
 using HistoryHeroes.Skills;
 using TMPro;
@@ -34,6 +35,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text titleLabel;
         [SerializeField] private TMP_Text subtitleLabel;
         [SerializeField] private TMP_Text capacityLabel;
+        [SerializeField] private TMP_Text previewLabel; // 저장되는 빌드 미리 보기 (전체 UI 검토 "저장 뒤 어떤 빌드가 되는지")
         [SerializeField] private Image capacityFill;
         [SerializeField] private Row[] rows;
         [SerializeField] private Button autoFitButton;
@@ -47,6 +49,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button[] slotButtons;
         [SerializeField] private TMP_Text[] slotLabels;
         [SerializeField] private Button slotCancel;
+        [SerializeField] private TMP_Text slotTitleLabel;
+        [SerializeField] private Button tempButton;
+        [SerializeField] private TMP_Text tempLabel;
 
         [SerializeField] private SkillDatabase database;
 
@@ -56,10 +61,12 @@ namespace HistoryHeroes.UI
         private RecordDraft _draft;
         private Func<RecordDraft, RunRecord> _makeRecord;
         private Action _onDone;
+        private bool _pending;
 
         /// <summary>"저장 안 함"을 보일까 (튜토리얼은 꼭 저장해야 보스로 간다). 닫으면 다시 true</summary>
         public bool AllowSkip { get; set; } = true;
-        private int _fixedSlot = -1;
+        private string _fixedRecordId;
+        private bool _confirmTemp;
 
         public bool IsOpen => root.activeSelf;
 
@@ -77,6 +84,14 @@ namespace HistoryHeroes.UI
                 int index = i;
                 rows[i].minus.onClick.AddListener(() => Step(index, -1));
                 rows[i].plus.onClick.AddListener(() => Step(index, +1));
+                // 이름을 누르면 고정 (자동 맞추기가 깎지 않는다, 2개까지 — 전체 검토 2번)
+                if (rows[i].nameLabel != null)
+                {
+                    rows[i].nameLabel.raycastTarget = true;
+                    Button pin = rows[i].nameLabel.GetComponent<Button>() ?? rows[i].nameLabel.gameObject.AddComponent<Button>();
+                    pin.transition = Selectable.Transition.None;
+                    pin.onClick.AddListener(() => TogglePin(index));
+                }
             }
 
             for (int i = 0; i < slotButtons.Length; i++)
@@ -88,21 +103,120 @@ namespace HistoryHeroes.UI
             autoFitButton.onClick.AddListener(AutoFit);
             saveButton.onClick.AddListener(Save);
             skipButton.onClick.AddListener(Skip);
-            slotCancel.onClick.AddListener(() => slotPanel.SetActive(false));
+            slotCancel.onClick.AddListener(() =>
+            {
+                if (_confirmTemp) ShowSlotChoices();
+                else slotPanel.SetActive(false);
+            });
+            if (tempButton != null) tempButton.onClick.AddListener(SaveToTemp);
         }
 
         /// <summary>새 기록 남기기 (던전이 끝난 뒤)</summary>
         public void Open(RecordDraft draft, Func<RecordDraft, RunRecord> makeRecord, string subtitle, Action onDone)
         {
-            _fixedSlot = -1;
+            _pending = false;
+            _fixedRecordId = null;
             OpenInternal(draft, makeRecord, "기록 남기기", subtitle, "저장 안 함", onDone);
         }
 
-        /// <summary>패치로 비용이 올라 용량을 넘은 기록을 다시 고르기 (같은 칸에 덮어씀, GameDesign 7-5)</summary>
-        public void OpenReselect(RecordDraft draft, Func<RecordDraft, RunRecord> makeRecord, int slot, Action onDone)
+        /// <summary>앱을 다시 켠 뒤에도 판 끝의 원래 스킬로 선택 화면을 되살린다.</summary>
+        public bool OpenPending(RunRecord candidate, bool tutorial, Action onDone,
+            Func<string, float> damageShare = null, string subtitle = null)
         {
+            if (candidate == null || candidate.skills == null || database == null) return false;
+            var entries = new System.Collections.Generic.List<RecordDraft.Entry>();
+            foreach (RecordSkill saved in candidate.skills)
+            {
+                SkillData skill = database.Find(saved.id);
+                if (skill == null) continue;
+                FusionRecipe recipe = saved.fusion ? database.RecipeProducing(skill) : null;
+                entries.Add(new RecordDraft.Entry(skill, saved.level, saved.fusion, recipe));
+            }
+
+            if (entries.Count == 0) return false;
+            _pending = true;
+            _fixedRecordId = null;
+            DamageShare = damageShare; // 다시 켠 뒤에는 피해 비율이 없으므로 기본 추천값을 쓴다.
+            AllowSkip = !tutorial;
+            Action finished = tutorial ? () => GameSession.StartTutorialBoss(candidate.id) : onDone;
+            OpenInternal(new RecordDraft(entries, candidate.capacity), d => PreviewPending(candidate, d),
+                "기록 남기기", subtitle ?? (tutorial
+                    ? "튜토리얼 기록을 저장하면 보스로 이어져요"
+                    : "끝낸 판의 기록을 다시 고를 수 있어요"), "저장 안 함", finished);
+            return true;
+        }
+
+        /// <summary>미리보기는 후보의 복사본만 바꾼다. ID와 당시 성장은 그대로 둔다.</summary>
+        public static RunRecord PreviewPending(RunRecord candidate, RecordDraft draft)
+        {
+            if (candidate == null || draft == null) return null;
+            RunRecord preview = JsonUtility.FromJson<RunRecord>(JsonUtility.ToJson(candidate));
+            preview.skills = draft.ToSkills();
+            return preview;
+        }
+
+        public static SaveSystem.CommitResult SavePendingToSlot(RecordDraft draft, int slot)
+        {
+            if (draft == null || !draft.Fits || !draft.HasAnything) return SaveSystem.CommitResult.Rejected;
+            SaveData data = SaveSystem.Data;
+            RunRecord candidate = data.pendingRecord;
+            if (candidate == null) return SaveSystem.CommitResult.Rejected;
+            RunRecord record = PreviewPending(candidate, draft);
+            return SaveSystem.Commit(() =>
+            {
+                if (data.pendingRecord == null || data.pendingRecord.id != candidate.id
+                    || !RecordService.SaveToSlot(data, record, slot)) return false;
+                FinishPending(data, record);
+                return true;
+            });
+        }
+
+        public static SaveSystem.CommitResult SavePendingToTemp(RecordDraft draft)
+        {
+            if (draft == null || !draft.Fits || !draft.HasAnything) return SaveSystem.CommitResult.Rejected;
+            SaveData data = SaveSystem.Data;
+            RunRecord candidate = data.pendingRecord;
+            if (candidate == null) return SaveSystem.CommitResult.Rejected;
+            RunRecord record = PreviewPending(candidate, draft);
+            return SaveSystem.Commit(() =>
+            {
+                if (data.pendingRecord == null || data.pendingRecord.id != candidate.id
+                    || !RecordService.SaveToTemp(data, record)) return false;
+                FinishPending(data, record);
+                return true;
+            });
+        }
+
+        private static void FinishPending(SaveData data, RunRecord record)
+        {
+            if (data.pendingTutorialRecord)
+            {
+                data.tutorialRecordId = record.id;
+                Wallet.Grant(data, new Reward { Gold = 300 });
+            }
+
+            data.pendingRecord = null;
+            data.pendingTutorialRecord = false;
+        }
+
+        public static SaveSystem.CommitResult DiscardPending()
+        {
+            return SaveSystem.Commit(() =>
+            {
+                SaveData data = SaveSystem.Data;
+                if (data.pendingRecord == null) return false;
+                data.pendingRecord = null;
+                data.pendingTutorialRecord = false;
+                return true;
+            });
+        }
+
+        /// <summary>패치로 비용이 올라 용량을 넘은 기록을 다시 고르기 (같은 칸에 덮어씀, GameDesign 7-5)</summary>
+        public void OpenReselect(RecordDraft draft, Func<RecordDraft, RunRecord> makeRecord, string recordId, Action onDone)
+        {
+            _pending = false;
             DamageShare = null; // 다시 고르기에는 판 피해 기록이 없다
-            _fixedSlot = slot;
+            _fixedRecordId = recordId;
             OpenInternal(draft, makeRecord, "기록 다시 고르기", "패치로 비용이 올라 용량을 넘었어요. 남길 스킬을 다시 골라 주세요.", "취소", onDone);
         }
 
@@ -112,12 +226,13 @@ namespace HistoryHeroes.UI
             _makeRecord = makeRecord;
             _onDone = onDone;
             titleLabel.text = title;
-            subtitleLabel.text = subtitle;
+            subtitleLabel.text = subtitle + "\n<size=80%><color=#A9B4C2>이름을 누르면 고정 (자동 맞추기가 안 깎아요, 2개까지) · 장비·룬은 지금 상태로 남아요</color></size>"; // 전체 검토 2번
             subtitleLabel.color = new Color(1f, 1f, 1f, 0.75f);
             skipLabel.text = skip;
             skipButton.gameObject.SetActive(AllowSkip);
             _draft.AutoFit(DamageShare); // 처음엔 추천값 (피해를 많이 낸 스킬을 남긴다)
             slotPanel.SetActive(false);
+            _confirmTemp = false;
             root.SetActive(true);
             GamePause.Pause(this);
             Render();
@@ -149,12 +264,13 @@ namespace HistoryHeroes.UI
                 RecordDraft.Entry e = _draft.Entries[i];
                 row.band.color = e.IsFusion ? SkillCardView.FusionBand : e.Skill.Kind == SkillKind.Passive ? SkillCardView.PassiveBand : SkillCardView.ActiveBand;
                 row.nameLabel.text = e.IsEvolution ? $"{e.Skill.displayName} (진화)" : e.IsMerge ? $"{e.Skill.displayName} (합체)" : e.Skill.displayName;
+                if (e.Pinned) row.nameLabel.text = "<color=#FFD966>[고정]</color> " + row.nameLabel.text; // 이름을 누르면 고정 · 풀기
 
-                if (e.IsEvolution) row.levelLabel.text = e.Kept ? "남김" : "뺌";
-                else row.levelLabel.text = e.Kept ? $"Lv {e.Level} / {e.OwnedLevel}" : "뺌";
+                if (e.IsEvolution) row.levelLabel.text = e.Kept ? "남김" : "안 남김";
+                else row.levelLabel.text = e.Kept ? $"Lv {e.Level} / {e.OwnedLevel}" : "안 남김";
                 row.levelLabel.color = e.Kept ? Color.white : new Color(1f, 1f, 1f, 0.4f);
 
-                row.costLabel.text = $"{_draft.CostOf(e)}pt";
+                row.costLabel.text = e.Kept ? $"{_draft.CostOf(e)}pt" : string.Empty; // 안 남기면 0pt를 굳이 보이지 않는다
                 row.noteLabel.text = Note(e);
                 // 누를 수 없는 버튼은 아예 숨긴다 (흐린 버튼은 폰에서 구분이 잘 안 된다)
                 row.minus.gameObject.SetActive(e.Kept);
@@ -171,6 +287,12 @@ namespace HistoryHeroes.UI
             bool canSave = fits && _draft.HasAnything;
             saveButton.interactable = canSave;
             saveLabel.text = !fits ? "용량 초과" : !_draft.HasAnything ? "남길 스킬 없음" : "저장";
+            if (previewLabel != null)
+            {
+                previewLabel.text = _draft.HasAnything && _makeRecord != null
+                    ? "<color=#FFD966>저장되는 빌드</color>\n" + RecordFormat.Details(_makeRecord(_draft), database)
+                    : string.Empty;
+            }
         }
 
         private string Note(RecordDraft.Entry e)
@@ -201,9 +323,9 @@ namespace HistoryHeroes.UI
         private void Save()
         {
             if (!_draft.Fits || !_draft.HasAnything) return;
-            if (_fixedSlot >= 0)
+            if (_fixedRecordId != null)
             {
-                Commit(_fixedSlot);
+                Commit(-1);
                 return;
             }
 
@@ -214,71 +336,118 @@ namespace HistoryHeroes.UI
                 return;
             }
 
-            // 빈 칸이 없다 → 바꿀 칸 고르기
+            ShowSlotChoices();
+        }
+
+        private void ShowSlotChoices()
+        {
+            // 빈 칸이 없다 → 바꿀 칸 고르기. 새 기록 요약을 위에 보여 주어 바꾸기 전후를 견준다 (전체 검토 2번)
+            _confirmTemp = false;
             SaveData data = SaveSystem.Data;
+            RunRecord preview = _makeRecord(_draft);
+            subtitleLabel.text = $"바꿀 칸을 고르세요\n<size=85%><color=#7CFC9A>새 기록</color>  {RecordFormat.Details(preview, database)}</size>";
+            subtitleLabel.color = Color.white;
+            if (slotTitleLabel != null) slotTitleLabel.text = $"바꿀 칸을 고르세요\n새 기록: {RecordFormat.Title(preview, database)}\n잠긴 기록은 바꿀 수 없어요";
             for (int i = 0; i < slotButtons.Length; i++)
             {
                 bool exists = i < data.recordSlots;
                 slotButtons[i].gameObject.SetActive(exists);
                 if (!exists) continue;
                 RunRecord old = data.RecordInSlot(i);
-                slotLabels[i].text = old != null ? $"{RecordFormat.Title(old, database)}\n{RecordFormat.Details(old, database)}" : $"{i + 1}번 칸 (비어 있음)";
+                slotButtons[i].interactable = old == null || !old.locked;
+                slotLabels[i].text = old != null ? $"{(old.locked ? "<color=#FFD966>[잠김]</color> " : "")}{RecordFormat.Title(old, database)}\n{RecordFormat.Details(old, database)}" : $"{i + 1}번 칸 (비어 있음)";
             }
 
+            if (tempButton != null) tempButton.gameObject.SetActive(true);
+            if (tempLabel != null) tempLabel.text = "임시 칸에 두기";
             slotPanel.SetActive(true);
         }
 
         private void Commit(int slot)
         {
             RunRecord record = _makeRecord(_draft);
-            record.slot = slot;
-
-            SaveData data = SaveSystem.Data;
-            RunRecord old = data.RecordInSlot(slot);
-            if (old != null && _fixedSlot >= 0)
+            bool newRecord = _fixedRecordId == null;
+            SaveSystem.CommitResult result = _pending ? SavePendingToSlot(_draft, slot) : SaveSystem.Commit(() => newRecord
+                ? RecordService.SaveToSlot(SaveSystem.Data, record, slot)
+                : RecordService.Reselect(SaveSystem.Data, _fixedRecordId, record));
+            if (result != SaveSystem.CommitResult.Saved)
             {
-                // 다시 고르기: 같은 기록이므로 ID와 보스 격파 기록은 이어받는다
-                record.id = old.id;
-                record.createdAt = old.createdAt;
-                record.bossesDefeated = old.bossesDefeated;
-                record.bossWins = old.bossWins;
-                record.meta = old.meta; // 판 밖 성장은 만들 당시 그대로 (다시 고르기는 스킬만 바꾼다, Codex v0.4 1번)
-                if (string.IsNullOrEmpty(record.heroName)) record.heroName = old.heroName;
-            }
-
-            RunRecord replaced = data.RecordInSlot(slot);
-            data.records.RemoveAll(r => r.slot == slot);
-            data.records.Add(record);
-            bool newRecord = _fixedSlot < 0;
-            if (newRecord) data.relics.recordsSavedTotal++; // 업적 "기록 10개 저장" (다시 고르기는 안 셈)
-            if (!SaveSystem.Save())
-            {
-                // 디스크가 꽉 찼을 때 등: 기록을 되돌리고 화면을 그대로 둔다 (다시 누르면 다시 시도)
-                data.records.Remove(record);
-                if (replaced != null) data.records.Add(replaced);
-                if (newRecord) data.relics.recordsSavedTotal--;
                 slotPanel.SetActive(false);
-                subtitleLabel.text = "저장하지 못했어요. 기기 저장 공간을 확인하고 다시 눌러 주세요.";
+                subtitleLabel.text = result == SaveSystem.CommitResult.SaveFailed ? SaveSystem.SaveFailedText : "이 기록은 바꿀 수 없어요. 다른 칸을 골라 주세요.";
                 subtitleLabel.color = Over;
                 return;
             }
 
-            if (newRecord)
+            if (newRecord) RecordSaved();
+            Close();
+        }
+
+        private void SaveToTemp()
+        {
+            if (_fixedRecordId != null || !_draft.Fits || !_draft.HasAnything) return;
+            SaveData data = SaveSystem.Data;
+            if (data.FirstFreeSlot() >= 0) return;
+            if (data.TempRecord != null && !_confirmTemp)
             {
-                Missions.MissionEvents.Raise(Missions.MissionEvents.Record);
-                SaveSystem.SaveIfDirty();
+                _confirmTemp = true;
+                if (slotTitleLabel != null) slotTitleLabel.text = $"임시 기록을 바꿀까요?\n기존: {RecordFormat.Title(data.TempRecord, database)}\n새 기록: {RecordFormat.Title(_makeRecord(_draft), database)}";
+                subtitleLabel.text = $"기존: {RecordFormat.Title(data.TempRecord, database)}\n새 기록: {RecordFormat.Details(_makeRecord(_draft), database)}";
+                for (int i = 0; i < slotButtons.Length; i++) slotButtons[i].gameObject.SetActive(false);
+                if (tempLabel != null) tempLabel.text = "기존 기록 지우고 두기";
+                return;
+            }
+
+            RunRecord record = _makeRecord(_draft);
+            SaveSystem.CommitResult result = _pending ? SavePendingToTemp(_draft)
+                : SaveSystem.Commit(() => RecordService.SaveToTemp(SaveSystem.Data, record));
+            if (result != SaveSystem.CommitResult.Saved)
+            {
+                ShowSlotChoices();
+                if (slotTitleLabel != null) slotTitleLabel.text = result == SaveSystem.CommitResult.SaveFailed
+                    ? "저장하지 못했어요. 저장 공간을 확인하고 다시 눌러 주세요." : "임시 칸에 둘 수 없어요.";
+                return;
+            }
+
+            RecordSaved();
+            Close();
+        }
+
+        private static void RecordSaved()
+        {
+            Missions.MissionEvents.Raise(Missions.MissionEvents.Record);
+            SaveSystem.SaveIfDirty();
+        }
+
+        private void TogglePin(int index)
+        {
+            if (_draft == null || index < 0 || index >= _draft.Entries.Count) return;
+            if (!_draft.TogglePin(_draft.Entries[index]))
+            {
+                subtitleLabel.text = $"고정은 {RecordDraft.MaxPins}개까지예요 (이름을 다시 누르면 풀려요)";
+                return;
+            }
+
+            Render();
+        }
+
+        private void Skip()
+        {
+            if (_pending && DiscardPending() != SaveSystem.CommitResult.Saved)
+            {
+                subtitleLabel.text = SaveSystem.SaveFailedText;
+                subtitleLabel.color = Over;
+                return;
             }
 
             Close();
         }
-
-        private void Skip() => Close();
 
         private void Close()
         {
             AllowSkip = true;
             skipButton.gameObject.SetActive(true);
             slotPanel.SetActive(false);
+            _confirmTemp = false;
             root.SetActive(false);
             GamePause.Resume(this);
             Action done = _onDone;

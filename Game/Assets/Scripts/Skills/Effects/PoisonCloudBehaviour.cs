@@ -11,7 +11,7 @@ namespace HistoryHeroes.Skills
     /// </summary>
     public sealed class PoisonCloudBehaviour : ActiveSkillBehaviour
     {
-        [SerializeField] private Color color = new Color(0.45f, 0.85f, 0.3f, 0.4f);
+        [SerializeField] private Color color = new Color(0.8f, 1f, 0.25f, 0.5f); // 밝은 연두 (풀밭의 어두운 초록과 구분 — 3D 화면 점검 2번)
         [SerializeField] private bool bloom;
         [SerializeField] private int maxBloomChain = 3;
         [SerializeField] private float bloomRadius = 0.9f;

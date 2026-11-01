@@ -22,6 +22,9 @@ namespace HistoryHeroes.Progress
         public const float BossAttack = 0.3f;
         public const float ExpMultiplier = 2f;
 
+        /// <summary>이 방에 들어서면 레벨업 하나 더 (회전 칼날 5번 + 방어력 + 조합 = 7번째 카드가 방 4까지 나오게)</summary>
+        public const int BonusLevelRoom = 3;
+
         /// <summary>쓰러질 만큼 맞으면 이만큼 체력으로 (지지 않게)</summary>
         public const float SaveHp = 0.5f;
 
@@ -32,17 +35,18 @@ namespace HistoryHeroes.Progress
         public static bool BossPending(SaveData s) => !s.tutorialDone && !string.IsNullOrEmpty(s.tutorialRecordId) && s.FindRecord(s.tutorialRecordId) != null;
 
         /// <summary>
-        /// 방 6개: ① 빈 방 (이동) ② 궁병 1 (멈추면 쏜다) ③ 돌진병 2 (예고선 → 피하기) ④⑤ 섞어서 (레벨업·조합) ⑥ 엘리트 돌진병 (마지막)
+        /// 방 6개: ① 궁병 1 (이동 + 멈추면 쏜다, 첫 처치 = 첫 레벨업) ② 돌진병 2 (예고선 → 피하기) ③④⑤ 섞어서 (레벨업·조합) ⑥ 엘리트 돌진병 (마지막).
+        /// 2026-10-29 전체 기획 검토 1번: 첫 공격 20초 · 첫 카드 45초 · 첫 조합 3분 안 → 빈 방을 빼고 처음부터 쏘게 했다
         /// </summary>
         public static List<RoomPlan> Plan()
         {
             return new List<RoomPlan>
             {
-                new RoomPlan { kind = RoomKind.Normal, budget = 0, minTypes = 1, maxTypes = 1 },
                 new RoomPlan { kind = RoomKind.Normal, budget = 2, minTypes = 1, maxTypes = 1, only = "archer" },
                 new RoomPlan { kind = RoomKind.Normal, budget = 4, minTypes = 1, maxTypes = 1, only = "charger" },
+                new RoomPlan { kind = RoomKind.Normal, budget = 5, minTypes = 2, maxTypes = 2 },
                 new RoomPlan { kind = RoomKind.Normal, budget = 6, minTypes = 2, maxTypes = 2 },
-                new RoomPlan { kind = RoomKind.Normal, budget = 8, minTypes = 2, maxTypes = 2 },
+                new RoomPlan { kind = RoomKind.Normal, budget = 5, minTypes = 2, maxTypes = 2 },
                 new RoomPlan { kind = RoomKind.Elite, budget = 2, minTypes = 1, maxTypes = 1, elites = 1, only = "charger" },
             };
         }

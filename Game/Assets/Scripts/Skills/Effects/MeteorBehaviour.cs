@@ -34,13 +34,33 @@ namespace HistoryHeroes.Skills
             FxSprite marker = _fx.Get(center, Quaternion.identity);
             marker.Hold(PlaceholderSprites.Circle, center, Vector2.one * radius * 0.6f, markerColor, -1);
 
+            // 그래픽 평가 5번: 하늘에서 비스듬히 떨어지는 빛나는 바위 (블렌더 유성 + 불꼬리)
+            GameObject rock = null;
+            SkillArt art = SkillArt.Get;
+            var from = new Vector3(center.x + 2.2f, center.y + 3.2f, -10f);
+            var to = new Vector3(center.x, center.y, -0.4f);
+            if (art != null && art.meteor != null)
+            {
+                rock = Instantiate(art.meteor, from, Quaternion.identity, EffectRoot);
+                rock.transform.localScale = Vector3.one * Mathf.Clamp(radius * 0.7f, 0.9f, 1.8f);
+                SkillArt.Trail(rock, new Color(1f, 0.55f, 0.2f), 0.6f, 0.25f);
+            }
+
             for (float t = 0f; t < telegraph; t += Time.deltaTime)
             {
                 float k = t / telegraph;
                 marker.transform.localScale = Vector3.one * radius * 2f * Mathf.Lerp(0.3f, 1f, k);
+                if (rock != null)
+                {
+                    rock.transform.position = Vector3.Lerp(from, to, k * k); // 점점 빨라진다
+                    rock.transform.Rotate(220f * Time.deltaTime, 140f * Time.deltaTime, 0f, Space.Self);
+                }
+
                 yield return null;
             }
 
+            if (rock != null) Destroy(rock);
+            Common.CameraShake.Add(0.35f);
             _fx.Release(marker);
             AttackFx.Burst(center, radius, blastColor, 0.35f);
             CombatQuery.EnemiesWithin(center, radius, _hits);

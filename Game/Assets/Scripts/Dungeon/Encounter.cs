@@ -17,10 +17,12 @@ namespace HistoryHeroes.Dungeon
             if (plan.kind == RoomKind.Reward || plan.kind == RoomKind.Boss) return result;
 
             var available = new List<EnemyCost>();
+            // only = 설계자가 고른 적 (튜토리얼): 구간의 "몇 번 방부터" 규칙은 건너뛴다 (튜토리얼 첫 방 궁병, Codex 검토 1번)
+            bool picked = !string.IsNullOrEmpty(plan.only);
             foreach (EnemyCost e in chapter.enemies)
             {
-                if (e.prefab == null || e.cost <= 0 || e.fromRoom > room) continue;
-                if (!string.IsNullOrEmpty(plan.only) && (e.prefab.Data == null || e.prefab.Data.id != plan.only)) continue;
+                if (e.prefab == null || e.cost <= 0 || (!picked && e.fromRoom > room)) continue;
+                if (picked && (e.prefab.Data == null || e.prefab.Data.id != plan.only)) continue;
                 available.Add(e);
             }
 
@@ -91,8 +93,28 @@ namespace HistoryHeroes.Dungeon
             list.Add(new SpawnEntry { prefab = prefab, count = count, elite = elite });
         }
 
+        /// <summary>긴 방의 적 수를 앞·뒤 무리로 나눈다. 전체 적 수와 예산은 그대로 둔다.</summary>
+        public static List<SpawnEntry>[] SplitWaves(IReadOnlyList<SpawnEntry> spawns)
+        {
+            var waves = new[] { new List<SpawnEntry>(), new List<SpawnEntry>() };
+            if (spawns == null) return waves;
+            int total = 0;
+            foreach (SpawnEntry entry in spawns) if (entry.prefab != null) total += entry.count;
+            int firstRemaining = (total + 1) / 2;
+            foreach (SpawnEntry entry in spawns)
+            {
+                if (entry.prefab == null) continue;
+                int first = System.Math.Min(entry.count, firstRemaining);
+                firstRemaining -= first;
+                if (first > 0) { SpawnEntry copy = entry; copy.count = first; waves[0].Add(copy); }
+                if (entry.count > first) { SpawnEntry copy = entry; copy.count -= first; waves[1].Add(copy); }
+            }
+            return waves;
+        }
+
         /// <summary>방마다 레이아웃 (일반 방만 뽑고, 나머지는 정해진 모양)</summary>
-        public static List<RoomLayout> PickLayouts(IReadOnlyList<RoomPlan> plans, IReadOnlyList<RoomLayout> layouts, RoomLayout special, System.Random random)
+        /// <param name="chapter">0 = 구간 구분 없음. 1~5 = 그 구간 전용 방을 60%로 먼저 (확장 1차 1-2장)</param>
+        public static List<RoomLayout> PickLayouts(IReadOnlyList<RoomPlan> plans, IReadOnlyList<RoomLayout> layouts, RoomLayout special, System.Random random, int chapter = 0)
         {
             var result = new List<RoomLayout>(plans.Count);
             var used = new HashSet<RoomLayout>();
@@ -101,34 +123,78 @@ namespace HistoryHeroes.Dungeon
             {
                 if (p.kind != RoomKind.Normal || layouts == null || layouts.Count == 0)
                 {
-                    result.Add(special);
+                    result.Add(PickSpecial(p.kind, layouts, special, chapter, random));
                     last = null;
                     continue;
                 }
 
-                var options = new List<RoomLayout>();
-                foreach (RoomLayout l in layouts)
-                {
-                    if (l != null && !used.Contains(l) && l.kind != last) options.Add(l);
-                }
-
+                List<RoomLayout> options = NormalOptions(layouts, chapter, used, last, p.longRoom);
                 if (options.Count == 0)
                 {
                     // 다 썼으면 (긴 판·무한) 종류 연속만 피한다
                     used.Clear();
-                    foreach (RoomLayout l in layouts)
-                    {
-                        if (l != null && l.kind != last) options.Add(l);
-                    }
+                    options = NormalOptions(layouts, chapter, used, last, p.longRoom);
                 }
 
-                RoomLayout pick = options.Count > 0 ? options[random.Next(options.Count)] : special;
+                RoomLayout pick = options.Count > 0 ? PickNormal(options, chapter, random) : special;
                 used.Add(pick);
                 last = pick != null ? pick.kind : (LayoutKind?)null;
                 result.Add(pick);
             }
 
             return result;
+        }
+
+        /// <summary>한 판의 긴 방 자리: 갈림길·특수 방을 피한 두 후보에서 하나만 고른다.</summary>
+        public static int PickLongRoom(System.Random random) => random.Next(2) == 0 ? 7 : 12;
+
+        public static bool UsesLongRoom(int room, int selectedRoom, int roomCount, RoomKind kind, bool tutorial, bool daily, bool rift)
+            => room == selectedRoom && roomCount == 15 && !tutorial && !daily && !rift && kind == RoomKind.Normal;
+
+        /// <summary>일반 방 후보: 일반 용도 · 이 구간이 쓸 수 있는 방 · 안 쓴 방 · 바로 앞과 다른 종류</summary>
+        public static List<RoomLayout> NormalOptions(IReadOnlyList<RoomLayout> layouts, int chapter, HashSet<RoomLayout> used, LayoutKind? last, bool longRoom = false)
+        {
+            var options = new List<RoomLayout>();
+            foreach (RoomLayout l in layouts)
+            {
+                if (l == null || l.use != RoomUse.Normal || l.longRoom != longRoom || (used != null && used.Contains(l)) || l.kind == last) continue;
+                if (chapter > 0 && l.chapter != 0 && l.chapter != chapter) continue;
+                if (chapter == 0 && l.chapter != 0) continue;
+                options.Add(l);
+            }
+
+            return options;
+        }
+
+        /// <summary>구간 전용 방이 있으면 60%로 그중에서, 아니면 공용에서 (확장 1차 1-2장)</summary>
+        public static RoomLayout PickNormal(List<RoomLayout> options, int chapter, System.Random random)
+        {
+            if (chapter > 0)
+            {
+                List<RoomLayout> own = options.FindAll(l => l.chapter == chapter);
+                List<RoomLayout> shared = options.FindAll(l => l.chapter == 0);
+                if (own.Count > 0 && shared.Count > 0) options = random.NextDouble() < 0.6 ? own : shared;
+            }
+
+            return options[random.Next(options.Count)];
+        }
+
+        /// <summary>엘리트 = 원형 투기장 · 보상 = 받침대 방 · 중간 보스 = 구간 전용 모양 (없으면 빈 방)</summary>
+        public static RoomLayout PickSpecial(RoomKind kind, IReadOnlyList<RoomLayout> layouts, RoomLayout special, int chapter, System.Random random)
+        {
+            RoomUse use = kind == RoomKind.Elite ? RoomUse.Elite : kind == RoomKind.Reward ? RoomUse.Reward : kind == RoomKind.MidBoss ? RoomUse.MidBoss : RoomUse.Normal;
+            if (use == RoomUse.Normal || layouts == null) return special;
+            var options = new List<RoomLayout>();
+            foreach (RoomLayout l in layouts)
+            {
+                if (l != null && l.use == use && (l.chapter == 0 || l.chapter == chapter)) options.Add(l);
+            }
+
+            if (options.Count == 0) return special;
+            // 구간 전용이 있으면 그것 (중간 보스 방)
+            List<RoomLayout> own = options.FindAll(l => l.chapter == chapter && chapter > 0);
+            if (own.Count > 0) options = own;
+            return options.Count == 1 ? options[0] : options[random.Next(options.Count)];
         }
     }
 }

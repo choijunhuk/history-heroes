@@ -22,6 +22,11 @@ namespace HistoryHeroes.Modes
         [SerializeField] private GameObject arenaRoot;
         [SerializeField] private CameraFollow cameraFollow;
         [SerializeField] private Survival.SurvivalData survival;
+        [Header("확장 1차 6장: 서바이벌 맵 3개 (GameSession.SurvivalMap)")]
+        [SerializeField] private Survival.SurvivalData[] survivalMaps = new Survival.SurvivalData[0];
+        [SerializeField] private GameObject[] survivalMapRoots = new GameObject[0];
+        [SerializeField] private Transform[] survivalStarts = new Transform[0];
+        [SerializeField] private Survival.SurvivalRun survivalRun;
         [SerializeField] private HeroRoster roster;
         [SerializeField] private PlayerController player;
         [Tooltip("판 밖 성장 표 (v0.4). 비어 있으면 판 밖 성장 없이 싸운다")]
@@ -37,14 +42,16 @@ namespace HistoryHeroes.Modes
         /// 이번 판 영웅: 던전 = 로비에서 고른 영웅, 보스 = 기록에 저장된 영웅 (GameDesign 7-1 "사용한 영웅").
         /// 플레이어의 Awake보다 먼저 정해야 능력치가 그 영웅으로 만들어진다.
         /// </summary>
-        public static HeroData HeroForThisBattle(HeroRoster roster)
+        public static HeroData HeroForThisBattle(HeroRoster roster, SaveData save = null)
         {
-            SaveData save = SaveSystem.Data;
+            if (GameSession.IsHeroTrial) return roster.Find(GameSession.TrialHeroId);
+            save ??= SaveSystem.Data;
             if (GameSession.Mode == BattleMode.Boss)
             {
                 RunRecord record = save.FindRecord(GameSession.BossRecordId);
-                if (record == null && save.records.Count > 0) record = save.records[save.records.Count - 1];
+                if (record == null && !GameSession.IsGodTrial && save.records.Count > 0) record = save.records[save.records.Count - 1];
                 if (record != null) return roster.Find(record.heroId);
+                if (GameSession.IsGodTrial) return null;
             }
 
             // 튜토리얼 던전: 칭기즈 칸 (UX 4장)
@@ -82,23 +89,47 @@ namespace HistoryHeroes.Modes
         /// <summary>
         /// 이번 판의 판 밖 성장: 던전 = 지금 계정, 보스 = 기록에 고정된 것 (GameDesign 7-3 "현재 장비를 덧붙이지 않는다").
         /// </summary>
-        public static MetaSnapshot MetaForThisBattle(Meta.MetaTable table, string heroId)
+        public static MetaSnapshot MetaForThisBattle(Meta.MetaTable table, string heroId, SaveData save = null)
         {
-            SaveData save = SaveSystem.Data;
+            save ??= SaveSystem.Data;
+            if (GameSession.IsHeroTrial)
+            {
+                MetaSnapshot trial = Meta.MetaStats.FromAccount(save, table, heroId);
+                trial.heroLevel = 1;
+                trial.heroStars = 1;
+                return trial;
+            }
+
             if (GameSession.Mode == BattleMode.Boss)
             {
                 RunRecord record = save.FindRecord(GameSession.BossRecordId);
-                if (record == null && save.records.Count > 0) record = save.records[save.records.Count - 1];
+                if (record == null && !GameSession.IsGodTrial && save.records.Count > 0) record = save.records[save.records.Count - 1];
                 return record != null && record.meta != null ? record.meta : new MetaSnapshot();
             }
 
             if (GameSession.Mode == BattleMode.Daily) return DailyRules.FixedSet(); // 공정한 고정 세트 (펫·유물·수련 없음)
             // 이어하기: 판을 시작할 때의 성장 그대로 (로비에서 강화해도 이 판에는 안 들어간다)
-            if (GameSession.Resuming != null && GameSession.Resuming.hasMeta && GameSession.Resuming.meta != null) return GameSession.Resuming.meta;
+            if (GameSession.Resuming != null && GameSession.Resuming.hasMeta && GameSession.Resuming.meta != null)
+                return EnsureRunes(GameSession.Resuming.meta, save, table, heroId);
+            if (GameSession.Mode == BattleMode.Rift && GameSession.RiftContinue && save.rift.checkpoint.valid
+                && save.rift.checkpoint.hasMeta && save.rift.checkpoint.meta != null)
+                return EnsureRunes(save.rift.checkpoint.meta, save, table, heroId);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (DevMeta != null) return DevMeta; // 벤치: 정해 둔 판 밖 성장
+            if (DevMeta != null) return EnsureRunes(DevMeta, save, table, heroId); // 벤치: 정해 둔 판 밖 성장
 #endif
             return Meta.MetaStats.FromAccount(save, table, heroId);
+        }
+
+        private static MetaSnapshot EnsureRunes(MetaSnapshot snapshot, SaveData save, Meta.MetaTable table, string heroId)
+        {
+            if (!snapshot.hasRunes && table != null && table.runes != null)
+            {
+                // 옛 체크포인트에는 룬이 없으므로 이번 복귀에서 채우고 다음 저장부터 고정한다.
+                snapshot.runes = Runes.RuneService.Snapshot(save, table.runes, heroId);
+                snapshot.hasRunes = true;
+            }
+
+            return snapshot;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -109,8 +140,25 @@ namespace HistoryHeroes.Modes
         private static void ResetDev() => DevMeta = null;
 #endif
 
+        /// <summary>고른 서바이벌 맵만 켜고, 그 맵의 숫자·시작 자리를 서바이벌 판에 넘긴다</summary>
+        private void PickSurvivalMap()
+        {
+            int count = survivalMaps != null ? survivalMaps.Length : 0;
+            if (count == 0) return;
+            int map = Mathf.Clamp(GameSession.SurvivalMap, 0, count - 1);
+            if (survivalMaps[map] != null) survival = survivalMaps[map];
+            for (int i = 0; survivalMapRoots != null && i < survivalMapRoots.Length; i++)
+            {
+                if (survivalMapRoots[i] != null) survivalMapRoots[i].SetActive(i == map);
+            }
+
+            Transform start = survivalStarts != null && map < survivalStarts.Length ? survivalStarts[map] : null;
+            if (survivalRun != null) survivalRun.Configure(survival, start, map);
+        }
+
         private void Awake()
         {
+            GameSession.ConfigureMetaTable(metaTable);
             SettingsApplier.Apply(SaveSystem.Data.settings);
             Screen.sleepTimeout = SleepTimeout.NeverSleep; // 멈춰서 쏘는 동안 화면을 안 만져도 꺼지지 않게 (로비에서 폰 설정으로 돌린다)
             SaveSystem.RotateRunBackups(); // 지난 판이 끝나고 저장된 상태를 판 백업으로 (끝날 때 돌리면 끝나기 전 상태가 들어간다)
@@ -125,7 +173,7 @@ namespace HistoryHeroes.Modes
                 // 룬: 던전·서바이벌·균열만 (보스맵은 레벨업이 없다, 일일 도전은 고정 세트 — Runes 6장)
                 if (skills != null && metaTable != null && metaTable.runes != null && hero != null && GameSession.Mode != BattleMode.Boss && GameSession.Mode != BattleMode.Daily)
                 {
-                    skills.WeightModifier = Runes.RuneService.ModifierFor(SaveSystem.Data, metaTable.runes, hero.id, database != null ? database.recipes : null);
+                    skills.WeightModifier = Runes.RuneService.ModifierFor(player.Meta, metaTable.runes, hero.id, database != null ? database.recipes : null);
                 }
             }
 
@@ -134,13 +182,14 @@ namespace HistoryHeroes.Modes
             if (dungeonRoot != null) dungeonRoot.SetActive(!boss && !survive);
             if (bossRoot != null) bossRoot.SetActive(boss);
             if (survivalRoot != null) survivalRoot.SetActive(survive);
+            if (survive) PickSurvivalMap();
             if (arenaRoot != null) arenaRoot.SetActive(!survive);
             if (cameraFollow != null)
             {
                 cameraFollow.enabled = survive;
                 if (survive && survival != null)
                 {
-                    cameraFollow.BoundsHalfSize = survival.mapHalfSize;
+                    cameraFollow.BoundsHalf = survival.mapHalf;
                     CameraFit fit = cameraFollow.GetComponentInChildren<CameraFit>();
                     if (fit != null) fit.Area = survival.cameraArea;
                 }

@@ -61,7 +61,10 @@ namespace HistoryHeroes.Stats
         }
 
         /// <param name="context">기본 공격을 계산할 땐 BasicAttack, 액티브는 Active, 그 밖에는 Both.</param>
-        public float Get(StatType stat, StatTarget context = StatTarget.Both)
+        public float Get(StatType stat, StatTarget context = StatTarget.Both) => GetWithout(stat, null, context);
+
+        /// <summary>owner의 보정을 뺀 값 (상한까지 같이 계산). 이순신 철갑이 "실제로 막은 피해"를 재는 데 쓴다</summary>
+        public float GetWithout(StatType stat, object excludedOwner, StatTarget context = StatTarget.Both)
         {
             float flat = 0f;
             float percent = 0f;
@@ -70,6 +73,7 @@ namespace HistoryHeroes.Stats
             {
                 StatModifier m = _modifiers[i];
                 if (m.Stat != stat || !m.AppliesTo(context)) continue;
+                if (excludedOwner != null && ReferenceEquals(m.Owner, excludedOwner)) continue;
 
                 if (m.Kind == ModifierKind.Flat) flat += m.Value;
                 else percent += m.Value;

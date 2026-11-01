@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_buddha_breath
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: buddha_breath
+  displayName: "\uB2E4\uC2DC \uC787\uB294 \uC228"
+  description: "12\uCD08\uB9C8\uB2E4 \uC790\uC2E0\uC744 \uC989\uC2DC\xB70.6\uCD08
+    \uB4A4 \uB450 \uBC88 \uD68C\uBCF5 (\uD68C\uB2F9 \uCD5C\uB300\uCCB4\uB825 2.5%)\n\uB808\uBCA8\uB9C8\uB2E4
+    \uD68C\uB2F9 \uD68C\uBCF5 +0.5%p"
+  warriorDescription: 
+  icon: {fileID: 21300000, guid: 07eaf87ade54b6845b2c59a2b3431a72, type: 3}
+  rarity: 1
+  tags: 1024
+  role: 3
+  maxLevel: 3
+  saveCostFirstLevel: 12
+  saveCostPerLevel: 4
+  recordable: 1
+  heroOnlyId: buddha
+  cooldown: 12
+  damageFirstLevel: 0
+  damagePerLevel: 0
+  healFractionFirstLevel: 0.025
+  healFractionPerLevel: 0.005
+  countFirstLevel: 2
+  countPerLevel: 0
+  radius: 6
+  radiusPerLevel: 0
+  duration: 0.6
+  durationPerLevel: 0
+  slowFirstLevel: 0
+  slowPerLevel: 0
+  slowBossScale: 0.3
+  waveRadius: 0
+  returnImpactCoefficient: 0
+  waveLength: 0
+  waveSpeed: 0
+  waveInterval: 0
+  pushDistance: 0
+  behaviourPrefab: {fileID: 4068166423956667403, guid: 78cbb5f75fb1f4177bbffd3d45e73c71, type: 3}

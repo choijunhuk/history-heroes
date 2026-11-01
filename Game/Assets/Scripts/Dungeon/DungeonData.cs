@@ -34,6 +34,8 @@ namespace HistoryHeroes.Dungeon
         public int elites;
         [Tooltip("이 적만 (적 데이터 id, 튜토리얼: \"archer\" · \"charger\"). 비우면 구간 적 전부")]
         public string only;
+        [Tooltip("긴 방: 일반 15방 던전의 7·12번 중 한 방")]
+        public bool longRoom;
 
         public RoomPlan Copy() => (RoomPlan)MemberwiseClone();
     }

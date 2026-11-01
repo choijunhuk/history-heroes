@@ -14,6 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Dungeon.RoomLayout
   id: hazard_3
   kind: 3
+  use: 0
+  chapter: 0
+  longRoom: 0
   obstacles: []
   traps:
   - position: {x: 0, y: 2}
@@ -25,3 +28,4 @@ MonoBehaviour:
   - position: {x: 3, y: 5}
     size: {x: 1.6, y: 1.6}
     angle: 180
+  devices: []

@@ -18,6 +18,7 @@ namespace HistoryHeroes.Stats
                 case StatType.CooldownReduction: return Mathf.Clamp(value, 0f, 0.4f);
                 case StatType.ExpGain: return Mathf.Clamp(value, 0f, 0.5f);
                 case StatType.GoldGain: return Mathf.Clamp(value, 0f, 0.5f);
+                case StatType.DamageTaken: return Mathf.Clamp(value, 0f, 1f);
                 default: return Mathf.Max(0f, value);
             }
         }

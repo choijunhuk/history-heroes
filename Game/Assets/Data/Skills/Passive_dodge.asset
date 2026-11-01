@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "8% \uD655\uB960\uB85C \uD53C\uD574\uB97C \uD53C\uD568\n(\uB808\uBCA8\uB9C8\uB2E4
     +5%, \uCD5C\uB300 25%)"
   warriorDescription: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 99c060987068a3541b8c89563d804876, type: 3}
   rarity: 1
   tags: 2
   role: 3

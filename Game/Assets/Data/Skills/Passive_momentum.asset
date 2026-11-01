@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "\uBA48\uCD98 \uB4A4 3\uCD08\uAC04\n\uAE30\uBCF8 \uACF5\uACA9 \uC18D\uB3C4
     +50%\n\uAE30\uBCF8 \uACF5\uACA9 \uD53C\uD574 +30%"
   warriorDescription: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: e11f29a1c2a3f5a43bff129c3a72c669, type: 3}
   rarity: 2
   tags: 1
   role: 1

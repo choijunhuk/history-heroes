@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72180cf430d45c74f8b1a240d8dd9900, type: 3}
+  m_Name: Survival_city
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Survival.SurvivalData
+  mapId: city
+  mapName: "\uBB34\uB108\uC9C4 \uC131\uACFD \uB3C4\uC2DC"
+  mapBlurb: "\uBB34\uB108\uC9C4 \uC9D1 \uBE14\uB85D\uC774 \uB9CC\uB4E0 \uACE8\uBAA9
+    \xB7 \uD654\uB85C"
+  mapHalf: {x: 40, y: 40}
+  mission: 1
+  missionTarget: 8
+  missionDeadline: 360
+  duration: 600
+  cameraArea: {x: 12.5, y: 20}
+  maxAlive: 300
+  charger: {fileID: 5905299778683711481, guid: 7ae3689bc89ba8745a56d9b66e092633, type: 3}
+  archer: {fileID: 6378719536253049826, guid: ddbc2d5ffe374b04a889c449739907e9, type: 3}
+  bomber: {fileID: 95242875126919497, guid: 927f4d40937bb064fb550ecb5a52d43f, type: 3}
+  minion: {fileID: 5576645427100197428, guid: 537f6b4890e94d540973403966c59fe2, type: 3}
+  shield: {fileID: 4633683407903390228, guid: 4f3f7eeb2947b434aab06a363eddb244, type: 3}
+  archerFrom: 90
+  bomberFrom: 180
+  archerShare: 0.25
+  bomberShare: 0.1
+  aliveCurve:
+  - {x: 0, y: 8}
+  - {x: 1, y: 22}
+  - {x: 2, y: 40}
+  - {x: 4, y: 80}
+  - {x: 6, y: 130}
+  - {x: 8, y: 190}
+  - {x: 10, y: 250}
+  spawnInterval: 0.25
+  spawnBatchMax: 5
+  recycleDistanceRatio: 1.8
+  hpStart: 0.6
+  hpPerMinute: 0.25
+  attackStart: 0.8
+  attackPerMinute: 0.1
+  spawnMargin: 1.5
+  eliteTimes:
+  - 120
+  - 240
+  - 360
+  - 480
+  swarmTimes:
+  - 90
+  - 150
+  - 210
+  - 270
+  - 330
+  - 360
+  - 420
+  - 480
+  - 540
+  swarmKinds: 010000000000000002000000030000000100000000000000020000000300000001000000
+  midBossTime: 300
+  midBoss: {fileID: 6819175174072159056, guid: 115b1a174ff884a468c167de3d8f0242, type: 3}
+  midBossName: "\uADF8\uB9BC\uC790 \uC0AC\uB0E5\uAFBC"
+  midBossHp: 45
+  midBossAttack: 1.3
+  fenceRadius: 7
+  crateKeep: 7
+  crateRespawn: 90
+  braziers: 1
+  bagGold: 15
+  bagGoldPerMinute: 30
+  lookKey: ch2
+  mapColor: {r: 0.78, g: 0.45, b: 0.25, a: 1}
+  bossPrefab: {fileID: 1457192636731765037, guid: 15a9ed5dec8d85241ac5a37624dc674a, type: 3}
+  bossName: "\uD683\uBD88 \uAE30\uC0AC (\uC11C\uBC14\uC774\uBC8C)"
+  bossHpMultiplier: 60
+  bossAttackMultiplier: 1.5
+  bossWarning: 3
+  floorPerMinute: 1.5
+  activeSlots: 6
+  passiveSlots: 6
+  maxGems: 150
+  expMultiplier: 0.4
+  goldPerMinute: 50
+  accountExpPerMinute: 10
+  shardsPerTwoMinutes: 1
+  shardsMax: 5
+  heartCost: 1

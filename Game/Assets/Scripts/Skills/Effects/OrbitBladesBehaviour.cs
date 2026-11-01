@@ -59,6 +59,15 @@ namespace HistoryHeroes.Skills
             sr.sprite = PlaceholderSprites.Square;
             sr.color = color;
             sr.sortingOrder = 6;
+            // 3D 칼 (끝이 도는 쪽을 본다) + 원을 그리는 꼬리 빛 (그래픽 평가 2번: "흰 막대 같은 칼날"). 모델이 없으면 예전 네모
+            SkillArt art = SkillArt.Get;
+            if (art != null && art.blade != null)
+            {
+                SkillArt.Attach(art.blade, go.transform, 1.1f);
+                SkillArt.Trail(go, new Color(0.35f, 0.65f, 1f), 0.22f, 0.16f);
+                sr.enabled = false;
+            }
+
             return new Blade { Transform = go.transform };
         }
 
@@ -82,7 +91,8 @@ namespace HistoryHeroes.Skills
                 Vector2 position = center + offset;
 
                 Blade blade = _blades[i];
-                blade.Transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 0f, degrees + 90f));
+                // 3D: 칼날은 가슴 높이(-Z)에서 돈다 (땅에 누워 보이지 않게, Art3D-Plan 6번). 판정은 XY 그대로
+                blade.Transform.SetPositionAndRotation(new Vector3(position.x, position.y, -0.75f), Quaternion.Euler(0f, 0f, degrees + 90f));
 
                 HitEnemies(position, now);
 

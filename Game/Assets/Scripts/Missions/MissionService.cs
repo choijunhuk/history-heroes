@@ -80,9 +80,9 @@ namespace HistoryHeroes.Missions
             switch (gate)
             {
                 case MissionGate.None: return true;
-                case MissionGate.Survival: return save.unlockedChapter >= 3;
+                case MissionGate.Survival: return save.unlockedChapter >= 2; // 서바이벌은 1구간 보스 격파 뒤 (확장 결정 2, 전체 검토 12번)
                 case MissionGate.Equipment: return Equipment.EquipmentInventory.Unlocked(save);
-                case MissionGate.BossRecord: return save.records.Count > 0;
+                case MissionGate.BossRecord: return save.records.Count > 0 || save.TempRecord != null;
                 case MissionGate.RiftDaily: return Modes.RiftRules.Unlocked(save);
                 default: return false;
             }
@@ -269,6 +269,13 @@ namespace HistoryHeroes.Missions
         public static List<string> Raise(SaveData save, string key, int amount, string param)
         {
             var done = new List<string>();
+            Raise(save, key, amount, param, done);
+            return done;
+        }
+
+        /// <summary>전투 사건은 같은 알림 목록을 재사용한다. 호출자가 목록 비우기를 맡는다.</summary>
+        public static void Raise(SaveData save, string key, int amount, string param, List<string> done)
+        {
             MissionSave ms = save.missions;
             foreach (MissionProgress m in ms.daily)
             {
@@ -287,8 +294,6 @@ namespace HistoryHeroes.Missions
                     done.Add($"주간 미션 완료  {m.title}");
                 }
             }
-
-            return done;
         }
 
         /// <summary>"지금 값"으로 맞추는 미션 (액티브 3개 Lv3, 패시브 칸 다 채우기): 판 중 가장 높았던 값</summary>
@@ -374,7 +379,7 @@ namespace HistoryHeroes.Missions
         public static string RewardText(ChestDef chest, string heroId)
         {
             string text = RewardOf(chest, heroId).ToString();
-            if (chest.ancientShards > 0) text += (text.Length > 0 ? " · " : "") + $"고대 파편 +{chest.ancientShards}";
+            if (chest.ancientShards > 0) text += (text.Length > 0 ? " · " : "") + $"<sprite name=ancient_shard>고대 파편 +{chest.ancientShards}";
             return text;
         }
 

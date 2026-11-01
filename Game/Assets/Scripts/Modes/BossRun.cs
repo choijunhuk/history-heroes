@@ -21,6 +21,8 @@ namespace HistoryHeroes.Modes
     public sealed class BossRun : MonoBehaviour
     {
         [SerializeField] private List<BossData> bosses = new List<BossData>();
+        [SerializeField] private BossData thorTrial;
+        [SerializeField] private BossData[] godTrials;
         [SerializeField] private SkillDatabase database;
         [Tooltip("보스 최초 격파 장비 보상 (v0.4)")]
         [SerializeField] private Meta.MetaTable metaTable;
@@ -53,13 +55,26 @@ namespace HistoryHeroes.Modes
         public int HitsTaken => _hitsTaken;
         public bool IsFinished => _finished;
 
+        [Tooltip("보스 경기장 반지름 (기믹: 기둥 자리 · 불길 반쪽)")]
+        [SerializeField] private float arenaRadius = 3.9f;
+
         private void Start()
         {
             GamePause.ResetAll();
             DamageLog.Reset();
+            BossGimmicks.Notice = text => { if (hud != null) hud.ShowNotice(text, 2f); }; // 기믹 알림 (확장 1차 5장)
 
             _info = FindBoss(GameSession.Chapter);
-            _record = SaveSystem.Data.FindRecord(GameSession.BossRecordId) ?? LatestRecord();
+            _record = SaveSystem.Data.FindRecord(GameSession.BossRecordId);
+            if (!GameSession.IsGodTrial) _record ??= LatestRecord();
+            if (GameSession.IsGodTrial && (_info == null || _record == null || !GodTrialRules.IsUnlocked(SaveSystem.Data, GameSession.GodTrialId)))
+            {
+                _finished = true;
+                SaveSystem.Data.run = new RunSnapshot();
+                SaveSystem.Save();
+                result.ShowText("시련을 열 수 없어요", "고른 기록과 시련 정보를 다시 확인해 주세요.", "로비로", GameSession.ToLobby, null, null);
+                return;
+            }
 
             // 판 이어하기: 앱이 꺼지면 같은 기록으로 이 보스를 처음부터 (하트는 이미 썼다). 튜토리얼 보스는 로비가 다시 연다
             if (!GameSession.Tutorial)
@@ -67,7 +82,8 @@ namespace HistoryHeroes.Modes
                 SaveSystem.Data.run = new RunSnapshot
                 {
                     valid = true, mode = (int)BattleMode.Boss, chapter = GameSession.Chapter, practice = GameSession.Practice,
-                    recordId = _record != null ? _record.id : GameSession.BossRecordId, heartSpent = GameSession.HeartSpent, savedAt = Economy.Clock.UnixSeconds,
+                    recordId = _record != null ? _record.id : GameSession.BossRecordId, godTrialId = GameSession.GodTrialId,
+                    heartSpent = GameSession.HeartSpent, savedAt = Economy.Clock.UnixSeconds,
                 };
                 SaveSystem.Save();
             }
@@ -80,7 +96,7 @@ namespace HistoryHeroes.Modes
             skills.ApplyRecord(build.Skills, database);
             _foughtActives = Stars.ActiveIds(build.Skills, database);
 
-            hud.RoomText = (_info != null ? $"보스  {_info.displayName}" : "보스") + (GameSession.Practice ? "  (연습)" : string.Empty);
+            hud.RoomText = (_info != null ? $"{(GameSession.IsGodTrial ? "신의 시련" : "보스")}  {_info.displayName}" : "보스") + (GameSession.Practice ? "  (연습)" : string.Empty);
             hud.SetBossMode();
             player.Teleport(playerStart.position);
             player.Health.Died += _ => Finish(victory: false);
@@ -99,7 +115,7 @@ namespace HistoryHeroes.Modes
             };
             if (_info != null)
             {
-                bool challenge = !GameSession.Practice && !GameSession.Tutorial && !Stars.Has(SaveSystem.Data, _info.chapter, Stars.Boss, 2);
+                bool challenge = !GameSession.IsGodTrial && !GameSession.Practice && !GameSession.Tutorial && !Stars.Has(SaveSystem.Data, _info.chapter, Stars.Boss, 2);
                 hud.SetHitCounter(challenge, () => _hitsTaken, _info.star2MaxHits);
             }
 
@@ -133,6 +149,12 @@ namespace HistoryHeroes.Modes
             _boss.Killed += _ => Finish(victory: true);
             _startTime = Time.time;
             if (bossHud != null) bossHud.Bind(_boss, _info.displayName);
+            // 기믹 보스 (확장 1차 5장): 쌍둥이 = 그림자 표식, 망각의 왕 = 수정 기둥 보호막 (+ 2단계 무너지는 바닥)
+            Vector2 center = transform.parent != null ? (Vector2)transform.parent.position : Vector2.zero;
+            // 아테나의 방패는 외형이다. 왕의 수정 기둥 보호막을 시련에 붙이면 설계와 다른 피해 면역이 생긴다.
+            GimmickKind kind = GameSession.GodTrialId == GodTrialRules.AthenaTrialId ? GimmickKind.None : BossGimmicks.For(_boss);
+            BossGimmick gimmick = BossGimmicks.Attach(_boss, kind, BossArena.Circle(center, arenaRadius));
+            if (gimmick != null && hud != null) hud.ShowNotice(gimmick.Hint, 3f);
         }
 
         /// <summary>
@@ -154,7 +176,7 @@ namespace HistoryHeroes.Modes
             long now = Clock.UnixSeconds;
             string today = Clock.Today;
 
-            if (!GameSession.Tutorial) Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null); // 연습은 안 센다
+            if (!GameSession.Tutorial && !GameSession.IsGodTrial) Missions.MissionEvents.BossFinished(victory, _record != null ? _record.id : null, _info != null ? _info.chapter : GameSession.Chapter); // 연습은 안 센다
             if (GameSession.Tutorial)
             {
                 // 튜토리얼 보스 (UX 4장): 별·구간 해금·최초 격파 보상 없이 튜토리얼 끝 → 출석부·7일 미션·펫 칸이 열린다
@@ -164,6 +186,14 @@ namespace HistoryHeroes.Modes
                     if (metaTable != null && metaTable.pets != null) lines.AddRange(Pets.PetService.CheckAll(save, metaTable.pets));
                     GameSession.TutorialJustFinished = true;
                 }
+            }
+            else if (GameSession.IsGodTrial)
+            {
+                GodTrialResult trial = GodTrialRules.Complete(save, GameSession.GodTrialId, _record, _foughtActives,
+                    victory, GameSession.Practice, GameSession.HeartSpent, Clock.Now());
+                firstClear = trial.FirstClear;
+                lines.AddRange(trial.Lines);
+                if (GameSession.Practice) lines.Add("연습이라 보상·진행·신 조각은 없어요");
             }
             else if (GameSession.Practice)
             {
@@ -188,7 +218,7 @@ namespace HistoryHeroes.Modes
                     if (!firstClear && !reward.IsEmpty && metaTable != null && metaTable.relics != null)
                     {
                         save.AddItem(Relics.RelicTable.AncientShard, metaTable.relics.bossRepeatShards);
-                        lines.Add($"고대 파편 +{metaTable.relics.bossRepeatShards}");
+                        lines.Add($"<sprite name=ancient_shard>고대 파편 +{metaTable.relics.bossRepeatShards}");
                     }
                 }
                 else if (!save.defeatedBosses.Contains(_info.id) && GameSession.HeartSpent)
@@ -222,19 +252,20 @@ namespace HistoryHeroes.Modes
                 Seconds = elapsed,
                 BossName = _info != null ? _info.displayName : "보스",
                 HitsTaken = _hitsTaken,
-                Star2MaxHits = _info != null ? _info.star2MaxHits : 0,
+                Star2MaxHits = !GameSession.IsGodTrial && _info != null ? _info.star2MaxHits : 0,
                 FirstClear = firstClear,
-                UnlockedChapter = firstClear ? _info.chapter + 1 : 0,
+                IsGodTrial = GameSession.IsGodTrial,
+                UnlockedChapter = firstClear && !GameSession.IsGodTrial ? _info.chapter + 1 : 0,
                 BasicAttackShare = DamageLog.BasicShare,
                 RecordLabel = _record != null ? RecordFormat.Title(_record, database) : "기록 없음 (기본 공격만)",
                 RewardLines = lines,
             };
-            StartCoroutine(ShowResultAfter(victory ? 1f : 0.6f, summary));
+            StartCoroutine(ShowResultAfter(victory ? 1.8f : 0.6f, summary)); // 이기면 "격파!" 연출(느려짐·폭발)을 다 보고 나서
         }
 
         private IEnumerator ShowResultAfter(float seconds, BossSummary summary)
         {
-            yield return new WaitForSeconds(seconds);
+            yield return new WaitForSecondsRealtime(seconds); // 느려짐 중에도 실제 시간으로
             if (GameSession.Tutorial && summary.Victory)
             {
                 // 튜토리얼 보스: 별·하트 이야기 없이 받은 것 + 다음 목표 (UX 4장 9:00 "로비 → 1구간 던전에 도전하세요")
@@ -255,6 +286,13 @@ namespace HistoryHeroes.Modes
 
         private BossData FindBoss(int chapter)
         {
+            if (GameSession.IsGodTrial)
+            {
+                if (godTrials != null)
+                    foreach (BossData trial in godTrials)
+                        if (trial != null && trial.id == GameSession.GodTrialId) return trial;
+                return thorTrial != null && thorTrial.id == GameSession.GodTrialId ? thorTrial : null;
+            }
             foreach (BossData b in bosses)
             {
                 if (b != null && b.chapter == chapter) return b;
@@ -308,6 +346,7 @@ namespace HistoryHeroes.Modes
         public int HitsTaken;
         public int Star2MaxHits;
         public bool FirstClear;
+        public bool IsGodTrial;
         public int UnlockedChapter;
         public float BasicAttackShare;
         public string RecordLabel;

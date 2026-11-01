@@ -189,6 +189,34 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void Draft_AutoFit_KeepsAttackPassiveOverWeakActive()
+        {
+            // 전체 검토 2번: 공격력(기본 공격 패시브)을 피해가 적은 액티브보다 늦게 깎는다
+            var draft = new RecordDraft(new[] { Entry(_atk, 1), Entry(_blade, 1) }, 2); // 1 + 2 = 3 > 2
+            draft.AutoFit(id => id == "spin_blade" ? 0.03f : 0f);
+            Assert.IsTrue(draft.Fits);
+            Assert.IsTrue(draft.Entries[0].Kept, "공격력은 남는다");
+            Assert.IsFalse(draft.Entries[1].Kept, "피해 3%인 회전 칼날을 뺀다");
+        }
+
+        [Test]
+        public void Draft_PinnedSkillIsCutLast_AndAtMostTwo()
+        {
+            var draft = new RecordDraft(new[] { Entry(_def, 3), Entry(_lightning, 1), Entry(_atk, 1) }, 4); // 3 + 3 + 1 = 7 > 4
+            Assert.IsTrue(draft.TogglePin(draft.Entries[0]), "방어력 고정");
+            draft.AutoFit();
+            Assert.IsTrue(draft.Fits, $"비용 {draft.TotalCost}");
+            Assert.AreEqual(3, draft.Entries[0].Level, "고정한 방어력은 그대로");
+            Assert.IsFalse(draft.Entries[1].Kept, "대신 낙뢰를 뺀다");
+
+            Assert.IsTrue(draft.TogglePin(draft.Entries[2]));
+            Assert.IsFalse(draft.TogglePin(draft.Entries[1]), "세 번째 고정은 안 된다");
+            Assert.AreEqual(2, draft.PinCount);
+            Assert.IsTrue(draft.TogglePin(draft.Entries[2]), "다시 누르면 풀린다");
+            Assert.AreEqual(1, draft.PinCount);
+        }
+
+        [Test]
         public void Strength_SumsSaveCostByRole_AndPicksMain()
         {
             _blade.role = SkillRole.Defense;   // 2 + 2×(Lv-1)
@@ -289,6 +317,291 @@ namespace HistoryHeroes.Tests
             data.records.Add(record);
             data.discoveredRecipes.Add("steel_whirl");
             return data;
+        }
+
+        private static RunRecord NewRecord(string id, int slot = -1) =>
+            new RunRecord { id = id, slot = slot, heroId = "khan", capacity = 27, createdAt = "2026-10-29T00:00:00Z" };
+
+        [Test]
+        public void Details_CardShowsTopFourSkillsByLevelPlusCount()
+        {
+            // 보관함 카드 (전체 UI 검토 9번): 레벨 높은 순 4개 + "외 N개"
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<SkillDatabase>("Assets/Data/Skills/SkillDatabase.asset");
+            RunRecord r = NewRecord("many", 0);
+            string[] ids = { "spin_blade", "lightning", "ice_shard", "atk_up", "aspd_up", "hp_up" };
+            int[] levels = { 1, 5, 2, 4, 3, 1 };
+            for (int i = 0; i < ids.Length; i++) r.skills.Add(new RecordSkill { id = ids[i], level = levels[i] });
+
+            string card = RecordFormat.Details(r, db, 4);
+            StringAssert.Contains("외 2개", card);
+            StringAssert.Contains(db.Find("lightning").displayName, card); // Lv5는 남는다
+            StringAssert.DoesNotContain(db.Find("spin_blade").displayName, card); // Lv1은 빠진다
+            StringAssert.DoesNotContain("외 ", RecordFormat.Details(r, db)); // 기본은 전부
+        }
+
+        [Test]
+        public void Load_OldJsonWithoutTempOrLock_KeepsNumberedRecordUnlocked()
+        {
+            var store = new SaveStore(_folder);
+            var old = new SaveData();
+            old.records.Add(NewRecord("old", 0));
+            string json = JsonUtility.ToJson(old);
+            json = json.Replace("\"tempRecords\":[],", "").Replace(",\"tempRecords\":[]", "");
+            json = json.Replace("\"locked\":false,", "").Replace(",\"locked\":false", "");
+            StringAssert.DoesNotContain("tempRecords", json);
+            StringAssert.DoesNotContain("\"locked\"", json); // "unlockedChapter"에도 locked 글자가 있어서 필드 이름 그대로 본다
+            Directory.CreateDirectory(_folder);
+            File.WriteAllText(store.MainPath, SaveStore.Sign(json));
+
+            SaveData loaded = store.Load();
+
+            Assert.IsFalse(loaded.RecordInSlot(0).locked);
+            Assert.IsNull(loaded.TempRecord);
+            Assert.AreEqual(3, loaded.recordSlots);
+        }
+
+        [Test]
+        public void Temp_WhenArchiveFull_ReplacesOnlyPreviousTemp()
+        {
+            var save = new SaveData();
+            for (int i = 0; i < save.recordSlots; i++) save.records.Add(NewRecord("slot" + i, i));
+
+            Assert.IsTrue(RecordService.SaveToTemp(save, NewRecord("first")));
+            Assert.IsTrue(RecordService.SaveToTemp(save, NewRecord("second")));
+
+            Assert.AreEqual("second", save.TempRecord.id);
+            Assert.AreEqual(1, save.tempRecords.Count);
+            Assert.AreEqual(3, save.records.Count);
+            Assert.IsNull(save.FindRecord("first"));
+        }
+
+        [Test]
+        public void Temp_TitleDoesNotShowZeroNumber()
+        {
+            string title = RecordFormat.Title(NewRecord("temp"));
+            StringAssert.StartsWith("임시 기록", title);
+            StringAssert.DoesNotContain("0번", title);
+        }
+
+        [Test]
+        public void RecordService_RejectsInvalidSlotsAndDuplicateIdsWithoutChanges()
+        {
+            var save = new SaveData();
+            Assert.IsTrue(RecordService.SaveToSlot(save, NewRecord("keep"), 0));
+            Assert.IsFalse(RecordService.SaveToSlot(save, NewRecord("keep"), 1));
+            Assert.IsFalse(RecordService.SaveToTemp(save, NewRecord("keep")));
+            Assert.IsFalse(RecordService.SaveToSlot(save, NewRecord("new"), -1));
+            Assert.IsFalse(RecordService.SaveToSlot(save, NewRecord("new"), save.recordSlots));
+            Assert.AreEqual(1, save.records.Count);
+            Assert.AreEqual(1, save.relics.recordsSavedTotal);
+            Assert.IsNull(save.TempRecord);
+        }
+
+        [Test]
+        public void Temp_IsFoundByIdButNotCountedAsOwnedOrFreeSlot()
+        {
+            var save = new SaveData();
+            save.records.Add(NewRecord("slot", 0));
+            Assert.IsTrue(RecordService.SaveToTemp(save, NewRecord("temp")));
+
+            Assert.AreEqual(1, save.records.Count);
+            Assert.AreEqual(1, save.FirstFreeSlot());
+            Assert.AreSame(save.TempRecord, save.FindRecord("temp"));
+            var mission = new Missions.NewcomerMission { Check = Missions.NewcomerCheck.RecordsOwned, Value = 2 };
+            Assert.IsFalse(Missions.Newcomer.Done(save, mission));
+        }
+
+        [Test]
+        public void Temp_MovesToFirstFreeSlotWithoutCreatingAnotherRecord()
+        {
+            var save = new SaveData();
+            save.records.Add(NewRecord("slot", 0));
+            RunRecord temp = NewRecord("temp");
+            Assert.IsTrue(RecordService.SaveToTemp(save, temp));
+            int savedTotal = save.relics.recordsSavedTotal;
+
+            Assert.IsTrue(RecordService.MoveTempToArchive(save));
+
+            Assert.IsNull(save.TempRecord);
+            Assert.AreSame(temp, save.RecordInSlot(1));
+            Assert.AreEqual(1, temp.slot);
+            Assert.AreEqual(savedTotal, save.relics.recordsSavedTotal);
+        }
+
+        [Test]
+        public void Temp_WhenFullCannotMoveOrBeLocked()
+        {
+            var save = new SaveData();
+            for (int i = 0; i < save.recordSlots; i++) save.records.Add(NewRecord("slot" + i, i));
+            RunRecord temp = NewRecord("temp");
+            temp.locked = true;
+            Assert.IsTrue(RecordService.SaveToTemp(save, temp));
+
+            Assert.IsFalse(temp.locked);
+            Assert.IsFalse(RecordService.MoveTempToArchive(save));
+            Assert.IsFalse(RecordService.ToggleLock(save, -1));
+            Assert.IsFalse(RecordService.Delete(save, -1));
+            Assert.AreSame(temp, save.TempRecord);
+            Assert.AreEqual(3, save.records.Count);
+        }
+
+        [Test]
+        public void LockedRecord_CannotBeOverwrittenOrDeleted()
+        {
+            var save = new SaveData();
+            RunRecord locked = NewRecord("keep", 0);
+            locked.locked = true;
+            save.records.Add(locked);
+
+            Assert.IsFalse(RecordService.SaveToSlot(save, NewRecord("new"), 0));
+            Assert.IsFalse(RecordService.Delete(save, 0));
+            Assert.AreSame(locked, save.RecordInSlot(0));
+        }
+
+        [Test]
+        public void Lock_ToggleAllowsDeleteAfterUnlock()
+        {
+            var save = new SaveData();
+            save.records.Add(NewRecord("slot", 0));
+
+            Assert.IsTrue(RecordService.ToggleLock(save, 0));
+            Assert.IsTrue(save.RecordInSlot(0).locked);
+            Assert.IsTrue(RecordService.ToggleLock(save, 0));
+            Assert.IsTrue(RecordService.Delete(save, 0));
+            Assert.IsNull(save.RecordInSlot(0));
+        }
+
+        [Test]
+        public void Reselect_LockedRecordKeepsItsIdentityAndBossHistory()
+        {
+            var save = new SaveData();
+            RunRecord old = NewRecord("keep", 0);
+            old.locked = true;
+            old.bossesDefeated.Add("boss1");
+            save.records.Add(old);
+            RunRecord changed = NewRecord("new");
+            changed.capacity = 20;
+            changed.skills.Add(new RecordSkill("atk_up", 1, false));
+
+            Assert.IsTrue(RecordService.Reselect(save, old.id, changed));
+
+            Assert.AreEqual("keep", save.RecordInSlot(0).id);
+            Assert.IsTrue(save.RecordInSlot(0).locked);
+            Assert.AreEqual("boss1", save.RecordInSlot(0).bossesDefeated[0]);
+            Assert.AreEqual(20, save.RecordInSlot(0).capacity);
+        }
+
+        [Test]
+        public void SaveLoad_PreservesLockAndTempRecord()
+        {
+            var store = new SaveStore(_folder);
+            var save = new SaveData();
+            save.records.Add(NewRecord("slot", 0));
+            Assert.IsTrue(RecordService.ToggleLock(save, 0));
+            Assert.IsTrue(RecordService.SaveToTemp(save, NewRecord("temp")));
+            store.Save(save);
+
+            SaveData loaded = new SaveStore(_folder).Load();
+
+            Assert.IsTrue(loaded.RecordInSlot(0).locked);
+            Assert.AreEqual("temp", loaded.TempRecord.id);
+            Assert.AreSame(loaded.TempRecord, loaded.FindRecord("temp"));
+        }
+
+        [Test]
+        public void Commit_WhenTempReplacementCannotBeSaved_RestoresPreviousRecord()
+        {
+            string blocker = Path.Combine(Path.GetTempPath(), "hh-record-block-" + Guid.NewGuid().ToString("N"));
+            File.WriteAllText(blocker, "x");
+            SaveStore previousStore = SaveSystem.Store;
+            try
+            {
+                SaveSystem.Use(new SaveStore(Path.Combine(blocker, "sub")));
+                SaveData data = SaveSystem.Data;
+                data.tempRecords.Add(NewRecord("old"));
+                int savedTotal = data.relics.recordsSavedTotal;
+
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("저장 실패"));
+                SaveSystem.CommitResult result = SaveSystem.Commit(() => RecordService.SaveToTemp(data, NewRecord("new")));
+
+                Assert.AreEqual(SaveSystem.CommitResult.SaveFailed, result);
+                Assert.AreEqual("old", SaveSystem.Data.TempRecord.id);
+                Assert.IsNull(SaveSystem.Data.FindRecord("new"));
+                Assert.AreEqual(savedTotal, SaveSystem.Data.relics.recordsSavedTotal);
+            }
+            finally
+            {
+                SaveSystem.Use(previousStore);
+                File.Delete(blocker);
+            }
+        }
+
+        [Test]
+        public void Load_CollidingTempId_GivesTempNewIdAndKeepsBothRecords()
+        {
+            var store = new SaveStore(_folder);
+            var save = new SaveData();
+            save.records.Add(NewRecord("duplicate", 0));
+            save.tempRecords.Add(NewRecord("duplicate"));
+            store.Save(save);
+
+            SaveData loaded = new SaveStore(_folder).Load();
+
+            Assert.AreEqual("duplicate", loaded.RecordInSlot(0).id);
+            Assert.IsNotNull(loaded.TempRecord);
+            Assert.AreNotEqual("duplicate", loaded.TempRecord.id);
+            Assert.AreSame(loaded.TempRecord, loaded.FindRecord(loaded.TempRecord.id));
+        }
+
+        [Test]
+        public void Load_CollidingNumberedSlots_MovesSecondToFreeSlot()
+        {
+            var store = new SaveStore(_folder);
+            var save = new SaveData();
+            save.records.Add(NewRecord("first", 0));
+            save.records.Add(NewRecord("second", 0));
+            store.Save(save);
+
+            SaveData loaded = new SaveStore(_folder).Load();
+
+            Assert.AreEqual("first", loaded.RecordInSlot(0).id);
+            Assert.AreEqual("second", loaded.RecordInSlot(1).id);
+            Assert.AreEqual(2, loaded.records.Count);
+        }
+
+        [Test]
+        public void Load_InvalidSlotCannotDisplaceValidRecords()
+        {
+            var store = new SaveStore(_folder);
+            var save = new SaveData();
+            save.records.Add(NewRecord("invalid", 99));
+            for (int i = 0; i < save.recordSlots; i++) save.records.Add(NewRecord("keep" + i, i));
+            store.Save(save);
+
+            SaveData loaded = new SaveStore(_folder).Load();
+
+            Assert.AreEqual(3, loaded.records.Count);
+            for (int i = 0; i < save.recordSlots; i++) Assert.AreEqual("keep" + i, loaded.RecordInSlot(i).id);
+            // 칸이 다 차도 기록은 버리지 않는다: 임시 칸으로 (Claude 검토)
+            Assert.IsNotNull(loaded.TempRecord);
+            Assert.AreEqual("invalid", loaded.TempRecord.id);
+        }
+
+        [Test]
+        public void Load_RepairsTempMetadataAndMissingNestedLists()
+        {
+            var store = new SaveStore(_folder);
+            var save = new SaveData();
+            save.tempRecords.Add(new RunRecord { id = "temp", slot = 0, locked = true, skills = null, meta = null, bossesDefeated = null });
+            store.Save(save);
+
+            RunRecord loaded = new SaveStore(_folder).Load().TempRecord;
+
+            Assert.AreEqual(-1, loaded.slot);
+            Assert.IsFalse(loaded.locked);
+            Assert.IsNotNull(loaded.skills);
+            Assert.IsNotNull(loaded.meta);
+            Assert.IsNotNull(loaded.bossesDefeated);
         }
 
         [Test]
@@ -473,7 +786,8 @@ namespace HistoryHeroes.Tests
 
             SaveData loaded = store.Load();
 
-            Assert.IsTrue(store.LastLoad.IsFresh);
+            Assert.IsTrue(store.LastLoad.UnsupportedNewerSchema);
+            Assert.IsFalse(store.LastLoad.IsFresh);
             Assert.AreEqual(0, loaded.records.Count);
             Assert.AreEqual(future, File.ReadAllText(store.MainPath), "원본은 그대로");
         }

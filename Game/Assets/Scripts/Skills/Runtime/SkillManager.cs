@@ -50,8 +50,27 @@ namespace HistoryHeroes.Skills
         [SerializeField, Range(0f, 1f)] private float firstOfferExclusiveChance = 0.5f;
         private int _offersMade;
 
+        /// <summary>다음 카드 묶음에 희귀 이상을 이만큼 보장 (확장 1차 3-4장 저주받은 엘리트). 전설 확률은 그대로 — 일반 카드만 희귀로 바꾼다</summary>
+        public int MinRareNext { get; set; }
+
+        /// <summary>앞으로 이만큼의 카드 묶음은 갈림길 난수로 뽑는다 (특수 방 보상, RunRandom.CardDetour)</summary>
+        public int DetourOffersNext { get; set; }
+        private bool _detourOffer;
+
         /// <summary>레벨업 카드 만들기 (GameDesign 6-4). 조합 조건을 채웠으면 1장은 조합 카드로 확정.</summary>
         public List<SkillCard> CreateOffer(int floor)
+        {
+            _detourOffer = DetourOffersNext > 0;
+            if (_detourOffer)
+            {
+                DetourOffersNext--;
+                using (Common.RunRandom.CardDetour()) return CreateOfferInner(floor);
+            }
+
+            return CreateOfferInner(floor);
+        }
+
+        private List<SkillCard> CreateOfferInner(int floor)
         {
             var offer = new List<SkillCard>(cardsPerLevel);
 
@@ -78,8 +97,26 @@ namespace HistoryHeroes.Skills
 
             offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable, WeightModifier, Loadout));
             if (_offersMade++ == 0) BoostExclusive(offer, candidates);
+            if (MinRareNext > 0) GuaranteeRare(offer, candidates, MinRareNext);
+            MinRareNext = 0;
             ApplyRiftBoosts(offer);
             return offer;
+        }
+
+        /// <summary>희귀 이상이 count장이 될 때까지 일반 카드를 희귀 카드로 바꾼다 (카드 난수)</summary>
+        private static void GuaranteeRare(List<SkillCard> offer, List<SkillCard> candidates, int count)
+        {
+            int have = offer.FindAll(c => c.Type == CardType.Fusion || (c.Skill != null && c.Skill.rarity != Rarity.Common)).Count;
+            List<SkillCard> rares = candidates.FindAll(c => c.Skill != null && c.Skill.rarity == Rarity.Rare && !offer.Exists(o => o.Skill == c.Skill));
+            for (int i = offer.Count - 1; i >= 0 && have < count && rares.Count > 0; i--)
+            {
+                SkillCard card = offer[i];
+                if (card.Type == CardType.Fusion || card.Skill == null || card.Skill.rarity != Rarity.Common) continue;
+                int k = Common.RunRandom.CardRange(0, rares.Count);
+                offer[i] = rares[k];
+                rares.RemoveAt(k);
+                have++;
+            }
         }
 
         /// <summary>첫 카드 묶음에 전용 액티브가 없으면 확률적으로 마지막 일반 카드와 바꾼다</summary>
@@ -88,7 +125,9 @@ namespace HistoryHeroes.Skills
             SkillData exclusive = player.Hero != null ? player.Hero.exclusiveActive : null;
             if (exclusive == null || offer.Exists(c => c.Skill == exclusive)) return;
             SkillCard card = candidates.Find(c => c.Skill == exclusive);
-            if (card == null || Common.RunRandom.Card01() > firstOfferExclusiveChance) return;
+            // 이 영웅의 첫 판이면 확정 (전체 검토 3번: 새 영웅의 손맛을 첫 판에 바로)
+            bool firstRun = Records.SaveSystem.Data != null && !string.IsNullOrEmpty(HeroId) && Records.SaveSystem.Data.Hero(HeroId).runs == 0;
+            if (card == null || (!firstRun && Common.RunRandom.Card01() > firstOfferExclusiveChance)) return;
 
             for (int i = offer.Count - 1; i >= 0; i--)
             {
@@ -106,6 +145,21 @@ namespace HistoryHeroes.Skills
             SkillPicker.ExcludeShown(candidates, current); // 방금 본 카드는 다시 안 나온다
             kept.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - kept.Count, floor, rarityTable, WeightModifier, Loadout));
             return kept;
+        }
+
+        public bool TryBanCard(List<SkillCard> current, int index, int floor)
+        {
+            if (Common.GameSession.Tutorial || TutorialCards != null) return false;
+            // 특수 방 카드 한 장을 바꿔도 뒤의 일반 카드 난수 순서를 밀지 않는다.
+            using (_detourOffer ? Common.RunRandom.CardDetour() : null)
+            {
+                if (!SkillPicker.TryBanAndReplace(Loadout, skillPool, HeroId, current, index, floor, rarityTable, WeightModifier)) return false;
+            }
+            // 균열은 후보가 다 떨어지면 기본 회복 대신 균열 강화로 채운다.
+            var replacement = new List<SkillCard> { current[index] };
+            ApplyRiftBoosts(replacement);
+            current[index] = replacement[0];
+            return true;
         }
 
         /// <summary>
@@ -140,10 +194,37 @@ namespace HistoryHeroes.Skills
         /// </summary>
         public string CardHint(SkillCard card)
         {
-            if (card == null || card.Skill == null || card.Type == CardType.Fusion || card.Type == CardType.Fallback) return null;
-            return FusionHints.TryNearest(card.Skill, card.NextLevel, Loadout, recipes, HeroId, RecipeBook.IsDiscovered, out FusionHints.Progress p, out int others)
+            if (card == null || card.Skill == null || (card.Type != CardType.NewSkill && card.Type != CardType.LevelUp)) return null;
+            string hint = FusionHints.TryNearest(card.Skill, card.NextLevel, Loadout, recipes, HeroId, RecipeBook.IsDiscovered, out FusionHints.Progress p, out int others)
                 ? FusionHints.CardLine(p, others)
                 : null;
+            var targets = new List<string>();
+            foreach (FusionRecipe recipe in recipes)
+            {
+                if (recipe == null || recipe.result == null || !RecipeBook.IsTargeted(recipe)) continue;
+                if (recipe.materialA == card.Skill || recipe.materialB == card.Skill) targets.Add(recipe.result.displayName);
+            }
+
+            if (targets.Count == 0) return hint;
+            string targetLine = "★ 목표: " + string.Join(" · ", targets);
+            return string.IsNullOrEmpty(hint) ? targetLine : targetLine + "\n" + hint;
+        }
+
+        /// <summary>빼기 전에 발견한 조합 이름만 보여 준다. 아직 모르는 결과는 밝히지 않는다.</summary>
+        public string BanHint(SkillCard card)
+        {
+            if (card == null || card.Skill == null || (card.Type != CardType.NewSkill && card.Type != CardType.LevelUp))
+                return card != null && card.Type == CardType.Fusion ? "조합은 이번 판 숨기기를 써 주세요" : "이 카드는 뺄 수 없어요";
+            var blocked = new List<string>();
+            foreach (FusionRecipe recipe in recipes)
+            {
+                if (recipe == null || recipe.result == null || !RecipeBook.IsDiscovered(recipe)) continue;
+                if (recipe.materialA != card.Skill && recipe.materialB != card.Skill) continue;
+                if (!blocked.Contains(recipe.result.displayName)) blocked.Add(recipe.result.displayName);
+            }
+
+            const string action = "누르면 이번 판에서 빼요";
+            return blocked.Count == 0 ? action : action + "\n막히는 조합: " + string.Join(" · ", blocked);
         }
 
         /// <summary>조합 카드 경고 (조사 A4): 이 조합으로 재료가 사라져 이번 판에 못 만들게 되는 발견한 조합. 없으면 빈 문자열</summary>
@@ -279,9 +360,10 @@ namespace HistoryHeroes.Skills
             ChoseLegendary = choseLegendary;
         }
 
-        /// <summary>판 이어하기: 조합 이력 (재료로 쓴 스킬 · 끝낸 조합 · 숨긴 조합) — 없으면 카드 후보가 달라진다</summary>
+        /// <summary>판 이어하기: 조합 이력과 빼기 상태 — 없으면 카드 후보가 달라진다</summary>
         public void CaptureFusionHistory(Records.RunSnapshot s)
         {
+            CaptureBans(s);
             foreach (SkillData d in Loadout.ConsumedMaterials) s.consumed.Add(d.id);
             foreach (FusionRecipe r in Loadout.CompletedFusions) s.completedFusions.Add(r.id);
             foreach (FusionRecipe r in Loadout.HiddenFusions) s.hiddenFusions.Add(r.id);
@@ -290,6 +372,7 @@ namespace HistoryHeroes.Skills
         public void RestoreFusionHistory(Records.RunSnapshot s, SkillDatabase database)
         {
             if (s == null) return;
+            Loadout.RestoreBans(s.bannedSkillIds, s.bansLeft);
             foreach (string id in s.consumed)
             {
                 SkillData d = database != null ? database.Find(id) : null;
@@ -309,8 +392,17 @@ namespace HistoryHeroes.Skills
             }
         }
 
+        public void CaptureBans(Records.RunSnapshot snapshot)
+        {
+            snapshot.bannedSkillIds = new List<string>(Loadout.BannedSkillIds);
+            snapshot.bansLeft = Loadout.BansLeft;
+        }
+
         public void Choose(SkillCard card)
         {
+            if (card == null || Loadout.IsBanned(card.Skill)) return;
+            if (card.Type == CardType.Fusion && card.Recipe != null
+                && (Loadout.IsBanned(card.Recipe.materialA) || Loadout.IsBanned(card.Recipe.materialB))) return;
             if (card.Skill != null && card.Skill.rarity == Rarity.Legendary && card.Type != CardType.Fallback)
             {
                 ChoseLegendary = true;

@@ -45,6 +45,9 @@ namespace HistoryHeroes.Progress
 
         public void GrantLevelUp() => Level.GrantLevel();
 
+        /// <summary>튜토리얼: 첫 처치에 바로 첫 레벨업 (첫 카드 45초 안, 전체 기획 검토 1번). 이어 하기로 돌아와 처치 수가 이미 있으면 다시 주지 않는다</summary>
+        public bool LevelOnFirstKill { get; set; }
+
         /// <summary>방을 깨면 남은 보석을 모두 끌어온다 (줍느라 돌아다니지 않게).</summary>
         public void AttractAll()
         {
@@ -54,6 +57,7 @@ namespace HistoryHeroes.Progress
         private void OnKilled(EnemyBase enemy)
         {
             Kills++;
+            if (LevelOnFirstKill && Kills == 1) GrantLevelUp();
             float value = enemy.Data.experience * (enemy.IsElite ? 5f : 1f) * ExpMultiplier;
             if (MaxGems > 0 && _active.Count >= MaxGems && MergeIntoNearest(enemy.transform.position, value)) return;
             ExperienceGem gem = _gems.Get(enemy.transform.position, Quaternion.identity);

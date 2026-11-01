@@ -31,6 +31,11 @@ namespace HistoryHeroes.Pets
         public PetSource source;
         public int sourceChapter;
         public Color color = Color.white;
+        [Header("3D (Art3D-Plan 5번)")]
+        [Tooltip("3D 모델 프리팹 (Assets/Art/3D/Pets). 비어 있으면 임시 도형")]
+        public GameObject model3D;
+        [Tooltip("게임 속 키 (유닛)")]
+        public float modelHeight = 0.7f;
 
         [Tooltip("반응하는 행동 한 줄 (\"멈춰서 버티기\")")]
         public string trigger;

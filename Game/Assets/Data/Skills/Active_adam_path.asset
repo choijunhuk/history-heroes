@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f722f8d3244dc345abe6e1a17210945, type: 3}
+  m_Name: Active_adam_path
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Skills.ActiveSkillData
+  id: adam_path
+  displayName: "\uC55E\uAE38 \uC9DA\uAE30"
+  description: "7\uCD08\uB9C8\uB2E4 \uAC00\uAE4C\uC6B4 \uC801 \uBC29\uD5A5 140\uB3C4\xB7\uBC18\uACBD
+    2.8 \uC804\uBC29 \uD0C0\uACA9 \uD55C \uBC88 (\uD53C\uD574 100%)\n\uB808\uBCA8\uB9C8\uB2E4
+    \uD53C\uD574 +20%p"
+  warriorDescription: 
+  icon: {fileID: 21300000, guid: c7261cd9d4eda6449a75dd3261df2bba, type: 3}
+  rarity: 1
+  tags: 8
+  role: 2
+  maxLevel: 5
+  saveCostFirstLevel: 3
+  saveCostPerLevel: 3
+  recordable: 1
+  heroOnlyId: adam
+  cooldown: 7
+  damageFirstLevel: 1
+  damagePerLevel: 0.2
+  healFractionFirstLevel: 0
+  healFractionPerLevel: 0
+  countFirstLevel: 1
+  countPerLevel: 0
+  radius: 2.8
+  radiusPerLevel: 0
+  duration: 0
+  durationPerLevel: 0
+  slowFirstLevel: 0
+  slowPerLevel: 0
+  slowBossScale: 0.3
+  waveRadius: 0
+  returnImpactCoefficient: 0
+  waveLength: 0
+  waveSpeed: 0
+  waveInterval: 0
+  pushDistance: 0
+  behaviourPrefab: {fileID: 8241279365069743200, guid: 8335bf5fdb2a84ad0b59bb0bc52980aa, type: 3}

@@ -17,6 +17,9 @@ namespace HistoryHeroes.Enemy
 
         private int _step;
 
+        /// <summary>분신 (기믹 "거울 분신": 가짜를 기본 공격하면 기절)</summary>
+        public EnemyBase ClonePrefab => clonePrefab;
+
         protected override void OnTick()
         {
             if (shadow != null) shadow.enabled = true; // 진짜 표시

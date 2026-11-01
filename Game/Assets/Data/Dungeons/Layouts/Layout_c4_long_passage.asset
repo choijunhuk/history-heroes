@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39caf59f68b960c46854986e1f51abca, type: 3}
+  m_Name: Layout_c4_long_passage
+  m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Dungeon.RoomLayout
+  id: c4_long_passage
+  kind: 2
+  use: 0
+  chapter: 4
+  longRoom: 1
+  obstacles:
+  - kind: 0
+    circle: 0
+    position: {x: -3.1, y: 2}
+    size: {x: 0.8, y: 3}
+    hits: 0
+  - kind: 0
+    circle: 0
+    position: {x: 3.1, y: 6.5}
+    size: {x: 0.8, y: 3}
+    hits: 0
+  - kind: 0
+    circle: 0
+    position: {x: -3.1, y: 10.5}
+    size: {x: 0.8, y: 2}
+    hits: 0
+  traps:
+  - position: {x: 2.5, y: 9}
+    size: {x: 1, y: 1}
+    angle: 0
+  devices: []

@@ -14,10 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: gutenberg_type
   displayName: "\uAD6C\uD150\uBCA0\uB974\uD06C\uC758 \uD65C\uC790"
+  icon: {fileID: 21300000, guid: b95cc8a79645444f09ed90cd849281c1, type: 3}
   set: 1
   fact: "\uC720\uB7FD \uD65C\uD310 \uC778\uC1C4\uC220\uC744 \uD37C\uB728\uB9B0 \uAE08\uC18D
     \uD65C\uC790"
+  story: 
   source: 4
   sourceChapter: 0
   sourceValue: records10
-  howToGet: "\uAE30\uB85D 10\uAC1C \uB0A8\uAE30\uAE30"
+  howToGet: "\uC720\uBB3C \uBF51\uAE30"

@@ -34,6 +34,27 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d99f2c011cce895499ff34c927cb0583, type: 2}
   - {fileID: 11400000, guid: 52f8fc82c4d3cbc4694de735abd06128, type: 2}
   - {fileID: 11400000, guid: 4270acb6a3234a7429cfe8e58b71d595, type: 2}
+  - {fileID: 11400000, guid: 4c40fa460de1f4c67b13cacb56ec9130, type: 2}
+  - {fileID: 11400000, guid: 0a4b982e623b14855966fddafba1c39f, type: 2}
+  - {fileID: 11400000, guid: 1041f9282376a4a349c500cc3032a8db, type: 2}
+  - {fileID: 11400000, guid: f32ade35aa82f4491aaf5b1119d60620, type: 2}
+  - {fileID: 11400000, guid: 919fd673d52054e14ad114f437b3d7e8, type: 2}
+  - {fileID: 11400000, guid: 05ec9ad89b4c14d4c8982fd89eaad5a4, type: 2}
+  - {fileID: 11400000, guid: 1b22f9de3b34e4c94abde4e751c2b9fd, type: 2}
+  - {fileID: 11400000, guid: ddd01c0e0bbff48e490547e2a86a5d4f, type: 2}
+  - {fileID: 11400000, guid: 3e441bd39fba644a099f2f0b0e7468a7, type: 2}
+  - {fileID: 11400000, guid: 1e93433d543194e6cbe2062eceef9877, type: 2}
+  - {fileID: 11400000, guid: 6c7a985f679734c23b67557f96a98539, type: 2}
+  - {fileID: 11400000, guid: 3ae365f7482b24961b18f78c8c65ed17, type: 2}
+  - {fileID: 11400000, guid: c886ba9095a484836ab1cb612686a53b, type: 2}
+  - {fileID: 11400000, guid: 4694e8d8e92db4e30b5386820a929c49, type: 2}
+  - {fileID: 11400000, guid: ccb7c7269a14340eb8a0ed71e6854606, type: 2}
+  - {fileID: 11400000, guid: a3c0973bc59d649d3bf871c54db088df, type: 2}
+  - {fileID: 11400000, guid: d978992c7d4a74c27bf1e8d4d96ba322, type: 2}
+  - {fileID: 11400000, guid: f84b75421518941b0887c36177e713c6, type: 2}
+  - {fileID: 11400000, guid: 1f6d26bb2f49c44479e44d3d018ac80b, type: 2}
+  - {fileID: 11400000, guid: d118fab730c064a6aa3e2f40141d0d51, type: 2}
+  - {fileID: 11400000, guid: 3b24810036d6549378d96a139639aa18, type: 2}
   weaponBase:
   - 0.03
   - 0.06
@@ -49,11 +70,18 @@ MonoBehaviour:
   - 0.03
   - 0.045
   - 0.06
+  mainShares:
+  - 0.6
+  - 0.5
+  - 1
+  - 0.4
+  - 0.3
+  - 0.2
   enhanceCap: 0a000000140000001e00000028000000
   weaponPerLevel: 0.0025
   armorPerLevel: 0.0025
   accessoryPerLevel: 0.0005
-  enhanceCostPerLevel: 100
+  enhanceCostPerLevel: 50
   synthesisCount: 3
   toUncommonCost: 500
   toRareCost: 3000

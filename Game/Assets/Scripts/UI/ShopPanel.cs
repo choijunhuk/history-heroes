@@ -3,6 +3,7 @@ using HistoryHeroes.Common;
 using HistoryHeroes.Economy;
 using HistoryHeroes.Equipment;
 using HistoryHeroes.Records;
+using HistoryHeroes.Relics;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,9 +11,8 @@ using UnityEngine.UI;
 namespace HistoryHeroes.UI
 {
     /// <summary>
-    /// 상점 (Gacha 5장, Equipment 8장): 일반 상자(🪙5,000 · 하루 1번 광고 무료), 고급 상자(💎250 / 10연 💎2,250 / 🎫 1장,
-    /// "전설 확정까지 n회"), 확률 보기(추첨과 같은 표), 🔩 조각 교환소(원하는 희귀 60 · 전설 300).
-    /// 구매 버튼 바로 옆에 확률 보기를 둔다 (게임산업법·구글 플레이). 결과는 열자마자 저장돼 있다.
+    /// 장비 상자 · 유물 뽑기 · 보석(실제 결제) 상점. 값과 결과를 함께 저장한 뒤 결과를 보여 준다.
+    /// 보석 탭은 상점이 준 가격만 보여 주고, 플레이어가 카드를 눌러 확인 창에서 [구매]를 고를 때만 결제 창을 연다 (Monetization 1장 · 5장).
     /// </summary>
     public sealed class ShopPanel : MonoBehaviour
     {
@@ -24,6 +24,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button normalFreeButton;
         [SerializeField] private TMP_Text normalFreeLabel;
         [SerializeField] private TMP_Text premiumInfoLabel;
+        [SerializeField] private TMP_Text premiumPityLabel;
         [SerializeField] private Button premium1Button;
         [SerializeField] private TMP_Text premium1Label;
         [SerializeField] private Button premium10Button;
@@ -43,13 +44,54 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button goldShopButton;
         [SerializeField] private TMP_Text goldShopLabel;
         [SerializeField] private Heroes.HeroRoster roster;
+        [Header("유물 뽑기")]
+        [SerializeField] private RelicTable relics;
+        [SerializeField] private Button equipmentTabButton;
+        [SerializeField] private Button relicTabButton;
+        [SerializeField] private GameObject relicSection;
+        [SerializeField] private GameObject equipmentSection;
+        [SerializeField] private TMP_Text relicInfoLabel;
+        [SerializeField] private Button relicPayButton;
+        [SerializeField] private TMP_Text relicPayLabel;
+        [SerializeField] private Button relic1Button;
+        [SerializeField] private TMP_Text relic1Label;
+        [SerializeField] private Button relic10Button;
+        [SerializeField] private TMP_Text relic10Label;
+        [SerializeField] private Button relicFreeButton;
+        [SerializeField] private TMP_Text relicFreeLabel;
+        [SerializeField] private Button relicRatesButton;
+        [SerializeField] private TMP_Text relicMessageLabel;
+        [SerializeField] private GameObject relicResultsRoot;
+        [SerializeField] private TMP_Text relicResultsLabel;
+        [SerializeField] private Image[] relicResultIcons;
+        [SerializeField] private TMP_Text[] relicResultLabels;
+        [SerializeField] private Button relicResultsCloseButton;
+        [SerializeField] private ScrollRect relicResultsScroll;
+        [SerializeField] private ScrollRect ratesScroll;
+        [Header("보석 (실제 결제)")]
+        [SerializeField] private Button gemTabButton;
+        [SerializeField] private GameObject gemSection;
+        [SerializeField] private ButtonList gemList;
+        [SerializeField] private TMP_Text gemMessageLabel;
+        [Tooltip("구매 확인 창 (로비의 고르기 창을 빌린다)")]
+        [SerializeField] private ChoicePanel choice;
 
         private static readonly Color RowNormal = new Color(0.13f, 0.15f, 0.2f);
         private static readonly Color RowDisabled = new Color(0.1f, 0.1f, 0.12f);
+        private static readonly Color RowStarter = new Color(0.36f, 0.22f, 0.08f);
 
         private bool _exchangeMode;
         private bool _goldShopMode;
         private bool _waitingForAd;
+        private bool _relicMode;
+        private bool _gemMode;
+        private bool _payWithGems;
+        private Color _relicTabColor;
+        private Color _relic1Color;
+        private Color _premiumColor; // 고급 상자 단추 원래 색 (잠겼을 때만 회색)
+        private Color _relic10Color;
+        private Color _relicPayColor;
+        private Color _relicFreeColor;
         private List<ButtonList.Row> _lastResults = new List<ButtonList.Row>();
         private System.Action _onClosed;
 
@@ -57,8 +99,28 @@ namespace HistoryHeroes.UI
 
         private void Awake()
         {
+            _relicTabColor = relicTabButton.image.color;
+            _relic1Color = relic1Button.image.color;
+            _premiumColor = premium1Button.image.color;
+            _relic10Color = relic10Button.image.color;
+            _relicPayColor = relicPayButton.image.color;
+            _relicFreeColor = relicFreeButton.image.color;
             root.SetActive(false);
             if (ratesRoot != null) ratesRoot.SetActive(false);
+            if (relicResultsRoot != null) relicResultsRoot.SetActive(false);
+            equipmentTabButton.onClick.AddListener(() => { _relicMode = false; _gemMode = false; Render(true); });
+            relicTabButton.onClick.AddListener(() => { _relicMode = true; _gemMode = false; Render(true); });
+            gemTabButton.onClick.AddListener(() => { _gemMode = true; _relicMode = false; Render(true); });
+            IapService.Changed += OnIapChanged;
+            Account.AccountService.Changed += OnIapChanged; // 계정 동기화가 끝나면 첫 결제 패키지 · 2배 배지가 열린다
+            IapService.Granted += OnIapGranted;
+            IapService.Notice += OnIapNotice;
+            relicPayButton.onClick.AddListener(() => { _payWithGems = !_payWithGems; Render(false); });
+            relic1Button.onClick.AddListener(() => BuyRelics(1, _payWithGems ? RelicGachaService.Pay.Gems : RelicGachaService.Pay.Shards));
+            relic10Button.onClick.AddListener(() => BuyRelics(10, _payWithGems ? RelicGachaService.Pay.Gems : RelicGachaService.Pay.Shards));
+            relicFreeButton.onClick.AddListener(() => BuyRelics(1, RelicGachaService.Pay.Free));
+            relicRatesButton.onClick.AddListener(ShowRates);
+            relicResultsCloseButton.onClick.AddListener(() => relicResultsRoot.SetActive(false));
             normalBuyButton.onClick.AddListener(() => Buy(gacha.normal, 1, GachaService.Pay.Gold));
             normalFreeButton.onClick.AddListener(WatchAdForNormal);
             premium1Button.onClick.AddListener(() => Buy(gacha.premium, 1, GachaService.Pay.Gems));
@@ -84,21 +146,51 @@ namespace HistoryHeroes.UI
             backButton.onClick.AddListener(Close);
         }
 
+        private void OnDestroy()
+        {
+            IapService.Changed -= OnIapChanged;
+            Account.AccountService.Changed -= OnIapChanged;
+            IapService.Granted -= OnIapGranted;
+            IapService.Notice -= OnIapNotice;
+        }
+
         public void Open(System.Action onClosed = null)
         {
             _onClosed = onClosed;
             _exchangeMode = false;
             _goldShopMode = false;
+            _relicMode = false;
+            _gemMode = false;
+            _payWithGems = false;
             _lastResults.Clear();
             messageLabel.text = string.Empty;
+            gemMessageLabel.text = string.Empty;
+            // 못 붙었으면 다시 붙어 보고, 붙어 있으면 확정이 남은 결제를 다시 확정한다 (게임은 결제 없이도 그대로)
+            IapService.Start();
+            relicMessageLabel.text = string.Empty;
+            ratesRoot.SetActive(false);
+            relicResultsRoot.SetActive(false);
+            transform.SetAsLastSibling();
             root.SetActive(true);
+            Render(true);
+        }
+
+        /// <summary>도감에서도 같은 유물 뽑기 화면을 연다.</summary>
+        public void OpenRelics(System.Action onClosed = null)
+        {
+            Open(onClosed);
+            _relicMode = true;
             Render(true);
         }
 
         private void Close()
         {
+            ratesRoot.SetActive(false);
+            relicResultsRoot.SetActive(false);
             root.SetActive(false);
-            _onClosed?.Invoke();
+            System.Action callback = _onClosed;
+            _onClosed = null;
+            callback?.Invoke();
         }
 
         private void Render(bool scrollToTop)
@@ -106,24 +198,51 @@ namespace HistoryHeroes.UI
             SaveData save = SaveSystem.Data;
             string today = Clock.Today;
             bool unlocked = EquipmentInventory.Unlocked(save);
-            walletLabel.text = $"골드 {save.gold:N0} · 보석 {Wallet.Gems(save):N0} · 고급 소환권 {save.ItemCount(Wallet.Ticket)} · 장비 조각 {save.ItemCount(Wallet.GearShard)}";
+            walletLabel.text = _gemMode
+                ? $"<sprite name=gem>보석 {Wallet.Gems(save):N0} <size=85%>(유료 {save.gemsPaid:N0} · 무료 {save.gemsFree:N0})</size>"
+                : _relicMode
+                ? $"<sprite name=gem>보석 {Wallet.Gems(save):N0} · <sprite name=ancient_shard>고대 파편 {RelicService.Shards(save):N0}"
+                : $"<sprite name=gold>골드 {save.gold:N0} · <sprite name=gem>보석 {Wallet.Gems(save):N0} · <sprite name=ticket>고급 소환권 {save.ItemCount(Wallet.Ticket)} · <sprite name=equip_shard>장비 조각 {save.ItemCount(Wallet.GearShard)}";
+            gemSection.SetActive(_gemMode);
+            relicSection.SetActive(_relicMode);
+            equipmentSection.SetActive(!_relicMode && !_gemMode);
+            equipmentTabButton.interactable = _relicMode || _gemMode;
+            relicTabButton.interactable = !_relicMode;
+            gemTabButton.interactable = !_gemMode;
+            relicTabButton.image.color = RelicService.Unlocked(save) ? _relicTabColor : RowDisabled;
+            if (_gemMode)
+            {
+                RenderGems(save, scrollToTop);
+                return;
+            }
+            if (_relicMode)
+            {
+                RenderRelics(save, today);
+                return;
+            }
 
-            normalBuyLabel.text = $"일반 상자 · 골드 {gacha.normal.goldCost:N0}";
+            normalBuyLabel.text = $"일반 상자 · 골드 {gacha.normal.goldCost:N0}\n<size=75%>희귀 {gacha.normal.rarity[(int)EquipRarity.Rare] * 100f:0.##}% · 보장 없음</size>";
             normalBuyButton.interactable = unlocked && save.gold >= gacha.normal.goldCost;
             bool free = GachaService.CanFreeNormal(save, today);
             normalFreeButton.interactable = unlocked && free && !_waitingForAd;
             normalFreeLabel.text = _waitingForAd ? "광고 보는 중…" : free ? "광고 보고 무료 (오늘 1번)" : "오늘 무료는 받았어요";
 
+            int legendaryLeft = GachaService.PullsUntilPity(save, gacha.premium);
+            int rareLeft = GachaService.PullsUntilRareGuarantee(save, gacha);
+            string legendaryRate = $"전설 {GachaService.NextLegendaryRate(save, gacha) * 100f:0.###}%";
             premiumInfoLabel.text = unlocked
-                ? $"고급 상자 · 전설 2% · <color=#FFC94A>전설 확정까지 {GachaService.PullsUntilPity(save, gacha.premium)}회</color>"
-                : "<color=#FFB347>1구간 보스를 깨면 장비와 상자가 열려요</color>";
-            premium1Label.text = $"1회 · 보석 {gacha.premium.gemCost:N0}";
-            premium10Label.text = $"10연 · 보석 {gacha.premium.gem10Cost:N0}";
+                ? $"고급 상자 · 희귀 이상까지 {rareLeft}회"
+                : "<color=#FFB347>1구간 보스를 깨면 장비 상자가 열려요</color>";
+            premiumPityLabel.text = unlocked ? $"전설 확정까지 {legendaryLeft}회 · 희귀 이상 확정까지 {rareLeft}회" : "";
+            premium1Label.text = $"보석 {gacha.premium.gemCost:N0}\n<size=75%>{legendaryRate} · 확정 {legendaryLeft}회</size>";
+            premium10Label.text = $"10회 {gacha.premium.gem10Cost:N0}\n<size=75%>첫회 {legendaryRate} · {legendaryLeft}회</size>";
             premium1Button.interactable = unlocked && Wallet.Gems(save) >= gacha.premium.gemCost;
             premium10Button.interactable = unlocked && Wallet.Gems(save) >= gacha.premium.gem10Cost;
             int tickets = save.ItemCount(Wallet.Ticket);
-            ticketLabel.text = $"소환권 1장 (가진 것 {tickets})";
+            ticketLabel.text = $"소환권 1장 ({tickets})\n<size=75%>{legendaryRate} · 확정 {legendaryLeft}회</size>";
             ticketButton.interactable = unlocked && tickets > 0;
+            // 잠긴 상자는 초록 대신 회색 (유물 뽑기와 같게 — 어두운 초록은 눌러도 되는 것처럼 보였다, 2026-10-31 화면 점검)
+            premium1Button.image.color = premium10Button.image.color = ticketButton.image.color = unlocked ? _premiumColor : RowDisabled;
             exchangeButton.interactable = unlocked;
             exchangeLabel.text = _exchangeMode ? "상자 결과" : "조각 교환소";
             if (goldShopLabel != null) goldShopLabel.text = _goldShopMode ? "상자 결과" : "골드 상점";
@@ -137,8 +256,98 @@ namespace HistoryHeroes.UI
         {
             return new List<ButtonList.Row>
             {
-                new ButtonList.Row("<color=#A9B4C2>상자에서 나온 장비가 여기 보여요. 희귀·전설 중복은 장비 조각이 돼요 (장비 화면에서 끌 수 있어요)</color>", RowDisabled, null, false),
+                new ButtonList.Row("<color=#A9B4C2>상자에서 나온 장비가 여기에 표시됩니다.</color>", RowDisabled, null, false),
+                new ButtonList.Row("<color=#A9B4C2>고급 상자는 한 번씩 열어도 희귀 이상 보장 횟수가 이어집니다.</color>", RowDisabled, null, false),
+                new ButtonList.Row("<color=#A9B4C2>희귀·전설 중복은 장비 조각으로 바뀝니다. 장비 화면에서 설정할 수 있습니다.</color>", RowDisabled, null, false),
             };
+        }
+
+        private void RenderRelics(SaveData save, string today)
+        {
+            bool unlocked = RelicService.Unlocked(save) && RelicGachaService.CanOpen(relics);
+            relic1Button.image.color = unlocked ? _relic1Color : RowDisabled;
+            relic10Button.image.color = unlocked ? _relic10Color : RowDisabled;
+            relicPayButton.image.color = unlocked ? _relicPayColor : RowDisabled;
+            relicFreeButton.image.color = unlocked ? _relicFreeColor : RowDisabled;
+            int shards = RelicService.Shards(save);
+            int gems = Wallet.Gems(save);
+            int missing = 0;
+            if (relics != null)
+                foreach (RelicData relic in relics.relics)
+                    if (relic != null && RelicService.Stars(save, relic.id) == 0) missing++;
+            int pityLeft = unlocked ? RelicGachaService.PullsUntilPity(save, relics) : 0;
+            relicInfoLabel.text = !RelicService.Unlocked(save)
+                ? "2구간 보스를 깨면 유물 뽑기가 열려요. 첫 클리어 유물은 보관돼요."
+                : $"유물 뽑기 · 없는 유물 {missing}종 · 고대 파편 {shards:N0}\n누적 {save.relicGacha.totalPulls}회 · {(pityLeft > 0 ? $"새 유물 보장까지 {pityLeft}회" : "24종 모두 보유: 새 유물 보장 종료")}";
+            if (!RelicGachaService.CanOpen(relics))
+            {
+                relicInfoLabel.text = "유물 데이터가 없어 뽑기를 열 수 없어요.";
+                relicPayButton.interactable = relic1Button.interactable = relic10Button.interactable = relicFreeButton.interactable = relicRatesButton.interactable = false;
+                return;
+            }
+            relicPayLabel.text = _payWithGems ? $"사용 재화: 보석 {gems:N0} · 눌러서 파편으로 변경" : $"사용 재화: 고대 파편 {shards:N0} · 눌러서 보석으로 변경";
+            int oneCost = _payWithGems ? relics.pullGemCost : relics.pullShardCost;
+            int tenCost = _payWithGems ? relics.tenPullGemCost : relics.tenPullShardCost;
+            string icon = _payWithGems ? "gem" : "ancient_shard";
+            int balance = _payWithGems ? gems : shards;
+            string relicOdds = pityLeft > 0
+                ? $"각 유물 {100f / relics.relics.Count:0.##}% · 새것 {pityLeft}회"
+                : $"각 유물 {100f / relics.relics.Count:0.##}% · 보장 종료";
+            relic1Label.text = $"1회 · <sprite name={icon}>{oneCost:N0}\n<size=70%>{relicOdds}</size>";
+            relic10Label.text = $"10회 · <sprite name={icon}>{tenCost:N0}\n<size=70%>{relicOdds}</size>";
+            relic1Button.interactable = unlocked && balance >= oneCost;
+            relic10Button.interactable = unlocked && balance >= tenCost;
+            bool free = RelicGachaService.CanFree(save, today);
+            relicFreeLabel.text = free ? "무료 1회 (오늘)" : "오늘 무료는 받았어요";
+            relicFreeButton.interactable = unlocked && free;
+            relicPayButton.interactable = unlocked;
+            relicRatesButton.interactable = relics != null;
+        }
+
+        private void BuyRelics(int count, RelicGachaService.Pay pay)
+        {
+            if (!RelicGachaService.CanOpen(relics))
+            {
+                relicMessageLabel.text = "<color=#FF7A6B>유물 데이터에 문제가 있어 뽑을 수 없어요. 재화는 그대로예요.</color>";
+                return;
+            }
+
+            List<RelicGachaService.Pull> pulls = null;
+            SaveSystem.CommitResult result = SaveSystem.Commit(() =>
+                RelicGachaService.TryPull(SaveSystem.Data, relics, count, pay, Clock.Today, Clock.UnixSeconds, out pulls));
+            if (result == SaveSystem.CommitResult.SaveFailed)
+                relicMessageLabel.text = SaveSystem.SaveFailedText;
+            else if (result == SaveSystem.CommitResult.Rejected)
+                relicMessageLabel.text = "<color=#FFB347>재화가 부족하거나 오늘 무료 뽑기를 이미 받았어요.</color>";
+            else
+            {
+                relicMessageLabel.text = $"유물 {pulls.Count}개를 받았어요. 결과를 확인하세요.";
+                ShowRelicResults(pulls);
+            }
+
+            Render(false);
+        }
+
+        private void ShowRelicResults(List<RelicGachaService.Pull> pulls)
+        {
+            relicResultsLabel.text = $"유물 뽑기 결과 · {pulls.Count}개";
+            for (int i = 0; i < relicResultLabels.Length; i++)
+            {
+                bool visible = i < pulls.Count;
+                relicResultLabels[i].transform.parent.gameObject.SetActive(visible);
+                if (!visible) continue;
+                RelicGachaService.Pull pull = pulls[i];
+                relicResultIcons[i].sprite = pull.Data.icon;
+                relicResultIcons[i].gameObject.SetActive(pull.Data.icon != null);
+                string state = pull.IsNew ? "<color=#7CE38B>NEW</color>" : pull.StarUp ? "<color=#FFD966>★UP</color>"
+                    : pull.Shards > 0 ? $"<sprite name=ancient_shard>+{pull.Shards}" : $"다음 별 {pull.Duplicates}/{relics.DuplicatesNeeded(pull.Stars)}";
+                string pity = pull.FromPity ? " · 새 유물 보장" : string.Empty;
+                relicResultLabels[i].text = $"{pull.Data.displayName}\n<color=#FFD966>★{pull.Stars}</color>  {state}{pity}";
+            }
+
+            relicResultsRoot.SetActive(true);
+            Canvas.ForceUpdateCanvases();
+            relicResultsScroll.verticalNormalizedPosition = 1f;
         }
 
         private void RenderExchange(SaveData save, bool scrollToTop)
@@ -197,6 +406,106 @@ namespace HistoryHeroes.UI
             Render(false);
         }
 
+        // ---------------------------------------------------------------- 보석 (실제 결제)
+
+        private void RenderGems(SaveData save, bool scrollToTop)
+        {
+            var rows = new List<ButtonList.Row>();
+            bool busy = IapService.BuyingId != null || !IapService.ValidationReady;
+            bool settled = Account.AccountService.SyncSettled;
+            foreach (IapCatalog.Item item in IapCatalog.All)
+            {
+                if (!IapLedger.Available(save, item)) continue; // 첫 결제 패키지는 받은 뒤 숨긴다
+                string price = IapService.Price(item.Id);
+                bool ok = price != null && !busy && IapLedger.Sellable(save, item, settled);
+                string id = item.Id;
+                Color color = !ok ? RowDisabled : item.OncePerAccount ? RowStarter : RowNormal;
+                rows.Add(new ButtonList.Row(GemCardText(save, item, price), color, () => ConfirmBuy(id), ok));
+            }
+
+            gemList.Show(rows, scrollToTop);
+        }
+
+        /// <summary>이름 · 배지 · 가격 (상점이 준 글 그대로) / 내용 / 보너스 줄</summary>
+        private static string GemCardText(SaveData save, IapCatalog.Item item, string price)
+        {
+            bool settled = Account.AccountService.SyncSettled;
+            bool first = IapLedger.FirstBonusShown(save, item, settled);
+            string badge = item.OncePerAccount ? "  <color=#FFB347>계정당 1번</color>" : first ? "  <color=#FF9F43>첫 구매 2배</color>" : string.Empty;
+            string priceText = price != null && !IapService.ValidationReady ? "<color=#A9B4C2>결제 준비 중</color>"
+                : price != null && !IapLedger.Sellable(save, item, settled) ? "<color=#A9B4C2>계정 확인 중</color>"
+                : price != null ? $"<size=115%><color=#7CE38B><b>{price}</b></color></size>"
+                : IapService.State == IapService.Status.Connecting ? "<color=#A9B4C2>상점 연결 중…</color>"
+                : $"<color=#A9B4C2>{IapService.UnavailableText}</color>";
+            string contents, extra;
+            if (item.OncePerAccount)
+            {
+                contents = $"<sprite name=gem>보석 {Wallet.Format(item.PaidGems + item.FreeGems)} · <sprite name=ticket>고급 소환권 {item.Tickets} · <sprite name=gold>골드 {Wallet.Format(item.Gold)}";
+                extra = $"<color=#A9B4C2>유료 보석 {Wallet.Format(item.PaidGems)} + 무료 보석 {Wallet.Format(item.FreeGems)}</color>";
+            }
+            else
+            {
+                contents = $"<sprite name=gem>보석 {Wallet.Format(item.PaidGems)}";
+                var parts = new List<string>();
+                if (item.FreeGems > 0) parts.Add($"보너스 +{Wallet.Format(item.FreeGems)}");
+                if (first) parts.Add($"첫 구매 +{Wallet.Format(item.PaidGems)}");
+                extra = parts.Count > 0 ? $"<color=#FFD966>{string.Join(" · ", parts)}</color>" : "<color=#A9B4C2>보너스 없음</color>";
+            }
+
+            return $"<b>{item.Title}</b>{badge}<pos=62%>{priceText}\n{contents}\n<size=85%>{extra}</size>";
+        }
+
+        /// <summary>카드를 누르면 확인 창: 받는 것 · 가격 · 청약철회 · 미성년자 · (게스트면) 기기 분실 안내 → [구매] [취소]</summary>
+        private void ConfirmBuy(string productId)
+        {
+            IapCatalog.Item item = IapCatalog.Find(productId);
+            string price = IapService.Price(productId);
+            if (item == null || price == null || choice == null)
+            {
+                Render(false);
+                return;
+            }
+
+            PurchaseEntry get = IapLedger.Preview(SaveSystem.Data, item, Account.AccountService.SyncSettled);
+            string split = $"유료 보석 {Wallet.Format(get.paidGems)} · 무료 보석 {Wallet.Format(get.freeGems)}{(get.firstBonus ? " (첫 구매 2배 포함)" : string.Empty)}";
+            string withdrawal = item.OncePerAccount
+                ? "패키지는 구매 후 7일 이내, 구성품을 하나도 쓰지 않았으면 청약철회할 수 있어요. 하나라도 쓰면 철회가 제한돼요."
+                : "유료 보석은 구매 후 7일 이내, 사용하지 않았으면 청약철회할 수 있어요. 사용한 보석·뽑기는 철회가 제한돼요.";
+            var options = new List<ChoicePanel.Option>
+            {
+                new ChoicePanel.Option { Text = $"받는 것: {IapLedger.Text(get)}\n<size=85%><color=#A9B4C2>{split}</color></size>" },
+                new ChoicePanel.Option { Text = $"<size=85%>{withdrawal}</size>" },
+                new ChoicePanel.Option { Text = "<size=85%>미성년자가 법정대리인 동의 없이 결제하면 취소될 수 있어요.</size>" },
+            };
+            if (Account.AccountService.State != Account.AccountState.Linked) // LiveOps 3-1: 알리기만 하고 막지 않는다
+                options.Add(new ChoicePanel.Option { Text = "<size=85%><color=#FFB347>게스트는 기기를 잃으면 구매한 보석을 되찾을 수 없어요. 설정 → 계정에서 카카오를 연결해 두세요.</color></size>" });
+            options.Add(new ChoicePanel.Option { Text = $"<b>구매  {price}</b>", OnChosen = () => Purchase(productId, get) });
+            choice.Open("구매 확인", $"<b>{item.Title}</b> · {price}", options, laterText: "취소");
+        }
+
+        private void Purchase(string productId, PurchaseEntry shown)
+        {
+            gemMessageLabel.text = IapService.Buy(productId, shown) ? "결제 창을 여는 중…" : $"<color=#FFB347>{IapService.UnavailableText}</color>";
+            Render(false);
+        }
+
+        private void OnIapChanged()
+        {
+            if (IsOpen) Render(false);
+        }
+
+        private void OnIapGranted(PurchaseEntry entry)
+        {
+            gemMessageLabel.text = $"<color=#7CE38B>구매 완료 · {IapLedger.Text(entry)}</color>";
+            if (IsOpen) Render(false);
+        }
+
+        private void OnIapNotice(string text)
+        {
+            gemMessageLabel.text = $"<color=#FFB347>{text}</color>";
+            if (IsOpen) Render(false);
+        }
+
         // ---------------------------------------------------------------- 사기
 
         private void Buy(BoxRates box, int count, GachaService.Pay pay)
@@ -251,7 +560,7 @@ namespace HistoryHeroes.UI
             {
                 if (p.Data == null) continue;
                 best = Mathf.Max(best, (int)p.Data.rarity);
-                string note = p.FromPity ? "  <color=#FFC94A>[천장]</color>" : p.FromTenGuarantee ? "  <color=#6FA8FF>[10연 보장]</color>" : string.Empty;
+                string note = p.FromPity ? "  <color=#FFC94A>[천장]</color>" : p.FromTenGuarantee ? "  <color=#6FA8FF>[희귀 이상 보장]</color>" : string.Empty;
                 string line = EquipmentInventory.AddLine(p.Added, p.Data).Replace("장비  ", string.Empty);
                 _lastResults.Add(new ButtonList.Row(line + note, RowNormal, null, false));
             }
@@ -285,9 +594,20 @@ namespace HistoryHeroes.UI
 
         private void ShowRates()
         {
+            if (_relicMode)
+            {
+                ratesLabel.text = RelicGachaService.RatesText(SaveSystem.Data, relics)
+                    + "\n<size=85%><color=#A9B4C2>사용한 보석·뽑기는 철회가 제한됩니다.</color></size>";
+                ratesRoot.SetActive(true);
+                Canvas.ForceUpdateCanvases();
+                ratesScroll.verticalNormalizedPosition = 1f;
+                return;
+            }
             ratesLabel.text = GachaService.RatesText(gacha, gacha.premium) + "\n" + GachaService.RatesText(gacha, gacha.normal) +
-                              "\n<size=85%><color=#A9B4C2>화면의 확률과 실제 추첨은 같은 표를 씁니다. 이 버전은 가짜 보석이라 실제 결제는 없어요</color></size>";
+                              "\n<size=85%><color=#A9B4C2>화면의 확률과 실제 추첨은 같은 표를 씁니다. 사용한 보석·뽑기는 철회가 제한됩니다.</color></size>";
             ratesRoot.SetActive(true);
+            Canvas.ForceUpdateCanvases();
+            ratesScroll.verticalNormalizedPosition = 1f;
         }
     }
 }

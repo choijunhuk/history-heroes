@@ -14,9 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Relics.RelicData
   id: khan_paiza
   displayName: "\uCE6D\uAE30\uC988 \uCE78\uC758 \uD30C\uC774\uC790"
+  icon: {fileID: 21300000, guid: 282780f9049b94508bb4f58b2221f020, type: 3}
   set: 3
   fact: "\uBABD\uACE8 \uC81C\uAD6D\uC758 \uD1B5\uD589\xB7\uAD8C\uD55C \uC99D\uD45C"
+  story: 
   source: 0
   sourceChapter: 0
   sourceValue: khan
-  howToGet: "\uCE6D\uAE30\uC988 \uCE78\uC73C\uB85C \uB358\uC804 \uCCAB \uD074\uB9AC\uC5B4"
+  howToGet: "\uC720\uBB3C \uBF51\uAE30 \uB610\uB294 \uCE6D\uAE30\uC988 \uCE78\uC73C\uB85C
+    \uB358\uC804 \uCCAB \uD074\uB9AC\uC5B4"

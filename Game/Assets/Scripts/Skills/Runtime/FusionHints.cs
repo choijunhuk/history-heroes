@@ -35,6 +35,7 @@ namespace HistoryHeroes.Skills
             if (!string.IsNullOrEmpty(r.heroOnlyId) && r.heroOnlyId != heroId) return false;
             if (loadout.IsCompleted(r) || loadout.IsHidden(r) || loadout.Find(r.result) != null) return false;
             if (loadout.IsConsumed(r.materialA) || loadout.IsConsumed(r.materialB)) return false;
+            if (loadout.IsBanned(r.materialA) || loadout.IsBanned(r.materialB)) return false;
             return true;
         }
 

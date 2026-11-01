@@ -13,7 +13,15 @@ namespace HistoryHeroes.Records
         /// <summary>저장 구조가 바뀌면 올린다. 읽을 때 옛 구조면 옮겨 담고(Migrate), 더 새 구조면 읽지 않고 원본을 보존한다.</summary>
         /// 1: v0.2 기록·도감·구간 / 2: v0.2b 재화·하트·계정 레벨·별 / 3: v0.4 장비·영웅 성장·수련·상자·상점
         /// <summary>4 (v0.5): 서바이벌·펫·미션 — 빈 상태로 시작 (Normalize가 채운다). 옛 빌드는 더 새 파일을 읽지 않고 멈춘다</summary>
-        public const int CurrentSchemaVersion = 5;
+        /// <summary>6: 카드 빼기 이력·남은 횟수와 목표 레시피 (옛 저장은 빼기 2회부터)</summary>
+        /// <summary>7: 유물 뽑기 횟수·무료 날짜·중복 진행. 옛 저장의 빈 값은 모두 0/없음이 맞다.</summary>
+        /// <summary>8: 장비 6칸. 앞의 무기·갑옷·장신구 번호는 그대로 두고 새 칸을 뒤에 붙인다.</summary>
+        /// <summary>9: 신의 시련 첫 격파와 주간 목표를 별도로 보관한다.</summary>
+        /// <summary>10: 미확정 기록·불굴 사용 여부·판 시작 룬을 함께 보관한다.</summary>
+        /// <summary>11: 기능 첫 사용 안내를 본 이력. 옛 저장은 아직 안 본 상태로 시작한다.</summary>
+        /// <summary>12: 첫 실행 동의 기록 (약관·개인정보 버전, 동의 시각, 만 14세 확인). 옛 저장은 동의 기록이 없어 다음 로비에서 한 번 묻는다.</summary>
+        /// <summary>13: 실제 결제 기록 (거래 번호별 지급 내역 · 첫 구매 2배를 쓴 상품 · 첫 결제 패키지). 옛 저장은 결제한 적 없음으로 시작한다.</summary>
+        public const int CurrentSchemaVersion = 13;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -32,8 +40,20 @@ namespace HistoryHeroes.Records
         /// <summary>기록들. 슬롯 번호는 RunRecord.slot (0부터)</summary>
         public List<RunRecord> records = new List<RunRecord>();
 
+        /// <summary>번호 칸과 따로 두는 임시 기록 (없거나 하나). 보관함 개수에는 세지 않는다.</summary>
+        public List<RunRecord> tempRecords = new List<RunRecord>();
+
+        /// <summary>결과·기록 선택 중 앱이 꺼져도 다시 고를 수 있는 빌드. 저장·명시적 포기 뒤에만 비운다.</summary>
+        public RunRecord pendingRecord;
+        public bool pendingTutorialRecord;
+
+        public RunRecord TempRecord => tempRecords != null && tempRecords.Count > 0 ? tempRecords[0] : null;
+
         /// <summary>조합 도감: 한 번이라도 만든 레시피 ID</summary>
         public List<string> discoveredRecipes = new List<string>();
+
+        /// <summary>발견한 레시피 중 목표로 고른 ID (최대 2개, 뽑기 확률은 그대로)</summary>
+        public List<string> targetRecipes = new List<string>();
 
         /// <summary>열린 구간 (1부터). 구간 보스를 처음 깨면 +1 (GameDesign 7-4)</summary>
         public int unlockedChapter = 1;
@@ -43,6 +63,8 @@ namespace HistoryHeroes.Records
 
         /// <summary>판 수 (통계·테스트용)</summary>
         public int dungeonRuns;
+        /// <summary>10판 기념으로 보석 영웅 한 명을 무료로 열었나 (전체 검토 8번, 한 번만)</summary>
+        public bool freeHeroClaimed;
         public int bossRuns;
 
         // ---------------- v0.2b 경제 (Economy.md, Stats.md 7장, Modes.md 3장) ----------------
@@ -88,6 +110,7 @@ namespace HistoryHeroes.Records
         public ShopSave shop = new ShopSave();
         public RuneSave runes = new RuneSave();
         public RelicSave relics = new RelicSave();
+        public RelicGachaSave relicGacha = new RelicGachaSave();
 
         // ----- v0.5 서바이벌 (GameDesign 8-3: 생존 시간 기록, 영웅별 최고 기록) -----
         public SurvivalSave survival = new SurvivalSave();
@@ -107,6 +130,10 @@ namespace HistoryHeroes.Records
         // ---------------------------------------------------------------- v1.0 (구조 5)
         /// <summary>튜토리얼 보스를 깼다 → 출석부·신규 7일 미션·기록 보관함이 열린다 (Systems 3장)</summary>
         public bool tutorialDone;
+        /// <summary>로비에서 한 번 보여 준 기능 안내 ID. 닫거나 다시 접속해도 반복하지 않는다.</summary>
+        public List<string> seenFirstUseHints = new List<string>();
+        /// <summary>첫 실행 동의 기록 (Progress.Consent가 판정). 비어 있으면 아직 동의 전</summary>
+        public ConsentRecord consent = new ConsentRecord();
         /// <summary>튜토리얼 던전에서 남긴 기록 (보스 전에 앱이 꺼져도 튜토리얼 보스로 바로 간다)</summary>
         public string tutorialRecordId;
         public AttendanceSave attendance = new AttendanceSave();
@@ -118,6 +145,12 @@ namespace HistoryHeroes.Records
         public List<string> titles = new List<string>();
         /// <summary>보석으로 바로 해금한 영웅 (보스 격파로 열린 영웅은 unlockedChapter로 판단)</summary>
         public List<string> unlockedHeroes = new List<string>();
+        /// <summary>망각의 왕 첫 격파 뒤 "신의 심판" 예고 장면을 봤다 (GodsVsHumanity 2장, 한 번만)</summary>
+        public bool godsTeaserSeen;
+        /// <summary>신의 시련 첫 격파·주간 조각 목표. 기존 보스 별과는 별개다.</summary>
+        public GodTrialSave godTrials = new GodTrialSave();
+        /// <summary>실제 결제로 받은 것 (Economy.IapLedger). 거래 번호로 두 번 지급을 막고, 환불·문의 때 무엇을 줬는지 본다</summary>
+        public PurchaseSave purchases = new PurchaseSave();
 
         public int ItemCount(string itemId)
         {
@@ -132,6 +165,16 @@ namespace HistoryHeroes.Records
         public void AddItem(string itemId, int amount)
         {
             if (amount == 0 || string.IsNullOrEmpty(itemId)) return;
+            const string shardPrefix = "hero_shard_";
+            string heroId = itemId.StartsWith(shardPrefix, StringComparison.Ordinal)
+                ? itemId.Substring(shardPrefix.Length) : null;
+            if (amount > 0 && Modes.GodTrialRules.IsGod(heroId)
+                && (unlockedHeroes == null || !unlockedHeroes.Contains(heroId)))
+            {
+                // 신 해금 전 조각은 시련과 주간 목표를 합쳐 영웅별 30개까지만 보관한다.
+                amount = Math.Min(amount, Math.Max(0, Modes.GodTrialRules.UnlockShards - ItemCount(itemId)));
+                if (amount == 0) return;
+            }
             foreach (ItemCount i in items)
             {
                 if (i.id != itemId) continue;
@@ -152,6 +195,7 @@ namespace HistoryHeroes.Records
 
         public RunRecord RecordInSlot(int slot)
         {
+            if (slot < 0 || slot >= recordSlots) return null;
             foreach (RunRecord r in records)
             {
                 if (r.slot == slot) return r;
@@ -193,12 +237,13 @@ namespace HistoryHeroes.Records
 
         public RunRecord FindRecord(string recordId)
         {
+            if (string.IsNullOrEmpty(recordId)) return null;
             foreach (RunRecord r in records)
             {
                 if (r.id == recordId) return r;
             }
 
-            return null;
+            return TempRecord != null && TempRecord.id == recordId ? TempRecord : null;
         }
     }
 
@@ -210,6 +255,7 @@ namespace HistoryHeroes.Records
     {
         public string id;
         public int slot;
+        public bool locked;
         public string heroId;
         /// <summary>화면 표시용 (영웅 이름이 바뀌어도 ID로 다시 찾는다)</summary>
         public string heroName;
@@ -247,6 +293,9 @@ namespace HistoryHeroes.Records
     [Serializable]
     public sealed class MetaSnapshot
     {
+        /// <summary>룬이 없던 판과 옛 저장을 구분한다. ID와 레벨은 판 시작 값이다.</summary>
+        public bool hasRunes;
+        public List<RuneLevel> runes = new List<RuneLevel>();
         public int heroLevel = 1;
         public int heroStars = 1;
         /// <summary>장착 장비 (칸마다 하나, 비면 빠짐). level = 그 칸의 강화값을 장비 등급 상한으로 자른 값</summary>
@@ -274,8 +323,8 @@ namespace HistoryHeroes.Records
     public sealed class EquipmentSave
     {
         public List<EquipmentItem> items = new List<EquipmentItem>();
-        /// <summary>칸 강화 (무기·갑옷·장신구, 계정 공용). 0 = 강화 안 함, 최대 40</summary>
-        public List<int> slotLevels = new List<int> { 0, 0, 0 };
+        /// <summary>칸 강화 (무기·갑옷·목걸이·장갑·허리띠·신발, 계정 공용). 새 칸은 Lv1, 옛 Lv0도 보존한다.</summary>
+        public List<int> slotLevels = new List<int> { 1, 1, 1, 1, 1, 1 };
         public List<HeroLoadout> loadouts = new List<HeroLoadout>();
         public int nextUid = 1;
         /// <summary>희귀·전설 중복을 얻자마자 조각으로 (Equipment 9장 기본값 켜짐)</summary>
@@ -294,12 +343,12 @@ namespace HistoryHeroes.Records
         public bool locked;
     }
 
-    /// <summary>영웅마다 3칸 (장비 uid, 빈 칸은 빈 문자열). 같은 장비를 여러 영웅이 동시에 낄 수 있다</summary>
+    /// <summary>영웅마다 6칸 (장비 uid, 빈 칸은 빈 문자열). 같은 장비를 여러 영웅이 동시에 낄 수 있다</summary>
     [Serializable]
     public sealed class HeroLoadout
     {
         public string heroId;
-        public List<string> uids = new List<string> { "", "", "" };
+        public List<string> uids = new List<string> { "", "", "", "", "", "" };
     }
 
     // ---------------------------------------------------------------- v0.4 영웅 성장 (Stats 4·6)
@@ -310,6 +359,8 @@ namespace HistoryHeroes.Records
         public string heroId;
         public int level = 1;
         public int stars = 1;
+        /// <summary>이 영웅으로 끝낸 던전 판 수 (첫 판이면 첫 카드에 전용 액티브 확정, 전체 검토 3번)</summary>
+        public int runs;
     }
 
     // ---------------------------------------------------------------- v0.6 무한의 균열 · 일일 도전
@@ -330,6 +381,9 @@ namespace HistoryHeroes.Records
     [Serializable]
     public sealed class RiftCheckpoint
     {
+        public bool reviveUsed;
+        public bool hasMeta;
+        public MetaSnapshot meta;
         public bool valid;
         public int floor;
         public int seed;
@@ -340,6 +394,8 @@ namespace HistoryHeroes.Records
         public List<RecordSkill> skills = new List<RecordSkill>();
         /// <summary>균열 강화를 고른 횟수 (공격력 / 체력 / 공격속도 순서)</summary>
         public List<int> boosts = new List<int>();
+        public List<string> bannedSkillIds = new List<string>();
+        public int bansLeft = 2;
     }
 
     /// <summary>
@@ -349,6 +405,8 @@ namespace HistoryHeroes.Records
     [Serializable]
     public sealed class RunSnapshot
     {
+        /// <summary>불굴은 같은 판에서 앱을 다시 켜도 한 번만 쓴다.</summary>
+        public bool reviveUsed;
         public bool valid;
         /// <summary>Common.BattleMode (0 던전 · 1 보스 · 3 균열 · 4 일일 도전 연습)</summary>
         public int mode;
@@ -360,6 +418,8 @@ namespace HistoryHeroes.Records
         public string weekKey;
         /// <summary>보스: 쓴 기록</summary>
         public string recordId;
+        /// <summary>보스 모드의 신의 시련 ID. 빈 값이면 기존 구간 보스다.</summary>
+        public string godTrialId;
         public int room = 1;
         public string heroId;
         public List<RecordSkill> skills = new List<RecordSkill>();
@@ -375,6 +435,14 @@ namespace HistoryHeroes.Records
         public int offersMade;
         public bool choseLegendary;
         public int rerollsLeft = -1;
+        public List<string> bannedSkillIds = new List<string>();
+        public int bansLeft = 2;
+        /// <summary>확장 1차 3장: 갈림길에서 고른 문 (갈림길마다 -1 = 아직, 0 = 왼쪽(평범), 1 = 오른쪽(특별))</summary>
+        public List<int> forkChoices = new List<int>();
+        /// <summary>기억의 석비에서 고른 축복 id (판 안 효과, 없으면 빈 글)</summary>
+        public List<string> blessings = new List<string>();
+        /// <summary>이 방(room)의 "맞지 않고 깨기"를 이미 실패했나 (껐다 켜서 다시 도전하지 못하게, 검토 9장 2번)</summary>
+        public bool challengeFailed;
         /// <summary>이 방의 보상(보상 방·균열 엘리트 층)을 이미 받았나 (껐다 켜서 다시 받기 방지)</summary>
         public bool rewardTaken;
         /// <summary>판을 시작할 때 하트를 썼나 (보스 첫 패배 하트 돌려주기)</summary>
@@ -382,6 +450,15 @@ namespace HistoryHeroes.Records
         /// <summary>판을 시작할 때의 판 밖 성장 (이어할 때 그대로 — 로비에서 바꾼 강화가 끼어들지 않게)</summary>
         public bool hasMeta;
         public MetaSnapshot meta;
+
+        // ── 서바이벌 이어하기 (전체 검토 6번: 10분짜리 판이 앱이 꺼지면 통째로 사라지던 것) ──
+        public int survivalMap;
+        public int nextElite;
+        public bool midBossDone;
+        public int nextSwarm;
+        public int cratesBroken;
+        public int elitesEarly;
+        public int bagGold;
         /// <summary>조합 이력: 재료로 쓴 스킬 · 끝낸 조합 · 이번 판에 숨긴 조합</summary>
         public List<string> consumed = new List<string>();
         public List<string> completedFusions = new List<string>();
@@ -509,7 +586,12 @@ namespace HistoryHeroes.Records
     [Serializable]
     public sealed class SurvivalSave
     {
+        /// <summary>영웅별 최고 생존 시간 = 맵 1(균열의 들판) 기록 (확장 1차: 맵이 3개가 되며 옛 기록은 맵 1로)</summary>
         public List<HeroBest> best = new List<HeroBest>();
+        /// <summary>맵마다 (확장 1차 6장 + 검토 9장 5번): 최고 시간 · 별 · 첫 클리어 · 클리어 수</summary>
+        public List<SurvivalMapSave> maps = new List<SurvivalMapSave>();
+        /// <summary>받은 서바이벌 별 상자 수 (별 5개마다 1개)</summary>
+        public int starChestsTaken;
         /// <summary>서바이벌을 클리어한 영웅 (유물 "영웅 2명으로 클리어")</summary>
         public List<string> clearHeroes = new List<string>();
         public int clears;
@@ -537,6 +619,72 @@ namespace HistoryHeroes.Records
             best.Add(created);
             return created;
         }
+
+        /// <summary>맵 기록 (없으면 null — 화면 표시용)</summary>
+        public SurvivalMapSave FindMap(string id)
+        {
+            if (maps != null)
+            {
+                foreach (SurvivalMapSave m in maps)
+                {
+                    if (m.id == id) return m;
+                }
+            }
+
+            // 옛 저장 (맵이 하나이던 때): 맵 1 기록은 읽을 때 옮긴다 → 로비에서 바로 맵 2가 열린다 (코드 검토 2026-10-28 2번)
+            if (id == "field" && (clears > 0 || longestSeconds > 0f)) return MapOf(id);
+            return null;
+        }
+
+        /// <summary>
+        /// 맵 기록 (없으면 만든다). 맵 1을 처음 만들 때 옛 저장의 기록을 옮긴다:
+        /// 최고 시간 = 영웅 최고 중 가장 긴 것, 옛 클리어가 있으면 클리어 1번 (다음 맵이 열린다)
+        /// </summary>
+        public SurvivalMapSave MapOf(string id)
+        {
+            if (maps != null)
+            {
+                foreach (SurvivalMapSave m in maps)
+                {
+                    if (m.id == id) return m;
+                }
+            }
+
+            if (maps == null) maps = new List<SurvivalMapSave>();
+            var created = new SurvivalMapSave { id = id };
+            if (id == "field")
+            {
+                created.bestSeconds = longestSeconds;
+                if (clears > 0)
+                {
+                    created.clears = 1;
+                    created.stars = 1; // ★1 클리어 (옛 판에서 이미 깼다)
+                    created.firstClearTaken = true; // 첫 클리어 보상은 옛 규칙으로 이미 받았다
+                }
+            }
+
+            maps.Add(created);
+            return created;
+        }
+
+        public int TotalStars()
+        {
+            int total = 0;
+            if (maps == null) return 0;
+            foreach (SurvivalMapSave m in maps) total += Survival.SurvivalProgress.StarCount(m.stars);
+            return total;
+        }
+    }
+
+    [Serializable]
+    public sealed class SurvivalMapSave
+    {
+        public string id;
+        public float bestSeconds;
+        /// <summary>별 칸 (1 클리어 · 2 맵 임무 · 4 전설 없이)</summary>
+        public int stars;
+        public bool firstClearTaken;
+        public int clears;
     }
 
     [Serializable]
@@ -552,7 +700,7 @@ namespace HistoryHeroes.Records
     public sealed class RelicSave
     {
         public List<RelicStar> owned = new List<RelicStar>();
-        /// <summary>원래 획득처를 이미 채운 유물 (교환소로 먼저 얻었으면 그때 🏺 돌려받음)</summary>
+        /// <summary>영웅 첫 클리어 또는 종전 고정 유물의 파편 보상을 이미 받았는가</summary>
         public List<string> sourcesClaimed = new List<string>();
         /// <summary>던전을 클리어해 본 영웅 (영웅 유물)</summary>
         public List<string> heroDungeonClears = new List<string>();
@@ -565,6 +713,18 @@ namespace HistoryHeroes.Records
     {
         public string id;
         public int stars;
+        /// <summary>다음 ★까지 모인 중복 (★2에서 0~1개)</summary>
+        public int duplicates;
+    }
+
+    [Serializable]
+    public sealed class RelicGachaSave
+    {
+        /// <summary>새 유물을 못 얻은 연속 횟수. 전부 얻으면 0으로 둔다.</summary>
+        public int newRelicPity;
+        public int totalPulls;
+        public string freeDate;
+        public List<GachaLogEntry> log = new List<GachaLogEntry>();
     }
 
     // ---------------------------------------------------------------- v0.4 룬 (Runes 9장)
@@ -632,6 +792,28 @@ namespace HistoryHeroes.Records
         public List<string> actives = new List<string>();
     }
 
+    /// <summary>시련 첫 승리는 영구 저장하고 주간 목표의 기록 구성은 한 주만 남긴다.</summary>
+    [Serializable]
+    public sealed class GodTrialSave
+    {
+        public List<string> cleared = new List<string>();
+        public string weekKey;
+        public string goalTrialId;
+        public string firstRecordId;
+        public List<string> firstActives = new List<string>();
+        /// <summary>이번 주 각 승리 당시 기록 ID와 실제 액티브 구성. 기록을 지워도 비교는 남는다.</summary>
+        public List<GodTrialWin> weeklyWins = new List<GodTrialWin>();
+        public bool goalLocked;
+        public int weeklyShards;
+    }
+
+    [Serializable]
+    public sealed class GodTrialWin
+    {
+        public string recordId;
+        public List<string> actives = new List<string>();
+    }
+
     [Serializable]
     public sealed class ItemCount
     {
@@ -655,6 +837,8 @@ namespace HistoryHeroes.Records
         public bool notifyAsked;
         /// <summary>프레임: true 60 / false 30 (배터리 절약)</summary>
         public bool frame60 = true;
+        /// <summary>그래픽 품질 (v1.0 17번 · 3D): 0 낮음(그림자 끔 · 해상도 75%) / 1 보통(그림자 · 90%) / 2 높음(그림자 · 100% · 계단 줄임). 옛 저장은 보통</summary>
+        public int graphics = 1;
         /// <summary>조이스틱: false = 누른 자리에 생김 (기본, UX 2장) / true = 아래 가운데 고정</summary>
         public bool joystickFixed;
         /// <summary>조이스틱 크기: 0 작게 · 1 보통 · 2 크게</summary>
@@ -686,7 +870,10 @@ namespace HistoryHeroes.Records
     {
         /// <summary>시작한 날 (튜토리얼 보스 격파한 날, 05:00 기준). 비어 있으면 아직</summary>
         public string startDay;
-        /// <summary>사건으로 세는 미션의 카운터 ("fusion", "hero_dungeon:guan" …)</summary>
+        /// <summary>시작한 뒤 들어온 날 수 (칸이 이 수만큼 열린다, 전체 검토 11번) · 마지막으로 센 날</summary>
+        public int activeDays;
+        public string lastActiveDay;
+        /// <summary>사건으로 세는 미션의 카운터 ("fusion", "hero_dungeon:guan", "boss_try:2" …)</summary>
         public List<NamedCount> counts = new List<NamedCount>();
         public List<int> claimedDays = new List<int>();
         public bool bonusClaimed;
@@ -738,5 +925,50 @@ namespace HistoryHeroes.Records
             this.level = level;
             this.fusion = fusion;
         }
+    }
+
+    /// <summary>실제 결제 장부 (구조 13). 클라우드 저장에 같이 올라가므로 연결한 계정은 기기를 바꿔도 따라간다</summary>
+    [Serializable]
+    public sealed class PurchaseSave
+    {
+        /// <summary>지급을 끝낸 거래 (지운 적 없음 — 청약철회 계산이 구매별 유료분·무료분을 본다)</summary>
+        public List<PurchaseEntry> ledger = new List<PurchaseEntry>();
+        /// <summary>첫 구매 2배를 이미 받은 보석 상품 ID (상품마다 계정당 1회)</summary>
+        public List<string> firstBought = new List<string>();
+        /// <summary>첫 결제 패키지를 받았다 (계정당 1회)</summary>
+        public bool starterClaimed;
+    }
+
+    /// <summary>거래 하나로 지급한 것. transactionId = 구글 구매 토큰 (가짜 상점은 무작위 GUID)</summary>
+    [Serializable]
+    public sealed class PurchaseEntry
+    {
+        public string transactionId;
+        public string productId;
+        /// <summary>지급한 시각 (UTC, ISO 8601)</summary>
+        public string utc;
+        public int paidGems;
+        /// <summary>보너스 + 첫 구매분 (무료분)</summary>
+        public int freeGems;
+        public int tickets;
+        public int gold;
+        /// <summary>이 거래에서 첫 구매 2배를 받았다</summary>
+        public bool firstBonus;
+        /// <summary>구글 환불이 확인됐다 / 결제가 취소(차지백 등)됐다. 아직 쓰는 곳 없음 — 회수를 넣을 때 구조를 또 올리지 않게 미리 둔다</summary>
+        public bool refunded;
+        public bool voided;
+
+        public PurchaseEntry Copy() => (PurchaseEntry)MemberwiseClone();
+    }
+
+    /// <summary>동의한 약관·개인정보 처리방침 버전과 시각. 버전이 0이면 동의한 적 없음.</summary>
+    [Serializable]
+    public sealed class ConsentRecord
+    {
+        public int termsVersion;
+        public int privacyVersion;
+        /// <summary>동의한 시각 (UTC, ISO 8601)</summary>
+        public string agreedAtUtc;
+        public bool age14;
     }
 }

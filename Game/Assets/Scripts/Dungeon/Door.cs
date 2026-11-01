@@ -12,8 +12,15 @@ namespace HistoryHeroes.Dungeon
         [SerializeField] private SpriteRenderer sprite;
         [SerializeField] private Color closedColor = new Color(0.25f, 0.22f, 0.2f);
         [SerializeField] private Color openColor = new Color(0.4f, 0.95f, 0.55f);
+        [Header("3D 아치 문 (그래픽 평가 4번): 문짝이 뒤로 열리고, 열리면 문 안이 빛난다")]
+        [SerializeField] private Transform leafRight;
+        [SerializeField] private Transform leafLeft;
+        [SerializeField] private GameObject openGlow;
+        [SerializeField] private float openAngle = 100f;
 
         private Collider2D _trigger;
+        private Quaternion _rightBase, _leftBase;
+        private float _angle, _targetAngle;
         private static readonly List<Collider2D> _overlaps = new List<Collider2D>();
 
         public bool IsOpen { get; private set; }
@@ -23,7 +30,18 @@ namespace HistoryHeroes.Dungeon
         {
             _trigger = GetComponent<Collider2D>();
             _trigger.isTrigger = true;
+            if (leafRight != null) _rightBase = leafRight.localRotation;
+            if (leafLeft != null) _leftBase = leafLeft.localRotation;
             SetOpen(false);
+        }
+
+        private void Update()
+        {
+            if (leafRight == null || Mathf.Approximately(_angle, _targetAngle)) return;
+            _angle = Mathf.MoveTowards(_angle, _targetAngle, 240f * Time.deltaTime);
+            // 경첩(문짝 원점)을 축으로 뒤(벽 너머)로 연다 → 문짝이 방 안을 가리지 않는다
+            leafRight.localRotation = _rightBase * Quaternion.Euler(0f, _angle, 0f);
+            if (leafLeft != null) leafLeft.localRotation = _leftBase * Quaternion.Euler(0f, -_angle, 0f);
         }
 
         public void SetOpen(bool open)
@@ -31,6 +49,8 @@ namespace HistoryHeroes.Dungeon
             if (open && !IsOpen) Audio.AudioManager.Play("door", 0.7f);
             IsOpen = open;
             if (sprite != null) sprite.color = open ? openColor : closedColor;
+            _targetAngle = open ? openAngle : 0f;
+            if (openGlow != null) openGlow.SetActive(open);
 
             // 닫힌 문 위에 서 있다가 방을 깬 경우: 들어오는 순간(Enter)이 다시 오지 않으므로 바로 확인
             if (open && _trigger != null)

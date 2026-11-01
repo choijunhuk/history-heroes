@@ -13,9 +13,10 @@ namespace HistoryHeroes.Enemy
         private static readonly List<SpriteRenderer> _pool = new List<SpriteRenderer>();
         private static Transform _root;
 
-        public static readonly Color Danger = new Color(1f, 0.25f, 0.2f, 0.45f);
-        public static readonly Color Summon = new Color(0.7f, 0.4f, 1f, 0.5f);
-        public static readonly Color Warning = new Color(1f, 0.85f, 0.3f, 0.4f);
+        // 테두리 원(RimCircle)이라 안쪽은 이 알파의 55% — 테두리가 진하게 보이게 조금 올렸다 (3D 화면 점검 2번)
+        public static readonly Color Danger = new Color(1f, 0.25f, 0.2f, 0.7f); // 화면 점검 2차: 보스·벽에 가려도 테두리가 보이게
+        public static readonly Color Summon = new Color(0.7f, 0.4f, 1f, 0.6f);
+        public static readonly Color Warning = new Color(1f, 0.85f, 0.3f, 0.55f);
 
         private static SpriteRenderer Get(Sprite sprite, int order)
         {
@@ -52,7 +53,7 @@ namespace HistoryHeroes.Enemy
 
         public static SpriteRenderer Circle(Vector2 center, float radius, Color color, int order = -2)
         {
-            SpriteRenderer sr = Get(PlaceholderSprites.Circle, order);
+            SpriteRenderer sr = Get(PlaceholderSprites.RimCircle, order);
             sr.transform.position = center;
             sr.transform.localScale = Vector3.one * radius * 2f;
             sr.color = color;
@@ -77,7 +78,7 @@ namespace HistoryHeroes.Enemy
 
         public static SpriteRenderer Box(Vector2 center, Vector2 size, float angle, Color color, int order = -3)
         {
-            SpriteRenderer sr = Get(PlaceholderSprites.Square, order);
+            SpriteRenderer sr = Get(PlaceholderSprites.RimSquare, order);
             sr.transform.position = center;
             sr.transform.rotation = Quaternion.Euler(0f, 0f, angle);
             sr.transform.localScale = new Vector3(size.x, size.y, 1f);
@@ -96,7 +97,7 @@ namespace HistoryHeroes.Enemy
             }
         }
 
-        public static bool IsCircle(SpriteRenderer sr) => sr.sprite == PlaceholderSprites.Circle;
+        public static bool IsCircle(SpriteRenderer sr) => sr.sprite == PlaceholderSprites.RimCircle || sr.sprite == PlaceholderSprites.Circle;
         public static bool IsFan(SpriteRenderer sr) => sr.sprite != null && sr.sprite.texture != null && sr.sprite.texture.name.StartsWith("Fan");
 
         public static void Hide(SpriteRenderer sr)
@@ -104,13 +105,24 @@ namespace HistoryHeroes.Enemy
             if (sr != null) sr.gameObject.SetActive(false);
         }
 
-        /// <summary>예고가 차오르는 느낌: t(0~1)만큼 진해진다</summary>
+        /// <summary>
+        /// 예고가 차오르는 느낌: t(0~1)만큼 진해진다. 마지막 30%는 **모든 예고가 같은 박자로 깜빡인다** (초당 8번, 화면 전체가 맞춰서) —
+        /// "곧 맞는다"를 보스·함정·기믹이 똑같이 알린다 (그래픽 재평가 8번: 예고 외곽선·깜빡임 박자 통일)
+        /// </summary>
         public static void Fill(SpriteRenderer sr, Color color, float t)
         {
             if (sr == null) return;
-            color.a = Mathf.Lerp(color.a * 0.35f, Mathf.Min(1f, color.a * 1.3f), Mathf.Clamp01(t));
+            t = Mathf.Clamp01(t);
+            color.a = Mathf.Lerp(color.a * 0.35f, Mathf.Min(1f, color.a * 1.3f), t);
+            if (t >= BlinkFrom) color.a *= Blink(Time.unscaledTime);
             sr.color = color;
         }
+
+        /// <summary>깜빡임이 시작되는 차오름 (마지막 30%)</summary>
+        public const float BlinkFrom = 0.7f;
+
+        /// <summary>같은 박자 깜빡임 (초당 8번: 밝게 1 · 어둡게 0.55)</summary>
+        public static float Blink(float time) => Mathf.Repeat(time * 8f, 1f) < 0.5f ? 1f : 0.55f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
