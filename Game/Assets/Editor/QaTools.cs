@@ -609,7 +609,7 @@ namespace HistoryHeroes.EditorTools
 
         /// <summary>
         /// 화면의 모든 TMP 글자를 훑어 문제 목록을 만든다 (Play 중에만).
-        /// 종류: 칸밖(OVF) · 잘림(CLIP) · 화면밖(OFF) · 작음(SMALL &lt;22, <size=%> 글자 포함) · 자동축소 바닥(MIN) · 겹침(OVL).
+        /// 종류: 칸밖(OVF) · 잘림(CLIP) · 화면밖(OFF) · 작음(SMALL &lt;22, <size=%> 글자 포함) · 자동축소 바닥(MIN) · 같은 역할 단추 글자 크기 다름(BTN-SIZE) · 겹침(OVL).
         /// 측정은 1080 기준 해상도 픽셀. 예: TextAudit() 또는 TextAudit("overlay") 로 겹침만 줄이기.
         /// </summary>
         public static string TextAudit(float minSize = 22f)
@@ -674,6 +674,30 @@ namespace HistoryHeroes.EditorTools
                     break;
                 }
                 if (!hidden && screen.Overlaps(sr)) items.Add((t, sr, canvas));
+            }
+
+            // 같은 부모 · 같은 높이의 단추(= 같은 역할)는 글자 크기가 같아야 한다 (UX.md). 목록(ButtonList) 줄은 글이 제각각이라 제외
+            var sibling = new Dictionary<(Transform, int), List<(string name, float size)>>();
+            foreach (UnityEngine.UI.Button b in Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsSortMode.None))
+            {
+                if (!b.gameObject.activeInHierarchy || b.transform.parent == null) continue;
+                if (b.GetComponentInParent<HistoryHeroes.UI.ButtonList>() != null && b.GetComponentInParent<HistoryHeroes.UI.ButtonTextGroup>() == null) continue;
+                TMPro.TMP_Text label = b.GetComponentInChildren<TMPro.TMP_Text>(false);
+                if (label == null || string.IsNullOrWhiteSpace(label.text) || label.color.a < 0.02f) continue;
+                label.ForceMeshUpdate();
+                float eff = label.fontSize; // 같은 부모의 단추는 같은 캔버스 · 같은 배율 (팝 애니메이션 중 배율 차이를 빼려고 원래 글자 크기로 비교)
+                var key = (b.transform.parent, Mathf.RoundToInt(((RectTransform)b.transform).rect.height));
+                if (!sibling.TryGetValue(key, out var group)) sibling[key] = group = new List<(string, float)>();
+                group.Add((b.name, eff));
+            }
+
+            foreach (var kv in sibling)
+            {
+                if (kv.Value.Count < 2) continue;
+                float lo = float.MaxValue, hi = 0f;
+                foreach (var g in kv.Value) { lo = Mathf.Min(lo, g.size); hi = Mathf.Max(hi, g.size); }
+                if (hi - lo > 0.6f)
+                    lines.Add($"BTN-SIZE 같은 단추 글자 크기가 다름 {lo:0.#}~{hi:0.#}px | {kv.Key.Item1.name}: {string.Join(", ", kv.Value.ConvertAll(g => g.name + " " + g.size.ToString("0.#")))}");
             }
 
             for (int i = 0; i < items.Count; i++)

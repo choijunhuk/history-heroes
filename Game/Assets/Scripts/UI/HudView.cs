@@ -6,14 +6,12 @@ using UnityEngine.UI;
 
 namespace HistoryHeroes.UI
 {
-    /// <summary>전투 화면 위쪽: 체력, 경험치, 레벨, 방 번호, 처치 수. (UX.md 2장)</summary>
+    /// <summary>전투 화면 위쪽: 경험치 막대 + 레벨 배지, 방 번호, 처치 수. 체력은 영웅 머리 위 막대 (HeroHpBar, UX.md 2장)</summary>
     public sealed class HudView : MonoBehaviour
     {
         [SerializeField] private PlayerController player;
         [SerializeField] private ExperienceSystem experience;
 
-        [SerializeField] private Image hpFill;
-        [SerializeField] private TMP_Text hpLabel;
         [SerializeField] private Image expFill;
         [SerializeField] private TMP_Text levelLabel;
         [SerializeField] private TMP_Text roomLabel;
@@ -192,34 +190,18 @@ namespace HistoryHeroes.UI
         public void SetBossMode()
         {
             HideRoomProgress();
-            levelLabel.gameObject.SetActive(false);
+            levelLabel.transform.parent.gameObject.SetActive(false); // 레벨 배지째
             killLabel.gameObject.SetActive(false);
             expFill.transform.parent.gameObject.SetActive(false);
             experience = null;
         }
 
         // 지난번에 그린 값. 같으면 글자를 다시 만들지 않는다 (모바일에서 매 프레임 문자열 = GC)
-        private int _hp = -1, _maxHp = -1, _level = -1, _kills = -1;
+        private int _level = -1, _kills = -1;
 
         private void Update()
         {
             if (noticeLabel != null && noticeLabel.gameObject.activeSelf && Time.unscaledTime > _noticeUntil) noticeLabel.gameObject.SetActive(false);
-
-            if (player != null && player.Health != null)
-            {
-                float max = Mathf.Max(1f, player.Health.Max);
-                float ratio = player.Health.Current / max;
-                hpFill.fillAmount = ratio;
-                hpFill.color = HeroHpBar.ColorFor(ratio); // 머리 위 막대와 같은 색 규칙 (초록 · 노랑 · 빨강)
-
-                int hp = Mathf.CeilToInt(player.Health.Current), maxHp = Mathf.CeilToInt(max);
-                if (hp != _hp || maxHp != _maxHp)
-                {
-                    _hp = hp;
-                    _maxHp = maxHp;
-                    hpLabel.SetText("{0} / {1}", hp, maxHp);
-                }
-            }
 
             if (experience != null)
             {

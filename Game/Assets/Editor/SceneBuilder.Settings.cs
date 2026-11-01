@@ -264,13 +264,13 @@ namespace HistoryHeroes.EditorTools
                 accountStatus.enableAutoSizing = true;
                 accountStatus.fontSizeMin = 24f;
                 accountStatus.fontSizeMax = 30f;
-                Button kakao = ListButton(account, "KakaoLink", null, "카카오 계정 연결", ButtonGreen, 130f);
+                Button kakao = ListButton(account, "KakaoLink", null, "카카오 계정 연결", ButtonGreen, 120f);
                 kakao.image.color = new Color(0.99f, 0.9f, 0.1f);
                 TMP_Text kakaoLabel = kakao.GetComponentInChildren<TMP_Text>();
                 kakaoLabel.color = new Color(0.22f, 0.12f, 0f);
                 kakaoLabel.fontSize = 40;
                 Button cloud = ListButton(account, "CloudSave", "archive", "지금 클라우드에 저장", ButtonBlue, 120f);
-                Button delete = ListButton(account, "DeleteAccount", "skull", "계정 삭제", new Color(0.7f, 0.2f, 0.2f), 100f);
+                Button delete = ListButton(account, "DeleteAccount", "skull", "계정 삭제", new Color(0.7f, 0.2f, 0.2f), 120f);
                 var accountSection = panel.gameObject.AddComponent<AccountSection>();
                 using (var props = new Props(accountSection))
                 {

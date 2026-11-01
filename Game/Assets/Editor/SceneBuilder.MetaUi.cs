@@ -358,17 +358,51 @@ namespace HistoryHeroes.EditorTools
             return screen;
         }
 
+        /// <summary>
+        /// 고르기 창 (알림 권한 · 계정 진행 · 구매 확인 · 장비 고르기). 2026-11-01 카드 모양: 제목 리본 · 안내 · 카드 안 줄 목록 · 아래 큰 [나중에].
+        /// 줄은 모두 같은 높이, 글자 크기는 ButtonTextGroup이 맞춘다.
+        /// </summary>
         private static ChoicePanel BuildChoicePanel(Transform parent)
         {
             RectTransform panel = Overlay(parent, "ChoicePanel", out GameObject holder);
             var screen = holder.AddComponent<ChoicePanel>();
-            TMP_Text title = Label("Title", panel, "", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 820f), new Vector2(900f, 90f));
-            // 안내는 두 줄까지 (계정 삭제 확인 · 진행 고르기 설명)
-            TMP_Text info = Label("Info", panel, "", 30, TextAlignmentOptions.Center);
-            Place(info.rectTransform, Center, Center, new Vector2(0f, 690f), new Vector2(1000f, 150f));
-            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 0f), new Vector2(1000f, 1200f), 120f, 30f);
-            Button later = Btn("Later", panel, "나중에", new Vector2(0f, -760f), new Vector2(400f, 100f), ButtonGray, out _);
+            RectTransform ribbon = Rect("TitleRibbon", panel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(860f, 130f));
+            if (_kit != null)
+            {
+                Image ribbonImage = Img(ribbon, new Color(0.86f, 0.26f, 0.24f), _kit.Ribbon);
+                ribbonImage.type = Image.Type.Sliced;
+            }
+
+            TMP_Text title = Label("Title", ribbon, "", 56, TextAlignmentOptions.Center);
+            Stretch(title.rectTransform);
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 36f;
+            title.fontSizeMax = 56f;
+            // 안내는 세 줄까지 (계정 삭제 확인 · 진행 고르기 설명)
+            TMP_Text info = Label("Info", panel, "", 32, TextAlignmentOptions.Center);
+            Place(info.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -170f), new Vector2(980f, 170f));
+            info.enableAutoSizing = true;
+            info.fontSizeMin = 26f;
+            info.fontSizeMax = 32f;
+            // 줄 목록 카드: 안내 아래 ~ 아래 큰 단추 위 (세로로 긴 화면이면 늘어난다)
+            RectTransform card = Rect("Card", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            card.offsetMin = new Vector2(24f, 176f);
+            card.offsetMax = new Vector2(-24f, -350f);
+            Image cardImage = Img(card, SettingsCardColor, _kit != null ? _kit.Panel : null);
+            if (_kit != null) cardImage.type = Image.Type.Sliced;
+            ButtonList list = BuildButtonList(card, "List", Vector2.zero, new Vector2(960f, 900f), 170f, 40f);
+            var listRect = (RectTransform)list.transform;
+            listRect.anchorMin = Vector2.zero;
+            listRect.anchorMax = Vector2.one;
+            listRect.offsetMin = new Vector2(16f, 16f);
+            listRect.offsetMax = new Vector2(-16f, -16f);
+            list.transform.Find("Content").gameObject.AddComponent<ButtonTextGroup>().SetScan(true);
+            Button later = Btn("Later", panel, "나중에", Vector2.zero, new Vector2(SettingsWidth, 130f), ButtonGray, out TMP_Text laterLabel);
+            var laterRect = (RectTransform)later.transform;
+            laterRect.anchorMin = laterRect.anchorMax = new Vector2(0.5f, 0f);
+            laterRect.pivot = new Vector2(0.5f, 0f);
+            laterRect.anchoredPosition = new Vector2(0f, 24f);
+            laterLabel.fontSize = 44;
             using (var props = new Props(screen))
             {
                 props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("infoLabel", info).Ref("list", list).Ref("laterButton", later);

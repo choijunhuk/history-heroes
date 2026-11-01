@@ -24,7 +24,7 @@ namespace HistoryHeroes.EditorTools
 
             RectTransform guideRoot = Rect("FirstUseGuide", safe, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             var guide = guideRoot.gameObject.AddComponent<LobbyGuide>();
-            RectTransform banner = Rect("Banner", guideRoot, Center, Center, Center, new Vector2(0f, 340f), new Vector2(980f, 160f)); // 화면 가운데 기준: 옆 단추 줄(중심 +465 이상) 바로 아래 · 긴 폰에서도 단추를 안 가린다
+            RectTransform banner = Rect("Banner", guideRoot, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -268f), new Vector2(980f, 150f)); // 위쪽 기준: 오늘 미션 띠 바로 아래 · 양옆 큰 단추(영웅 높이)보다 위라서 어떤 길이의 폰에서도 안 가린다 (2026-11-01)
             Img(banner, new Color(0.05f, 0.07f, 0.12f, 0.9f), null).raycastTarget = true;
             Button dismiss = banner.gameObject.AddComponent<Button>();
             TMP_Text label = Label("Text", banner, "", 32, TextAlignmentOptions.Center);

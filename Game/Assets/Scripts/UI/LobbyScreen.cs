@@ -624,7 +624,7 @@ namespace HistoryHeroes.UI
             if (survivalButton == null || survivalButtonLabel == null) return;
             if (!GameSession.SurvivalUnlocked(data))
             {
-                survivalButtonLabel.text = "서바이벌\n<size=70%>1구간 보스를 깨면 열려요</size>";
+                survivalButtonLabel.text = "서바이벌\n<size=85%>1구간 보스를 깨면 열려요</size>";
                 return;
             }
 
@@ -632,7 +632,7 @@ namespace HistoryHeroes.UI
             string dev = GameSession.SurvivalUnlockedByProgress(data) ? "" : " · 개발용 해금";
             int stars = data.survival.TotalStars();
             int maxStars = Survival.SurvivalProgress.MapIds.Length * 3;
-            survivalButtonLabel.text = $"서바이벌\n<size=70%>★{stars}/{maxStars} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
+            survivalButtonLabel.text = $"서바이벌\n<size=85%>★{stars}/{maxStars} · 하트 {GameSession.SurvivalHearts}{dev}</size>";
         }
 
         // ---------------------------------------------------------------- v1.0 신규 7일 미션 · 순찰

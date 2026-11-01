@@ -1,3 +1,4 @@
+using HistoryHeroes.UI;
 using System.Collections.Generic;
 using System.IO;
 using TMPro;
@@ -121,6 +122,38 @@ namespace HistoryHeroes.EditorTools
                 t.fontSizeMin = t.fontSize;
                 t.fontSizeMax = MinTextSize;
                 t.enableAutoSizing = true;
+            }
+        }
+
+        /// <summary>
+        /// 같은 역할 단추 = 같은 글자 크기 (UX.md). 같은 부모 안에서 높이가 같은 단추끼리 묶어 ButtonTextGroup을 붙인다
+        /// (높이가 같으면 같은 크기 등급 = 같은 역할). 장면 저장 직전에 부른다. 줄 목록(ButtonList)은 글 길이가 제각각이라 빼고, 고르기 창만 따로 묶는다.
+        /// </summary>
+        private static void ApplyButtonGroups()
+        {
+            var seen = new System.Collections.Generic.HashSet<Transform>();
+            foreach (Button b in Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Transform parent = b.transform.parent;
+                if (parent == null || !seen.Add(parent)) continue;
+                if (parent.GetComponentInParent<ButtonList>(true) != null) continue;
+                var byHeight = new System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<Button>>();
+                foreach (Transform child in parent)
+                {
+                    if (!child.TryGetComponent(out Button button)) continue;
+                    if (button.GetComponentInChildren<TextMeshProUGUI>(true) == null) continue;
+                    int key = Mathf.RoundToInt(((RectTransform)child).rect.height);
+                    if (key <= 0) continue;
+                    if (!byHeight.TryGetValue(key, out var list)) byHeight[key] = list = new System.Collections.Generic.List<Button>();
+                    list.Add(button);
+                }
+
+                foreach (var list in byHeight.Values)
+                {
+                    if (list.Count < 2) continue;
+                    var group = parent.gameObject.AddComponent<ButtonTextGroup>();
+                    using (var props = new Props(group)) props.Refs("buttons", list);
+                }
             }
         }
 

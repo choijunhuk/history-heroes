@@ -271,7 +271,7 @@ namespace HistoryHeroes.EditorTools
             Sprite icon = Icon(iconKey);
             if (icon != null)
             {
-                RectTransform iconRect = Rect("Icon", rt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(84f, 84f));
+                RectTransform iconRect = Rect("Icon", rt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(72f, 72f));
                 Image image = Img(iconRect, Color.white, icon);
                 image.preserveAspect = true;
                 var shadow = iconRect.gameObject.AddComponent<Shadow>();
@@ -281,7 +281,7 @@ namespace HistoryHeroes.EditorTools
 
             RectTransform lr = label.rectTransform;
             lr.anchorMin = Vector2.zero;
-            lr.anchorMax = new Vector2(1f, icon != null ? 0.5f : 1f);
+            lr.anchorMax = new Vector2(1f, icon != null ? 0.58f : 1f);
             lr.offsetMin = new Vector2(8f, 10f);
             lr.offsetMax = new Vector2(-8f, 0f);
             label.margin = Vector4.zero;

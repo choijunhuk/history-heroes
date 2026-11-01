@@ -267,6 +267,7 @@ namespace HistoryHeroes.EditorTools
 
             AddUiSounds(ui.Hud.transform.root); // v1.0 버튼 소리
             ApplyTypeScale();
+            ApplyButtonGroups();
             EditorSceneManager.SaveScene(scene, BattleScenePath);
         }
 
@@ -485,41 +486,33 @@ namespace HistoryHeroes.EditorTools
             hudRect.gameObject.AddComponent<SafeAreaFitter>(); // 카메라 구멍·상태 표시줄 피하기
             ui.Hud = hudRect.gameObject.AddComponent<HudView>();
 
-            RectTransform expBg = Rect("ExpBar", hudRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(-40f, 24f));
+            // ----- 맨 위: 전체 폭 경험치 막대 + 왼쪽 끝 레벨 배지 (Archero 식, 2026-11-01). 체력은 영웅 머리 위 막대가 맡는다 -----
+            RectTransform expBg = Rect("ExpBar", hudRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(36f, -18f), new Vector2(-72f, 38f));
             Fill(expBg, new Color(0.1f, 0.1f, 0.12f, 0.85f), new Color(0.3f, 0.85f, 1f), out Image expFill);
-
-            RectTransform hpBg = Rect("HpBar", hudRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -42f), new Vector2(580f, 58f));
-            Fill(hpBg, new Color(0.1f, 0.1f, 0.12f, 0.85f), new Color(0.85f, 0.22f, 0.25f), out Image hpFill);
-            TMP_Text hpLabel = Label("HpLabel", hpBg, "1000 / 1000", 36, TextAlignmentOptions.Center);
-            Stretch(hpLabel.rectTransform);
-            if (_kit != null)
-            {
-                // 그래픽 재평가 2번 "HUD 정리": 체력 막대 왼쪽 끝에 하트, 오른쪽 위 처치 수에 해골, 방 이름 뒤 어두운 칸
-                RectTransform heart = Rect("Heart", hpBg, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-6f, 0f), new Vector2(70f, 70f));
-                Image heartImage = Img(heart, new Color(1f, 0.35f, 0.4f), Icon("heart"));
-                heartImage.preserveAspect = true;
-                var heartOutline = heart.gameObject.AddComponent<Outline>();
-                heartOutline.effectColor = new Color(0f, 0f, 0f, 0.8f);
-                heartOutline.effectDistance = new Vector2(2f, -2f);
-            }
-
-            TMP_Text levelLabel = Label("LevelLabel", hudRect, "Lv 1", 46, TextAlignmentOptions.TopRight);
+            RectTransform levelBadge = Rect("LevelBadge", hudRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -6f), new Vector2(104f, 104f));
+            Image levelBadgeImage = Img(levelBadge, new Color(0.3f, 0.6f, 1f), _kit != null ? _kit.Slot : null);
+            if (_kit != null) levelBadgeImage.type = Image.Type.Sliced;
+            TMP_Text levelLabel = Label("LevelLabel", levelBadge, "Lv 1", 38, TextAlignmentOptions.Center);
             if (_titleFont != null)
             {
                 levelLabel.font = _titleFont;
                 if (_buttonMat != null) levelLabel.fontSharedMaterial = _buttonMat;
             }
-            Place(levelLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -40f), new Vector2(260f, 64f));
+            Stretch(levelLabel.rectTransform);
+            levelLabel.enableAutoSizing = true;
+            levelLabel.fontSizeMin = 28f;
+            levelLabel.fontSizeMax = 40f;
+            levelLabel.textWrappingMode = TextWrappingModes.NoWrap;
             TMP_Text killLabel = Label("KillLabel", hudRect, "처치 0", 32, TextAlignmentOptions.TopRight);
-            Place(killLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(_kit != null ? -92f : -40f, -108f), new Vector2(300f, 50f));
+            Place(killLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(_kit != null ? -92f : -40f, -68f), new Vector2(300f, 50f));
             if (_kit != null)
             {
-                RectTransform skull = Rect("Skull", hudRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -104f), new Vector2(46f, 46f));
+                RectTransform skull = Rect("Skull", hudRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -64f), new Vector2(46f, 46f));
                 Img(skull, new Color(1f, 1f, 1f, 0.9f), Icon("skull")).preserveAspect = true;
             }
             if (_kit != null)
             {
-                RectTransform roomPill = Rect("RoomPill", hudRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -104f), new Vector2(380f, 64f));
+                RectTransform roomPill = Rect("RoomPill", hudRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -66f), new Vector2(380f, 64f));
                 Image pill = Img(roomPill, new Color(0.04f, 0.06f, 0.12f, 0.75f), _kit.Badge);
                 pill.type = Image.Type.Sliced;
             }
@@ -530,17 +523,17 @@ namespace HistoryHeroes.EditorTools
                 roomLabel.font = _titleFont;
                 if (_buttonMat != null) roomLabel.fontSharedMaterial = _buttonMat;
             }
-            Place(roomLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(520f, 60f));
+            Place(roomLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -74f), new Vector2(520f, 60f));
 
             // 방 진행 바 (조사 A6) · 알림 (A7)
-            RectTransform roomBar = Rect("RoomBar", hudRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -178f), new Vector2(600f, 36f));
+            RectTransform roomBar = Rect("RoomBar", hudRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -142f), new Vector2(600f, 36f));
             TMP_Text hudNotice = Label("Notice", hudRect, "", 30, TextAlignmentOptions.Center, new Color(1f, 0.9f, 0.55f));
             Place(hudNotice.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -330f), new Vector2(960f, 56f));
             hudNotice.gameObject.SetActive(false);
 
             // 별 ★2 도전 중일 때만 보이는 맞은 횟수 (Modes 3-2)
             TMP_Text hitsLabel = Label("HitsLabel", hudRect, "맞음 0/15", 30, TextAlignmentOptions.TopRight, new Color(1f, 1f, 1f, 0.8f));
-            Place(hitsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -160f), new Vector2(300f, 46f));
+            Place(hitsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -122f), new Vector2(300f, 46f));
             hitsLabel.gameObject.SetActive(false);
 
             // 영웅 머리 위 체력 막대 (실기기 시험 "체력이 잘 안 보인다"). 위치는 HeroHpBar가 매 프레임 따라간다
@@ -548,7 +541,7 @@ namespace HistoryHeroes.EditorTools
 
             using (var props = new Props(ui.Hud))
             {
-                props.Ref("hpFill", hpFill).Ref("hpLabel", hpLabel).Ref("expFill", expFill)
+                props.Ref("expFill", expFill)
                     .Ref("levelLabel", levelLabel).Ref("roomLabel", roomLabel).Ref("killLabel", killLabel).Ref("hitsLabel", hitsLabel)
                     .Ref("roomBar", roomBar).Ref("noticeLabel", hudNotice)
                     .Ref("cellSprite", _kit != null ? _kit.Badge : null).Ref("eliteIcon", Icon("star")).Ref("rewardIcon", Icon("chest")).Ref("bossIcon", Icon("skull"));
@@ -622,10 +615,10 @@ namespace HistoryHeroes.EditorTools
             return guide;
         }
 
-        /// <summary>영웅 머리 위 체력 막대 (160×20, 1080 기준). 잔상(흰색) → 채움 → 보호막(하늘색 띠) 순으로 겹친다</summary>
+        /// <summary>영웅 머리 위 체력 막대 (224×34, 1080 기준, 안에 현재 체력 숫자). 잔상(흰색) → 채움 → 보호막(하늘색 띠) 순으로 겹친다</summary>
         private static HeroHpBar BuildHeroHpBar(RectTransform hud)
         {
-            RectTransform bar = Rect("HeroHpBar", hud, Center, Center, new Vector2(0.5f, 0f), Vector2.zero, new Vector2(160f, 20f));
+            RectTransform bar = Rect("HeroHpBar", hud, Center, Center, new Vector2(0.5f, 0f), Vector2.zero, new Vector2(224f, 34f));
             var group = bar.gameObject.AddComponent<CanvasGroup>();
             group.interactable = false;
             group.blocksRaycasts = false;
@@ -653,11 +646,20 @@ namespace HistoryHeroes.EditorTools
             Image shield = Layer("Shield", new Color(0.45f, 0.85f, 1f, 0.95f), bar, 3f);
             var shieldRect = (RectTransform)shield.transform;
             shieldRect.anchorMin = new Vector2(0f, 1f);
-            shieldRect.offsetMin = new Vector2(3f, -9f);
+            shieldRect.offsetMin = new Vector2(3f, -11f);
             shieldRect.offsetMax = new Vector2(-3f, -3f);
             shield.enabled = false;
             back.raycastTarget = false;
-            using (var props = new Props(bar3)) props.Ref("parentRect", hud).Ref("group", group).Ref("trail", trail).Ref("fill", fill).Ref("shield", shield);
+            // 현재 체력 숫자: 굵은 제목 글꼴 + 어두운 테두리 (폰에서 막대 색 위에서도 읽힘)
+            TMP_Text value = Label("Value", bar, "1000", 28, TextAlignmentOptions.Center);
+            if (_titleFont != null)
+            {
+                value.font = _titleFont;
+                if (_buttonMat != null) value.fontSharedMaterial = _buttonMat;
+            }
+            Stretch(value.rectTransform);
+            value.textWrappingMode = TextWrappingModes.NoWrap;
+            using (var props = new Props(bar3)) props.Ref("parentRect", hud).Ref("group", group).Ref("trail", trail).Ref("fill", fill).Ref("shield", shield).Ref("label", value);
             return bar3;
         }
 
@@ -677,19 +679,28 @@ namespace HistoryHeroes.EditorTools
             var openRect = (RectTransform)open.transform;
             openRect.anchorMin = openRect.anchorMax = new Vector2(0f, 1f);
             openRect.pivot = new Vector2(0f, 1f);
-            openRect.anchoredPosition = new Vector2(40f, -120f);
+            openRect.anchoredPosition = new Vector2(16f, -124f); // 맨 위 왼쪽 (레벨 배지 바로 아래)
 
-            // 일시정지는 어두워진 전투 위 창 (전체 UI 검토: 배경을 통째로 바꾸면 전투 맥락이 끊긴다)
+            // 일시정지는 어두워진 전투 위 카드 (설정 · 로비와 같은 카드 모양). 단추 셋은 높이 · 글자 크기 모두 같다 (2026-11-01 개발자: "글씨 크기가 달라서 불편")
             RectTransform panel = Overlay(root, "PauseMenu", out GameObject holder, new Color(0.02f, 0.03f, 0.06f, 0.72f));
             var menu = holder.AddComponent<PauseMenu>();
-            TMP_Text title = Label("Title", panel, "일시정지", 72, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(title.rectTransform, Center, Center, new Vector2(0f, 520f), new Vector2(900f, 110f));
-            TMP_Text info = Label("Info", panel, "", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.7f));
-            Place(info.rectTransform, Center, Center, new Vector2(0f, 390f), new Vector2(960f, 100f));
-            Button resume = Btn("Resume", panel, "계속", new Vector2(0f, 180f), new Vector2(820f, 160f), ButtonGreen, out TMP_Text resumeLabel);
-            resumeLabel.fontSize = 56;
-            Button settingsButton = Btn("PauseSettings", panel, "설정", new Vector2(0f, -10f), new Vector2(820f, 130f), ButtonBlue, out _);
-            Button giveUp = Btn("GiveUp", panel, "판 포기", new Vector2(0f, -190f), new Vector2(820f, 130f), new Color(0.5f, 0.22f, 0.22f), out TMP_Text giveUpLabel);
+            RectTransform card = Rect("Card", panel, Center, Center, Center, new Vector2(0f, -20f), new Vector2(940f, 820f));
+            Image cardImage = Img(card, SettingsCardColor, _kit != null ? _kit.Panel : null);
+            if (_kit != null) cardImage.type = Image.Type.Sliced;
+            if (_kit != null)
+            {
+                RectTransform ribbon = Rect("Ribbon", panel, Center, Center, Center, new Vector2(0f, 420f), new Vector2(760f, 140f));
+                Image ribbonImage = Img(ribbon, new Color(0.3f, 0.5f, 0.88f), _kit.Ribbon);
+                ribbonImage.type = Image.Type.Sliced;
+            }
+
+            TMP_Text title = Label("Title", panel, "일시정지", 68, TextAlignmentOptions.Center);
+            Place(title.rectTransform, Center, Center, new Vector2(0f, 428f), new Vector2(700f, 110f));
+            TMP_Text info = Label("Info", panel, "", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.8f));
+            Place(info.rectTransform, Center, Center, new Vector2(0f, 250f), new Vector2(840f, 120f));
+            Button resume = PauseButton(panel, "Resume", "계속", 60f, ButtonGreen, out _);
+            Button settingsButton = PauseButton(panel, "PauseSettings", "설정", -110f, ButtonBlue, out _);
+            Button giveUp = PauseButton(panel, "GiveUp", "판 포기", -280f, new Color(0.5f, 0.22f, 0.22f), out TMP_Text giveUpLabel);
             using (var props = new Props(menu))
             {
                 props.Ref("root", panel.gameObject).Ref("openButton", open).Ref("infoLabel", info)
@@ -698,6 +709,20 @@ namespace HistoryHeroes.EditorTools
             }
 
             return menu;
+        }
+
+        /// <summary>일시정지 단추: 셋 모두 840×150, 글자 크기 같음 (ButtonTextGroup이 맞춘다)</summary>
+        private static Button PauseButton(RectTransform panel, string name, string text, float y, Color color, out TMP_Text label)
+        {
+            Button b = Btn(name, panel, text, new Vector2(0f, y), new Vector2(840f, 150f), color, out label);
+            label.fontSize = 58;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 28f;
+            label.fontSizeMax = 58f;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.rectTransform.offsetMin = new Vector2(16f, 0f);
+            label.rectTransform.offsetMax = new Vector2(-16f, 0f);
+            return b;
         }
 
         private static LevelUpScreen BuildLevelUp(Transform root)
@@ -730,16 +755,19 @@ namespace HistoryHeroes.EditorTools
             const float step = CardWidth + 12f;
             for (int i = 0; i < 3; i++) cards[i] = BuildCard(panel, i, new Vector2(-step + step * i, 40f));
 
-            Button reroll = Btn("Reroll", panel, "리롤 (광고) 2/2", new Vector2(-220f, -400f), new Vector2(390f, 120f), new Color(0.22f, 0.3f, 0.45f), out TMP_Text rerollLabel);
-            rerollLabel.enableAutoSizing = true; // "광고 보고 다시 뽑기 (남은 2)"가 한 줄에 들어가게
+            Button reroll = Btn("Reroll", panel, "리롤 (광고) 2/2", new Vector2(-235f, -400f), new Vector2(440f, 130f), new Color(0.22f, 0.3f, 0.45f), out TMP_Text rerollLabel);
+            rerollLabel.enableAutoSizing = true; // "무료로 다시 뽑기 (남은 2)"는 두 줄까지 (2026-11-01 실기: 32는 작다)
             rerollLabel.fontSizeMin = 22f;
-            rerollLabel.fontSizeMax = 32f;
-            rerollLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            rerollLabel.fontSizeMax = 40f;
+            rerollLabel.textWrappingMode = TextWrappingModes.Normal;
             rerollLabel.rectTransform.offsetMin = new Vector2(14f, 0f);
             rerollLabel.rectTransform.offsetMax = new Vector2(-14f, 0f);
-            Button ban = Btn("Ban", panel, "빼기 (남은 2)", new Vector2(220f, -400f), new Vector2(390f, 120f), ButtonBlue, out TMP_Text banLabel);
+            Button ban = Btn("Ban", panel, "빼기 (남은 2)", new Vector2(235f, -400f), new Vector2(440f, 130f), ButtonBlue, out TMP_Text banLabel);
+            banLabel.enableAutoSizing = true; // 옆 리롤 단추와 같은 크기 범위 (ButtonTextGroup이 둘을 같게 맞춘다)
+            banLabel.fontSizeMin = 22f;
+            banLabel.fontSizeMax = 40f;
             Button hide = Btn("HideFusion", panel, "이번 판 숨기기", new Vector2(0f, -550f), new Vector2(390f, 100f), ButtonBlue, out _);
-            TMP_Text note = Label("RerollNote", panel, "리롤은 다시 뽑을 기회일 뿐, 더 좋은 카드를 보장하지 않아요", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.55f));
+            TMP_Text note = Label("RerollNote", panel, "리롤은 다시 뽑을 기회일 뿐, 더 좋은 카드를 보장하지 않아요", 28, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.55f));
             Place(note.rectTransform, Center, Center, new Vector2(0f, -660f), new Vector2(960f, 90f));
 
             using (var props = new Props(screen))

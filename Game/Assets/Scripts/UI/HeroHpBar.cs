@@ -1,4 +1,5 @@
 using HistoryHeroes.Player;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,7 +9,7 @@ namespace HistoryHeroes.UI
     /// 영웅 머리 위 체력 막대 (Archero 식). 실기기 시험 "체력이 잘 안 보인다" → 시선이 가 있는 영웅 바로 위에 둔다.
     /// 3D 모델 머리 위(월드, 위 = -Z)를 전투 카메라로 화면 좌표로 바꿔 매 프레임 따라간다. 오버레이 캔버스라 3D에 묻히지 않는다.
     /// 색: 초록(>50%) · 노랑(25~50%) · 빨강(&lt;25%). 맞으면 흰 잔상이 늦게 따라 내려온다. 보호막은 위쪽 하늘색 띠. 25% 미만이면 은은하게 뛴다
-    /// ("번쩍임 줄이기"면 뛰지 않는다). 숫자는 안 쓴다 (이 크기에선 읽기 어렵다 — 숫자는 위쪽 HUD 막대).
+    /// ("번쩍임 줄이기"면 뛰지 않는다). 현재 체력 숫자를 막대 안에 쓴다 (굵은 글꼴 + 어두운 테두리).
     /// 막대는 하나, 매 프레임 새로 만드는 것 없음.
     /// </summary>
     [DefaultExecutionOrder(100)]
@@ -20,6 +21,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private Image trail;
         [SerializeField] private Image fill;
         [SerializeField] private Image shield;
+        [Tooltip("막대 안 현재 체력 숫자")]
+        [SerializeField] private TMP_Text label;
         [Tooltip("머리 위로 띄우는 간격 (1080 기준 px)")]
         [SerializeField] private float gap = 18f;
 
@@ -31,6 +34,7 @@ namespace HistoryHeroes.UI
         private Camera _camera;
         private RectTransform _rect;
         private float _shownRatio = 1f, _trail = 1f, _holdUntil;
+        private int _shownHp = -1;
         private bool _reduceFlash;
         private float _flashCheckAt;
 
@@ -65,6 +69,13 @@ namespace HistoryHeroes.UI
 
             if (ratio >= _trail) _trail = ratio;
             else if (Time.unscaledTime >= _holdUntil) _trail = Mathf.Max(ratio, _trail - TrailSpeed * Time.unscaledDeltaTime);
+
+            int hp = Mathf.CeilToInt(health.Current);
+            if (label != null && hp != _shownHp)
+            {
+                _shownHp = hp;
+                label.SetText("{0}", hp); // 바뀔 때만 (할당 없음)
+            }
 
             fill.fillAmount = ratio;
             trail.fillAmount = _trail;

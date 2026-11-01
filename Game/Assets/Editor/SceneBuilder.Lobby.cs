@@ -103,6 +103,7 @@ namespace HistoryHeroes.EditorTools
 
             AddUiSounds(root);
             ApplyTypeScale();
+            ApplyButtonGroups();
             EditorSceneManager.SaveScene(scene, LobbyScenePath);
         }
 
