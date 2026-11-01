@@ -386,22 +386,44 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
-        public void SwitchPrep_InterruptedAtEachStep_ResumesCorrectly()
+        public void SwitchInterrupted_EachStage_ResumesIntoTargetOrFinishesGuestDeletion_NeverNewGuestWithTargetData()
         {
-            const string guest = "guest-1";
-            // 준비 표시가 없다 (평소 · 바꾸기를 끝냈거나 그만둠)
-            Assert.AreEqual(AccountRules.SwitchResume.Nothing, AccountRules.DecideSwitchResume(null, guest, null));
-            Assert.AreEqual(AccountRules.SwitchResume.Nothing, AccountRules.DecideSwitchResume(string.Empty, guest, null));
-            // ① 표시만 쓰고 꺼짐 / ② 서버가 바꾸기용으로 닫은 뒤 꺼짐 → 같은 게스트 세션으로 그만두기 = 서버가 다시 연다 (ok) → 게스트 그대로
-            Assert.AreEqual(AccountRules.SwitchResume.Clear, AccountRules.DecideSwitchResume(guest, guest, "ok"));
-            // ③ 빈 장부 보관까지 끝나고 꺼짐 → 다시 열 수 없다 (closed) → UGS 계정 지우기를 마저 하고 새 게스트로
-            Assert.AreEqual(AccountRules.SwitchResume.FinishDeletion, AccountRules.DecideSwitchResume(guest, guest, "closed"));
-            // ④ 게스트를 지운 뒤 꺼짐 (세션도 지워졌다) → 새 게스트로 들어왔다 → 표시만 지운다
-            Assert.AreEqual(AccountRules.SwitchResume.Clear, AccountRules.DecideSwitchResume(guest, "guest-2", null));
-            // 서버에 못 닿음 · 알 수 없는 답 → 표시를 남겨 다음 실행에서 다시 (그동안 결제는 멈춤)
-            Assert.AreEqual(AccountRules.SwitchResume.KeepForLater, AccountRules.DecideSwitchResume(guest, guest, null));
-            Assert.AreEqual(AccountRules.SwitchResume.KeepForLater, AccountRules.DecideSwitchResume(guest, guest, "error"));
-            Assert.AreEqual(AccountRules.SwitchResume.KeepForLater, AccountRules.DecideSwitchResume(guest, null, null), "로그인 전 (오프라인)");
+            const string guest = "guest-1", target = "kakao-b";
+            // ① 게스트 정리: 닫기 전 · 닫은 뒤 · 보관 뒤 어디서 꺼져도 같은 게스트 세션이면 닫기 · 보관 · 지우기를 마저 한다 (다시 열지 않는다)
+            Assert.AreEqual(AccountRules.SwitchStep.Nothing, AccountRules.DecideSwitchPrep(null, guest));
+            Assert.AreEqual(AccountRules.SwitchStep.FinishGuestCleanup, AccountRules.DecideSwitchPrep(guest, guest));
+            Assert.AreEqual(AccountRules.SwitchStep.Clear, AccountRules.DecideSwitchPrep(guest, "guest-2"), "지운 뒤 꺼짐: 세션도 지워져 새 게스트 — 지운 게스트는 아무것도 없다");
+            Assert.AreEqual(AccountRules.SwitchStep.Hold, AccountRules.DecideSwitchPrep(guest, null), "로그인 전 (오프라인)");
+
+            // ② 그 계정 진행 고르기
+            Assert.AreEqual(AccountRules.SwitchStep.Nothing, AccountRules.DecideSwitchTarget(null, guest));
+            Assert.AreEqual(AccountRules.SwitchStep.Clear, AccountRules.DecideSwitchTarget(string.Empty, null), "그 계정 로그인 전에 꺼짐: 받은 것이 없다 → 평소대로");
+            Assert.AreEqual(AccountRules.SwitchStep.ResumeTarget, AccountRules.DecideSwitchTarget(string.Empty, target), "로그인 직후 꺼짐: 남은 세션은 그 계정뿐");
+            Assert.AreEqual(AccountRules.SwitchStep.ResumeTarget, AccountRules.DecideSwitchTarget(target, target), "고르기 전 · 그 계정 진행을 받은 뒤 표시를 지우기 전: 그 계정 세션 그대로");
+            Assert.AreEqual(AccountRules.SwitchStep.Hold, AccountRules.DecideSwitchTarget(target, null), "그 계정에 들어간 뒤 세션이 없음: 새 게스트를 만들지 않는다");
+            Assert.AreEqual(AccountRules.SwitchStep.Clear, AccountRules.DecideSwitchTarget(target, "someone-else"));
+
+            // 어느 단계에서도 "그 계정에 들어간 뒤(②, 대상 기록됨)"에 새 게스트로 가는 답은 없다
+            foreach (string current in new[] { null, target })
+                Assert.AreNotEqual(AccountRules.SwitchStep.Clear, AccountRules.DecideSwitchTarget(target, current));
+        }
+
+        [Test]
+        public void SwitchTarget_WithAnyPurchase_OnlyCloudOption()
+        {
+            SaveData empty = SaveStore.NewGame();
+            var none = new Economy.PurchaseServer.Ledger { status = "ok" };
+            Assert.IsFalse(AccountRules.TargetHasPurchases(empty, none), "결제 없는 계정: 두 쪽 다 고를 수 있다");
+
+            SaveData paidCloud = SaveStore.NewGame();
+            paidCloud.purchases.ledger.Add(new PurchaseEntry { transactionId = "sha256:x", productId = "gems_t1", voided = true });
+            Assert.IsTrue(AccountRules.TargetHasPurchases(paidCloud, none), "클라우드 장부에 (회수된 것이라도) 결제");
+
+            var paidServer = new Economy.PurchaseServer.Ledger { status = "ok" };
+            paidServer.purchases.Add(new Economy.PurchaseServer.Purchase { tokenHash = "x", productId = "gems_t1" });
+            Assert.IsTrue(AccountRules.TargetHasPurchases(empty, paidServer), "서버 장부에 결제");
+            Assert.IsTrue(AccountRules.TargetHasPurchases(empty, null), "서버 장부를 못 받음 → 있는 것으로");
+            Assert.IsTrue(AccountRules.TargetHasPurchases(empty, new Economy.PurchaseServer.Ledger { status = "retry" }));
         }
 
         [Test]

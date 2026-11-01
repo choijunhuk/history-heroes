@@ -40,11 +40,6 @@ public sealed class PurchaseVerifier
     /// <summary>결제 기록이 끝내 생기지 않은 확정 대기(지급 전에 실패)는 이만큼 뒤 지운다</summary>
     public static readonly TimeSpan OrphanAckAge = TimeSpan.FromHours(1);
     private static readonly TimeSpan VoidedOverlap = TimeSpan.FromHours(1);
-    /// <summary>닫힘 이유: 계정 삭제 (한 방향)</summary>
-    public const string DeletedReason = "deleted";
-    /// <summary>닫힘 이유: 이미 있는 카카오 계정으로 바꾸기 준비 (그만두면 다시 연다)</summary>
-    public const string SwitchReason = "switch";
-
     /// <summary>계정을 닫은 뒤 이만큼 지나면 마무리(늦게 남은 색인 칸 익명화 · 예약 목록 지우기)를 한다 — 진행 중이던 어떤 호출도(15초 한도) 끝났을 시간</summary>
     public static readonly TimeSpan ClosingGrace = TimeSpan.FromHours(1);
     /// <summary>구글이 받는 가장 오래된 startTime은 30일 전</summary>
@@ -362,7 +357,7 @@ public sealed class PurchaseVerifier
     /// </summary>
     private async Task CloseForPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
-        await _store.CloseAsync(context, playerId, _utcNow(), DeletedReason, ct);
+        await _store.CloseAsync(context, playerId, _utcNow(), ct);
         for (int attempt = 0; attempt < MaxAttempts; attempt++)
         {
             (string headLock, _) = await HeadAsync(context, playerId, ct);
@@ -399,15 +394,16 @@ public sealed class PurchaseVerifier
     }
 
     /// <summary>
-    /// (마무리 할 일 등록 →) 닫고, 남은 결제를 보관본에 합쳐 쓰고, 이 플레이어의 색인 칸(결제 + 예약)을 익명으로 바꾸고, 결제 키를 지운다. 돌려주는 값: 이번에 보관한 결제 수.
+    /// 닫고 (→ 마무리 할 일 등록), 남은 결제를 보관본에 합쳐 쓰고, 이 플레이어의 색인 칸(결제 + 예약)을 익명으로 바꾸고, 결제 키를 지운다. 돌려주는 값: 이번에 보관한 결제 수.
     /// finishing(계정 삭제 마무리, 닫은 지 ClosingGrace 뒤): 칸이 없으면 익명 칸을 만들고, 예약 목록까지 지운다. 익명화가 계속 충돌하면 예외 (다음에 다시)
     /// </summary>
     private async Task<int> ArchiveCoreAsync(IExecutionContext context, string playerId, bool finishing, CancellationToken ct)
     {
         string archiveId = ArchiveId(playerId);
-        // 먼저 마무리 할 일을 남긴다: 이 뒤 어디서 끊겨도, 시간 초과로 끝난 호출이 늦게 색인을 남겨도 마무리가 다시 한다
-        if (!finishing) await _store.SetClosingAsync(context, archiveId, new ClosingPlayer { Player = playerId, Utc = Utc(_utcNow()) }, ct);
+        // 먼저 닫고(한 방향 — 다시 여는 길이 없다) 그다음 마무리 할 일을 남긴다: 할 일은 닫힌 계정에만 생긴다.
+        // 이 뒤 어디서 끊겨도, 시간 초과로 끝난 호출이 늦게 색인을 남겨도 마무리가 다시 한다 (끊기면 이 함수가 retry → 게임이 다시 부른다)
         await CloseForPurchasesAsync(context, playerId, ct);
+        if (!finishing) await _store.SetClosingAsync(context, archiveId, new ClosingPlayer { Player = playerId, Utc = Utc(_utcNow()) }, ct);
         List<PurchaseRecord> ledger = await _store.LoadPurchasesAsync(context, playerId, ct); // 닫은 뒤에 찍는다 → 빠짐 없음
         List<string> legacy = await _store.ListLegacyReservedAsync(context, playerId, ct);   // 옛 배포가 private에 남긴 예약도 함께
         List<string> reserved = (await _store.ListReservedAsync(context, playerId, ct)).Concat(legacy).Distinct().ToList(); // 닫은 뒤에는 예약이 생기지 않는다 → 빠짐 없음
@@ -434,9 +430,10 @@ public sealed class PurchaseVerifier
     // ------------------------------------------------------------------ 이미 있는 카카오 계정으로 바꾸기 (결제 안 한 게스트만)
 
     /// <summary>
-    /// 게스트를 지우기 전에(게스트로 부른다): 결제 · 예약이 하나도 없을 때만 게스트를 닫는다 — ① 닫힘 표시(이유 switch, 그 뒤 새 판정 · 예약은 거절) → ② 머리 lock을 읽고 →
-    /// ③ 그 뒤의 결제 키 · 예약(옛 private 예약 포함)을 보고 → 하나라도 있으면 다시 열고 has_purchases → ④ 없으면 머리를 그 lock으로 닫는다 (그사이 예약 · 지급이 들어왔으면 lock이 바뀌어 거절 → 다시 확인).
-    /// 진행 중이던 VerifyPurchase는 ④ 전에 들어가 has_purchases가 되거나, 뒤에 와서 거절된다. 다시 불러도 같은 결과 (끊겼다 다시 해도 된다). 계정 삭제로 이미 닫혔으면 ok (지우기만 남음)
+    /// 게스트를 지우기 전에(게스트로 부른다): 결제 · 예약이 하나도 없을 때만 게스트를 닫는다 — **한 방향, 다시 여는 함수는 없다.**
+    /// 이미 닫혔으면(지난 시도 · 계정 삭제) ok. 아니면 머리 lock을 읽고 → 결제 키 · 예약(옛 private 예약 포함)을 보고 → 하나라도 있으면 아무것도 쓰지 않고 has_purchases →
+    /// 없으면 머리를 그 lock으로 닫고(그사이 예약 · 지급이 들어왔으면 lock이 바뀌어 거절 → 다시 확인) 닫힘 표시를 쓴다.
+    /// 진행 중이던 VerifyPurchase는 닫기 전에 들어가 has_purchases가 되거나, 뒤에 와서 거절된다. 끊겼다 다시 불러도 된다 (닫힌 뒤에는 늘 ok → 게임은 보관 · 삭제를 마저 한다)
     /// </summary>
     public async Task<SwitchResult> CloseForSwitchAsync(IExecutionContext context)
     {
@@ -446,23 +443,25 @@ public sealed class PurchaseVerifier
         CancellationToken ct = budget.Token;
         try
         {
-            string? reason = await _store.LoadClosedReasonAsync(context, playerId, ct);
-            if (reason != null && reason != SwitchReason) return SwitchResult.Of(PurchaseList.Ok);
-            if (reason == null) await _store.CloseAsync(context, playerId, _utcNow(), SwitchReason, ct);
             for (int attempt = 0; attempt < MaxAttempts; attempt++)
             {
                 (string headLock, bool headClosed) = await HeadAsync(context, playerId, ct);
+                bool marked = await _store.IsClosedAsync(context, playerId, ct);
+                if (headClosed || marked)
+                {
+                    // 머리만 닫히고 표시를 못 쓴 채 끊겼을 수 있다 → 표시를 마저 (머리가 늦은 처음 만들기로 되돌아가도 표시가 지킨다)
+                    if (!marked) await _store.CloseAsync(context, playerId, _utcNow(), ct);
+                    return SwitchResult.Of(PurchaseList.Ok);
+                }
+
                 bool any = (await _store.LoadPurchasesAsync(context, playerId, ct)).Count > 0
                            || (await _store.ListReservedAsync(context, playerId, ct)).Count > 0
                            || (await _store.ListLegacyReservedAsync(context, playerId, ct)).Count > 0;
-                if (any)
-                {
-                    await ReopenForSwitchAsync(context, playerId, ct);
-                    return SwitchResult.Of(SwitchResult.HasPurchases);
-                }
+                if (any) return SwitchResult.Of(SwitchResult.HasPurchases); // 아무것도 쓰지 않았다 — 게스트 그대로
 
-                if (headClosed || await _store.TryCloseHeadAsync(context, playerId, headLock, ct))
+                if (await _store.TryCloseHeadAsync(context, playerId, headLock, ct))
                 {
+                    await _store.CloseAsync(context, playerId, _utcNow(), ct);
                     _log.LogInformation("계정 바꾸기: 결제 없는 게스트를 닫음");
                     return SwitchResult.Of(PurchaseList.Ok);
                 }
@@ -475,47 +474,6 @@ public sealed class PurchaseVerifier
             _log.LogError("계정 바꾸기 닫기 오류: {Error}", Describe(e));
             return SwitchResult.Of(VerifyResult.Retry);
         }
-    }
-
-    /// <summary>
-    /// 계정 바꾸기를 그만둔다 (게스트로 부른다 — 바꾸기가 실패했거나 준비 중 앱이 꺼졌을 때): 이유가 switch면 머리와 표시를 다시 연다 → ok.
-    /// 계정 삭제로 닫혔으면(보관까지 끝남) 열 수 없다 → closed (게임은 지우기를 마저 한다). 열려 있으면 ok
-    /// </summary>
-    public async Task<SwitchResult> CancelSwitchAsync(IExecutionContext context)
-    {
-        string? playerId = context.PlayerId;
-        if (string.IsNullOrEmpty(playerId)) return SwitchResult.Of(VerifyResult.Invalid);
-        using var budget = new CancellationTokenSource(_budget);
-        CancellationToken ct = budget.Token;
-        try
-        {
-            string? reason = await _store.LoadClosedReasonAsync(context, playerId, ct);
-            if (reason == null) return SwitchResult.Of(PurchaseList.Ok);
-            if (reason != SwitchReason) return SwitchResult.Of(PurchaseList.Closed);
-            await ReopenForSwitchAsync(context, playerId, ct);
-            return SwitchResult.Of(PurchaseList.Ok);
-        }
-        catch (Exception e)
-        {
-            _log.LogError("계정 바꾸기 그만두기 오류: {Error}", Describe(e));
-            return SwitchResult.Of(VerifyResult.Retry);
-        }
-    }
-
-    /// <summary>계정 바꾸기 준비로 닫은 게스트를 다시 연다: 머리가 닫혀 있으면 lock으로 열고, 닫힘 표시를 지운다</summary>
-    private async Task ReopenForSwitchAsync(IExecutionContext context, string playerId, CancellationToken ct)
-    {
-        for (int attempt = 0; attempt < MaxAttempts; attempt++)
-        {
-            (string headLock, bool headClosed) = await HeadAsync(context, playerId, ct);
-            if (!headClosed || await _store.TryOpenHeadAsync(context, playerId, headLock, ct))
-            {
-                await _store.ReopenAsync(context, playerId, ct);
-                return;
-            }
-        }
-
-        throw new InvalidOperationException("head_reopen");
     }
 
     /// <summary>보관본에 합쳐 쓴다 (이미 있으면 그 결제들 + 이번 결제들, 지운 날 · 기한은 처음 것 그대로). lock으로 고친다</summary>
@@ -735,6 +693,13 @@ public sealed class PurchaseVerifier
             if (string.IsNullOrEmpty(item.Player) || now - ParseUtc(item.Utc) < ClosingGrace) continue;
             try
             {
+                // 할 일은 닫은 뒤에만 생기지만(ArchiveCoreAsync), 혹시라도 열린 계정이면 손대지 않는다 (산 결제를 보관 · 익명화하지 않게)
+                if (!await _store.IsClosedAsync(context, item.Player, ct))
+                {
+                    _log.LogWarning("계정 삭제 마무리: 닫히지 않은 계정의 할 일 — 건너뜀");
+                    continue;
+                }
+
                 await ArchiveCoreAsync(context, item.Player, finishing: true, ct);
                 await _store.DeleteClosingAsync(context, archiveId, ct);
                 done++;

@@ -769,29 +769,30 @@ public sealed class PurchaseVerifierTests
         Assert.That((entry.Player, entry.ArchiveId), Is.EqualTo(((string?)null, PurchaseVerifier.ArchiveId(Make.Player))));
     }
 
-    // ------------------------------------------------------------------ 이미 있는 카카오 계정으로 바꾸기 (5차 1 · 3 · 4)
+    // ------------------------------------------------------------------ 이미 있는 카카오 계정으로 바꾸기 (5차 1 · 4, 6차 1 · 2)
 
     [Test]
     public async Task CloseForSwitch_EmptyGuest_ClosesHead_ThenVerifyRefused()
     {
         Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
-        Assert.That((_store.HeadClosed(), _store.ClosedReason[Make.Player]), Is.EqualTo((true, PurchaseVerifier.SwitchReason)));
+        Assert.That((_store.HeadClosed(), _store.Closed.Contains(Make.Player)), Is.EqualTo((true, true)));
         Assert.That((await Verify("gems_t1", "late")).Reason, Is.EqualTo("account_closed"), "닫은 뒤 온 결제는 예약도 지급도 안 됨");
         Assert.That((_store.ReservedOf().Count, _store.Purchases().Count), Is.EqualTo((0, 0)));
         Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok), "다시 불러도 같은 결과");
     }
 
     [Test]
-    public async Task CloseForSwitch_GuestWithPurchaseOrReservation_HasPurchases_Reopened()
+    public async Task CloseForSwitch_GuestWithPurchaseOrReservation_HasPurchases_NothingWritten()
     {
         await Verify("gems_t1", "paid");
         Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(SwitchResult.HasPurchases));
-        Assert.That((_store.Closed.Contains(Make.Player), _store.HeadClosed()), Is.EqualTo((false, false)), "다시 열었다");
+        Assert.That((_store.Closed.Contains(Make.Player), _store.HeadClosed()), Is.EqualTo((false, false)), "닫지 않았다 (다시 열 일도 없다)");
         Assert.That((await Verify("gems_t2", "next")).Status, Is.EqualTo(VerifyResult.Granted), "게스트는 그대로 결제할 수 있다");
 
         var reservedOnly = new FakeContext("player-r");
         _store.LegacyReserved["player-r"] = new HashSet<string> { PurchaseVerifier.Hash("old") }; // 옛 배포의 private 예약만 있어도
         Assert.That((await _verifier.CloseForSwitchAsync(reservedOnly)).Status, Is.EqualTo(SwitchResult.HasPurchases));
+        Assert.That(_store.Closed, Does.Not.Contain("player-r"));
     }
 
     [Test]
@@ -807,31 +808,66 @@ public sealed class PurchaseVerifierTests
             Assert.That(s.TryReserveAsync(_player, Make.Player, headLock, PurchaseVerifier.Hash("racing"), default).GetAwaiter().GetResult(), Is.True);
         };
         Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(SwitchResult.HasPurchases));
-        Assert.That(_store.Closed, Does.Not.Contain(Make.Player));
+        Assert.That((_store.Closed.Contains(Make.Player), _store.HeadClosed()), Is.EqualTo((false, false)));
         Assert.That(_store.ReservedOf(), Is.EqualTo(new[] { PurchaseVerifier.Hash("racing") }));
     }
 
     [Test]
-    public async Task SwitchInterrupted_AfterMarkerOrAfterClose_CancelReopens_ResumeWorks()
+    public async Task CloseForSwitch_IsFinal_InterruptedOrConcurrentCalls_NeverReopen()
     {
-        // ① 표시만 쓰고 끊김 (머리는 열린 채) → 그만두기 = 다시 열기
-        await _store.CloseAsync(_player, Make.Player, Make.Now, PurchaseVerifier.SwitchReason, default);
-        Assert.That((await _verifier.CancelSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
-        Assert.That(_store.Closed, Does.Not.Contain(Make.Player));
-
-        // ② 닫기까지 끝나고 끊김 → 그만두기 = 머리 · 표시 다시 열기 → 다시 결제 가능
+        // 머리만 닫고 표시를 못 쓴 채 끊김 → 다시 부르면 표시를 마저 쓰고 ok (결제가 있었어도 has_purchases로 열리지 않는다)
         await _verifier.CloseForSwitchAsync(_player);
-        Assert.That((await _verifier.CancelSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
-        Assert.That((_store.HeadClosed(), _store.Closed.Contains(Make.Player)), Is.EqualTo((false, false)));
-        Assert.That((await Verify("gems_t1", "after-cancel")).Status, Is.EqualTo(VerifyResult.Granted));
+        _store.Closed.Remove(Make.Player);
+        Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
+        Assert.That(_store.Closed, Does.Contain(Make.Player));
 
-        // ③ 보관(계정 삭제)까지 끝나고 끊김 → 다시 열 수 없음 (closed) → 게임은 지우기를 마저 한다. 바꾸기 닫기를 다시 불러도 ok
-        var empty = new FakeContext("player-e");
-        await _verifier.CloseForSwitchAsync(empty);
-        await _verifier.ArchiveAndDeleteAsync(empty);
-        Assert.That((await _verifier.CancelSwitchAsync(empty)).Status, Is.EqualTo(PurchaseList.Closed));
-        Assert.That((await _verifier.CloseForSwitchAsync(empty)).Status, Is.EqualTo(PurchaseList.Ok));
-        Assert.That((await _verifier.VerifyAsync(empty, "gems_t1", "x")).Reason, Is.EqualTo("account_closed"));
+        // 바꾸기 닫기 · 보관이 몇 번이든 어떤 순서로 겹쳐도 닫힌 채 (다시 여는 함수가 없다) → 빈 장부로 패키지 · 2배를 다시 받을 길이 없다
+        await _verifier.ArchiveAndDeleteAsync(_player);
+        Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
+        await _verifier.ArchiveAndDeleteAsync(_player);
+        Assert.That((_store.HeadClosed(), _store.Closed.Contains(Make.Player)), Is.EqualTo((true, true)));
+        Assert.That((await Verify(IapCatalog.StarterPack, "again")).Reason, Is.EqualTo("account_closed"));
+        Assert.That((await _verifier.GetPurchasesAsync(_player)).Status, Is.EqualTo(PurchaseList.Closed));
+
+        // 늦은 처음 만들기가 머리를 열린 처음 값으로 되돌려도 표시가 지킨다
+        _store.ResetHead();
+        Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
+        Assert.That((await Verify("gems_t1", "after-reset")).Reason, Is.EqualTo("account_closed"));
+    }
+
+    [Test]
+    public void Module_HasNoReopenFunction()
+    {
+        // 게임이 부를 수 있는 함수 목록 — 닫힌 계정을 다시 여는 함수(옛 CancelSwitch)가 없다
+        string[] names = typeof(PurchaseModule).GetMethods()
+            .SelectMany(m => m.GetCustomAttributes(typeof(Unity.Services.CloudCode.Core.CloudCodeFunctionAttribute), false))
+            .Cast<Unity.Services.CloudCode.Core.CloudCodeFunctionAttribute>().Select(a => a.Name).OrderBy(n => n).ToArray();
+        Assert.That(names, Is.EqualTo(new[] { "ArchiveAndDeletePurchases", "CloseForSwitch", "GetPurchases", "RunMaintenance", "VerifyPurchase" }));
+        Assert.That(typeof(IPurchaseStore).GetMethods().Select(m => m.Name), Has.None.Contains("Open").And.None.Contains("Reopen"));
+    }
+
+    [Test]
+    public async Task Archive_CloseMarkerFails_NoClosingWork_LaterPurchasesSafe()
+    {
+        // 6차 2: 닫힘 표시 쓰기가 실패하면 보관은 retry — 마무리 할 일을 남기지 않는다 (할 일은 닫은 뒤에만)
+        _store.CloseError = new HttpRequestException("down");
+        Assert.That((await _verifier.ArchiveAndDeleteAsync(_player)).Status, Is.EqualTo(VerifyResult.Retry));
+        Assert.That((_store.Closing.Count, _store.Closed.Contains(Make.Player)), Is.EqualTo((0, false)));
+
+        // 열린 계정으로 계속 결제 → 1시간 뒤 정리 작업이 그 결제를 보관 · 익명화하지 않는다
+        _store.CloseError = null;
+        Assert.That((await Verify("gems_t1", "kept")).Status, Is.EqualTo(VerifyResult.Granted));
+        _now = Make.Now + PurchaseVerifier.ClosingGrace + TimeSpan.FromMinutes(1);
+        await _verifier.RunMaintenanceAsync(_scheduler);
+        Assert.That(_store.Purchases().Count, Is.EqualTo(1));
+        Assert.That(_store.IndexOf(PurchaseVerifier.Hash("kept"))!.Player, Is.EqualTo(Make.Player));
+
+        // 옛 배포가 열린 계정에 남긴 할 일도 건드리지 않는다
+        _store.Closing[PurchaseVerifier.ArchiveId(Make.Player)] = JsonConvert.SerializeObject(new ClosingPlayer { Player = Make.Player, Utc = "2026-10-01T00:00:00.0000000Z" });
+        _now += TimeSpan.FromMinutes(5);
+        await _verifier.RunMaintenanceAsync(_scheduler);
+        Assert.That(_store.Purchases().Count, Is.EqualTo(1));
+        Assert.That(_store.Closing, Is.Not.Empty, "건너뛰었다 (지우지도 않음)");
     }
 
     [Test]

@@ -27,13 +27,16 @@ namespace HistoryHeroes.Account
         public const string SaveKey = "save";
         public const string MetaKey = "meta";
 
-        /// <summary>진행 고르기를 끝내기 전에 앱이 꺼졌다는 표시 (다음 실행에서 카카오 계정에 이어 붙어 클라우드를 덮지 않게)</summary>
-        private const string PendingChoiceKey = "hh.account.pendingChoice";
         /// <summary>
-        /// 이미 있는 카카오 계정으로 바꾸려고 게스트를 정리하는 중 (값 = 그 게스트의 UGS 플레이어 ID). 선택 대기 표시와 따로 둔다:
-        /// 정리 도중 앱이 꺼지면 다음 실행이 **그 게스트 세션 그대로** 바꾸기를 그만두거나(다시 열기) 지우기를 마저 한다. 게스트를 지운 뒤에만 지우고 선택 대기로 넘어간다
+        /// 이미 있는 카카오 계정으로 바꾸기 ① 게스트 정리 중 (값 = 그 게스트의 UGS 플레이어 ID). 정리 도중 꺼지면 다음 실행이 그 게스트 세션으로
+        /// 닫기 · 보관 · 지우기를 마저 한다 (서버에서 한 번 닫은 게스트는 다시 열지 않는다). 게스트를 지운 뒤에만 ②로 넘어간다
         /// </summary>
         private const string SwitchPrepKey = "hh.account.switchPrep";
+        /// <summary>
+        /// 이미 있는 카카오 계정으로 바꾸기 ② 그 계정으로 들어가 진행을 고르는 중 (값 = 그 계정의 UGS 플레이어 ID, 로그인 전이면 ""). 그 계정에서 무엇이든 받기 전에 남긴다.
+        /// 고르기가 끝나기 전에 꺼지면 다음 실행은 **그 계정 세션 그대로** 고르기를 다시 연다 — 새 게스트를 만들지 않는다 (그 계정 진행이 게스트로 새지 않게)
+        /// </summary>
+        private const string SwitchTargetKey = "hh.account.switchTarget";
         /// <summary>+ UGS 플레이어 ID: 이 기기가 마지막으로 올리거나 받은 클라우드 저장의 올린 번호</summary>
         private const string SyncedKeyPrefix = "hh.account.synced.";
 
@@ -107,13 +110,25 @@ namespace HistoryHeroes.Account
             }
         }
 
-        private static bool ChoicePending => PlayerPrefs.GetInt(PendingChoiceKey, 0) == 1;
+        /// <summary>바꾸려는 카카오 계정의 진행 고르기가 남았다 (②). 그동안 올리기 · 결제를 멈춘다</summary>
+        private static bool ChoicePending => PlayerPrefs.HasKey(SwitchTargetKey);
 
         private static void ClearPending()
         {
-            PlayerPrefs.DeleteKey(PendingChoiceKey);
+            PlayerPrefs.DeleteKey(SwitchTargetKey);
             PlayerPrefs.Save(); // 안드로이드는 Save 전에 꺼지면 지운 게 되살아난다
+            SyncSwitching();
         }
+
+        private static void ClearPrep()
+        {
+            PlayerPrefs.DeleteKey(SwitchPrepKey);
+            PlayerPrefs.Save();
+            SyncSwitching();
+        }
+
+        /// <summary>바꾸기 표시(① · ②)가 남아 있는 동안 결제를 멈춘다 (새 결제 · 서버 묻기 · 서버 장부 맞추기). 다 지우면 그때의 계정으로 다시 묻고 맞춘다</summary>
+        private static void SyncSwitching() => Economy.IapService.SetSwitching(PlayerPrefs.HasKey(SwitchPrepKey) || PlayerPrefs.HasKey(SwitchTargetKey));
 
         private static string SyncedKey => SyncedKeyPrefix + AuthenticationService.Instance.PlayerId;
 
@@ -154,20 +169,29 @@ namespace HistoryHeroes.Account
                     await UnityServices.InitializeAsync(new InitializationOptions().SetEnvironmentName(EnvironmentName));
 
                 IAuthenticationService auth = AuthenticationService.Instance;
-                if (ChoicePending)
+                SyncSwitching(); // 바꾸기가 끝나지 않았으면 로그인되자마자 결제를 묻지 않게
+                if (auth.IsSignedIn && auth.IsExpired) auth.SignOut();
+                if (ChoicePending && !auth.IsSignedIn && !auth.SessionTokenExists)
                 {
-                    // 진행 고르기 도중 꺼졌다: 그 카카오 계정에 그대로 이어 붙으면 이 기기 진행이 클라우드를 덮는다 → 게스트로 돌아간다
-                    if (auth.IsSignedIn) auth.SignOut(true);
-                    else if (auth.SessionTokenExists) auth.ClearSessionToken();
+                    // ② 표시인데 이 기기에 세션이 없다: 그 계정 로그인 전에 꺼졌으면("") 받은 것이 없으니 지우고 평소대로.
+                    // 그 계정으로 들어간 뒤인데 세션이 없으면 새 게스트를 만들지 않는다 (그 계정 진행이 이 기기에 있을 수 있다)
+                    if (AccountRules.DecideSwitchTarget(PlayerPrefs.GetString(SwitchTargetKey, string.Empty), null) == AccountRules.SwitchStep.Hold)
+                    {
+                        Debug.LogWarning("[Account] 바꾸려던 계정의 세션이 없음 → 새 게스트를 만들지 않음");
+                        Set(AccountState.Offline, SwitchLostText);
+                        return;
+                    }
+
                     ClearPending();
                 }
 
-                if (PlayerPrefs.HasKey(SwitchPrepKey)) Economy.IapService.SetSwitching(true); // 게스트 정리를 이어 받기 전에는 로그인되자마자 결제를 묻지 않게
-                if (auth.IsSignedIn && auth.IsExpired) auth.SignOut();
                 // 저장된 세션이 있으면 그 플레이어(게스트든 카카오든)로 돌아온다
                 if (!auth.IsSignedIn) await auth.SignInAnonymouslyAsync();
-                if (PlayerPrefs.HasKey(SwitchPrepKey)) await ResumeSwitchPrepAsync(auth);
+                if (ChoicePending) ResumeSwitchTarget(auth);
+                else if (PlayerPrefs.HasKey(SwitchPrepKey)) await ResumeSwitchPrepAsync(auth);
                 await RefreshLinked();
+                // ② 그 계정 세션 그대로: 로비가 한가할 때 진행 고르기를 다시 연다 (그동안 올리기 · 결제는 멈춤)
+                if (ChoicePending && State == AccountState.Linked) ConflictPending = true;
                 Debug.Log($"[Account] 로그인: {State} ({auth.PlayerId})");
             }
             catch (Exception e)
@@ -290,83 +314,156 @@ namespace HistoryHeroes.Account
                 return;
             }
 
-            // 준비 중 표시를 먼저 (게스트 세션은 그대로) → 정리하는 동안 결제는 멈춘다 (새 결제 · 서버 묻기 · 장부 맞추기 — 진행 고르기가 끝날 때까지)
+            // ① 게스트 정리 중 표시를 먼저 (게스트 세션은 그대로) → 바꾸기가 끝날 때까지 결제는 멈춘다
             PlayerPrefs.SetString(SwitchPrepKey, auth.PlayerId ?? string.Empty);
             PlayerPrefs.Save();
-            Economy.IapService.SetSwitching(true);
+            SyncSwitching();
             try
             {
-                // 결제 기록을 다른 계정으로 옮기는 길은 두지 않는다 (환불 회수 · 보관이 꼬인다) → 결제 · 예약이 없는 게스트만 서버에서 닫고(CloseForSwitch),
-                // 빈 장부를 보관한 뒤 UGS 계정을 지우고 들어간다 — 게스트로 로그인된 지금만 지울 수 있다.
-                // 닫기 · 보관 · 삭제 중 하나라도 실패하면 바꾸지 않는다 (서버에서 다시 열고 게스트 그대로, 다시 하면 된다)
+                // 결제 기록을 다른 계정으로 옮기는 길은 두지 않는다 → 결제 · 예약이 없는 게스트만 서버에서 닫고(CloseForSwitch, 한 방향),
+                // 빈 장부를 보관한 뒤 UGS 계정을 지우고 들어간다 — 게스트로 로그인된 지금만 지울 수 있다
                 string blocked = await PrepareGuestForSwitchAsync();
                 if (blocked != null)
                 {
-                    // 서버에서 다시 열고 준비 표시를 지운다. 보관까지 끝나 다시 열 수 없으면 지우기를 마저 하고 새 게스트로 (못 하면 다음 실행에서)
-                    await ResumeSwitchPrepAsync(auth);
+                    // 결제가 있으면 서버는 아무것도 쓰지 않았다 → 게스트 그대로. 그 밖의 실패는 게스트가 이미 닫혔을 수 있다 — 다시 열지 않고
+                    // 표시를 남겨 둔다 (다시 하면 이어서, 아니면 다음 실행에서 지우기를 마저 하고 새 게스트로. 그동안 결제는 멈춤)
+                    if (blocked == PaidGuestSwitchText) ClearPrep();
                     Set(AccountState.Guest, blocked);
                     return;
                 }
 
-                // 게스트를 지웠다 → 이제야 선택 대기 표시 (이 뒤에 꺼지면 다음 실행은 새 게스트로 — 지운 게스트로 돌아갈 일은 없다)
+                // 게스트를 지웠다 → ②로 (그 계정 로그인 전이라 ""), ① 표시는 같은 저장에서 지운다
+                PlayerPrefs.SetString(SwitchTargetKey, string.Empty);
                 PlayerPrefs.DeleteKey(SwitchPrepKey);
-                PlayerPrefs.SetInt(PendingChoiceKey, 1);
                 PlayerPrefs.Save();
                 await provider.SignIn(token);
-                CloudCopy cloud = await LoadCloud(true);
-                if (!cloud.HasSave)
-                {
-                    // 연결된 계정이지만 클라우드 저장이 없다 → 이 기기 진행을 올린다 (처음 만들기, 동시에 만든 기기가 있으면 다시 고르기)
-                    await FinishWithDevice(provider, cloud);
-                    return;
-                }
-
-                if (!cloud.Readable)
-                {
-                    await BackToGuest(cloud.UnreadableText);
-                    return;
-                }
-
-                Set(AccountState.Busy, "어느 진행을 쓸지 골라 주세요");
-                Choice choice = await Ask($"이 {provider.DisplayName} 계정에 저장된 진행이 있어요", "고른 진행으로 이어서 해요. 고르지 않은 쪽 진행은 사라져요", cloud);
-                if (choice == Choice.Cancel)
-                {
-                    await BackToGuest("연결을 그만뒀어요. 이 기기 진행 그대로예요");
-                    return;
-                }
-
-                if (choice == Choice.Device)
-                {
-                    if (!KeepCloudPurchases(cloud))
-                    {
-                        await BackToGuest("저장하지 못했어요. 기기 저장 공간을 확인하고 다시 해 주세요");
-                        return;
-                    }
-                    await FinishWithDevice(provider, cloud);
-                    return;
-                }
-
-                if (!ApplyCloud(cloud))
-                {
-                    await BackToGuest("저장하지 못했어요. 기기 저장 공간을 확인하고 다시 해 주세요");
-                    return;
-                }
-
-                ClearPending();
+                // 그 계정에서 무엇이든(클라우드 진행 · 결제 장부) 받기 전에 대상을 남긴다
+                PlayerPrefs.SetString(SwitchTargetKey, auth.PlayerId);
+                PlayerPrefs.Save();
                 LinkedName = provider.DisplayName;
-                Set(AccountState.Linked, $"{provider.DisplayName} 계정의 진행을 불러왔어요");
-                Common.GameSession.ToLobby(); // 바뀐 저장으로 로비를 다시 그린다
+                await ChooseSwitchAsync(provider.DisplayName, resumed: false);
             }
             catch (Exception e)
             {
+                // 여기 오는 것은 그 계정 로그인 실패뿐 (고르기는 안에서 처리한다) → 받은 것이 없다
                 Debug.LogWarning("[Account] 계정 전환 실패: " + e.Message);
                 await BackToGuest(e is RequestFailedException r ? AccountRules.ErrorText(r.ErrorCode, r.Message) : "문제가 생겼어요. 잠시 뒤에 다시 해 주세요");
             }
             finally
             {
-                // 계정 · 진행이 정해졌다 (또는 그만뒀다) → 그 계정으로 결제를 다시 묻고 장부를 맞춘다.
-                // 게스트 정리를 끝내지 못했으면(준비 표시가 남음) 다음 실행에서 마무리할 때까지 결제는 계속 멈춰 둔다
-                Economy.IapService.SetSwitching(PlayerPrefs.HasKey(SwitchPrepKey));
+                SyncSwitching(); // 바꾸기가 끝났으면(표시 없음) 그때의 계정으로 결제를 다시 묻고 장부를 맞춘다
+            }
+        }
+
+        /// <summary>
+        /// ② 바꾸려는 카카오 계정으로 들어온 뒤의 진행 고르기 (방금 들어옴, 또는 resumed = 지난 실행이 고르기 전에 꺼져 그 세션으로 다시 엶).
+        /// 그 계정에 결제 기록이 하나라도 있으면(서버 장부 · 클라우드 장부, 모르면 있는 것으로) **그 계정 진행만** 고를 수 있다 — 이 기기 진행에 그 계정 결제를 합치는 길이 없다.
+        /// 결제가 없으면 두 쪽 다 고를 수 있고 어느 쪽도 결제를 옮기지 않는다 (게스트에도 결제가 없다 — ①에서 확인).
+        /// 그 계정 진행을 받는 것은 SaveSystem.Replace 한 번 (되거나 안 되거나). 받은 뒤 / 이 기기 진행을 올리기 시작한 뒤에는 게스트로 돌아가지 않는다.
+        /// 그만두기 · 실패: 방금 들어왔으면 새 게스트로 (받은 것이 없다), 다시 연 것이면 그 계정에 머물고 다음에 다시 고른다
+        /// </summary>
+        private static async Task ChooseSwitchAsync(string name, bool resumed)
+        {
+            bool committed = false;
+            try
+            {
+                Set(AccountState.Busy, "클라우드 진행을 확인하는 중…");
+                CloudCopy cloud = await LoadCloud(true);
+                if (!cloud.HasSave)
+                {
+                    // 그 계정에 클라우드 진행이 없다 → 이 기기 진행이 그 계정 진행이 된다 (그 계정 결제는 서버 장부 맞추기가 넣는다 — 이제 같은 계정)
+                    committed = true;
+                    await FinishWithDevice(name, cloud);
+                    return;
+                }
+
+                if (!cloud.Readable)
+                {
+                    await StopSwitchAsync(cloud.UnreadableText, resumed);
+                    return;
+                }
+
+                bool paid = AccountRules.TargetHasPurchases(cloud.Data, await TargetLedgerAsync());
+                Set(AccountState.Busy, "어느 진행을 쓸지 골라 주세요");
+                Choice choice;
+                if (paid)
+                {
+                    bool yes = Confirm != null && await Confirm($"이 {name} 계정에는 결제 기록이 있어요",
+                        $"결제 기록이 있는 계정은 그 계정의 진행으로만 이어서 할 수 있어요. 이 기기 진행은 사라져요 (이 기기 백업에는 남아요).", $"{name} 계정 진행 쓰기");
+                    choice = yes ? Choice.Cloud : Choice.Cancel;
+                }
+                else
+                {
+                    choice = await Ask($"이 {name} 계정에 저장된 진행이 있어요", "고른 진행으로 이어서 해요. 고르지 않은 쪽 진행은 사라져요", cloud);
+                }
+
+                if (choice == Choice.Cancel)
+                {
+                    await StopSwitchAsync("연결을 그만뒀어요. 이 기기 진행 그대로예요", resumed);
+                    return;
+                }
+
+                if (choice == Choice.Device)
+                {
+                    // 결제가 없는 계정일 때만 여기 온다 → 옮길 결제가 없다
+                    committed = true;
+                    await FinishWithDevice(name, cloud);
+                    return;
+                }
+
+                if (!ApplyCloud(cloud, mergeDevicePurchases: false))
+                {
+                    await StopSwitchAsync("저장하지 못했어요. 기기 저장 공간을 확인하고 다시 해 주세요", resumed);
+                    return;
+                }
+
+                committed = true;
+                ClearPending();
+                LinkedName = name;
+                Set(AccountState.Linked, $"{name} 계정의 진행을 불러왔어요");
+                Common.GameSession.ToLobby(); // 바뀐 저장으로 로비를 다시 그린다
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Account] 계정 전환 고르기 실패: " + e.Message);
+                string text = e is RequestFailedException r ? AccountRules.ErrorText(r.ErrorCode, r.Message) : "문제가 생겼어요. 잠시 뒤에 다시 해 주세요";
+                if (!committed)
+                {
+                    await StopSwitchAsync(text, resumed);
+                    return;
+                }
+
+                // 이미 그 계정 진행을 받았거나 이 기기 진행을 그 계정으로 올리기 시작했다 → 그 계정에 머문다
+                ClearPending();
+                LinkedName = name;
+                Set(AccountState.Linked, text);
+            }
+        }
+
+        /// <summary>고르기를 그만둔다: 방금 들어왔으면 표시를 지우고 새 게스트로 (받은 것이 없다), 다시 연 것이면 그 계정에 머물고 다음에 다시 고른다 (올리기 · 결제는 멈춘 채)</summary>
+        private static async Task StopSwitchAsync(string message, bool resumed)
+        {
+            if (!resumed)
+            {
+                await BackToGuest(message);
+                return;
+            }
+
+            _conflictDeferred = true;
+            Set(AccountState.Linked, message + ". 고를 때까지 클라우드 저장과 결제를 멈춰요. [지금 클라우드에 저장]을 누르면 다시 골라요");
+        }
+
+        /// <summary>바꾸려는 계정(지금 로그인)의 서버 결제 장부. 못 받으면 null (= 결제가 있는 것으로 본다)</summary>
+        private static async Task<Economy.PurchaseServer.Ledger> TargetLedgerAsync()
+        {
+            try
+            {
+                return await Economy.PurchaseServer.GetPurchasesAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Account] 바꾸려는 계정의 결제 장부를 못 받음 (결제가 있는 것으로): " + e.Message);
+                return null;
             }
         }
 
@@ -374,16 +471,16 @@ namespace HistoryHeroes.Account
         /// 사용자가 "이 기기 진행"을 골랐다 (또는 클라우드가 비었다): 사용자가 본 클라우드 판(seen)의 write lock으로 덮는다.
         /// 그 뒤 다른 기기가 썼으면 서버가 거절하고 고르기가 다시 뜬다 (본 적 없는 진행을 말없이 덮지 않게).
         /// </summary>
-        private static async Task FinishWithDevice(LoginProvider provider, CloudCopy seen)
+        private static async Task FinishWithDevice(string name, CloudCopy seen)
         {
             ClearPending();
-            LinkedName = provider.DisplayName;
+            LinkedName = name;
             Set(AccountState.Linked, null);
             _cloudChanged = true;
             bool uploaded = await UploadAsync(true, seen);
-            Set(AccountState.Linked, uploaded ? $"{provider.DisplayName} 계정에 이 기기 진행을 올렸어요"
+            Set(AccountState.Linked, uploaded ? $"{name} 계정에 이 기기 진행을 올렸어요"
                 : ConflictPending ? "그사이 클라우드가 바뀌었어요. 다시 골라 주세요"
-                : $"{provider.DisplayName} 계정을 연결했어요. 클라우드 저장은 다음에 다시 해요");
+                : $"{name} 계정을 연결했어요. 클라우드 저장은 다음에 다시 해요");
         }
 
         /// <summary>계정 전환을 그만둔다: 외부 계정에서 나와 새 게스트로 (이 기기 저장은 손대지 않았다)</summary>
@@ -392,9 +489,9 @@ namespace HistoryHeroes.Account
             IAuthenticationService auth = AuthenticationService.Instance;
             try
             {
+                ClearPending(); // 표시를 먼저 지운다 (그 계정에서 받은 것이 없다) — 세션을 지운 뒤 표시가 남으면 다음 실행이 막힌다
                 if (auth.IsSignedIn) auth.SignOut(true);
                 else if (auth.SessionTokenExists) auth.ClearSessionToken();
-                ClearPending();
                 LinkedName = null;
                 await auth.SignInAnonymouslyAsync();
                 Set(AccountState.Guest, message);
@@ -409,16 +506,17 @@ namespace HistoryHeroes.Account
 
         public const string PaidGuestSwitchText = "이 기기에서 결제한 기록이 있어서 이미 다른 진행이 있는 카카오 계정으로는 바꿀 수 없어요. 바꾸려면 문의해 주세요 (choijunhuk2007@gmail.com, 사용자 ID 함께).";
         public const string SwitchRetryText = "서버에 연결하지 못해 계정을 바꾸지 않았어요. 잠시 뒤에 다시 해 주세요";
+        public const string SwitchLostText = "계정 바꾸기를 마치지 못했어요. 문의해 주세요 (choijunhuk2007@gmail.com)";
 
         /// <summary>
-        /// 이미 있는 카카오 계정으로 바꾸기 전 (게스트로 로그인된 채): 결제 기록이 있으면(이 기기 장부 또는 서버 장부) 막고, 없으면 서버 결제 장부를 보관 · 닫은 뒤 게스트 UGS 계정을 지운다.
-        /// 돌려주는 값: 바꾸지 못하는 이유 (null이면 게스트를 지웠고 들어가도 된다)
+        /// 이미 있는 카카오 계정으로 바꾸기 전 (게스트로 로그인된 채): 서버가 결제 · 예약이 없을 때만 게스트를 닫고(한 방향 — 이미 닫혔으면 그대로 ok),
+        /// 빈 장부를 보관한 뒤 게스트 UGS 계정을 지운다. 돌려주는 값: 바꾸지 못하는 이유 (null이면 게스트를 지웠고 들어가도 된다)
         /// </summary>
         private static async Task<string> PrepareGuestForSwitchAsync()
         {
             try
             {
-                // 서버가 같은 판정 안에서: 결제 · 예약이 하나도 없을 때만 게스트를 닫는다 (진행 중이던 결제가 끼어들면 has_purchases — 서버가 다시 열어 둔다)
+                // 서버가 같은 판정 안에서: 결제 · 예약이 하나도 없을 때만 게스트를 닫는다 (진행 중이던 결제가 끼어들면 has_purchases — 아무것도 쓰지 않는다)
                 string closed = await Economy.PurchaseServer.CloseForSwitchAsync();
                 if (closed == Economy.PurchaseServer.HasPurchases) return PaidGuestSwitchText;
                 if (closed != "ok") return SwitchRetryText;
@@ -435,48 +533,46 @@ namespace HistoryHeroes.Account
         }
 
         /// <summary>
-        /// 게스트 정리가 막혔거나 지난 실행이 정리 도중 꺼졌다 (준비 표시가 남음): 그 게스트 세션 그대로 이어 받는다 — 카카오 로그인은 이어 가지 않고 바꾸기를 그만두며,
-        /// 서버가 다시 열 수 있으면 게스트 그대로, 보관까지 끝났으면 지우기를 마저 하고 새 게스트로. 서버에 못 닿으면 표시를 남겨 다음에 다시
+        /// ① 지난 실행이 게스트 정리 도중 꺼졌다: 그 게스트 세션이면 닫기 · 보관 · 지우기를 마저 하고 새 게스트로 (닫은 게스트는 다시 열지 않는다 —
+        /// 아직 닫히지 않았고 결제가 있으면 서버가 아무것도 쓰지 않아 게스트 그대로). 그 세션이 이미 없으면(지워짐) 표시만 지운다. 서버에 못 닿으면 표시를 남겨 다음에 다시
         /// </summary>
         private static async Task ResumeSwitchPrepAsync(IAuthenticationService auth)
         {
-            string preparedFor = PlayerPrefs.GetString(SwitchPrepKey, string.Empty);
-            Economy.IapService.SetSwitching(true);
             try
             {
-                string cancel = null;
-                if (!string.IsNullOrEmpty(preparedFor) && preparedFor == auth.PlayerId)
-                {
-                    try
-                    {
-                        cancel = await Economy.PurchaseServer.CancelSwitchAsync();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogWarning("[Account] 바꾸기 준비를 이어 받지 못함 (다음에 다시): " + e.Message);
-                    }
-                }
-
-                AccountRules.SwitchResume step = AccountRules.DecideSwitchResume(preparedFor, auth.PlayerId, cancel);
-                Debug.Log($"[Account] 바꾸기 준비 이어 받기: {step}");
-                if (step == AccountRules.SwitchResume.FinishDeletion)
-                {
-                    if (await Economy.PurchaseServer.ArchiveAndDeleteAsync() != "ok") return;
-                    await auth.DeleteAccountAsync();
-                }
-
-                if (step == AccountRules.SwitchResume.KeepForLater) return;
-                PlayerPrefs.DeleteKey(SwitchPrepKey);
-                PlayerPrefs.Save();
-                if (!auth.IsSignedIn) await auth.SignInAnonymouslyAsync(); // 지웠으면 새 게스트로
+                AccountRules.SwitchStep step = AccountRules.DecideSwitchPrep(PlayerPrefs.GetString(SwitchPrepKey, string.Empty), auth.PlayerId);
+                Debug.Log($"[Account] 게스트 정리 이어 받기: {step}");
+                if (step == AccountRules.SwitchStep.Hold) return;
+                if (step == AccountRules.SwitchStep.FinishGuestCleanup && await PrepareGuestForSwitchAsync() == SwitchRetryText) return;
+                ClearPrep();
+                if (!auth.IsSignedIn) await auth.SignInAnonymouslyAsync(); // 지웠으면 새 게스트로 (② 표시는 없다)
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[Account] 바꾸기 준비 마무리 실패 (다음에 다시): " + e.Message);
+                Debug.LogWarning("[Account] 게스트 정리 마무리 실패 (다음에 다시): " + e.Message);
             }
             finally
             {
-                Economy.IapService.SetSwitching(PlayerPrefs.HasKey(SwitchPrepKey)); // 못 끝냈으면 다음 실행까지 결제를 멈춘 채로
+                SyncSwitching();
+            }
+        }
+
+        /// <summary>② 지난 실행이 바꾸려는 계정의 진행 고르기 전에 꺼졌다 (로그인된 뒤): 그 계정 세션이면 그대로 두고 대상을 기록, 아니면 표시만 지운다</summary>
+        private static void ResumeSwitchTarget(IAuthenticationService auth)
+        {
+            string target = PlayerPrefs.GetString(SwitchTargetKey, string.Empty);
+            AccountRules.SwitchStep step = AccountRules.DecideSwitchTarget(target, auth.PlayerId);
+            Debug.Log($"[Account] 계정 바꾸기 이어 받기: {step}");
+            if (step != AccountRules.SwitchStep.ResumeTarget)
+            {
+                ClearPending();
+                return;
+            }
+
+            if (target.Length == 0)
+            {
+                PlayerPrefs.SetString(SwitchTargetKey, auth.PlayerId); // 그 계정 로그인 직후 꺼졌다 (게스트는 지워져 남은 세션은 그 계정뿐)
+                PlayerPrefs.Save();
             }
         }
 
@@ -530,9 +626,10 @@ namespace HistoryHeroes.Account
 
         /// <summary>클라우드 진행으로 바꾼다: 이 기기 진행은 백업(.run1 · .bak)으로 남는다 (해시 · 구조 옮기기는 Parse가 이미 했다).
         /// 이 기기에서만 한 결제(보석 · 장부 · 첫 구매 2배 · 패키지)는 클라우드 진행에 옮겨 담는다 — 진짜 돈으로 산 것은 사라지면 안 된다</summary>
-        private static bool ApplyCloud(CloudCopy cloud)
+        private static bool ApplyCloud(CloudCopy cloud, bool mergeDevicePurchases = true)
         {
-            Economy.IapLedger.MergeInto(cloud.Data, SaveSystem.Data);
+            // 계정 바꾸기에서는 합치지 않는다 (게스트에 결제가 없다 — 다른 계정 사이에 결제를 옮기는 길을 두지 않는다)
+            if (mergeDevicePurchases) Economy.IapLedger.MergeInto(cloud.Data, SaveSystem.Data);
             if (!SaveSystem.Replace(cloud.Data)) return false;
             SetSynced(cloud.Meta?.uploadId);
             SaveSystem.CloudRechecked();
@@ -550,7 +647,8 @@ namespace HistoryHeroes.Account
         /// </summary>
         public static bool KeepPurchases(SaveData other)
         {
-            return other == null || Economy.IapLedger.MergeInto(SaveSystem.Data, other) == 0 || SaveSystem.Save();
+            // 합치기 + 저장을 한 번에: 저장을 못 하면 합친 것까지 통째로 되돌린다 (메모리에 반쯤 합친 장부가 남지 않게)
+            return other == null || SaveSystem.Commit(() => Economy.IapLedger.MergeInto(SaveSystem.Data, other) > 0) != SaveSystem.CommitResult.SaveFailed;
         }
 
         /// <summary>
@@ -561,6 +659,14 @@ namespace HistoryHeroes.Account
         {
             if (!ConflictPending || State != AccountState.Linked) return;
             ConflictPending = false;
+            if (ChoicePending)
+            {
+                // ② 바꾸려던 계정의 진행 고르기가 남았다 → 계정 바꾸기 규칙으로 다시 고른다 (그 계정에 결제가 있으면 그 계정 진행만)
+                _conflictDeferred = false;
+                await ChooseSwitchAsync(LinkedName ?? Providers[0].DisplayName, resumed: true);
+                return;
+            }
+
             Set(AccountState.Busy, "클라우드 진행을 확인하는 중…");
             try
             {
@@ -632,6 +738,13 @@ namespace HistoryHeroes.Account
         /// <summary>설정 → 지금 클라우드에 저장. 클라우드가 다른 곳에서 바뀌었으면 고르기를 다시 연다</summary>
         public static async Task UploadNowAsync()
         {
+            if (ChoicePending && State == AccountState.Linked)
+            {
+                ConflictPending = true; // 계정 바꾸기 고르기가 남았다 → 그것부터
+                await ResolveConflictAsync();
+                return;
+            }
+
             _conflictDeferred = false;
             _cloudChanged = true;
             bool ok = await UploadAsync(true);
@@ -831,6 +944,7 @@ namespace HistoryHeroes.Account
                 string archived = await Economy.PurchaseServer.ArchiveAndDeleteAsync();
                 if (archived != "ok") throw new InvalidOperationException("결제 기록 보관 실패: " + (archived ?? "빈 답"));
                 await CloudSaveService.Instance.Data.Player.DeleteAllAsync();
+                if (ChoicePending) ClearPending(); // 세션이 지워진 뒤 계정 바꾸기 표시가 남으면 다음 실행이 막힌다 (이 기기 진행은 아래에서 지운다)
                 await auth.DeleteAccountAsync(); // 끝나면 로그아웃 + 세션도 지운다
             }
             catch (Exception e)

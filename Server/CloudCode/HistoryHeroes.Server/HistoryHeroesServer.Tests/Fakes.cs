@@ -36,8 +36,8 @@ internal sealed class FakeStore : IPurchaseStore
     /// <summary>플레이어 → protected 키 → (글, lock)</summary>
     public readonly Dictionary<string, Dictionary<string, (string json, string writeLock)>> Protected = new();
     public readonly HashSet<string> Closed = new();
-    /// <summary>닫힌 이유 (없으면 옛 표시처럼 "deleted")</summary>
-    public readonly Dictionary<string, string> ClosedReason = new();
+    /// <summary>닫힘 표시 쓰기가 실패한다 (서버 장애 흉내)</summary>
+    public Exception? CloseError;
     /// <summary>옛 배포가 private에 남긴 예약 (플레이어 → 토큰 해시)</summary>
     public readonly Dictionary<string, HashSet<string>> LegacyReserved = new();
     /// <summary>토큰 해시 → (글, lock)</summary>
@@ -126,13 +126,6 @@ internal sealed class FakeStore : IPurchaseStore
         return Task.FromResult(true);
     }
 
-    public Task<bool> TryOpenHeadAsync(IExecutionContext context, string playerId, string headLock, CancellationToken ct)
-    {
-        if (!P(playerId).TryGetValue("iap_head", out var head) || head.writeLock != headLock) return Task.FromResult(false);
-        P(playerId)["iap_head"] = (HeadJson("reopened"), NewLock());
-        return Task.FromResult(true);
-    }
-
     public async Task<List<PurchaseRecord>> LoadPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
         await Gate(ct);
@@ -198,26 +191,16 @@ internal sealed class FakeStore : IPurchaseStore
         return Task.CompletedTask;
     }
 
-    public Task<string?> LoadClosedReasonAsync(IExecutionContext context, string playerId, CancellationToken ct) =>
-        Task.FromResult(Closed.Contains(playerId) ? ClosedReason.GetValueOrDefault(playerId, "deleted") : (string?)null);
-
-    public Task ReopenAsync(IExecutionContext context, string playerId, CancellationToken ct)
-    {
-        Closed.Remove(playerId);
-        ClosedReason.Remove(playerId);
-        return Task.CompletedTask;
-    }
-
     public async Task<bool> IsClosedAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
         await Gate(ct);
         return Closed.Contains(playerId);
     }
 
-    public Task CloseAsync(IExecutionContext context, string playerId, DateTime utcNow, string reason, CancellationToken ct)
+    public Task CloseAsync(IExecutionContext context, string playerId, DateTime utcNow, CancellationToken ct)
     {
+        if (CloseError != null) throw CloseError;
         Closed.Add(playerId);
-        ClosedReason[playerId] = reason;
         return Task.CompletedTask;
     }
 

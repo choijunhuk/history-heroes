@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 namespace HistoryHeroes.Server;
 
 /// <summary>
-/// CloseForSwitch · CancelSwitch의 답. status: ok · has_purchases(결제 · 예약이 있어 바꾸지 않음 — 다시 열었다) · closed(계정 삭제로 닫혀 다시 열 수 없음) · retry
+/// CloseForSwitch의 답. status: ok(닫혔다 — 한 방향) · has_purchases(결제 · 예약이 있어 바꾸지 않음, 아무것도 쓰지 않았다) · retry
 /// </summary>
 public sealed class SwitchResult
 {

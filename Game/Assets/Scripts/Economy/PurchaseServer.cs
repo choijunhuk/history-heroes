@@ -87,12 +87,9 @@ namespace HistoryHeroes.Economy
 
         /// <summary>
         /// 결제 안 한 게스트를 이미 있는 카카오 계정으로 바꾸기 전 (게스트로 부른다): 서버가 결제 · 예약이 하나도 없을 때만 게스트를 닫는다 (진행 중이던 결제와 겹쳐도 서버가 한 줄로 판정).
-        /// "ok" 닫음 · "has_purchases" 결제가 있어 바꾸지 않음(다시 열어 둠) · 그 밖은 실패
+        /// "ok" 닫음(한 방향 — 다시 여는 길은 없다, 끊겼으면 다시 불러 보관 · 삭제를 마저 한다) · "has_purchases" 결제가 있어 바꾸지 않음(아무것도 쓰지 않았다) · 그 밖은 실패
         /// </summary>
         public static async Task<string> CloseForSwitchAsync() => await StatusOf("CloseForSwitch");
-
-        /// <summary>바꾸기를 그만둘 때 (게스트로): 바꾸기 준비로 닫은 게스트를 다시 연다. "ok" 열림 · "closed" 계정 삭제까지 끝나 열 수 없음(지우기를 마저 한다) · 그 밖은 실패</summary>
-        public static async Task<string> CancelSwitchAsync() => await StatusOf("CancelSwitch");
 
         private static async Task<string> StatusOf(string function)
         {

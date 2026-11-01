@@ -378,6 +378,31 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void KeepPurchases_SaveFails_RollsBackWholeMerge()
+        {
+            // 6차 3: 다른 쪽 결제를 합친 뒤 저장을 못 하면 메모리에도 남지 않는다 (반쯤 합친 장부 · 보석이 다음 저장에 섞이지 않게)
+            string blocker = Path.GetTempFileName();
+            try
+            {
+                SaveSystem.Use(new SaveStore(Path.Combine(blocker, "blocked")));
+                SaveSystem.Data.gemsFree = 30;
+                string before = SaveStore.Serialize(SaveSystem.Data);
+                var other = new SaveData();
+                IapLedger.ApplyServer(other, Server("gems_t4", "b-paid", 2750, 3300, true), "b-paid", out _);
+
+                LogAssert.Expect(LogType.Error, new Regex("저장 실패"));
+                Assert.IsFalse(Account.AccountService.KeepPurchases(other));
+                Assert.AreEqual(before, SaveStore.Serialize(SaveSystem.Data));
+                Assert.AreEqual(30, Wallet.Gems(SaveSystem.Data));
+                Assert.IsEmpty(SaveSystem.Data.purchases.ledger);
+            }
+            finally
+            {
+                File.Delete(blocker);
+            }
+        }
+
+        [Test]
         public void Upload_RawTokenFile_IsMigratedAndSavedFirst_NeverUploadsRawToken()
         {
             // 옛 저장 파일(구매 토큰 원문 거래 번호): 읽을 때 메모리에서만 바뀐다 → 올리기 전에 바꾼 모양으로 저장하고 그 파일을 올린다 (2차 리뷰 Y1)
