@@ -717,6 +717,70 @@ namespace HistoryHeroes.EditorTools
                    $"멈춤={GamePause.IsPaused} 끝={run.IsFinished} 특수={run.CurrentSpecial} 갈림길={run.ForkOpen} [{string.Join(",", owned)}]";
         }
 
+        // ───── 결제 (Unity IAP · 에디터는 가짜 상점, Play 중에만) ─────
+
+        /// <summary>상점 상태 · 상품별 가격 · 지갑(유료/무료) · 장부 한 줄</summary>
+        public static string IapStatus()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            Records.SaveData d = Records.SaveSystem.Data;
+            var prices = new List<string>();
+            foreach (Economy.IapCatalog.Item item in Economy.IapCatalog.All)
+                prices.Add($"{item.Id}={Economy.IapService.Price(item.Id) ?? "-"}{(Economy.IapLedger.FirstBonusLeft(d, item) ? "*" : "")}");
+            return $"{Economy.IapService.State} 구매중={Economy.IapService.BuyingId ?? "-"} 보석 유료{d.gemsPaid} 무료{d.gemsFree} 골드{d.gold} 소환권{d.ItemCount(Economy.Wallet.Ticket)} " +
+                   $"장부{d.purchases.ledger.Count} 패키지받음={d.purchases.starterClaimed} | {string.Join(" ", prices)} (*=첫 구매 2배 남음)";
+        }
+
+        /// <summary>가짜 상점 결제 창(IMGUI)의 [Buy] 또는 [Cancel]을 누른다</summary>
+        public static string IapFakeStore(bool buy)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            GameObject window = GameObject.Find("UIFakeStoreWindow");
+            Component dialog = window != null ? window.GetComponent("UIFakeStoreWindow") : null;
+            if (dialog == null) return "가짜 상점 창이 없음";
+            var method = dialog.GetType().GetMethod(buy ? "OnOkClicked" : "OnCancelClicked",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+            if (method == null) return "가짜 상점 창 단추를 못 찾음 (패키지 버전이 바뀜?)";
+            method.Invoke(dialog, null);
+            return (buy ? "구매" : "취소") + " 누름";
+        }
+
+        /// <summary>
+        /// 같은 거래를 상점이 다시 보낸 것처럼 지급 → 저장을 한 번 더 (결제가 올 때와 같은 길). 장부가 막아야 한다.
+        /// transactionId를 비우면 장부의 마지막 거래를 쓴다.
+        /// </summary>
+        public static string IapRedeliver(string productId = null, string transactionId = null)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            Records.SaveData d = Records.SaveSystem.Data;
+            if (string.IsNullOrEmpty(transactionId))
+            {
+                if (d.purchases.ledger.Count == 0) return "장부가 비어 있음";
+                Records.PurchaseEntry last = d.purchases.ledger[d.purchases.ledger.Count - 1];
+                transactionId = last.transactionId;
+                productId ??= last.productId;
+            }
+            string before = $"유료{d.gemsPaid} 무료{d.gemsFree} 장부{d.purchases.ledger.Count}";
+            Economy.IapLedger.Result result = Economy.IapService.GrantAndSave(productId, transactionId, out _, out Records.SaveSystem.CommitResult saved);
+            d = Records.SaveSystem.Data;
+            return $"{productId} 다시 받기 → {result} / {saved} | 전 {before} → 후 유료{d.gemsPaid} 무료{d.gemsFree} 장부{d.purchases.ledger.Count}";
+        }
+
+        /// <summary>디스크의 저장 파일을 다시 읽어 장부가 들어 있는지 본다</summary>
+        public static string IapSaveCheck()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            string json = System.IO.File.ReadAllText(Records.SaveSystem.Store.MainPath);
+            var parsed = Records.SaveStore.Parse(json, out Records.SaveData disk, out string problem);
+            if (disk == null) return $"못 읽음: {parsed} {problem}";
+            var lines = new List<string>();
+            foreach (Records.PurchaseEntry e in disk.purchases.ledger)
+                lines.Add($"{e.productId}(유료{e.paidGems}+무료{e.freeGems}{(e.firstBonus ? " 첫구매" : "")}{(e.tickets > 0 ? $" 소환권{e.tickets}" : "")}{(e.gold > 0 ? $" 골드{e.gold}" : "")})");
+            return $"{Records.SaveSystem.Store.MainPath} 검사={parsed} 구조={disk.schemaVersion} 장부{disk.purchases.ledger.Count}: {string.Join(", ", lines)} | 첫구매 [{string.Join(",", disk.purchases.firstBought)}] 패키지={disk.purchases.starterClaimed}";
+        }
+
         // ───── 계정 · 클라우드 저장 (진짜 UGS 서버, Play 중에만) ─────
 
         private static string _accountCheck = "아직 안 함";

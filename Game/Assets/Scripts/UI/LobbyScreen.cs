@@ -136,6 +136,10 @@ namespace HistoryHeroes.UI
             _begun = true;
             AccountSection.Bind(choice, roster); // 계정 진행 고르기 · 확인 창
             Account.AccountService.Start(); // 동의 뒤에만 서버에 닿는다. 실패해도 게임은 그대로 (오프라인)
+            // 결제 상점도 동의 뒤에 붙는다. 지난번에 지급 못 한 결제가 있으면 여기서 받는다 (상점을 안 열어도 알린다)
+            IapService.Granted += OnIapGranted;
+            IapService.Notice += OnIapNotice;
+            IapService.Start();
             GameSession.ConfigureMetaTable(metaTable);
             string lobbyHero = GameSession.ConsumeLobbyHero();
             SettingsApplier.Apply(data.settings);
@@ -315,6 +319,8 @@ namespace HistoryHeroes.UI
         private void OnDestroy()
         {
             Missions.MissionEvents.Completed -= OnMissionCompleted;
+            IapService.Granted -= OnIapGranted;
+            IapService.Notice -= OnIapNotice;
             AccountSection.Unbind();
         }
 
@@ -428,6 +434,17 @@ namespace HistoryHeroes.UI
         }
 
         private void OnMissionCompleted(string line) => ShowNotice(line);
+
+        // 상점이 열려 있으면 상점 화면이 알린다
+        private void OnIapGranted(PurchaseEntry entry)
+        {
+            if (shop == null || !shop.IsOpen) ShowNotice("결제한 상품을 받았어요: " + IapLedger.Text(entry));
+        }
+
+        private void OnIapNotice(string text)
+        {
+            if (shop == null || !shop.IsOpen) ShowNotice(text);
+        }
 
         private void Update()
         {

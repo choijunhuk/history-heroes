@@ -515,6 +515,8 @@ namespace HistoryHeroes.Records
             if (data.schemaVersion < 11) data.seenFirstUseHints = new List<string>();
             // 11 → 12: 옛 저장에는 동의 기록이 없다. 빈 기록으로 두면 다음 로비에서 한 번 묻는다.
             if (data.schemaVersion < 12) data.consent = new ConsentRecord();
+            // 12 → 13: 실제 결제가 없던 저장이다. 빈 장부 = 결제한 적 없음 (첫 구매 2배 · 첫 결제 패키지 모두 남아 있다).
+            if (data.schemaVersion < 13) data.purchases = new PurchaseSave();
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -523,6 +525,10 @@ namespace HistoryHeroes.Records
         {
             data.seenFirstUseHints ??= new List<string>();
             data.consent ??= new ConsentRecord();
+            data.purchases ??= new PurchaseSave();
+            data.purchases.ledger ??= new List<PurchaseEntry>();
+            data.purchases.ledger.RemoveAll(e => e == null || string.IsNullOrEmpty(e.transactionId));
+            data.purchases.firstBought ??= new List<string>();
             data.records ??= new List<RunRecord>();
             data.discoveredRecipes ??= new List<string>();
             data.targetRecipes ??= new List<string>();

@@ -135,8 +135,9 @@ namespace HistoryHeroes.EditorTools
             TMP_Text wallet = Label("Wallet", panel, "", 26, TextAlignmentOptions.Center);
             Place(wallet.rectTransform, Center, Center, new Vector2(0f, 775f), new Vector2(1000f, 50f));
 
-            Button equipmentTab = Btn("EquipmentTab", panel, "장비 상자", new Vector2(-252f, 690f), new Vector2(496f, 78f), ButtonBlue, out _);
-            Button relicTab = Btn("RelicTab", panel, "유물 뽑기", new Vector2(252f, 690f), new Vector2(496f, 78f), ButtonBlue, out _);
+            Button equipmentTab = Btn("EquipmentTab", panel, "장비 상자", new Vector2(-335f, 690f), new Vector2(325f, 78f), ButtonBlue, out _);
+            Button relicTab = Btn("RelicTab", panel, "유물 뽑기", new Vector2(0f, 690f), new Vector2(325f, 78f), ButtonBlue, out _);
+            Button gemTab = Btn("GemTab", panel, "보석", new Vector2(335f, 690f), new Vector2(325f, 78f), ButtonBlue, out _);
 
             RectTransform equipmentSection = Rect("EquipmentSection", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             Button normalBuy = Btn("NormalBuy", equipmentSection, "일반 상자", new Vector2(-252f, 560f), new Vector2(496f, 100f), ButtonBlue, out TMP_Text normalBuyLabel);
@@ -199,10 +200,20 @@ namespace HistoryHeroes.EditorTools
                 "<color=#A9B4C2>각 유물 확률·새 유물 보장·중복 규칙은 확률 보기에서 확인하세요</color>", 28, TextAlignmentOptions.Center);
             Place(relicNotice.rectTransform, Center, Center, new Vector2(0f, -205f), new Vector2(980f, 80f));
             TMP_Text relicLegal = Label("RelicLegal", relicSection,
-                "<color=#A9B4C2>보석으로 뽑을 수 있습니다. 사용한 보석·뽑기는 철회가 제한됩니다. 이 버전은 실제 결제가 없는 시험판입니다.</color>", 27, TextAlignmentOptions.Center);
+                "<color=#A9B4C2>보석으로 뽑을 수 있습니다. 사용한 보석·뽑기는 철회가 제한됩니다.</color>", 27, TextAlignmentOptions.Center);
             Place(relicLegal.rectTransform, Center, Center, new Vector2(0f, 280f), new Vector2(980f, 110f));
             TMP_Text relicMessage = Label("RelicMessage", relicSection, "", 30, TextAlignmentOptions.Center);
             Place(relicMessage.rectTransform, Center, Center, new Vector2(0f, -335f), new Vector2(980f, 100f));
+
+            // 보석 (실제 결제): 청약철회 고지를 구매 카드 바로 위에 (Monetization 5-1)
+            RectTransform gemSection = Rect("GemSection", panel, Center, Center, Center, new Vector2(0f, -20f), new Vector2(1040f, 1320f));
+            Img(gemSection, PanelColor, null).raycastTarget = true;
+            TMP_Text gemNotice = Label("GemNotice", gemSection,
+                "<color=#A9B4C2>유료 보석은 구매 후 7일 이내, 사용하지 않았으면 청약철회할 수 있어요. 사용한 보석·뽑기는 철회가 제한돼요. 패키지는 구성품을 하나도 쓰지 않았을 때만 철회할 수 있어요.</color>", 26, TextAlignmentOptions.Center);
+            Place(gemNotice.rectTransform, Center, Center, new Vector2(0f, 570f), new Vector2(1000f, 130f));
+            ButtonList gemList = BuildButtonList(gemSection, "GemList", new Vector2(0f, -30f), new Vector2(1000f, 1040f), 140f, 27f);
+            TMP_Text gemMessage = Label("GemMessage", gemSection, "", 27, TextAlignmentOptions.Center);
+            Place(gemMessage.rectTransform, Center, Center, new Vector2(0f, -605f), new Vector2(1000f, 100f));
 
             // 확률 보기 (덮는 판)
             RectTransform ratesPanel = Rect("RatesPanel", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
@@ -282,7 +293,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("premium10Button", premium10).Ref("premium10Label", premium10Label).Ref("ticketButton", ticket).Ref("ticketLabel", ticketLabel)
                     .Ref("ratesButton", rates).Ref("exchangeButton", exchange).Ref("exchangeLabel", exchangeLabel).Ref("messageLabel", message)
                     .Ref("list", list).Ref("ratesRoot", ratesPanel.gameObject).Ref("ratesLabel", ratesText).Ref("ratesCloseButton", ratesClose)
-                    .Ref("backButton", back).Ref("goldShopButton", goldShop).Ref("goldShopLabel", goldShopLabel);
+                    .Ref("backButton", back).Ref("goldShopButton", goldShop).Ref("goldShopLabel", goldShopLabel)
+                    .Ref("gemTabButton", gemTab).Ref("gemSection", gemSection.gameObject).Ref("gemList", gemList).Ref("gemMessageLabel", gemMessage);
             }
 
             return screen;

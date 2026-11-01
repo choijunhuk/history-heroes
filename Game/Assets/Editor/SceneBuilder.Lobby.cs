@@ -60,7 +60,7 @@ namespace HistoryHeroes.EditorTools
             OpeningPanel opening = BuildOpeningPanel(root);
             SurvivalMapPanel survivalMaps = BuildSurvivalMapPanel(safe); // 확장 1차 6-6장
             using (var props = new Props(heroPanel)) props.Ref("relics", relicPanel).Ref("equipment", equipmentPanel).Ref("metaTable", meta).Ref("training", trainingPanel).Ref("runes", runePanel).Ref("pets", petPanel);
-            using (var props = new Props(shopPanel)) props.Ref("roster", roster).Ref("relics", meta != null ? meta.relics : null);
+            using (var props = new Props(shopPanel)) props.Ref("roster", roster).Ref("relics", meta != null ? meta.relics : null).Ref("choice", choicePanel);
             using (var props = new Props(relicPanel)) props.Ref("shop", shopPanel);
             using (var props = new Props(bossIntro)) props.Ref("reselect", reselect).Ref("hearts", heartPanel).Ref("opening", opening).Ref("thorTrial", LoadThorTrial()).Refs("godTrials", LoadGodTrials());
 

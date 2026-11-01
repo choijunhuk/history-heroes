@@ -19,6 +19,9 @@ namespace HistoryHeroes.Economy
 
         public static void AddFreeGems(SaveData d, int amount) => d.gemsFree = Math.Max(0, d.gemsFree + Math.Max(0, amount));
 
+        /// <summary>결제로 산 기본 보석 (유료분). 청약철회·환불은 이 몫을 기준으로 계산한다 (Monetization 3-1)</summary>
+        public static void AddPaidGems(SaveData d, int amount) => d.gemsPaid = Math.Max(0, d.gemsPaid + Math.Max(0, amount));
+
         public static bool TrySpendGold(SaveData d, int amount)
         {
             if (amount < 0 || d.gold < amount) return false;

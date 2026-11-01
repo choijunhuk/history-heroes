@@ -134,7 +134,7 @@ namespace HistoryHeroes.Tests
         [Test]
         public void PrivacyVersion2_AsksPlayersWhoAgreedToVersion1Again()
         {
-            Assert.AreEqual(2, Consent.PrivacyVersion, "계정 · 클라우드 저장을 넣으며 개인정보 처리방침을 고쳤다");
+            Assert.GreaterOrEqual(Consent.PrivacyVersion, 2, "계정 · 클라우드 저장을 넣으며 개인정보 처리방침을 고쳤다 (결제로 3판)");
             SaveData save = SaveStore.NewGame();
             Consent.Accept(save, DateTime.UtcNow);
             save.consent.privacyVersion = 1;

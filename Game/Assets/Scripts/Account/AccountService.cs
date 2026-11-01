@@ -303,6 +303,11 @@ namespace HistoryHeroes.Account
 
                 if (choice == Choice.Device)
                 {
+                    if (!KeepCloudPurchases(cloud))
+                    {
+                        await BackToGuest("저장하지 못했어요. 기기 저장 공간을 확인하고 다시 해 주세요");
+                        return;
+                    }
                     await FinishWithDevice(provider);
                     return;
                 }
@@ -401,13 +406,21 @@ namespace HistoryHeroes.Account
             return ChooseProgress(title, info, AccountSummary.From(SaveSystem.Data), AccountSummary.From(cloud.Data));
         }
 
-        /// <summary>클라우드 진행으로 바꾼다: 이 기기 진행은 백업(.run1 · .bak)으로 남는다 (해시 · 구조 옮기기는 Parse가 이미 했다)</summary>
+        /// <summary>클라우드 진행으로 바꾼다: 이 기기 진행은 백업(.run1 · .bak)으로 남는다 (해시 · 구조 옮기기는 Parse가 이미 했다).
+        /// 이 기기에서만 한 결제(보석 · 장부 · 첫 구매 2배 · 패키지)는 클라우드 진행에 옮겨 담는다 — 진짜 돈으로 산 것은 사라지면 안 된다</summary>
         private static bool ApplyCloud(CloudCopy cloud)
         {
+            Economy.IapLedger.MergeInto(cloud.Data, SaveSystem.Data);
             if (!SaveSystem.Replace(cloud.Data)) return false;
             SetSynced(cloud.Meta?.uploadId);
             _cloudChanged = false;
             return true;
+        }
+
+        /// <summary>"이 기기 진행"을 골라도 클라우드에만 있는 결제는 이 기기 저장에 옮겨 담고 저장한다 (그다음 올리기가 클라우드를 덮는다). 저장 실패면 false</summary>
+        private static bool KeepCloudPurchases(CloudCopy cloud)
+        {
+            return cloud?.Data == null || Economy.IapLedger.MergeInto(SaveSystem.Data, cloud.Data) == 0 || SaveSystem.Save();
         }
 
         /// <summary>
@@ -449,6 +462,12 @@ namespace HistoryHeroes.Account
 
                 if (choice == Choice.Device)
                 {
+                    if (!KeepCloudPurchases(cloud))
+                    {
+                        _conflictDeferred = true;
+                        Set(AccountState.Linked, "저장하지 못했어요. 기기 저장 공간을 확인하고 다시 해 주세요");
+                        return;
+                    }
                     Set(AccountState.Linked, null);
                     _cloudChanged = true;
                     bool ok = await UploadAsync(true, overwrite: true);

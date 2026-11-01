@@ -1,0 +1,8 @@
+<!-- IL2CPP 코드 줄이기가 지우지 않게 남겨 둘 것.
+     GooglePlayTangle(영수증 검사 키)은 IapService가 이름으로만 찾아서 줄이기가 "안 쓰는 코드"로 보고 지울 수 있다.
+     키를 만들기 전에는 이 형식이 없다 (없는 형식은 링커가 건너뛴다). -->
+<linker>
+  <assembly fullname="HistoryHeroes.Runtime" ignoreIfMissing="1">
+    <type fullname="UnityEngine.Purchasing.Security.GooglePlayTangle" preserve="all" />
+  </assembly>
+</linker>

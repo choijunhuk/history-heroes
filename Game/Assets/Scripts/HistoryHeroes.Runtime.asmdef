@@ -11,7 +11,11 @@
         "Unity.Services.Core",
         "Unity.Services.Core.Environments",
         "Unity.Services.Authentication",
-        "Unity.Services.CloudSave"
+        "Unity.Services.CloudSave",
+        "Unity.Purchasing",
+        "Unity.Purchasing.SecurityCore",
+        "Unity.Purchasing.Security",
+        "Unity.Purchasing.SecurityStub"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

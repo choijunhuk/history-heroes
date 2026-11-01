@@ -20,7 +20,8 @@ namespace HistoryHeroes.Records
         /// <summary>10: 미확정 기록·불굴 사용 여부·판 시작 룬을 함께 보관한다.</summary>
         /// <summary>11: 기능 첫 사용 안내를 본 이력. 옛 저장은 아직 안 본 상태로 시작한다.</summary>
         /// <summary>12: 첫 실행 동의 기록 (약관·개인정보 버전, 동의 시각, 만 14세 확인). 옛 저장은 동의 기록이 없어 다음 로비에서 한 번 묻는다.</summary>
-        public const int CurrentSchemaVersion = 12;
+        /// <summary>13: 실제 결제 기록 (거래 번호별 지급 내역 · 첫 구매 2배를 쓴 상품 · 첫 결제 패키지). 옛 저장은 결제한 적 없음으로 시작한다.</summary>
+        public const int CurrentSchemaVersion = 13;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -148,6 +149,8 @@ namespace HistoryHeroes.Records
         public bool godsTeaserSeen;
         /// <summary>신의 시련 첫 격파·주간 조각 목표. 기존 보스 별과는 별개다.</summary>
         public GodTrialSave godTrials = new GodTrialSave();
+        /// <summary>실제 결제로 받은 것 (Economy.IapLedger). 거래 번호로 두 번 지급을 막고, 환불·문의 때 무엇을 줬는지 본다</summary>
+        public PurchaseSave purchases = new PurchaseSave();
 
         public int ItemCount(string itemId)
         {
@@ -922,6 +925,40 @@ namespace HistoryHeroes.Records
             this.level = level;
             this.fusion = fusion;
         }
+    }
+
+    /// <summary>실제 결제 장부 (구조 13). 클라우드 저장에 같이 올라가므로 연결한 계정은 기기를 바꿔도 따라간다</summary>
+    [Serializable]
+    public sealed class PurchaseSave
+    {
+        /// <summary>지급을 끝낸 거래 (지운 적 없음 — 청약철회 계산이 구매별 유료분·무료분을 본다)</summary>
+        public List<PurchaseEntry> ledger = new List<PurchaseEntry>();
+        /// <summary>첫 구매 2배를 이미 받은 보석 상품 ID (상품마다 계정당 1회)</summary>
+        public List<string> firstBought = new List<string>();
+        /// <summary>첫 결제 패키지를 받았다 (계정당 1회)</summary>
+        public bool starterClaimed;
+    }
+
+    /// <summary>거래 하나로 지급한 것. transactionId = 구글 구매 토큰 (가짜 상점은 무작위 GUID)</summary>
+    [Serializable]
+    public sealed class PurchaseEntry
+    {
+        public string transactionId;
+        public string productId;
+        /// <summary>지급한 시각 (UTC, ISO 8601)</summary>
+        public string utc;
+        public int paidGems;
+        /// <summary>보너스 + 첫 구매분 (무료분)</summary>
+        public int freeGems;
+        public int tickets;
+        public int gold;
+        /// <summary>이 거래에서 첫 구매 2배를 받았다</summary>
+        public bool firstBonus;
+        /// <summary>구글 환불이 확인됐다 / 결제가 취소(차지백 등)됐다. 아직 쓰는 곳 없음 — 회수를 넣을 때 구조를 또 올리지 않게 미리 둔다</summary>
+        public bool refunded;
+        public bool voided;
+
+        public PurchaseEntry Copy() => (PurchaseEntry)MemberwiseClone();
     }
 
     /// <summary>동의한 약관·개인정보 처리방침 버전과 시각. 버전이 0이면 동의한 적 없음.</summary>
