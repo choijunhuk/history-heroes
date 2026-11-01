@@ -71,10 +71,10 @@
 
 ### 서버 결제 검증 켜기
 
-> 🤖 이미 한 것 (2026-11-01): Cloud Code C# 모듈 `HistoryHeroesServer`를 UGS 프로젝트 `4c301e37-…` **production** 환경에 배포함 (결제 확인 · 서버 확정 · 환불 정리 · 계정 삭제 보관). 코드: `Server/CloudCode/HistoryHeroes.Server/` · 게임 쪽 `Game/Assets/Scripts/Economy/PurchaseServer.cs` · 설계 [Monetization 7-1](../Design/Monetization.md#7-1-구현-상태-2026-11-01-1차) · 리뷰 반영 [2026-11-01-server-purchase-review](../Reviews/2026-11-01-server-purchase-review.md).
+> 🤖 이미 한 것 (2026-11-01): Cloud Code C# 모듈 `HistoryHeroesServer`를 UGS 프로젝트 `4c301e37-…` **production** 환경에 배포함 (결제 확인 · 서버 확정 · 환불 정리 · 계정 삭제 보관 · 정리 작업 `RunMaintenance`). 코드: `Server/CloudCode/HistoryHeroes.Server/` · 게임 쪽 `Game/Assets/Scripts/Economy/PurchaseServer.cs` · 설계 [Monetization 7-1](../Design/Monetization.md#7-1-구현-상태-2026-11-01-1차) · 리뷰 반영 [2026-11-01-server-purchase-review](../Reviews/2026-11-01-server-purchase-review.md).
 > ✅ 1~4 · 6번 끝 (2026-11-01): Google Cloud 프로젝트 · **Google Play Android Developer API 켬** · 서비스 계정 `play-purchase-verifier@reflected-agent-466110-f5.iam.gserviceaccount.com` · JSON 키 → UGS Secret Manager `GOOGLE_PLAY_SERVICE_ACCOUNT`. `QaTools.ServerCheck()` = `준비=True`, 가짜 토큰 `invalid google_404:applicationNotFound` (Play Console 앱이 아직 없어서 — 정상).
 > 🔴 **서비스 계정 키(JSON)는 비밀이다.** 저장소 · 채팅 · 메일에 붙이지 않는다. 내려받은 파일은 지운다 (잃어버리면 새 키를 만들면 된다).
-> 예약 실행(UGS Scheduler)은 쓰지 않는다: 환불 정리 · 보관본 지우기는 게임이 부르는 `GetPurchases`에 10분 간격으로 얹었다 (에디터에서 예약을 배포할 수 없어서). 설정할 것 없음.
+> 🔴 **정리 작업 예약 (아래 10번)을 출시 전에 만든다.** 확정 못 한 토큰 3일 뒤 지우기 · 환불 회수 · 보관본 5년 뒤 지우기를 접속과 상관없이 돌리는 장치다 (개인정보 처리방침 1 · 3장이 이걸 약속한다). 만들기 전에는 게임이 부르는 `GetPurchases`에 얹은 10분 간격 대비 경로만 돈다. Scheduler · Triggers 패키지를 새로 넣지 않으려고 대시보드에서 만든다.
 
 1. ✅ **Google Cloud 프로젝트** + 2. ✅ **Google Play Android Developer API 켜기** + 3. ✅ **서비스 계정** + 4. ✅ **JSON 키** (Cloud Console → IAM 및 관리자 → 서비스 계정 → 키 → 새 키 → JSON).
 5. 👤 **Play Console에 초대 (남음 — 앱을 만든 뒤):** Play Console → **사용자 및 권한** → 새 사용자 초대 → 이메일 `play-purchase-verifier@reflected-agent-466110-f5.iam.gserviceaccount.com` → 앱 권한에 History Heroes 추가 → 권한: **재무 데이터, 주문, 취소 설문조사 응답 보기** (구매 확인 · 환불 목록) + **주문 및 구독 관리** (서버 확정 acknowledge) → 사용자 초대. (구글 안내: [Play Developer API 시작하기](https://developers.google.com/android-publisher/getting_started)) 권한이 퍼지는 데 몇 시간 ~ 하루 — 그동안 검증은 `retry`(401/403)로 답하고 결제는 남겨 두었다가 다시 묻는다.
@@ -82,5 +82,15 @@
 7. 🤖 **확인:** 에디터 Play → 동의 → 게스트 로그인 뒤 `unity command eval` 로 `QaTools.ServerCheck()` → 잠시 뒤 `QaTools.ServerCheckResult()`. 5번이 끝나면 가짜 토큰이 `invalid google_400:…`(또는 `google_404:purchaseTokenNotFound` 같은 토큰 이유)로 바뀐다. `google_404:applicationNotFound`면 앱 · 패키지 이름이 아직 없고, `retry google_auth_…` · `google_401/403`이면 5번 권한이 아직 안 퍼졌거나 키가 틀렸다.
 8. 👤 + 🤖 **라이선스 테스터로 실제 결제 시험** (내부 테스트 트랙, 위 "결제 켜기" 4 · 6번 뒤): 보석 상품 하나를 사서 ① 보석이 들어오고 ② 다시 열어도 두 번 들어오지 않고 ③ 같은 상품을 한 번 더 사면 첫 구매 2배가 빠지고 ④ 첫 결제 패키지를 두 번 사면 두 번째는 "계정당 1번" 안내 + 3일 안 자동 환불 ⑤ Unity 대시보드 → Cloud Code → Logs에 `지급 … 테스트 True 확정 True` ⑥ Cloud Save → 플레이어 → Protected `purchases`의 그 결제 `acknowledged: true`이고 `ackToken`이 없음 ⑦ Play Console → 주문 관리에서 테스트 주문을 **환불**하고 10분쯤 뒤 게임을 다시 열면 "환불 · 취소된 결제 … 회수했어요" + 보석이 그만큼 줄고(모자라면 음수 · 상자 잠김) 장부에 `voided: true`인지 본다.
 9. 🤖 **모듈을 고쳤을 때 다시 배포:** 유니티 메뉴 **Services → Deployment** → 창 위 환경이 `production`인지 확인 → `Assets/CloudCode/HistoryHeroesServer.ccmr` 고르기 → **Deploy Selected** (코드로는 `Deployments.Instance.DeploymentWindow` — 창을 연 뒤 `Deploy(GetFromFiles(...))`). 필요한 것: .NET 9 SDK (맥 `/usr/local/share/dotnet/dotnet`, 윈도우는 `dotnet`이 PATH에 — 경로는 Preferences → Cloud Code). 상품표(`IapCatalog.cs`)를 고쳐도 서버가 같은 파일을 쓰므로 **꼭 다시 배포**한다. Deployment 창이 `ProjectSettings.asset`에 `cloudServicesEnabled: Purchasing: 0`을 쓰면 되돌린다.
+
+10. 👤 **정리 작업 예약 만들기 (Unity 대시보드, production 환경):**
+    1. [cloud.unity.com](https://cloud.unity.com) → 프로젝트 History Heroes → **Triggers** (또는 **Products → Triggers**) → **Schedules** → 환경 **production** → **New schedule**.
+    2. **Details:** Name `iap-maintenance` · Event name `iap-maintenance` (이름에서 자동으로 채워진다 — 글자 그대로인지 확인) · 종류 **Recurring** → **Expression** → `*/10 * * * *` (UTC, 10분마다) · Firing window: Start immediately · Run indefinitely → Next.
+    3. **Payload:** `{}` → **Create**. (만든 뒤에는 고칠 수 없다 — 틀리면 지우고 다시)
+    4. **Triggers** → **New trigger** → Name `iap-maintenance-run` → 원천 **Schedule** → Next.
+    5. **When this happens:** **Add Schedule** → `iap-maintenance` 고르기 (필터 없음). 설정 파일로 보면 eventType = `com.unity.services.scheduler.iap-maintenance.v1`.
+    6. **Do this:** **Add Action** → **Cloud Code** → 모듈 `HistoryHeroesServer` → 함수 `RunMaintenance` (= actionUrn `urn:ugs:cloud-code:HistoryHeroesServer/RunMaintenance`) → **Confirm**.
+    7. 확인: 10분쯤 뒤 대시보드 → Cloud Code → Logs에 `정리 작업: 환불 표시 … · 확정 대기 정리 … · 보관본 지움 …` 줄이 보이면 된다. (`RunMaintenance`는 플레이어가 부르면 `forbidden`으로 거절하고, 1분 안에 두 번 돌면 `skipped`)
+    8. (선택) 플레이어가 이 함수를 아예 부르지 못하게 하려면 대시보드 → Access Control → 프로젝트 정책에 Principal `Player` · Effect `Deny` · Resource `urn:ugs:cloud-code:/v1/projects/*/modules/HistoryHeroesServer/RunMaintenance` · Action `*`를 더한다 (함수 안에서도 이미 거절한다).
 
 아직 없는 것: 보석 잔액 · 쓰기의 서버 기준 · 회수 안내 우편 — [Monetization 7-1](../Design/Monetization.md#7-1-구현-상태-2026-11-01-1차).

@@ -9,6 +9,8 @@ namespace HistoryHeroes.Server;
 public sealed class PurchaseList
 {
     public const string Ok = "ok";
+    /// <summary>계정 삭제로 닫힌 플레이어 (게임은 계정 삭제를 마저 하게 안내한다)</summary>
+    public const string Closed = "closed";
 
     [JsonProperty("status")] public string Status { get; set; } = Ok;
     [JsonProperty("configured")] public bool Configured { get; set; }

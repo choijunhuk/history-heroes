@@ -326,6 +326,45 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void KeepDevice_ClawbackOnlyMerge_IsSavedBeforeUpload_UploadedFileHasClawback()
+        {
+            // "이 기기 진행"을 골랐다: 다른 쪽(클라우드)에서 회수된 결제가 이 기기에는 아직 그대로 → 회수만 일어나도 저장해야 올리는 파일에 들어간다 (2차 리뷰 E)
+            PurchaseServer.Purchase bought = Server("gems_t2", "tok", 500, 550, true);
+            IapLedger.ApplyServer(SaveSystem.Data, bought, "tok", out _);
+            Assert.IsTrue(SaveSystem.Save());
+            var cloud = new SaveData();
+            IapLedger.ApplyServer(cloud, bought, "tok", out _);
+            IapLedger.MergeServer(cloud, new[] { Server("gems_t2", "tok", 500, 550, true, voided: true) });
+
+            Assert.IsTrue(Account.AccountService.KeepPurchases(cloud));
+            Assert.IsTrue(Account.AccountService.ReadUploadFile(out string json, out SaveData uploaded));
+            Assert.AreEqual(0, Wallet.Gems(uploaded), "올리는 파일에 회수가 들어 있다");
+            Assert.IsTrue(uploaded.purchases.ledger.Single().voided);
+            StringAssert.Contains("\"voided\": true", json);
+            Assert.AreEqual(0, IapLedger.MergeInto(SaveSystem.Data, cloud), "한 번 회수한 뒤로는 바뀐 게 없다");
+        }
+
+        [Test]
+        public void Upload_RawTokenFile_IsMigratedAndSavedFirst_NeverUploadsRawToken()
+        {
+            // 옛 저장 파일(구매 토큰 원문 거래 번호): 읽을 때 메모리에서만 바뀐다 → 올리기 전에 바꾼 모양으로 저장하고 그 파일을 올린다 (2차 리뷰 Y1)
+            var old = new SaveData { gemsPaid = 100 };
+            old.purchases.ledger.Add(new PurchaseEntry { transactionId = "raw-token", productId = "gems_t1", paidGems = 100 });
+            Directory.CreateDirectory(_folder);
+            var store = new SaveStore(_folder);
+            File.WriteAllText(store.MainPath, SaveStore.Serialize(old));
+            SaveSystem.Use(store);
+            Assert.AreEqual(IapLedger.IdOf("raw-token"), SaveSystem.Data.purchases.ledger[0].transactionId, "메모리는 이미 바뀌었다");
+            StringAssert.Contains("raw-token", File.ReadAllText(store.MainPath), "파일은 아직 옛 모양");
+
+            Assert.IsTrue(Account.AccountService.ReadUploadFile(out string json, out SaveData uploaded));
+            StringAssert.DoesNotContain("raw-token", json);
+            StringAssert.Contains(IapLedger.IdOf("raw-token"), json);
+            StringAssert.DoesNotContain("raw-token", File.ReadAllText(store.MainPath), "올리기 전에 디스크에도 저장됐다");
+            Assert.AreEqual(100, uploaded.gemsPaid);
+        }
+
+        [Test]
         public void SaveLoad_MigratesRawTokenIdsToHashes()
         {
             var d = new SaveData();

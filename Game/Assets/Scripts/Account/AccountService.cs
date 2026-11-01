@@ -280,9 +280,13 @@ namespace HistoryHeroes.Account
             PlayerPrefs.Save();
             try
             {
-                // 지금 게스트 플레이어는 클라우드에 올린 게 없다 (게스트는 이 기기에만 저장). 다른 계정으로 들어가면 되찾을 수 없으니 지우고 들어간다
+                // 지금 게스트 플레이어는 클라우드에 올린 게 없다 (게스트는 이 기기에만 저장). 다른 계정으로 들어가면 되찾을 수 없으니 지우고 들어간다.
+                // 지우는 계정은 언제나 서버 결제 장부를 먼저 보관하고 닫는다 (계정 삭제와 같은 길 — 이 기기의 결제는 이 기기 저장에 그대로 남는다).
+                // 보관이 실패하면 지우지 않고 로그아웃만 한다 (장부가 지운 계정 밑에 남지 않게)
                 try
                 {
+                    string archived = await Economy.PurchaseServer.ArchiveAndDeleteAsync();
+                    if (archived != "ok") throw new InvalidOperationException("결제 기록 보관 실패: " + (archived ?? "빈 답"));
                     await auth.DeleteAccountAsync();
                 }
                 catch (Exception e)
@@ -442,10 +446,15 @@ namespace HistoryHeroes.Account
             return true;
         }
 
-        /// <summary>"이 기기 진행"을 골라도 클라우드에만 있는 결제는 이 기기 저장에 옮겨 담고 저장한다 (그다음 올리기가 클라우드를 덮는다). 저장 실패면 false</summary>
-        private static bool KeepCloudPurchases(CloudCopy cloud)
+        private static bool KeepCloudPurchases(CloudCopy cloud) => KeepPurchases(cloud?.Data);
+
+        /// <summary>
+        /// "이 기기 진행"을 골라도 다른 쪽에만 있는 결제는 이 기기 저장에 옮겨 담고, 다른 쪽에서 회수한 결제는 여기서도 회수한 뒤 **올리기 전에 저장**한다
+        /// (올리기는 디스크 파일을 그대로 보낸다 — 메모리만 바꾸면 회수 전 글이 올라간다). 바뀐 게 없으면 저장하지 않는다. 저장 실패면 false
+        /// </summary>
+        public static bool KeepPurchases(SaveData other)
         {
-            return cloud?.Data == null || Economy.IapLedger.MergeInto(SaveSystem.Data, cloud.Data) == 0 || SaveSystem.Save();
+            return other == null || Economy.IapLedger.MergeInto(SaveSystem.Data, other) == 0 || SaveSystem.Save();
         }
 
         /// <summary>
@@ -554,7 +563,7 @@ namespace HistoryHeroes.Account
             if (_conflictDeferred && seen == null) return false;
             double now = Time.realtimeSinceStartupAsDouble;
             if (!AccountRules.ShouldUpload(State, ChoicePending, _cloudChanged || SaveSystem.IsDirty, force, now, _lastUpload)) return false;
-            if (!SaveSystem.SaveIfDirty() || !ReadSavedFile(out string json, out SaveData saved)) return false;
+            if (!SaveSystem.SaveIfDirty() || !ReadUploadFile(out string json, out SaveData saved)) return false;
 
             _uploading = true;
             _cloudChanged = false;
@@ -634,7 +643,27 @@ namespace HistoryHeroes.Account
             return false;
         }
 
-        /// <summary>본 저장 파일 글 + 그 글을 읽은 데이터 (요약용). 파일이 없거나 못 읽으면 false</summary>
+        /// <summary>
+        /// 올릴 글: 본 저장 파일 글 + 그 글을 읽은 데이터 (요약용). 파일이 없거나 못 읽으면 false.
+        /// 파일에 옛 모양(구매 토큰 원문 거래 번호)이 남아 있으면 — 읽을 때 메모리에서만 바뀐 것 — 지금 메모리(바꾼 모양)로 먼저 저장하고 다시 읽는다.
+        /// 그래서 옮기기를 거치지 않은 파일은 올라가지 않는다
+        /// </summary>
+        public static bool ReadUploadFile(out string json, out SaveData saved)
+        {
+            if (!ReadSavedFile(out json, out saved)) return false;
+            if (FileMatchesParsed(json, saved)) return true;
+            Debug.Log("[Account] 저장 파일에 옛 거래 번호가 남아 먼저 다시 저장한 뒤 올림");
+            return SaveSystem.Save() && ReadSavedFile(out json, out saved) && FileMatchesParsed(json, saved);
+        }
+
+        /// <summary>파일 글에 읽은 데이터의 거래 번호가 그대로 들어 있나 (읽을 때 바꾼 칸이 없나)</summary>
+        private static bool FileMatchesParsed(string json, SaveData saved)
+        {
+            foreach (PurchaseEntry e in saved.purchases.ledger)
+                if (!json.Contains("\"" + e.transactionId + "\"")) return false;
+            return true;
+        }
+
         private static bool ReadSavedFile(out string json, out SaveData saved)
         {
             json = null;

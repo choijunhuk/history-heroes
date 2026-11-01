@@ -103,6 +103,7 @@ Codex 점수: 전체 4 · UI 3.5 · 전투 가독성 4 · 뽕맛 4.5 · 스토�
 | | 진짜 광고 SDK (LevelPlay) | 👤 계정 + 🤖 연결 |
 | | 인앱 결제 켜기: 🤖 코드는 됨 (2026-11-01, 보석 6 + 첫 결제 패키지, 가짜 상점 시험) → 👤 결제 프로필 · 상품 7개 등록 · 라이선스 키로 영수증 검사 키(Tangle) 만들기 ([출시 점검표 3장](Release/GooglePlay-Checklist.md)) | 👤 |
 | | 결제 서버 검증: 🤖 2026-11-01 됨 (Cloud Code `HistoryHeroesServer` production — 확인 · 서버 확정 · 환불 회수 · 계정 삭제 보관, 교차 리뷰 반영) · 비밀값 등록됨 → 👤 Play Console 앱을 만든 뒤 서비스 계정 초대 ([출시 점검표 3장 "서버 결제 검증 켜기"](Release/GooglePlay-Checklist.md#서버-결제-검증-켜기) 5번) | 👤 |
+| ⭐ | 정리 작업 예약 만들기 (대시보드 Triggers → Schedules `iap-maintenance` `*/10 * * * *` + Trigger → `HistoryHeroesServer/RunMaintenance`) — 출시 전 필수 ([출시 점검표 3장 10번](Release/GooglePlay-Checklist.md#서버-결제-검증-켜기)) | 👤 |
 | | 보석 쓰기 · 회수를 서버로 · 회수 안내 우편 · 나머지 상품 (영웅 · 성장 패키지, 월정액, 시즌 패스, 광고 제거) | 🤖 |
 | | 개인정보 처리방침 · 이용약관 공개 주소 | 👤 |
 | | Google Play "자동 보호" 등 앱 보호 설정 확인 | 👤 |

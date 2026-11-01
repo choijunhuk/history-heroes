@@ -48,6 +48,7 @@ namespace HistoryHeroes.Economy
         public const string PendingText = "결제가 아직 끝나지 않았어요. 결제가 끝나면 들어와요.";
         public const string NotPaidText = "무료 결제(프로모션 코드 · 보상형)는 이 게임에서 지급하지 않아요. 확정하지 않아 3일 안에 자동으로 취소돼요.";
         public const string VoidedText = "환불 · 취소된 결제라서 지급하지 않았어요.";
+        public const string ClosedAccountText = "계정 삭제가 끝나지 않았어요. 설정 → 계정 → 계정 삭제를 다시 눌러 마무리해 주세요. 그때까지 결제는 할 수 없어요.";
         /// <summary>막 산 결제를 구글이 아직 모른다고(404) 하면 이 시간 동안은 "확인 중"으로 다시 묻는다 (구글 쪽 반영이 늦을 수 있다)</summary>
         public static readonly TimeSpan JustBoughtWindow = TimeSpan.FromMinutes(10);
         /// <summary>확정(소비) 실패를 이만큼 다시 하면 멈춘다 — 다음 실행에 상점이 다시 보내면 그때 또 (끝없이 돌지 않게)</summary>
@@ -491,6 +492,14 @@ namespace HistoryHeroes.Economy
             {
                 PurchaseServer.Ledger ledger = await PurchaseServer.GetPurchasesAsync();
                 if (session != _session || ledger == null || player != Account.AccountService.PlayerId) return;
+                if (ledger.status == PurchaseServer.Closed)
+                {
+                    // 계정 삭제 도중 멈췄다 (서버는 이 계정을 이미 닫았다): 팔지 않고 삭제를 마저 하게 안내한다
+                    Debug.LogWarning("[IAP] 서버가 닫은 계정 (계정 삭제가 끝나지 않음)");
+                    Say(ClosedAccountText);
+                    return;
+                }
+
                 if (ledger.status != null && ledger.status != "ok")
                 {
                     Debug.LogWarning($"[IAP] 서버 장부를 받지 못함 ({ledger.status}, 다음에 다시)");

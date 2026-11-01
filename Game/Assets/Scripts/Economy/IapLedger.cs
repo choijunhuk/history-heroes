@@ -214,7 +214,7 @@ namespace HistoryHeroes.Economy
         /// <summary>
         /// 저장을 통째로 바꾸기 전에(클라우드 진행 고르기) 다른 쪽에만 있는 결제를 옮겨 담는다 — 진짜 돈으로 산 것은 어느 진행을 골라도 줄지 않는다 (LiveOps 3-2).
         /// target 장부에 없는 거래만 더하고 그 거래로 받은 보석 · 소환권 · 골드를 target에 다시 준다. 첫 구매 2배 · 패키지 받음은 합친다. 몇 번 불러도 두 번 주지 않는다.
-        /// 돌려주는 값: 옮긴 거래 수
+        /// 돌려주는 값: 바꾼 거래 수 (옮긴 것 + 여기서도 회수한 것) — 0이 아니면 부르는 쪽이 저장한다
         /// </summary>
         public static int MergeInto(SaveData target, SaveData source)
         {
@@ -227,7 +227,13 @@ namespace HistoryHeroes.Economy
                 PurchaseEntry existing = Find(target, e.transactionId);
                 if (existing != null)
                 {
-                    if (e.voided) ClawBack(target, existing); // 한쪽에서 회수한 결제는 고른 쪽에서도 회수한다 (되살리지 않는다)
+                    // 한쪽에서 회수한 결제는 고른 쪽에서도 회수한다 (되살리지 않는다) — 바뀐 것으로 센다 (부르는 쪽이 저장하게)
+                    if (e.voided && !existing.voided)
+                    {
+                        ClawBack(target, existing);
+                        added++;
+                    }
+
                     continue;
                 }
                 if (!e.refunded && !e.voided)

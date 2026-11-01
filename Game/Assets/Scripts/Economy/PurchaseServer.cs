@@ -25,6 +25,8 @@ namespace HistoryHeroes.Economy
         public const string Voided = "voided";
         public const string NotConfigured = "not_configured";
         public const string Retry = "retry";
+        /// <summary>GetPurchases의 status: 계정 삭제로 서버가 닫은 플레이어 (그 뒤 결제 함수는 모두 거절)</summary>
+        public const string Closed = "closed";
 
         /// <summary>서버 장부의 결제 한 건 = 지급할 것</summary>
         [Serializable]
@@ -88,7 +90,8 @@ namespace HistoryHeroes.Economy
 
         /// <summary>
         /// 계정 삭제 직전 (AccountService.DeleteAsync): 서버 결제 장부를 보관본(되돌릴 수 없는 ID, 5년 뒤 지움)으로 옮기고 장부 · 색인을 지운다.
-        /// 돌려주는 값: "ok"면 끝. 그 밖은 실패 — 계정 삭제를 멈추고 다시 하게 한다 (장부가 지운 계정 밑에 남지 않게)
+        /// 서버는 그 뒤 이 플레이어를 닫는다 (되돌릴 수 없음 — 결제 · 장부 받기 모두 거절). 그래서 계정을 지우는 길에서만 부른다 (설정의 계정 삭제, 카카오 계정으로 바꿀 때 지우는 게스트).
+        /// 돌려주는 값: "ok"면 끝 (이미 닫혔어도 ok). 그 밖은 실패 — 계정 삭제를 멈추고 다시 하게 한다 (장부가 지운 계정 밑에 남지 않게)
         /// </summary>
         public static async Task<string> ArchiveAndDeleteAsync()
         {
