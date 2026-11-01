@@ -36,10 +36,10 @@ namespace HistoryHeroes.Economy
         public static bool Available(SaveData d, IapCatalog.Item item) => !item.OncePerAccount || !d.purchases.starterClaimed;
 
         /// <summary>
-        /// 지금 팔아도 되나: 계정당 1번 상품은 계정 동기화가 끝났을 때만 (클라우드를 맞추기 전의 오래된 장부로는 "아직 안 받음"을 믿을 수 없다).
-        /// 보석 상품은 늘 판다 (Codex 교차 리뷰 2026-11-01 3번)
+        /// 지금 팔아도 되나: 계정 동기화가 끝났을 때만 (클라우드를 맞추기 전의 오래된 장부로는 계정당 1번 상품의 "아직 안 받음"도,
+        /// 보석의 첫 구매 2배도 믿을 수 없다 — Codex 교차 리뷰 2026-11-01 3번, 재확인에서 보석 2배 경로까지 막음). 게스트는 늘 맞춰진 상태다
         /// </summary>
-        public static bool Sellable(SaveData d, IapCatalog.Item item, bool syncSettled) => Available(d, item) && (!item.OncePerAccount || syncSettled);
+        public static bool Sellable(SaveData d, IapCatalog.Item item, bool syncSettled) => Available(d, item) && syncSettled;
 
         /// <summary>첫 구매 2배를 약속해도 되나 (배지 · 확인 창). 동기화가 안 끝났으면 약속하지 않는다 — 실제 지급이 2배면 더 받을 뿐</summary>
         public static bool FirstBonusShown(SaveData d, IapCatalog.Item item, bool syncSettled) => syncSettled && FirstBonusLeft(d, item);

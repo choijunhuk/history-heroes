@@ -587,7 +587,17 @@ namespace HistoryHeroes.Account
                         [MetaKey] = new SaveItem(metaJson, target.MetaLock),
                     });
                     if (target.SaveLock == null || target.MetaLock == null)
-                        conflict = (await LoadCloud(false)).Meta?.uploadId != meta.uploadId; // 처음 만들기 경쟁: 다른 기기가 나중에 썼다
+                    {
+                        // 처음 만들기: Cloud Save에는 "없을 때만 만들기"가 없다 (SaveItem 주석: 새로 만들 때는 lock을 비운다).
+                        // 쓴 뒤 바로 한 번, 3초 뒤 한 번 더 읽어 둘 다 내 번호일 때만 맞춘 것으로 친다.
+                        // ponytail: 그래도 남는 아주 짧은 동시 생성 틈은 다음 업로드의 번호 검사(CloudChangedElsewhere)가 잡아 고르기 창을 연다 — 이 기기 저장은 지우지 않는다. 완전히 막으려면 서버(Cloud Code) 생성 함수
+                        conflict = (await LoadCloud(false)).Meta?.uploadId != meta.uploadId;
+                        if (!conflict)
+                        {
+                            await Task.Delay(3000);
+                            conflict = (await LoadCloud(false)).Meta?.uploadId != meta.uploadId;
+                        }
+                    }
 
                     if (!conflict)
                     {

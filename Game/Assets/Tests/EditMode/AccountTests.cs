@@ -374,7 +374,8 @@ namespace HistoryHeroes.Tests
 
             Assert.IsTrue(Economy.IapLedger.Sellable(d, starter, true));
             Assert.IsFalse(Economy.IapLedger.Sellable(d, starter, false), "동기화 전에는 계정당 1번 상품을 안 판다");
-            Assert.IsTrue(Economy.IapLedger.Sellable(d, gems, false), "보석은 그대로 판다");
+            Assert.IsFalse(Economy.IapLedger.Sellable(d, gems, false), "동기화 전에는 보석도 안 판다 (첫 구매 2배를 오래된 장부로 판정하지 않게)");
+            Assert.IsTrue(Economy.IapLedger.Sellable(d, gems, true));
 
             Assert.IsTrue(Economy.IapLedger.FirstBonusShown(d, gems, true));
             Assert.IsFalse(Economy.IapLedger.FirstBonusShown(d, gems, false), "2배 배지는 동기화 뒤에만");
