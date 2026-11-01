@@ -20,6 +20,9 @@ public interface IPurchaseStore
     /// <summary>[머리를 읽은 lock으로 "닫힘" + 닫힘 표시] 한 batch (그 뒤 옛 lock을 든 batch는 모두 거절, 머리가 닫히면 표시도 반드시 있다). 충돌이면 false</summary>
     Task<bool> TryCloseHeadAsync(IExecutionContext context, string playerId, string headLock, DateTime utcNow, CancellationToken ct);
 
+    /// <summary>이 플레이어 protected 키 수 (머리 · 결제 · 예약 · 닫힘 표시 — Cloud Save 플레이어당 키 한도를 본다)</summary>
+    Task<int> CountProtectedKeysAsync(IExecutionContext context, string playerId, CancellationToken ct);
+
     /// <summary>이 플레이어의 결제 전부 (키 p_*)</summary>
     Task<List<PurchaseRecord>> LoadPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct);
 

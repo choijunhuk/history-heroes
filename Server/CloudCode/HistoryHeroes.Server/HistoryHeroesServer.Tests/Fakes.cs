@@ -39,6 +39,8 @@ internal sealed class FakeStore : IPurchaseStore
     public readonly HashSet<string> Closed = new();
     /// <summary>옛 배포가 private에 쓴 닫힘 표시</summary>
     public readonly HashSet<string> LegacyClosed = new();
+    /// <summary>플레이어당 protected 키 한도 (넘는 새 키 쓰기는 Cloud Save처럼 실패)</summary>
+    public int KeyLimit = int.MaxValue;
     /// <summary>저장소 호출마다 (부른 호출의 컨텍스트) — 두 호출을 한 줄로 번갈아 돌리는 시험용</summary>
     public Action<IExecutionContext>? OnOp;
     /// <summary>닫힘 표시 쓰기가 실패한다 (서버 장애 흉내)</summary>
@@ -83,6 +85,15 @@ internal sealed class FakeStore : IPurchaseStore
     private Dictionary<string, (string json, string writeLock)> P(string player) =>
         Protected.TryGetValue(player, out var d) ? d : Protected[player] = new Dictionary<string, (string, string)>();
 
+    /// <summary>protected 키 수 (닫힘 표시 포함)</summary>
+    public int KeyCount(string player = Make.Player) => P(player).Count + (Closed.Contains(player) ? 1 : 0);
+
+    /// <summary>새 키를 쓸 칸이 있나 (없으면 Cloud Save처럼 실패)</summary>
+    private void Room(string player, bool newKey)
+    {
+        if (newKey && KeyCount(player) >= KeyLimit) throw new InvalidOperationException("key_limit");
+    }
+
     public List<string> ReservedOf(string player = Make.Player) => P(player).Keys.Where(k => k.StartsWith("r_")).Select(k => k[2..]).ToList();
 
     private async Task Gate(CancellationToken ct)
@@ -117,9 +128,16 @@ internal sealed class FakeStore : IPurchaseStore
         return P(playerId).TryGetValue("iap_head", out var head) ? (head.writeLock, marked || head.json.Contains("\"s\":\"closed\"")) : (null, marked);
     }
 
+    public Task<int> CountProtectedKeysAsync(IExecutionContext context, string playerId, CancellationToken ct)
+    {
+        OnOp?.Invoke(context);
+        return Task.FromResult(KeyCount(playerId));
+    }
+
     public Task CreateHeadAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
         OnOp?.Invoke(context);
+        Room(playerId, !P(playerId).ContainsKey("iap_head"));
         ResetHead(playerId);
         Writes.Add((playerId, "iap_head", false));
         return Task.CompletedTask;
@@ -130,6 +148,7 @@ internal sealed class FakeStore : IPurchaseStore
         OnOp?.Invoke(context);
         BeforeCloseHead?.Invoke(this);
         if (!P(playerId).TryGetValue("iap_head", out var head) || head.writeLock != headLock) return Task.FromResult(false);
+        Room(playerId, !Closed.Contains(playerId));
         P(playerId)["iap_head"] = (HeadJson("closed", closed: true), NewLock()); // [머리 + 표시] 한 batch
         Closed.Add(playerId);
         Writes.Add((playerId, "iap_head", true));
@@ -155,6 +174,7 @@ internal sealed class FakeStore : IPurchaseStore
         OnOp?.Invoke(context);
         if (BeforeAdd != null && BeforeAdd(this)) return Task.FromResult(false);
         if (!P(playerId).TryGetValue("iap_head", out var head) || head.writeLock != headLock) return Task.FromResult(false);
+        Room(playerId, !P(playerId).ContainsKey("p_" + record.TokenHash));
         P(playerId)["iap_head"] = (HeadJson(record.TokenHash), NewLock());
         P(playerId)["p_" + record.TokenHash] = (Ser(record), NewLock());
         Writes.Add((playerId, "p_" + record.TokenHash, true));
@@ -165,6 +185,7 @@ internal sealed class FakeStore : IPurchaseStore
     {
         OnOp?.Invoke(context);
         if (!P(playerId).TryGetValue("iap_head", out var head) || head.writeLock != headLock) return Task.FromResult(false);
+        Room(playerId, !P(playerId).ContainsKey("r_" + tokenHash));
         P(playerId)["iap_head"] = (HeadJson("r:" + tokenHash), NewLock());
         P(playerId)["r_" + tokenHash] = ("true", NewLock());
         Writes.Add((playerId, "r_" + tokenHash, true));
@@ -225,6 +246,7 @@ internal sealed class FakeStore : IPurchaseStore
     {
         OnOp?.Invoke(context);
         if (CloseError != null) throw CloseError;
+        Room(playerId, !Closed.Contains(playerId));
         Closed.Add(playerId);
         return Task.CompletedTask;
     }

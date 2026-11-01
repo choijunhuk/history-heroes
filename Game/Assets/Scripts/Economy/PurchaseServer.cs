@@ -24,6 +24,8 @@ namespace HistoryHeroes.Economy
         /// <summary>지급했던 결제가 환불 · 취소됐다 → 지급하지 않고, 이 기기에 있으면 회수</summary>
         public const string Voided = "voided";
         public const string NotConfigured = "not_configured";
+        /// <summary>이 계정의 서버 장부 칸이 거의 찼다 → 지급 · 확정 안 함 (구글이 환불), 문의 안내</summary>
+        public const string Limit = "limit";
         public const string Retry = "retry";
         /// <summary>GetPurchases의 status: 계정 삭제로 서버가 닫은 플레이어 (그 뒤 결제 함수는 모두 거절)</summary>
         public const string Closed = "closed";

@@ -37,6 +37,11 @@ namespace HistoryHeroes.Account
         /// 고르기가 끝나기 전에 꺼지면 다음 실행은 **그 계정 세션 그대로** 고르기를 다시 연다 — 새 게스트를 만들지 않는다 (그 계정 진행이 게스트로 새지 않게)
         /// </summary>
         private const string SwitchTargetKey = "hh.account.switchTarget";
+        /// <summary>
+        /// 계정 삭제 중 (값 = 지우는 플레이어 ID). 서버 단계(카카오 연결 끊기 · 결제 보관 · 클라우드 지우기 · 계정 지우기) 전에 남긴다 — 도중에 꺼지면
+        /// 다음 실행은 저장을 읽기 전에 이 기기 진행을 지우고(SaveSystem.WipeOnNextLoad), 로그인 전에 서버 단계를 마저 한 뒤에만 새 게스트를 만든다
+        /// </summary>
+        private const string DeleteIntentKey = "hh.account.deleteIntent";
         /// <summary>+ UGS 플레이어 ID: 이 기기가 마지막으로 올리거나 받은 클라우드 저장의 올린 번호</summary>
         private const string SyncedKeyPrefix = "hh.account.synced.";
 
@@ -169,6 +174,12 @@ namespace HistoryHeroes.Account
                     await UnityServices.InitializeAsync(new InitializationOptions().SetEnvironmentName(EnvironmentName));
 
                 IAuthenticationService auth = AuthenticationService.Instance;
+                if (PlayerPrefs.HasKey(DeleteIntentKey) && !await ResumeDeletionAsync(auth))
+                {
+                    Set(AccountState.Offline, "계정 삭제를 마무리하지 못했어요. 인터넷을 확인해 주세요 (다음에 이어서 지워요)");
+                    return;
+                }
+
                 SyncSwitching(); // 바꾸기가 끝나지 않았으면 로그인되자마자 결제를 묻지 않게
                 if (auth.IsSignedIn && auth.IsExpired) auth.SignOut();
                 if (ChoicePending && !auth.IsSignedIn && !auth.SessionTokenExists)
@@ -958,6 +969,10 @@ namespace HistoryHeroes.Account
             try
             {
                 IAuthenticationService auth = AuthenticationService.Instance;
+                // 서버 단계 전에 삭제를 남긴다: 이 뒤 어디서 꺼져도 다음 실행은 이 기기 진행을 읽기 전에 지우고 삭제를 마저 한다
+                PlayerPrefs.SetString(DeleteIntentKey, auth.PlayerId ?? string.Empty);
+                PlayerPrefs.Save();
+                SaveSystem.WipeOnNextLoad(true);
                 PlayerInfo info = auth.PlayerInfo;
                 try
                 {
@@ -983,6 +998,7 @@ namespace HistoryHeroes.Account
                         $"{p.DisplayName} 연결 끊기를 건너뛰고 삭제");
                     if (!skip)
                     {
+                        AbortDeletion();
                         Set(before, "계정 삭제를 그만뒀어요");
                         return;
                     }
@@ -999,6 +1015,7 @@ namespace HistoryHeroes.Account
             catch (Exception e)
             {
                 Debug.LogWarning("[Account] 계정 삭제 실패: " + e.Message);
+                AbortDeletion(); // 계정이 남았다 → 이 기기 진행도 그대로 (다시 지우면 이어서 된다)
                 Set(before, e is RequestFailedException r ? AccountRules.ErrorText(r.ErrorCode, r.Message) : "지우지 못했어요. 잠시 뒤에 다시 해 주세요");
                 return;
             }
@@ -1014,8 +1031,60 @@ namespace HistoryHeroes.Account
             _cloudChecked = false;
             // 지우기 표시를 먼저 남기고 지운다. 실패해도 옛 진행은 메모리에 남지 않고, 로비는 막히며 다음 실행에서 이어서 지운다
             if (!SaveSystem.ResetToNewGame()) Debug.LogError("[Account] 계정은 지웠지만 이 기기 진행을 다 지우지 못함 (다음 실행에서 이어서): " + SaveSystem.LastError);
+            else
+            {
+                PlayerPrefs.DeleteKey(DeleteIntentKey); // 서버 · 이 기기 모두 지웠다 (못 지웠으면 다음 실행이 지운 뒤 표시를 지운다)
+                PlayerPrefs.Save();
+            }
             Set(AccountState.Connecting, null); // 로비가 동의를 다시 받은 뒤 Start()가 새 게스트를 만든다
             Common.GameSession.ToLobby();
+        }
+
+        private static void AbortDeletion()
+        {
+            PlayerPrefs.DeleteKey(DeleteIntentKey);
+            PlayerPrefs.Save();
+            SaveSystem.WipeOnNextLoad(false);
+        }
+
+        /// <summary>
+        /// 지난 실행이 계정 삭제 도중 꺼졌다 (이 기기 진행은 저장을 읽을 때 이미 지웠다). 로그인 전에: 남은 세션이 그 계정이면 서버 단계를 마저 하고
+        /// (카카오 연결 끊기는 건너뛴다 — 카카오톡 설정에서 끊을 수 있다), 세션이 없거나 서버가 거절하면(지운 계정) 표시만 지운다.
+        /// 서버에 못 닿으면 false — 표시를 남기고 새 게스트를 만들지 않는다 (다음에 다시)
+        /// </summary>
+        private static async Task<bool> ResumeDeletionAsync(IAuthenticationService auth)
+        {
+            string target = PlayerPrefs.GetString(DeleteIntentKey, string.Empty);
+            bool session = auth.IsSignedIn || auth.SessionTokenExists;
+            bool rejected = false;
+            if (session && !auth.IsSignedIn)
+            {
+                try
+                {
+                    await auth.SignInAnonymouslyAsync(); // 남은 세션 그대로 (새 게스트가 아니다)
+                }
+                catch (RequestFailedException e) when (e.ErrorCode == AuthenticationErrorCodes.InvalidSessionToken)
+                {
+                    rejected = true; // 지운 계정의 세션 (SDK가 지웠다)
+                }
+            }
+
+            AccountRules.DeletionStep step = AccountRules.DecideDeletionResume(target, session, auth.IsSignedIn ? auth.PlayerId : null, rejected);
+            Debug.Log($"[Account] 계정 삭제 이어 받기: {step}");
+            if (step == AccountRules.DeletionStep.FinishRemote)
+            {
+                if (await Economy.PurchaseServer.ArchiveAndDeleteAsync() != "ok") return false;
+                await CloudSaveService.Instance.Data.Player.DeleteAllAsync();
+                await auth.DeleteAccountAsync();
+            }
+
+            PlayerPrefs.DeleteKey(SyncedKeyPrefix + target);
+            PlayerPrefs.DeleteKey(SwitchPrepKey);
+            PlayerPrefs.DeleteKey(SwitchTargetKey);
+            PlayerPrefs.DeleteKey(DeleteIntentKey);
+            PlayerPrefs.Save();
+            SyncSwitching();
+            return true;
         }
 
         // ------------------------------------------------------------------ 수명

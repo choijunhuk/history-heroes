@@ -123,6 +123,9 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
 
     private static JObject Marker(DateTime utcNow) => new() { ["utc"] = utcNow.ToString("o") };
 
+    public async Task<int> CountProtectedKeysAsync(IExecutionContext context, string playerId, CancellationToken ct) =>
+        (await AllPagesAsync(after => _api.CloudSaveData.GetProtectedItemsAsync(context, context.ServiceToken, context.ProjectId, playerId, null!, after!, ct))).Count;
+
     public async Task<List<PurchaseRecord>> LoadPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
         List<Item> items = await AllPagesAsync(after => _api.CloudSaveData.GetProtectedItemsAsync(

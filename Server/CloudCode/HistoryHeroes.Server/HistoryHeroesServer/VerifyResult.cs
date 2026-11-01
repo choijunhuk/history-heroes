@@ -15,6 +15,8 @@ public sealed class VerifyResult
     public const string Voided = "voided";
     /// <summary>서버에 구글 서비스 계정 비밀값이 아직 없다 → 지급 · 확정 안 함</summary>
     public const string NotConfigured = "not_configured";
+    /// <summary>이 플레이어의 서버 장부 칸(Cloud Save 플레이어당 2,000키)이 거의 찼다 → 지급 · 확정 안 함 (구글이 환불), 게임은 문의 안내</summary>
+    public const string Limit = "limit";
     /// <summary>구글 · 저장소가 잠시 안 됨 → 게임은 결제를 남겨 두고 나중에 다시 묻는다</summary>
     public const string Retry = "retry";
 

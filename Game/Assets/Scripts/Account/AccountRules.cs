@@ -116,6 +116,25 @@ namespace HistoryHeroes.Account
             return server.purchases != null && server.purchases.Count > 0;
         }
 
+        /// <summary>계정 삭제가 끝나기 전에 앱이 꺼졌을 때 다음 실행이 할 일 (이 기기 진행은 저장을 읽기 전에 이미 지웠다 — SaveSystem.WipeOnNextLoad)</summary>
+        public enum DeletionStep
+        {
+            /// <summary>삭제 표시 없음</summary>
+            Nothing,
+            /// <summary>그 계정이 아직 있다 (세션으로 들어왔다) → 서버 단계를 마저 (결제 보관 · 클라우드 지우기 · 계정 지우기)</summary>
+            FinishRemote,
+            /// <summary>서버 쪽은 끝났다 (세션이 지워짐 · 서버가 세션을 거절 = 지운 계정 · 다른 플레이어) → 표시만 지우고 새 게스트로</summary>
+            Done,
+        }
+
+        /// <summary>intent: 지우던 플레이어 ID, sessionExists: 이 기기에 세션이 남았나, current: 그 세션으로 들어온 플레이어, sessionRejected: 서버가 세션을 거절했나</summary>
+        public static DeletionStep DecideDeletionResume(string intent, bool sessionExists, string current, bool sessionRejected)
+        {
+            if (intent == null) return DeletionStep.Nothing;
+            if (!sessionExists || sessionRejected) return DeletionStep.Done;
+            return current == intent ? DeletionStep.FinishRemote : DeletionStep.Done;
+        }
+
         /// <summary>이 기기 장부에 결제가 하나라도 있나 (있으면 이미 다른 진행이 있는 카카오 계정으로 바꾸지 않는다 — LiveOps 3-2)</summary>
         public static bool HasPurchases(SaveData d) => d?.purchases?.ledger != null && d.purchases.ledger.Count > 0;
 

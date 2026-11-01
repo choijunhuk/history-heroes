@@ -17,6 +17,8 @@ namespace HistoryHeroes.Records
         private static bool _recheckCloud;
         /// <summary>계정 삭제 뒤 이 기기 진행을 아직 다 못 지웠다 (Play 중에는 PlayerPrefs에도 → 다시 켜면 이어서 지운다)</summary>
         private static bool _wipePending;
+        /// <summary>계정 삭제를 시작했다: 다음에 저장을 읽을 때 옛 진행을 읽지 않고 지운다 (지금 메모리 · 저장은 그대로). 표시는 지우기 표시와 같은 PlayerPrefs 키</summary>
+        private static bool _wipeOnLoad;
 
         private const string RecheckCloudKey = "hh.save.recheckCloud";
         private const string WipePendingKey = "hh.save.wipePending";
@@ -97,6 +99,19 @@ namespace HistoryHeroes.Records
 
         public const string WipeFailedText = "계정은 지웠지만 이 기기의 진행을 아직 다 지우지 못했어요. 저장 공간을 확인한 뒤 게임을 다시 열어 주세요 (열 때 이어서 지워요).";
 
+        /// <summary>
+        /// 계정 삭제를 시작한다 (서버 단계 전에): 서버 단계 도중 앱이 꺼지면 다음 실행은 저장을 읽기 전에 이 기기 진행 · 백업을 지우고 새 게임으로 시작한다
+        /// (지운 계정의 진행 · 유료 보석 · 결제 장부가 새 게스트에게 가지 않게). 지금 메모리 · 저장은 그대로. 삭제를 그만두면 false.
+        /// </summary>
+        public static void WipeOnNextLoad(bool on)
+        {
+            _wipeOnLoad = on;
+            if (!Application.isPlaying) return;
+            if (on) PlayerPrefs.SetInt(WipePendingKey, 1);
+            else if (!_wipePending) PlayerPrefs.DeleteKey(WipePendingKey); // 끝나지 않은 지우기가 있으면 그 표시는 둔다
+            PlayerPrefs.Save();
+        }
+
         /// <summary>표시를 메모리와 (Play 중이면) PlayerPrefs에 같이 둔다. EditMode 테스트는 에디터 PlayerPrefs를 건드리지 않는다</summary>
         private static void SetFlag(ref bool field, string key, bool on)
         {
@@ -122,7 +137,7 @@ namespace HistoryHeroes.Records
                 if (_data == null)
                 {
                     SaveLifecycle.Ensure();
-                    if (_wipePending || Flag(WipePendingKey))
+                    if (_wipePending || _wipeOnLoad || Flag(WipePendingKey))
                     {
                         // 지운 계정의 진행은 메모리에도 다시 읽지 않는다. 남은 파일을 지우고 새 게임으로 (실패하면 표시가 남아 저장이 막힌다)
                         _wipePending = true;
@@ -157,6 +172,7 @@ namespace HistoryHeroes.Records
             _dirty = false;
             _recheckCloud = false;
             _wipePending = false;
+            _wipeOnLoad = false;
             LastError = null;
         }
 
@@ -249,6 +265,7 @@ namespace HistoryHeroes.Records
             }
 
             SetFlag(ref _wipePending, WipePendingKey, false);
+            _wipeOnLoad = false;
             LastError = null;
             return true;
         }
@@ -284,6 +301,7 @@ namespace HistoryHeroes.Records
             _dirty = false;
             _recheckCloud = false;
             _wipePending = false;
+            _wipeOnLoad = false;
             LastError = null;
             Saved = null;
         }

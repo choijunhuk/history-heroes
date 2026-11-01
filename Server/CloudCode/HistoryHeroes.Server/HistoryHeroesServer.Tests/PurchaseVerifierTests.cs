@@ -891,7 +891,7 @@ public sealed class PurchaseVerifierTests
         // 양쪽 순서로, 한쪽이 멈추는 모든 저장소 호출 위치 × 다른 쪽이 멈추는 모든 위치에서 돌린다 (늦은 머리 만들기가 닫힌 머리를 덮는 순서 포함)
         int runs = 0;
         foreach (bool verifyFirst in new[] { true, false })
-        for (int a = 1; a <= 26; a++)
+        for (int a = 1; a <= 28; a++)
         for (int b = 1; b <= 12; b++)
         {
             var store = new FakeStore();
@@ -921,7 +921,7 @@ public sealed class PurchaseVerifierTests
             runs++;
         }
 
-        Assert.That(runs, Is.EqualTo(2 * 26 * 12));
+        Assert.That(runs, Is.EqualTo(2 * 28 * 12));
     }
 
     [Test]
@@ -958,6 +958,51 @@ public sealed class PurchaseVerifierTests
         Assert.That((await _verifier.GetPurchasesAsync(_player)).Status, Is.EqualTo(PurchaseList.Closed));
         Assert.That((await _verifier.CloseForSwitchAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
         Assert.That(_store.Closed, Does.Contain(Make.Player));
+    }
+
+    [Test]
+    public async Task NearKeyLimit_NewPurchaseRefusedWithLimit_ArchiveStillCloses()
+    {
+        // 8차 🟡: 플레이어당 키 한도 — 예약 + 결제 두 칸을 더하면 여유 칸(SpareKeys)을 침범할 때부터 limit (지급 · 확정 안 함)
+        _store.KeyLimit = 20;
+        var verifier = new PurchaseVerifier(_store, _google, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, () => _now) { KeyLimit = 20 };
+        int granted = 0;
+        VerifyResult last;
+        do
+        {
+            last = await verifier.VerifyAsync(_player, "gems_t1", "t" + granted);
+            if (last.Status == VerifyResult.Granted) granted++;
+        } while (last.Status == VerifyResult.Granted && granted < 50);
+
+        Assert.That((last.Status, last.Reason), Is.EqualTo((VerifyResult.Limit, "key_limit")));
+        Assert.That(_store.KeyCount() + 2, Is.GreaterThan(20 - PurchaseVerifier.SpareKeys), "여유 칸을 지켰다");
+        Assert.That(_store.KeyCount(), Is.LessThanOrEqualTo(20 - PurchaseVerifier.SpareKeys));
+        Assert.That(_google.Acks, Has.None.EqualTo("t" + granted), "거절한 결제는 확정하지 않는다");
+        Assert.That((await verifier.ArchiveAndDeleteAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok), "표시 칸이 남아 계정 삭제가 된다");
+        Assert.That(_store.Closed, Does.Contain(Make.Player));
+    }
+
+    [Test]
+    public async Task SaturatedOldAccount_ArchiveFreesGrantedReservations_ThenCloses()
+    {
+        // 옛 배포에서 한도까지 찬 계정: 머리 + 결제 9 + 예약 10(지급된 9 + 지급 안 된 1) = 20칸 → 표시를 쓸 칸이 없다
+        _store.KeyLimit = 20;
+        var verifier = new PurchaseVerifier(_store, _google, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, () => _now) { KeyLimit = 20 };
+        for (int i = 0; i < 9; i++)
+        {
+            string hash = PurchaseVerifier.Hash("old" + i);
+            _store.AddDirect(Make.Record("old" + i, "gems_t1"));
+            _store.Protected[Make.Player]["r_" + hash] = ("true", "x" + i);
+        }
+
+        string ungranted = PurchaseVerifier.Hash("pending");
+        _store.Protected[Make.Player]["r_" + ungranted] = ("true", "xp");
+        Assert.That(_store.KeyCount(), Is.EqualTo(20));
+
+        Assert.That((await verifier.ArchiveAndDeleteAsync(_player)).Status, Is.EqualTo(PurchaseList.Ok));
+        Assert.That(_store.Closed, Does.Contain(Make.Player));
+        Assert.That(_store.Archives.Values.Single().json, Does.Contain(PurchaseVerifier.Hash("old0")), "결제는 보관본으로");
+        Assert.That(_store.ReservedOf(), Is.EqualTo(new[] { ungranted }), "지급되지 않은 예약은 마무리를 위해 남긴다");
     }
 
     [Test]

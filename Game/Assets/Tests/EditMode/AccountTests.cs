@@ -458,6 +458,64 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void DeletionInterrupted_AtAnyStep_NextLaunchWipesBeforeUse_NewGuestNeverGetsOldData()
+        {
+            // 8차 🔴: 계정 B 삭제 — 삭제 표시는 서버 단계(카카오 연결 끊기 · 결제 보관 · 클라우드 지우기 · 계정 지우기 · 세션 지우기) 전에 남는다.
+            // 어느 단계 뒤에 꺼져도 다음 실행은 저장을 읽기 전에 이 기기 진행 · 백업을 지우고 새 게임으로 (동의부터 다시)
+            var store = new SaveStore(_folder);
+            SaveData b = Progressed(9, 999, 50, 40, 200);
+            b.purchases.ledger.Add(new PurchaseEntry { transactionId = "sha256:b", productId = "gems_t4", paidGems = 2750 });
+            store.Save(b);
+            store.RotateRunBackups();
+            store.Save(b); // 본 파일 + .bak + 판 백업
+
+            SaveSystem.Use(store);
+            Assert.AreEqual(9, SaveSystem.Data.unlockedChapter);
+            SaveSystem.WipeOnNextLoad(true); // 삭제 시작 (서버 단계 전)
+            Assert.AreEqual(9, SaveSystem.Data.unlockedChapter, "지금 실행의 메모리는 그대로");
+            Assert.IsFalse(SaveSystem.WipePending, "지금 실행은 막히지 않는다");
+
+            // 다음 실행: 표시가 남은 채 저장을 처음 읽는다 (실제로는 PlayerPrefs)
+            SaveSystem.Use(new SaveStore(_folder));
+            SaveSystem.WipeOnNextLoad(true);
+            SaveData next = SaveSystem.Data;
+            SaveData fresh = SaveStore.NewGame();
+            Assert.AreEqual((fresh.unlockedChapter, 0, 0), (next.unlockedChapter, next.gemsPaid, next.purchases.ledger.Count), "B 진행 · 유료 보석 · 결제 장부 없음");
+            Assert.IsTrue(Consent.NeedsConsent(next), "동의부터 다시");
+            Assert.IsFalse(SaveSystem.WipePending, "지우기를 끝냈다");
+            foreach (string file in Directory.GetFiles(_folder))
+                StringAssert.DoesNotContain("sha256:b", File.ReadAllText(file), "백업에도 B가 남지 않는다: " + Path.GetFileName(file));
+            Assert.AreEqual(fresh.unlockedChapter, new SaveStore(_folder).Load().unlockedChapter);
+        }
+
+        [Test]
+        public void DeletionCancelledOrFailed_ProgressKept()
+        {
+            var store = new SaveStore(_folder);
+            store.Save(Progressed(9, 999, 50, 40, 200));
+            SaveSystem.Use(store);
+            _ = SaveSystem.Data;
+            SaveSystem.WipeOnNextLoad(true);
+            SaveSystem.WipeOnNextLoad(false); // 연결 끊기 그만둠 · 서버 단계 실패 → 계정이 남았다
+            SaveSystem.Use(new SaveStore(_folder));
+            Assert.AreEqual(9, SaveSystem.Data.unlockedChapter);
+        }
+
+        [Test]
+        public void DeletionResume_EachStep()
+        {
+            const string b = "player-b";
+            Assert.AreEqual(AccountRules.DeletionStep.Nothing, AccountRules.DecideDeletionResume(null, true, b, false));
+            // 연결 끊기 · 결제 보관 · 클라우드 지우기 뒤 꺼짐: 그 계정이 아직 있다 → 서버 단계를 마저
+            Assert.AreEqual(AccountRules.DeletionStep.FinishRemote, AccountRules.DecideDeletionResume(b, true, b, false));
+            // 계정 지우기(서버)는 됐는데 세션을 지우기 전 꺼짐: 서버가 세션을 거절 → 끝남
+            Assert.AreEqual(AccountRules.DeletionStep.Done, AccountRules.DecideDeletionResume(b, true, null, true));
+            // 세션까지 지운 뒤 꺼짐
+            Assert.AreEqual(AccountRules.DeletionStep.Done, AccountRules.DecideDeletionResume(b, false, null, false));
+            Assert.AreEqual(AccountRules.DeletionStep.Done, AccountRules.DecideDeletionResume(b, true, "someone-else", false));
+        }
+
+        [Test]
         public void SwitchPrep_NeverDeletesALinkedOrUnverifiedAccount()
         {
             // 7차 2: 정리 표시가 남은 채 그 게스트에 새 카카오 계정을 연결했다 (같은 플레이어 ID) → 다음 정리가 그 계정을 지우면 안 된다

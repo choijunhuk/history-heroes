@@ -39,6 +39,7 @@ namespace HistoryHeroes.Economy
         public static event Action<string> Notice;
 
         public const string UnavailableText = "상점에 연결할 수 없어요";
+        public const string LimitText = "이 계정의 결제 기록이 너무 많아 더 결제할 수 없어요. 이번 결제는 확정하지 않아 구글이 자동으로 환불해요. 문의해 주세요 (choijunhuk2007@gmail.com, 사용자 ID 함께).";
         public const string NotReadyText = "결제 확인 준비 중이에요. 이번 결제는 확정하지 않아서 3일 안에 자동으로 환불돼요.";
         public const string InvalidReceiptText = "결제를 확인하지 못해서 지급하지 않았어요. 확정하지 않은 결제는 3일 안에 자동으로 환불돼요. 계속되면 문의해 주세요.";
         public const string CheckingText = "결제 확인 중이에요. 확인되면 바로 들어와요 (인터넷 연결을 확인해 주세요).";
@@ -453,6 +454,9 @@ namespace HistoryHeroes.Economy
                     return null;
                 case PurchaseServer.NotConfigured:
                     notice = NotReadyText;
+                    return null;
+                case PurchaseServer.Limit:
+                    notice = LimitText;
                     return null;
             }
 

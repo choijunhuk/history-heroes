@@ -40,6 +40,14 @@ public sealed class PurchaseVerifier
     /// <summary>결제 기록이 끝내 생기지 않은 확정 대기(지급 전에 실패)는 이만큼 뒤 지운다</summary>
     public static readonly TimeSpan OrphanAckAge = TimeSpan.FromHours(1);
     private static readonly TimeSpan VoidedOverlap = TimeSpan.FromHours(1);
+    /// <summary>Cloud Save 플레이어당 키 한도 (공식 2,000 — protected 장부: 머리 · 결제 · 예약 · 닫힘 표시)</summary>
+    public const int PlayerKeyLimit = 2000;
+    /// <summary>새 예약은 이만큼 칸을 남기고만 받는다 (닫힘 표시 · 머리를 언제든 쓸 수 있게)</summary>
+    public const int SpareKeys = 10;
+
+    /// <summary>시험용으로 줄일 수 있는 키 한도 (기본 = PlayerKeyLimit)</summary>
+    public int KeyLimit { get; init; } = PlayerKeyLimit;
+
     /// <summary>계정을 닫은 뒤 이만큼 지나면 마무리(늦게 남은 색인 칸 익명화 · 예약 목록 지우기)를 한다 — 진행 중이던 어떤 호출도(15초 한도) 끝났을 시간</summary>
     public static readonly TimeSpan ClosingGrace = TimeSpan.FromHours(1);
     /// <summary>구글이 받는 가장 오래된 startTime은 30일 전</summary>
@@ -122,6 +130,13 @@ public sealed class PurchaseVerifier
             // → ② 색인(토큰 → 이 플레이어, 없을 때만) → ③ 확정 대기(토큰 원문, 서버 전용). 예약이 있어 지급이 안 된 토큰도 계정을 지울 때 색인에서 플레이어 ID를 지운다
             if (owner == null)
             {
+                // 칸 여유: 예약(r_) + 결제(p_) 두 칸을 더해도 닫힘 표시 등 여유 칸이 남을 때만 (넘치면 계정 삭제가 표시를 못 써 막힌다)
+                if (await _store.CountProtectedKeysAsync(context, playerId, ct) + 2 > KeyLimit - SpareKeys)
+                {
+                    _log.LogWarning("서버 장부 칸이 거의 참 → 지급 안 함 {Tag}", tag);
+                    return VerifyResult.Of(VerifyResult.Limit, "key_limit");
+                }
+
                 for (int attempt = 1; ; attempt++)
                 {
                     // 머리 lock과 함께 읽은 닫힘(표시 포함)을 보고, 옛 private 표시도 본다 (닫기는 "표시 → 머리" 또는 [머리 + 표시] 한 batch)
@@ -358,6 +373,7 @@ public sealed class PurchaseVerifier
     /// </summary>
     private async Task CloseForPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
+        await EnsureRoomForMarkerAsync(context, playerId, ct);
         await _store.CloseAsync(context, playerId, _utcNow(), ct);
         for (int attempt = 0; attempt < MaxAttempts; attempt++)
         {
@@ -366,6 +382,19 @@ public sealed class PurchaseVerifier
         }
 
         throw new InvalidOperationException("head_close");
+    }
+
+    /// <summary>
+    /// 닫힘 표시를 쓸 칸이 없으면(옛 배포에서 장부가 한도까지 찬 계정) 지급된 결제의 예약 칸(r_ — 결제 키 p_가 있으면 보관 · 익명화는 결제 키로 한다)을 지워 칸을 만든다.
+    /// 지급되지 않은 예약은 남긴다 (마무리가 색인을 다시 본다)
+    /// </summary>
+    private async Task EnsureRoomForMarkerAsync(IExecutionContext context, string playerId, CancellationToken ct)
+    {
+        if (await _store.CountProtectedKeysAsync(context, playerId, ct) < KeyLimit) return;
+        HashSet<string> granted = (await _store.LoadPurchasesAsync(context, playerId, ct)).Select(p => p.TokenHash).ToHashSet();
+        List<string> redundant = (await _store.ListReservedAsync(context, playerId, ct)).Where(granted.Contains).ToList();
+        _log.LogWarning("장부 칸이 가득 참 → 지급된 결제의 예약 {Count}칸을 지우고 닫는다", redundant.Count);
+        await _store.DeleteReservedAsync(context, playerId, redundant, ct);
     }
 
     /// <summary>
