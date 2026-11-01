@@ -22,6 +22,12 @@ namespace HistoryHeroes.Enemy
         public float DashLength => dashSpeed * dashDuration;
         public float HitRadius => hitRadius * transform.localScale.x;
 
+        /// <summary>
+        /// 돌진은 접촉이 돌진 시작 0.25초쯤 뒤 → 타격이 그보다 늦은 느린 동작(졸개의 할퀴기 0.44초)만 그 차이만큼 예고 안에서 먼저 시작한다.
+        /// 빠른 동작(후려치기 0.16초)은 돌진 시작에 맞춰 그대로
+        /// </summary>
+        protected override float StrikeLead(float impact) => Mathf.Max(0f, impact - 0.25f);
+
         protected override void Tick()
         {
             switch (state)

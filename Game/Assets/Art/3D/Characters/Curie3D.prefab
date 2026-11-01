@@ -1044,7 +1044,7 @@ Transform:
   - {fileID: 6957109653357356083}
   m_Father: {fileID: 5264753161243701720}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2509334218043934500
+--- !u!1 &2425252233539517368
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1052,9 +1052,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 264835820477801394}
-  - component: {fileID: 4473811011721092968}
-  - component: {fileID: 1550286411766342966}
+  - component: {fileID: 8731363176696037806}
+  - component: {fileID: 539586528724406778}
+  - component: {fileID: 6036310418663479871}
   m_Layer: 0
   m_Name: Curie_Flask
   m_TagString: Untagged
@@ -1062,13 +1062,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &264835820477801394
+--- !u!4 &8731363176696037806
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2509334218043934500}
+  m_GameObject: {fileID: 2425252233539517368}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0.7071067, z: 0.0000007902532, w: -0.0000005840208}
   m_LocalPosition: {x: -1.4555001, y: -0.7064872, z: 0.06539937}
@@ -1077,21 +1077,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 3058433784264909809}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &4473811011721092968
+--- !u!33 &539586528724406778
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2509334218043934500}
+  m_GameObject: {fileID: 2425252233539517368}
   m_Mesh: {fileID: -2870499656184464607, guid: 4891fef8327974cbab58d40da5c5c8fa, type: 3}
---- !u!23 &1550286411766342966
+--- !u!23 &6036310418663479871
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2509334218043934500}
+  m_GameObject: {fileID: 2425252233539517368}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -1899,7 +1899,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 264835820477801394}
+  - {fileID: 8731363176696037806}
   m_Father: {fileID: 7700872610548210886}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5859202566576290462
@@ -3350,6 +3350,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Model3DInfo
   height: 1.8759253
   castShadows: 1
+  attackImpact: 0.13
+  attackSpeed: 1.4
 --- !u!1 &9108951062580028427
 GameObject:
   m_ObjectHideFlags: 0

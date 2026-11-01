@@ -128,6 +128,11 @@ namespace HistoryHeroes.Enemy
         {
         }
 
+        /// <summary>보스는 예고 루틴(CircleStrikes · ArcStrike · Glow · Summon)이 PreStrike를 직접 부른다</summary>
+        protected override void TickPreStrike()
+        {
+        }
+
         private IEnumerator Loop()
         {
             while (true)
@@ -184,6 +189,7 @@ namespace HistoryHeroes.Enemy
             {
                 float t = (bossTime - start) / Mathf.Max(0.01f, telegraph);
                 foreach (SpriteRenderer m in markers) Telegraphs.Fill(m, c, t);
+                PreStrike(start + telegraph - bossTime);
                 yield return null;
             }
 
@@ -277,6 +283,7 @@ namespace HistoryHeroes.Enemy
                 fan.transform.position = Pos;
                 fan.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg);
                 Telegraphs.Fill(fan, Telegraphs.Danger, (bossTime - start) / Mathf.Max(0.01f, telegraph));
+                PreStrike(start + telegraph - bossTime);
                 yield return null;
             }
 
@@ -349,6 +356,7 @@ namespace HistoryHeroes.Enemy
                 Color c = color;
                 c.a = color.a * (0.6f + 0.4f * Mathf.Sin(bossTime * 18f));
                 glow.color = c;
+                PreStrike(start + seconds - bossTime);
                 yield return null;
             }
 
@@ -396,7 +404,13 @@ namespace HistoryHeroes.Enemy
 
             var marks = new List<SpriteRenderer>();
             foreach (Vector2 p in points) marks.Add(Show(Telegraphs.Circle(p, 0.55f, Telegraphs.Summon)));
-            yield return Wait(telegraph);
+            float summonEnd = bossTime + telegraph;
+            while (bossTime < summonEnd)
+            {
+                PreStrike(summonEnd - bossTime);
+                yield return null;
+            }
+
             foreach (SpriteRenderer m in marks) HideShown(m);
             if (ChildSpawner == null) yield break;
             foreach (Vector2 p in points)

@@ -231,7 +231,7 @@ namespace HistoryHeroes.EditorTools
             // 긴 머리와 검, 청록·남색 옷으로 구별한다. 시험 형상도 이 모델을 쓴다.
             new Look { name = "Susanoo", body = "Male_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = new Color(0.48f, 0.88f, 0.84f), hide = new[] { "Male_Ranger_Head_Hood" }, hair = new[] { "Hair_Long", "Eyebrows" }, hairColor = new Color(0.08f, 0.12f, 0.17f), attack = "Sword_Regular_A", props = new[] { "Susanoo_Sword" } },
             // 투구는 여자 몸에 맞춘 소품이다. 방패는 소품별 크기 조절을 지원하기 전까지 생략한다.
-            new Look { name = "Athena", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = new Color(0.95f, 0.91f, 0.78f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.67f, 0.45f, 0.24f), hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.18f, 0.12f, 0.08f), attack = "Sword_Regular_A", props = new[] { "Athena_Spear", "Athena_Helmet" } },
+            new Look { name = "Athena", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_Navy_BaseColor", tint = new Color(0.95f, 0.91f, 0.78f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.67f, 0.45f, 0.24f), hair = new[] { "Hair_Buns", "Eyebrows_Female" }, hairColor = new Color(0.18f, 0.12f, 0.08f), attack = "Punch_Cross", props = new[] { "Athena_Spear", "Athena_Helmet" } },
             // 토모에는 군기문학의 궁수 모습에서 영감을 받은 각색이다. 말이나 장병기는 쓰지 않는다.
             new Look { name = "Tomoe", female = true, body = "Female_Ranger", bodyTex = "T_Ranger_BaseColor", tint = new Color(0.86f, 0.47f, 0.4f), hide = new[] { "Female_Ranger_Head_Hood" }, metalParts = new[] { "Female_Ranger_Acc_Pauldrons", "Female_Ranger_Arms_Bracer" }, metalColor = new Color(0.48f, 0.3f, 0.2f), hair = new[] { "Hair_Long", "Eyebrows_Female" }, hairColor = new Color(0.04f, 0.035f, 0.04f), props = new[] { "Yi_Bow", "Khan_Quiver", "Tomoe_Sode_L", "Tomoe_Sode_R" } },
             // 무측천의 관식은 별도 소품을 쓰고, 긴 황제 예복은 만들지 않는다.
@@ -468,6 +468,7 @@ namespace HistoryHeroes.EditorTools
             c.AddParameter("Attack", AnimatorControllerParameterType.Trigger);
             c.AddParameter("Hit", AnimatorControllerParameterType.Trigger);
             c.AddParameter("Dead", AnimatorControllerParameterType.Bool);
+            c.AddParameter(new AnimatorControllerParameter { name = "AttackSpeed", type = AnimatorControllerParameterType.Float, defaultFloat = 1.4f }); // 공격 동작 재생 속도 (Visual3D가 모델 정보대로 넣는다)
             AnimatorState move = c.CreateBlendTreeInController("Move", out BlendTree tree, 0);
             tree.blendParameter = "Speed";
             tree.AddChild(Clip("Idle_Loop"), 0f);
@@ -477,7 +478,9 @@ namespace HistoryHeroes.EditorTools
 
             AnimatorState attack = sm.AddState("Attack");
             attack.motion = Clip("Spell_Simple_Shoot");
-            attack.speed = 1.4f;
+            attack.speed = 1f;
+            attack.speedParameterActive = true;
+            attack.speedParameter = "AttackSpeed";
             AnimatorStateTransition toAttack = sm.AddAnyStateTransition(attack);
             toAttack.AddCondition(AnimatorConditionMode.If, 0f, "Attack");
             toAttack.AddCondition(AnimatorConditionMode.IfNot, 0f, "Dead");
@@ -511,6 +514,21 @@ namespace HistoryHeroes.EditorTools
             EditorUtility.SetDirty(c);
             return c;
         }
+
+        /// <summary>
+        /// 공격 동작 클립별 타격·발사 순간 (클립 시작부터 초, 재생 속도 1). 무기 손이 가장 빠른 때 (찌르기·슛은 손이 가장 앞으로 나간 때).
+        /// 2026-11-01 진단 (Docs/Dev/Art3D-Plan.md "공격 타이밍"). 모델 정보(Model3DInfo.attackImpact)에 적고, 게임은 거기서 읽는다
+        /// </summary>
+        public static readonly Dictionary<string, float> ClipImpact = new Dictionary<string, float>
+        {
+            { "Sword_Regular_A", 0.22f }, { "Sword_Regular_B", 0.25f }, { "Sword_Attack", 0.37f }, { "Sword_Dash", 0.32f },
+            { "OverhandThrow", 0.38f }, { "Punch_Jab", 0.18f }, { "Punch_Cross", 0.22f }, { "Melee_Hook", 0.22f },
+            { "Zombie_Scratch", 0.62f }, { "Shield_Dash", 0.05f }, { "Pistol_Shoot", 0.05f }, { "Spell_Simple_Shoot", 0.13f },
+        };
+
+        /// <summary>영웅 근접 휘두름이 타격까지 걸리게 맞출 시간 (초). 이보다 느린 클립은 재생 속도를 올려 맞춘다</summary>
+        public const float HeroImpactSeconds = 0.1f;
+        public const float DefaultAttackSpeed = 1.4f;
 
         public static AnimationClip Clip(string name) => AssetDatabase.LoadAssetAtPath<AnimationClip>($"{Art3DAssets.Animations}/{name}.anim");
 
@@ -634,6 +652,9 @@ namespace HistoryHeroes.EditorTools
             var info = go.GetComponent<Model3DInfo>() ?? go.AddComponent<Model3DInfo>();
             info.height = bodyHeight;
             info.castShadows = look.shadows;
+            info.attackImpact = ClipImpact.TryGetValue(look.attack, out float impact) ? impact : 0f;
+            // 영웅: 느린 휘두름 클립은 빠르게 돌려 타격이 ≈0.1초에 오게 (권총·마법은 이미 0.04~0.1초라 그대로). 적은 예고 안에서 먼저 시작하니 그대로
+            info.attackSpeed = folder == Characters && impact / DefaultAttackSpeed > HeroImpactSeconds * 1.2f ? impact / HeroImpactSeconds : DefaultAttackSpeed;
 
             Directory.CreateDirectory(folder);
             string path = $"{folder}/{go.name}.prefab";

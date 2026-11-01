@@ -146,7 +146,37 @@ namespace HistoryHeroes.Enemy
 
             stateTimer -= Time.deltaTime * status.Haste; // 엘리트 "분노한": 예고·공격·쉬는 시간도 빨라진다
             FadeTelegraphLine();
+            TickPreStrike();
             Tick();
+        }
+
+        // ── 공격 동작을 예고 안에서 먼저 시작 (모션이 타격 뒤에 나오던 문제) ──
+        // 예고 시간은 그대로 두고, 효과(발사·소환·폭발·들이받기)가 나오기 "타격 순간" 전에 동작을 시작한다 → 휘두름의 정점이 효과와 맞는다.
+
+        private bool _preStruck;
+
+        /// <summary>
+        /// 효과가 나오기 이만큼(초) 전에 공격 동작을 시작한다. impact = 모델의 타격까지 시간 (Visual3D.ImpactSeconds).
+        /// 기본은 타격 순간이 효과와 같게. 0이면 먼저 시작하지 않는다 (돌진처럼 공격 상태에 들어갈 때 시작하는 게 자연스러운 적)
+        /// </summary>
+        protected virtual float StrikeLead(float impact) => impact;
+
+        /// <summary>예고 중 매 프레임 (한 번의 예고에 한 번만 동작을 먼저 시작한다). 보스는 패턴 루틴이 직접 PreStrike를 부른다</summary>
+        protected virtual void TickPreStrike()
+        {
+            if (state == State.Telegraph) PreStrike(stateTimer / Mathf.Max(0.1f, status.Haste));
+        }
+
+        /// <param name="remaining">효과까지 남은 실제 시간 (초)</param>
+        protected void PreStrike(float remaining)
+        {
+            if (_preStruck || visual == null || player == null) return;
+            float impact = visual.ImpactSeconds;
+            if (impact < 0.05f) return; // 동작이 빠른 클립(권총 · 방패 돌진)은 지금 그대로 맞는다
+            float lead = StrikeLead(impact);
+            if (lead < 0.02f || remaining > lead) return;
+            _preStruck = true;
+            visual.BeginAttack(ToPlayer, Mathf.Max(0.35f, lead + 0.3f), effectIn: Mathf.Max(0f, remaining));
         }
 
         protected abstract void Tick();
@@ -155,6 +185,7 @@ namespace HistoryHeroes.Enemy
         {
             if (next == State.Telegraph && state != State.Telegraph) Audio.AudioManager.Play("telegraph", 0.3f, 0.05f); // 예고 소리 (같은 소리 4개까지)
             ShowState(state, next, duration);
+            _preStruck = false;
             state = next;
             stateTimer = duration;
             if (telegraphLine != null) telegraphLine.enabled = next == State.Telegraph;

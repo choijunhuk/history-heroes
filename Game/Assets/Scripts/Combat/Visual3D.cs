@@ -32,12 +32,16 @@ namespace HistoryHeroes.Combat
         private static readonly int AttackId = Animator.StringToHash("Attack");
         private static readonly int HitId = Animator.StringToHash("Hit");
         private static readonly int DeadId = Animator.StringToHash("Dead");
+        private static readonly int AttackSpeedId = Animator.StringToHash("AttackSpeed");
+        private static readonly int MoveStateId = Animator.StringToHash("Move");
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
         private const float FlashTime = 0.08f;
         private const float CorpseTime = 1.6f;
         private const float SinkTime = 0.5f;
         private const float MinAttackGap = 0.2f;
+        /// <summary>BeginAttack 뒤 이 시간(타격까지 + 여유) 안에 오는 Attack은 같은 공격이다 (다시 시작하지 않는다)</summary>
+        private const float EarlySlack = 0.15f;
         private static readonly Color FlashColor = new Color(2.2f, 2.2f, 2.2f, 1f);
 
         private struct Slot
@@ -62,6 +66,8 @@ namespace HistoryHeroes.Combat
         private float _aimUntil;
         private float _flashUntil;
         private float _lastAttack = -10f;
+        private float _earlyUntil;
+        private float _impact;
         private Color _tint = Color.white;
         private Color _tintBase = Color.white;
         private bool _dead;
@@ -71,6 +77,15 @@ namespace HistoryHeroes.Combat
 
         /// <summary>모델 키 (월드). 머리 위 표시(체력 막대)가 모델 머리 위치를 구할 때 쓴다. 오브젝트 배율을 곱한다</summary>
         public float Height => height * transform.lossyScale.y;
+
+        /// <summary>
+        /// 공격 동작을 시작하고 타격(발사) 순간까지 걸리는 실제 시간 (초): 클립의 타격 순간 / 재생 속도. 모델 정보에 없으면 0.
+        /// 효과를 내는 쪽이 "이 시간 전에 BeginAttack"을 부르면 휘두름의 정점이 효과와 맞는다
+        /// </summary>
+        public float ImpactSeconds => _model != null ? _impact : 0f;
+
+        /// <summary>BeginAttack으로 먼저 시작한 공격이 아직 타격 전이다</summary>
+        public bool IsWindingUp => Time.time < _earlyUntil;
 
         public bool HasModel => _model != null;
         public Transform Model => _model;
@@ -146,6 +161,7 @@ namespace HistoryHeroes.Combat
             _model.gameObject.SetActive(true);
             Rescale();
             _animator = _model.GetComponent<Animator>();
+            LoadAttackTiming();
             CollectSlots();
             ApplyOutline();
             ResetAnimator();
@@ -218,10 +234,28 @@ namespace HistoryHeroes.Combat
             _slots = slots.ToArray();
         }
 
+        private float _speed = 1.4f;
+
+        /// <summary>모델 정보에서 공격 동작 시간표를 읽는다 (타격까지 = attackImpact / attackSpeed)</summary>
+        private void LoadAttackTiming()
+        {
+            float impact = 0f;
+            _speed = 1.4f;
+            if (_modelSource != null && _modelSource.TryGetComponent(out Model3DInfo info))
+            {
+                impact = info.attackImpact;
+                _speed = Mathf.Max(0.5f, info.attackSpeed);
+            }
+
+            _impact = impact / _speed;
+        }
+
         private void ResetAnimator()
         {
             if (_animator == null) return;
             _animator.Rebind();
+            _animator.SetFloat(AttackSpeedId, _speed);
+            _earlyUntil = 0f;
             _animator.ResetTrigger(AttackId);
             _animator.ResetTrigger(HitId);
             _animator.SetBool(DeadId, false);
@@ -240,13 +274,56 @@ namespace HistoryHeroes.Combat
 
         /// <summary>
         /// 공격했다: 그쪽을 잠깐 보고 공격 동작. 0.2초 안에 또 부르면(탄막 · 쏜 직후의 상태 바뀜) 처음 방향을 지킨다
-        /// → 모델이 실제로 날아간 화살 쪽을 본다 (Codex 3D 코드 리뷰 1번)
+        /// → 모델이 실제로 날아간 화살 쪽을 본다 (Codex 3D 코드 리뷰 1번).
+        /// BeginAttack으로 먼저 시작해 둔 공격이면 다시 시작하지 않는다 (효과가 나오는 순간 오는 이 호출이 같은 공격).
+        /// restart는 연타 두 번째 베기처럼 지난 동작이 아직 도는 중에도 처음부터 다시 (간격 검사 없음)
         /// </summary>
-        public void Attack(Vector2 direction, float holdFacing = 0.45f)
+        public void Attack(Vector2 direction, float holdFacing = 0.45f, bool snap = false, bool restart = false)
         {
             if (_dead) return;
-            if (Time.time - _lastAttack < MinAttackGap) return;
+            if (!restart && Time.time < _earlyUntil)
+            {
+                Aim(direction, holdFacing); // 같은 공격: 동작은 이미 돌고 있다
+                _earlyUntil = 0f;
+                return;
+            }
+
+            if (!restart && Time.time - _lastAttack < MinAttackGap) return;
+            Trigger(direction, holdFacing, snap);
+        }
+
+        /// <summary>
+        /// 효과(피해·발사·폭발)보다 ImpactSeconds 먼저 공격 동작을 시작한다. 몸은 바로 그쪽을 향한다.
+        /// 효과가 나올 때 부르는 Attack은 같은 공격으로 보고 넘어간다 (BeginAttack 뒤 ImpactSeconds+0.15초 안)
+        /// </summary>
+        /// <param name="effectIn">효과가 나올 때까지 (초). 기본은 타격 순간(ImpactSeconds). 폭탄을 던지는 투척병처럼 더 일찍 시작하면 그만큼 길게</param>
+        public void BeginAttack(Vector2 direction, float holdFacing = 0.45f, float effectIn = -1f)
+        {
+            if (_dead) return;
+            Trigger(direction, holdFacing, snap: true);
+            _earlyUntil = Time.time + (effectIn >= 0f ? effectIn : _impact) + EarlySlack;
+        }
+
+        /// <summary>먼저 시작한 공격을 접는다 (영웅이 움직여서 효과가 안 나온다): 이동 동작으로 돌아간다. 먼저 시작한 공격이 없으면 아무것도 안 한다</summary>
+        public void CancelAttack()
+        {
+            if (Time.time >= _earlyUntil) return;
+            _earlyUntil = 0f;
+            _lastAttack = -10f;
+            if (_animator == null || !_animator.isActiveAndEnabled) return;
+            _animator.ResetTrigger(AttackId);
+            _animator.CrossFadeInFixedTime(MoveStateId, 0.1f);
+        }
+
+        private void Trigger(Vector2 direction, float holdFacing, bool snap)
+        {
             Aim(direction, holdFacing);
+            if (snap && _model != null && direction.sqrMagnitude > 0.0001f)
+            {
+                _facing = _aim; // 타격 때 몸이 이미 표적을 향하게 (천천히 도는 0.1초를 없앤다)
+                _model.rotation = FacingRotation(_facing);
+            }
+
             _lastAttack = Time.time;
             if (_animator != null && _animator.isActiveAndEnabled) _animator.SetTrigger(AttackId);
         }

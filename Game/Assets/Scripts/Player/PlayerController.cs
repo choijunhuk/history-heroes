@@ -173,7 +173,23 @@ namespace HistoryHeroes.Player
 
         private void PlayAttack(Vector2 aim)
         {
-            if (Visual != null) Visual.Attack(aim);
+            if (Visual != null) Visual.Attack(aim, snap: true); // 먼저 시작한 동작이 있으면 그대로 두고, 없으면 지금 시작 (몸은 바로 표적 쪽으로)
+        }
+
+        // ── 공격 동작과 타격 맞추기 (2026-11-01 실기 피드백 "타격을 하고 모션이 나가는 느낌") ──
+        // 동작(휘두름·시위·시전)은 시작하고 ImpactSeconds(≈0.1초) 뒤에 정점이다. 그래서 쿨다운이 끝나기 ImpactSeconds 전에 동작을 먼저 시작하고,
+        // 쿨다운이 끝나는 순간 피해·발사가 나간다 → 공격 주기·DPS는 그대로. 멈춘 직후 첫 공격처럼 먼저 시작할 틈이 없을 때만
+        // 동작 시작 뒤 MaxWindupDelay(0.08초)까지 효과를 늦춘다 (최대 80ms, 나머지 차이는 눈에 안 띈다). 움직이면 동작을 접는다.
+
+        private const float MinWindupImpact = 0.05f;
+        private const float MaxWindupDelay = 0.08f;
+        private float _windupFireAt = -1f; // 0 이상이면 동작을 먼저 시작해 둔 상태 (이 시각에 효과)
+
+        private void CancelWindup()
+        {
+            if (_windupFireAt < 0f) return;
+            _windupFireAt = -1f;
+            if (Visual != null) Visual.CancelAttack();
         }
 
         private void CreateProjectilePool()
@@ -287,6 +303,7 @@ namespace HistoryHeroes.Player
                 else Enemy.EnemyProjectiles.ClearSlowZone();
             }
             if (Stop.IsStopped) TryBasicAttack();
+            else CancelWindup();
         }
 
         private void FixedUpdate()
@@ -545,6 +562,7 @@ namespace HistoryHeroes.Player
         {
             // 이동 전 날아간 탄이 다시 멈춘 뒤 명중해도 이전 준비를 되살리지 않는다.
             _stopSignatureGeneration++;
+            _windupFireAt = -1f;
             _breath.ResetPreparation();
             if (Health != null) Health.ClearShieldFrom(_buddhaShieldOwner);
             if (moved) _footstep.OnMoved();
@@ -776,6 +794,18 @@ namespace HistoryHeroes.Player
                 if (stage >= 3) Audio.AudioManager.Play("card", 0.6f, 0.05f);
             }
 
+            // 활을 놓는 동작은 놓기 ImpactSeconds 전에 먼저 시작한다 (놓는 순간 활이 이미 나간다)
+            float impact = Visual != null && Visual.HasModel ? Visual.ImpactSeconds : 0f;
+            if (impact >= MinWindupImpact && _chargeStage < 3 && !Visual.IsWindingUp)
+            {
+                float full = _sig.ChargeFullTime > 0f ? _sig.ChargeFullTime : hero.chargeTimes.z;
+                if ((full - _charge) / Mathf.Max(0.01f, speed) <= impact)
+                {
+                    Health target = _targets.Find(transform.position, Stats.Get(StatType.Range));
+                    if (target != null) Visual.BeginAttack((Vector2)target.transform.position - (Vector2)transform.position);
+                }
+            }
+
             if (_chargeStage >= 3) ReleaseCharge();
         }
 
@@ -837,18 +867,39 @@ namespace HistoryHeroes.Player
         private void TryBasicAttack()
         {
             if (hero.chargeShot) return; // 이성계: 공격속도가 아니라 모으는 시간 (UpdateCharge)
-            if (_attackCooldown > 0f) return;
-            if (Stop.StoppedTime < hero.firstShotDelay) return;
+            float impact = Visual != null && Visual.HasModel ? Visual.ImpactSeconds : 0f;
+            bool windup = impact >= MinWindupImpact;
+            bool windingUp = _windupFireAt >= 0f;
+            // 쏠 수 있게 되기까지 (쿨다운 · 멈춘 뒤 첫 발 지연). 동작을 먼저 시작할 수 있으면 그만큼 일찍 들어온다
+            float ready = Mathf.Max(_attackCooldown, hero.firstShotDelay - Stop.StoppedTime);
+            if (!windingUp && ready > (windup ? impact : 0f)) return;
 
-            _searchDelay -= Time.deltaTime;
-            if (_searchDelay > 0f) return;
+            if (!windingUp)
+            {
+                _searchDelay -= Time.deltaTime;
+                if (_searchDelay > 0f) return;
+            }
 
             Health target = _targets.Find(transform.position, BasicAttackRange,
                 requireCenterInRange: hero.attackKind == BasicAttackKind.MeleeThrust);
             if (target == null)
             {
                 _searchDelay = SearchRetryInterval;
+                CancelWindup();
                 return;
+            }
+
+            if (windup)
+            {
+                if (!windingUp)
+                {
+                    _windupFireAt = Time.time + Mathf.Max(ready, Mathf.Min(impact, MaxWindupDelay));
+                    Visual.BeginAttack((Vector2)target.transform.position - (Vector2)transform.position);
+                    return;
+                }
+
+                if (Time.time < _windupFireAt) return;
+                _windupFireAt = -1f;
             }
 
             OnBasicAttackStarted();
@@ -1116,7 +1167,18 @@ namespace HistoryHeroes.Player
                 }
                 if (thunder && s == 0) ThunderShockwave(origin, aim);
                 if (waveBounces > 0) FireWave(origin, aim, waveBounces);
-                if (s < swings - 1) yield return new WaitForSeconds(swingInterval);
+                if (s < swings - 1)
+                {
+                    // 연타: 다음 베기 동작도 타격 전에 다시 시작한다 (예전엔 0.2초 간격 검사에 걸려 두 번째부터 동작이 없었다)
+                    float lead = Mathf.Min(swingInterval, Visual != null && Visual.HasModel ? Visual.ImpactSeconds : 0f);
+                    yield return new WaitForSeconds(swingInterval - lead);
+                    if (lead >= MinWindupImpact * 0.5f && !Health.IsDead && generation == _stopSignatureGeneration && Stop.IsStopped)
+                    {
+                        Vector2 next = target != null && !target.IsDead ? (Vector2)target.transform.position - (Vector2)transform.position : aim;
+                        Visual.BeginAttack(next.sqrMagnitude > 0.0001f ? next : aim);
+                        yield return new WaitForSeconds(lead);
+                    }
+                }
             }
         }
 

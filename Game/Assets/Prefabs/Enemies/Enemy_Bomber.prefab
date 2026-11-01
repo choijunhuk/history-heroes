@@ -322,6 +322,7 @@ MonoBehaviour:
   throwDistance: 6
   blastRadius: 1.2
   blastMarker: {fileID: 7378917965108163180}
+  flightTime: 0.35
 --- !u!1 &6489419892983076186
 GameObject:
   m_ObjectHideFlags: 0

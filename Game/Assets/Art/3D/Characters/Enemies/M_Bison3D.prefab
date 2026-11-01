@@ -2111,6 +2111,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: HistoryHeroes.Runtime::HistoryHeroes.Combat.Model3DInfo
   height: 1.0975928
   castShadows: 1
+  attackImpact: 0.05
+  attackSpeed: 1.4
 --- !u!1 &7698407598129750969
 GameObject:
   m_ObjectHideFlags: 0

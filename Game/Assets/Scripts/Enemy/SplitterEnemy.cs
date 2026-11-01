@@ -21,6 +21,9 @@ namespace HistoryHeroes.Enemy
         private Vector2 _dir;
         private bool _hit;
 
+        /// <summary>덮치기: 접촉(≈0.14초)과 동작의 타격(0.13초)이 이미 맞는다 → 먼저 시작하지 않는다</summary>
+        protected override float StrikeLead(float impact) => 0f;
+
         protected override void Tick()
         {
             switch (state)
