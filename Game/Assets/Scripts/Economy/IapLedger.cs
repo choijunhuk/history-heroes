@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using HistoryHeroes.Records;
 
 namespace HistoryHeroes.Economy
@@ -7,6 +10,7 @@ namespace HistoryHeroes.Economy
     /// 결제 지급 장부 (저장 구조 13의 purchases). 상점 연결 없이 테스트한다 — 실제 상점 호출은 IapService.
     /// 거래 번호(구글 구매 토큰)가 장부에 있으면 다시 주지 않는다: 지급 → 저장 → 구매 확정 사이에 앱이 꺼지면
     /// 상점이 같은 거래를 다시 보내는데, 그때는 확정만 한다.
+    /// 기기 상점(안드로이드)은 지급 수량을 서버가 정하고(ApplyServer · PurchaseServer), 에디터 가짜 상점만 Apply로 이 기기에서 정한다.
     /// </summary>
     public static class IapLedger
     {
@@ -21,11 +25,38 @@ namespace HistoryHeroes.Economy
             AlreadyClaimed,
         }
 
+        /// <summary>서버 장부에서 되살린 칸은 토큰 원문이 없어 거래 번호를 이 머리 + SHA-256(토큰)으로 적는다</summary>
+        public const string HashedPrefix = "sha256:";
+
+        /// <summary>SHA-256 소문자 16진수 (서버 PurchaseVerifier.Hash와 같다). 토큰 맞추기 · 구글 계정 표시(UGS 플레이어 ID)에 쓴다</summary>
+        public static string Hash(string text)
+        {
+            using (SHA256 sha = SHA256.Create())
+            {
+                byte[] bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(text ?? string.Empty));
+                var sb = new StringBuilder(bytes.Length * 2);
+                foreach (byte b in bytes) sb.Append(b.ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
+        /// <summary>같은 결제인지 볼 열쇠: 토큰 원문이면 그 해시, "sha256:"로 적힌 칸이면 그 해시</summary>
+        private static string TokenKey(string transactionId) =>
+            transactionId.StartsWith(HashedPrefix, StringComparison.Ordinal) ? transactionId.Substring(HashedPrefix.Length) : Hash(transactionId);
+
+        /// <summary>이 거래가 장부에 있나 (토큰 원문 · 서버에서 되살린 해시 칸 어느 쪽이든 같은 결제면 찾는다)</summary>
         public static PurchaseEntry Find(SaveData d, string transactionId)
         {
             if (string.IsNullOrEmpty(transactionId)) return null;
+            string key = null;
             foreach (PurchaseEntry e in d.purchases.ledger)
+            {
                 if (e.transactionId == transactionId) return e;
+                if (string.IsNullOrEmpty(e.transactionId)) continue;
+                key ??= TokenKey(transactionId);
+                if (TokenKey(e.transactionId) == key) return e;
+            }
+
             return null;
         }
 
@@ -82,6 +113,53 @@ namespace HistoryHeroes.Economy
             if (item.OncePerAccount) d.purchases.starterClaimed = true;
             d.purchases.ledger.Add(entry);
             return Result.Granted;
+        }
+
+        /// <summary>
+        /// 서버가 정한 지급을 이 기기 장부에 넣는다 (기기 상점의 서버 검증 · 로그인 뒤 서버 장부 맞추기). 수량 · 첫 구매 2배는 서버 값 그대로.
+        /// transactionId: 상점이 준 토큰. 없으면(맞추기) "sha256:" + 서버 해시. 같은 결제가 이미 있으면 AlreadyGranted (두 번 주지 않는다).
+        /// 저장은 부르는 쪽이 SaveSystem.Commit으로
+        /// </summary>
+        public static Result ApplyServer(SaveData d, PurchaseServer.Purchase p, string transactionId, out PurchaseEntry entry)
+        {
+            entry = null;
+            if (p == null || string.IsNullOrEmpty(p.tokenHash) || string.IsNullOrEmpty(p.productId)) return Result.Invalid;
+            string id = string.IsNullOrEmpty(transactionId) ? HashedPrefix + p.tokenHash : transactionId;
+            entry = Find(d, id);
+            if (entry != null) return Result.AlreadyGranted;
+
+            entry = new PurchaseEntry
+            {
+                transactionId = id,
+                productId = p.productId,
+                utc = p.utc,
+                paidGems = p.paidGems,
+                freeGems = p.freeGems,
+                tickets = p.tickets,
+                gold = p.gold,
+                firstBonus = p.firstBonus,
+            };
+            Wallet.AddPaidGems(d, entry.paidGems);
+            Wallet.AddFreeGems(d, entry.freeGems);
+            Wallet.AddGold(d, entry.gold);
+            if (entry.tickets > 0) d.AddItem(Wallet.Ticket, entry.tickets);
+            if (entry.firstBonus && !d.purchases.firstBought.Contains(entry.productId)) d.purchases.firstBought.Add(entry.productId);
+            if (IapCatalog.Find(entry.productId)?.OncePerAccount == true) d.purchases.starterClaimed = true;
+            d.purchases.ledger.Add(entry);
+            return Result.Granted;
+        }
+
+        /// <summary>
+        /// 로그인 뒤 서버 장부와 맞추기: 서버에만 있는 결제를 이 기기에 다시 넣는다 (기기 저장을 잃었을 때 · 같은 계정의 다른 기기에서 산 것).
+        /// 그래서 이 기기의 계정당 1번 · 첫 구매 2배 표시가 서버와 같아진다. 몇 번 불러도 두 번 주지 않는다. 돌려주는 값: 넣은 결제 수
+        /// </summary>
+        public static int MergeServer(SaveData d, IEnumerable<PurchaseServer.Purchase> purchases)
+        {
+            int added = 0;
+            if (purchases == null) return 0;
+            foreach (PurchaseServer.Purchase p in purchases)
+                if (ApplyServer(d, p, null, out _) == Result.Granted) added++;
+            return added;
         }
 
         /// <summary>

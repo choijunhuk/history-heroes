@@ -1,9 +1,11 @@
+#nullable disable
 using System.Collections.Generic;
 
 namespace HistoryHeroes.Economy
 {
     /// <summary>
     /// 실제 결제 상품표 (Monetization 3-1 · 3-2). 플레이 콘솔에 만들 상품과 똑같이 둔다 — Docs/Release/GooglePlay-Checklist.md 3장이 이 표를 옮겨 적은 것.
+    /// 서버 결제 검증 모듈(Server/CloudCode)도 이 파일을 그대로 컴파일해 지급 수량을 정한다 → UnityEngine을 쓰지 말 것. 고치면 모듈을 다시 배포한다.
     /// 상품 ID는 플레이 콘솔에 한 번 만들면 바꾸거나 다시 쓸 수 없다 → 절대 고치지 않는다 (없앨 때도 ID는 비워 둔다).
     /// 화면의 가격은 언제나 상점이 준 글(localizedPriceString)을 쓴다. 여기 원화 값은 콘솔 등록 · 문서용이다.
     /// 지급 수량이 플레이 콘솔 설명과 이어져 있어 에셋(밸런스 값)이 아니라 코드 상수로 둔다.

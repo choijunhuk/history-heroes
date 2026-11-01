@@ -849,6 +849,39 @@ namespace HistoryHeroes.EditorTools
             }
         }
 
+        private static string _serverCheck = "아직 안 함";
+
+        /// <summary>
+        /// 서버 결제 검증 모듈(진짜 Cloud Code) 점검: GetPurchases (이 플레이어 장부 · 준비 여부) → 가짜 토큰으로 VerifyPurchase
+        /// (비밀값이 없으면 not_configured, 있으면 구글이 모르는 토큰이라 invalid). 로그인 뒤 Play 중에만. 결과는 ServerCheckResult()
+        /// </summary>
+        public static string ServerCheck()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            if (Account.AccountService.PlayerId == null) return "로그인 전 (AccountStatus 확인)";
+            _serverCheck = "묻는 중";
+            AskPurchaseServer();
+            return "묻는 중 → ServerCheckResult()";
+        }
+
+        public static string ServerCheckResult() => $"{_serverCheck} | 맞춤={Economy.IapService.ServerSynced} 판매가능={Economy.IapService.LedgerSettled}";
+
+        private static async void AskPurchaseServer()
+        {
+            try
+            {
+                Economy.PurchaseServer.Ledger ledger = await Economy.PurchaseServer.GetPurchasesAsync();
+                string result = ledger == null ? "GetPurchases 빈 답" : $"GetPurchases 준비={ledger.configured} 장부={ledger.purchases?.Count ?? -1}";
+                Economy.PurchaseServer.Verdict v = await Economy.PurchaseServer.VerifyAsync("gems_t1", "qa-fake-token-" + System.Guid.NewGuid().ToString("N"));
+                _serverCheck = result + $" | VerifyPurchase(가짜 토큰) {v?.status ?? "빈 답"} {v?.reason}";
+            }
+            catch (System.Exception e)
+            {
+                _serverCheck = "실패: " + e.Message;
+            }
+        }
+
         /// <summary>계정 삭제 (설정의 확인 뒤와 같은 일): 클라우드 · UGS 계정 · 이 기기 저장을 지우고 로비로</summary>
         public static string AccountDelete()
         {

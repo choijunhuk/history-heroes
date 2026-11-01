@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Cloud Code C# 모듈 (주 프로젝트). 모듈 이름 = 이 프로젝트 이름 = HistoryHeroesServer (영문 · 숫자 · 밑줄만 됨).
+       유니티 Deployment 창이 Game/Assets/CloudCode/HistoryHeroesServer.ccmr → 솔루션을
+       `dotnet publish -c Release -r linux-x64`로 묶어 올린다. 대상 .NET은 Cloud Code 2.10.4 템플릿과 같다. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>HistoryHeroes.Server</RootNamespace>
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Com.Unity.Services.CloudCode.Apis" Version="0.0.27" />
+    <PackageReference Include="Com.Unity.Services.CloudCode.Core" Version="0.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 상품표는 게임과 같은 파일 하나를 그대로 컴파일한다 (가격 · 지급 수량이 서버와 어긋날 수 없게) -->
+    <Compile Include="..\..\..\..\Game\Assets\Scripts\Economy\IapCatalog.cs" Link="Shared\IapCatalog.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="HistoryHeroesServer.Tests" />
+  </ItemGroup>
+</Project>

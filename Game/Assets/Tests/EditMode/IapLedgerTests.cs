@@ -151,10 +151,20 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void PrivacyVersion4_ServerPurchaseVerification_AsksVersion3PlayersAgain()
+        {
+            Assert.AreEqual(4, Progress.Consent.PrivacyVersion, "처리방침 4판 (서버 결제 검증 · 결제 기록 분리 보관)");
+            SaveData save = SaveStore.NewGame();
+            Progress.Consent.Accept(save, Now);
+            save.consent.privacyVersion = 3; // 서버 검증 전에 동의한 사람
+            Assert.IsTrue(Progress.Consent.NeedsConsent(save));
+        }
+
+        [Test]
         public void PaymentPolicyVersions_AskPlayersWhoAgreedBeforePaymentsAgain()
         {
             Assert.AreEqual(2, Progress.Consent.TermsVersion, "약관 4장 (유료 상품)");
-            Assert.AreEqual(3, Progress.Consent.PrivacyVersion, "처리방침 3판 (구글 플레이 결제 · 구매 기록)");
+            Assert.GreaterOrEqual(Progress.Consent.PrivacyVersion, 3, "처리방침 3판 (구글 플레이 결제 · 구매 기록)");
             SaveData save = SaveStore.NewGame();
             Progress.Consent.Accept(save, Now);
             save.consent.termsVersion = 1;

@@ -5,8 +5,14 @@
 # 실패하면 코드를 고친다. 게이트를 고쳐서 통과시키지 않는다.
 cd "$(dirname "$0")/.." || exit 1
 
-bad=$(git ls-files | grep -E '\.(keystore|jks|p12)$|(signing|kakao)\.properties$' || true)
+bad=$(git ls-files | grep -E '\.(keystore|jks|p12)$|(signing|kakao)\.properties$|service-account.*\.json$' || true)
 [ -n "$bad" ] && { echo "❌ 비밀 파일이 저장소에 있다: $bad"; exit 1; }
+git grep -q -E -- '-----BEGIN (RSA |EC )?PRIVATE KEY-----' && { echo "❌ 개인 키(PEM)가 저장소에 있다"; exit 1; }
+sa="$HOME/.history-heroes/google-play-service-account.json" # 서버 결제 검증용 구글 서비스 계정 (Unity Secrets에도 있음)
+if [ -f "$sa" ]; then
+  kid=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["private_key_id"])' "$sa" 2>/dev/null)
+  [ -n "$kid" ] && git grep -q -F -- "$kid" && { echo "❌ 구글 서비스 계정 키가 저장소에 있다"; exit 1; }
+fi
 
 # ~/.history-heroes의 비밀 값 (서명 비밀번호 · 카카오 앱 키)이 추적 파일에 들어갔는지
 for f in "$HOME/.history-heroes/signing.properties" "$HOME/.history-heroes/kakao.properties"; do

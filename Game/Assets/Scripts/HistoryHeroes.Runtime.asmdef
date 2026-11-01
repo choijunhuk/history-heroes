@@ -12,6 +12,7 @@
         "Unity.Services.Core.Environments",
         "Unity.Services.Authentication",
         "Unity.Services.CloudSave",
+        "Unity.Services.CloudCode",
         "Unity.Purchasing",
         "Unity.Purchasing.SecurityCore",
         "Unity.Purchasing.Security",

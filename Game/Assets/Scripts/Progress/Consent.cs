@@ -14,8 +14,9 @@ namespace HistoryHeroes.Progress
         /// <summary>2 (2026-11-01): 유료 상품 — 유료/무료 보석 · 청약철회 · 미성년자 · 미지급 · 환불 회수 (약관 4장)</summary>
         public const int TermsVersion = 2;
         /// <summary>2 (2026-11-01): 계정(UGS) · 카카오 로그인 · 클라우드 저장 · 계정 삭제를 처리방침에 넣었다.
-        /// 3 (2026-11-01): 구글 플레이 결제 · 구매 기록 (처리방침 5장이 "결제가 생기기 전에 다시 동의받는다"고 약속했다)</summary>
-        public const int PrivacyVersion = 3;
+        /// 3 (2026-11-01): 구글 플레이 결제 · 구매 기록 (처리방침 5장이 "결제가 생기기 전에 다시 동의받는다"고 약속했다).
+        /// 4 (2026-11-01): 서버 결제 검증 — 모든 계정의 구매 기록을 Unity 서버 장부에 두고(계정 삭제 뒤에도 법정 기간 분리 보관), 구매 토큰 · 게임 계정 ID 해시를 구글에 보낸다 (처리방침 5장이 이것도 "생기기 전에 다시 동의"를 약속했다)</summary>
+        public const int PrivacyVersion = 4;
 
         /// <summary>동의 화면에 보이는 등급 줄. IARC 등급이 나오면 여기만 고친다.</summary>
         public const string RatingText = "이용 등급: 등급 분류 전 (테스트판)";

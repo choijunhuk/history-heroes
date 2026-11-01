@@ -412,7 +412,7 @@ namespace HistoryHeroes.UI
         {
             var rows = new List<ButtonList.Row>();
             bool busy = IapService.BuyingId != null || !IapService.ValidationReady;
-            bool settled = Account.AccountService.SyncSettled;
+            bool settled = IapService.LedgerSettled;
             foreach (IapCatalog.Item item in IapCatalog.All)
             {
                 if (!IapLedger.Available(save, item)) continue; // 첫 결제 패키지는 받은 뒤 숨긴다
@@ -429,7 +429,7 @@ namespace HistoryHeroes.UI
         /// <summary>이름 · 배지 · 가격 (상점이 준 글 그대로) / 내용 / 보너스 줄</summary>
         private static string GemCardText(SaveData save, IapCatalog.Item item, string price)
         {
-            bool settled = Account.AccountService.SyncSettled;
+            bool settled = IapService.LedgerSettled;
             bool first = IapLedger.FirstBonusShown(save, item, settled);
             string badge = item.OncePerAccount ? "  <color=#FFB347>계정당 1번</color>" : first ? "  <color=#FF9F43>첫 구매 2배</color>" : string.Empty;
             string priceText = price != null && !IapService.ValidationReady ? "<color=#A9B4C2>결제 준비 중</color>"
@@ -466,7 +466,7 @@ namespace HistoryHeroes.UI
                 return;
             }
 
-            PurchaseEntry get = IapLedger.Preview(SaveSystem.Data, item, Account.AccountService.SyncSettled);
+            PurchaseEntry get = IapLedger.Preview(SaveSystem.Data, item, IapService.LedgerSettled);
             string split = $"유료 보석 {Wallet.Format(get.paidGems)} · 무료 보석 {Wallet.Format(get.freeGems)}{(get.firstBonus ? " (첫 구매 2배 포함)" : string.Empty)}";
             string withdrawal = item.OncePerAccount
                 ? "패키지는 구매 후 7일 이내, 구성품을 하나도 쓰지 않았으면 청약철회할 수 있어요. 하나라도 쓰면 철회가 제한돼요."

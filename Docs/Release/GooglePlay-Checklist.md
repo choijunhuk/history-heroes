@@ -45,7 +45,7 @@
 
 ### 결제 켜기 (👤 개발자 계정 신분 확인 뒤, 코드 수정 없음)
 
-> 🔴 **영수증 검사 키(5번)를 만들고 다시 빌드하기 전에는 실제 판매를 시작하지 않는다.** 키가 없는 안드로이드 빌드는 아무것도 팔지 않는다 (상점 카드 "결제 준비 중", 이미 온 결제는 지급 · 확정하지 않아 구글이 3일 안에 환불). 빌드할 때 `[IAP] 영수증 검사 키(GooglePlayTangle)가 없어요` 경고가 뜨면 아직이다.
+> 🔴 **영수증 검사 키(5번)를 만들고 다시 빌드하고, 아래 "서버 결제 검증 켜기"를 끝내기 전에는 실제 판매를 시작하지 않는다.** 키가 없는 안드로이드 빌드는 아무것도 팔지 않는다 (상점 카드 "결제 준비 중", 이미 온 결제는 지급 · 확정하지 않아 구글이 3일 안에 환불). 빌드할 때 `[IAP] 영수증 검사 키(GooglePlayTangle)가 없어요` 경고가 뜨면 아직이다.
 > 🔴 **IARC 연령 등급을 받기 전에는 실제 판매를 시작하지 않는다.** 등급이 나오면 `Consent.RatingText`(동의 화면 등급 줄)를 그 등급으로 바꾼다.
 
 1. **판매자 계정(결제 프로필)** 만들기: Play Console → 설정 → 결제 프로필. 한국 판매자는 사업자 정보 · 통신판매업 신고가 필요할 수 있다 (출시 전 확인).
@@ -66,6 +66,22 @@
 4. **라이선스 테스터** 등록 (설정 → 라이선스 테스트): 테스터 계정은 실제로 돈이 나가지 않는 시험 카드로 산다.
 5. **영수증 검사 키 만들기:** Play Console → 수익 창출 설정 → **라이선스**의 Base64 공개 키를 복사 → 유니티 메뉴 **Services → In-App Purchasing → Receipt Validation Obfuscator** → 키 붙여 넣기 → Obfuscate. `Assets/Scripts/UnityPurchasing/generated/GooglePlayTangle.cs`가 생긴다 (공개 키라 비밀은 아니다). 다시 빌드하면 게임이 알아서 찾아 검사한다 (그 전에는 검사를 건너뛴다).
 6. 다시 빌드해 내부 테스트로 올리고, 테스터 폰에서 보석 탭 가격이 ₩로 뜨는지 · 각 상품을 사서 보석이 들어오는지 · 같은 결제가 두 번 들어오지 않는지 확인.
-7. **데이터 보안** 신고에 "구매 기록(앱 활동 → 구매 내역)" 수집 추가. 개인정보 처리방침 3판 공개 주소 갱신.
+7. **데이터 보안** 신고에 "구매 기록(앱 활동 → 구매 내역)" 수집 추가. 개인정보 처리방침 **4판** 공개 주소 갱신 (서버 결제 장부 · 법정 기간 분리 보관).
+8. 아래 **서버 결제 검증 켜기**를 끝낸다. 안 하면 기기는 서버 장부를 받은 뒤 "결제 준비 중"으로 아무것도 팔지 않고, 이미 온 결제는 지급 · 확정하지 않는다 (구글 자동 환불).
 
-아직 없는 것: 서버 검증(Cloud Code + 구글 API 서비스 계정) · 환불 회수(Voided Purchases) — [Monetization 7-1](../Design/Monetization.md#7-1-구현-상태-2026-11-01-1차).
+### 서버 결제 검증 켜기
+
+> 🤖 이미 한 것 (2026-11-01): Cloud Code C# 모듈 `HistoryHeroesServer`를 UGS 프로젝트 `4c301e37-…` **production** 환경에 배포함. 지금은 비밀값이 없어 모든 결제 검증이 `not_configured`로 답한다 (안전한 쪽). 코드: `Server/CloudCode/HistoryHeroes.Server/` · 게임 쪽 `Game/Assets/Scripts/Economy/PurchaseServer.cs` · 설계 [Monetization 7-1](../Design/Monetization.md#7-1-구현-상태-2026-11-01-1차).
+> 🔴 **서비스 계정 키(JSON)는 비밀이다.** 저장소 · 채팅 · 메일에 붙이지 않는다. Secret Manager에 넣은 뒤 내려받은 파일은 지운다 (잃어버리면 새 키를 만들면 된다).
+
+1. 👤 **Google Cloud 프로젝트** 만들기 (또는 있는 것 쓰기): [console.cloud.google.com](https://console.cloud.google.com) → 프로젝트 만들기 (예: `history-heroes`).
+2. 👤 **Google Play Android Developer API 켜기:** Cloud Console → API 및 서비스 → 라이브러리 → "Google Play Android Developer API" → **사용**.
+3. 👤 **서비스 계정 만들기:** Cloud Console → IAM 및 관리자 → 서비스 계정 → **서비스 계정 만들기** (이름 예: `play-purchase-verifier`). Cloud 쪽 역할은 주지 않아도 된다 (권한은 Play Console에서 준다).
+4. 👤 **JSON 키 만들기:** 그 서비스 계정 → 키 → 키 추가 → 새 키 만들기 → **JSON** → 파일이 내려받아진다 (`client_email` · `private_key`가 들어 있음). 조직 정책이 키 만들기를 막으면 그 정책을 이 프로젝트에서만 풀어야 한다.
+5. 👤 **Play Console에 초대:** Play Console → **사용자 및 권한** → 새 사용자 초대 → 이메일에 서비스 계정 주소(`…@….iam.gserviceaccount.com`) → 앱 권한에 History Heroes 추가 → 권한: **재무 데이터, 주문, 취소 설문조사 응답 보기** + **주문 및 구독 관리** → 사용자 초대. (구글 안내: [Play Developer API 시작하기](https://developers.google.com/android-publisher/getting_started)) 권한이 퍼지는 데 몇 시간 ~ 하루가 걸릴 수 있다 — 그동안 검증은 `retry`(401/403)로 답하고 결제는 남겨 두었다가 다시 묻는다.
+6. 👤 **UGS Secret Manager에 넣기:** [cloud.unity.com](https://cloud.unity.com) → 프로젝트 History Heroes → **Development → Secrets** (프로젝트 단계, 또는 production 환경 단계) → **Add secret** → 키 `GOOGLE_PLAY_SERVICE_ACCOUNT` (글자 그대로) → 값: 4번 JSON 파일 **내용 전부** 붙여 넣기 → 접근 서비스에 **Cloud Code** 체크 → Add. 그다음 내려받은 JSON 파일을 지운다.
+7. 🤖 **모듈 다시 배포는 필요 없다** (비밀값은 부를 때마다 읽는다). 확인: 에디터 Play → 동의 → 게스트 로그인 뒤 `unity command eval` 로 `QaTools.ServerCheck()` → 잠시 뒤 `QaTools.ServerCheckResult()` → `GetPurchases 준비=True` · 가짜 토큰 `invalid google_400`(또는 `google_404`)이면 키 · 권한까지 맞다. `retry google_auth` · `google_401/403`이면 5번 권한이 아직 안 퍼졌거나 키가 틀렸다.
+8. 👤 + 🤖 **라이선스 테스터로 실제 결제 시험** (내부 테스트 트랙, 위 "결제 켜기" 4 · 6번 뒤): 보석 상품 하나를 사서 ① 보석이 들어오고 ② 다시 열어도 두 번 들어오지 않고 ③ 같은 상품을 한 번 더 사면 첫 구매 2배가 빠지고 ④ 첫 결제 패키지를 두 번 사면 두 번째는 "계정당 1번" 안내 + 3일 안 자동 환불인지 본다. Unity 대시보드 → Cloud Code → Logs에서 `지급 … 테스트 True` 줄과 Cloud Save → 플레이어 → Protected 데이터 `purchases`를 확인한다.
+9. 🤖 **모듈을 고쳤을 때 다시 배포:** 유니티 메뉴 **Services → Deployment** → 창 위 환경이 `production`인지 확인 → `Assets/CloudCode/HistoryHeroesServer.ccmr` 고르기 → **Deploy Selected**. 필요한 것: .NET 9 SDK (맥 `/usr/local/share/dotnet/dotnet`, 윈도우는 `dotnet`이 PATH에 — 경로는 Preferences → Cloud Code). 상품표(`IapCatalog.cs`)를 고쳐도 서버가 같은 파일을 쓰므로 **꼭 다시 배포**한다.
+
+아직 없는 것: 환불 회수(Voided Purchases API — 서버 장부의 주문 번호 · 토큰 해시로 맞춘다) · 보석 잔액 · 쓰기의 서버 기준 — [Monetization 7-1](../Design/Monetization.md#7-1-구현-상태-2026-11-01-1차).

@@ -13,6 +13,9 @@ namespace HistoryHeroes.Economy
     /// 확정 전에 앱이 꺼지면 상점이 다음 연결 때 같은 거래를 다시 보내고, 장부가 두 번 지급을 막는다 (Monetization 7장).
     /// 연결이 안 되면 상점 단추만 "연결할 수 없어요"가 되고 게임은 그대로 돈다.
     /// 안드로이드는 영수증 검사 키(GooglePlayTangle)가 없으면 아무것도 팔지 않는다 (닫힌 쪽으로 실패).
+    /// 안드로이드 기기는 지급을 **서버가 정한다** (ServerAuthority): 결제가 오면 서버(PurchaseServer.VerifyAsync)가 구글에 묻고 서버 장부로 수량을 정해
+    /// 돌려준 그대로 이 기기 장부에 넣고 저장한 뒤 확정한다. 서버가 안 되면 결제를 남겨 두고 다시 묻는다 (확정 안 함).
+    /// 로그인하면 서버 장부를 받아 이 기기에 없는 결제를 다시 넣는다 (SyncServer). 에디터 · 가짜 상점은 서버 없이 이 기기 장부로 지급한다 (개발용).
     /// </summary>
     public static class IapService
     {
@@ -38,6 +41,10 @@ namespace HistoryHeroes.Economy
         public const string UnavailableText = "상점에 연결할 수 없어요";
         public const string NotReadyText = "결제 확인 준비 중이에요. 이번 결제는 확정하지 않아서 3일 안에 자동으로 환불돼요.";
         public const string InvalidReceiptText = "결제를 확인하지 못해서 지급하지 않았어요. 확정하지 않은 결제는 3일 안에 자동으로 환불돼요. 계속되면 문의해 주세요.";
+        public const string CheckingText = "결제 확인 중이에요. 확인되면 바로 들어와요 (인터넷 연결을 확인해 주세요).";
+        public const string SaveFailedText = "저장하지 못해서 아직 지급하지 않았어요. 저장 공간을 확인해 주세요. 다음에 게임을 열면 다시 받아요.";
+        public const string AlreadyClaimedText = "첫 결제 패키지는 계정당 1번만 받을 수 있어요. 이번 결제는 확정하지 않아 환불 대기 중이에요 (3일 안에 자동 환불).";
+        public const string UngrantableText = "이 결제를 지급하지 못해 환불 대기 중이에요 (3일 안에 자동 환불). 계속되면 문의해 주세요.";
         /// <summary>확정이 실패하면 이만큼 뒤에 다시 (구글은 3일 안에 확정하지 않으면 환불한다)</summary>
         private const int ConfirmRetryMilliseconds = 10000;
 
@@ -52,8 +59,52 @@ namespace HistoryHeroes.Economy
         /// <summary>Play를 다시 시작하면 바뀐다 (지난 Play에서 걸어 둔 재시도가 새 Play에 끼어들지 않게)</summary>
         private static int _session;
 
+        /// <summary>서버 답을 기다리는 결제 (거래 번호 → 결제). 다시 묻기: 잠시 뒤(점점 길게) · 로그인될 때 · 상점을 열 때 · 상점이 다시 보낼 때</summary>
+        private static readonly Dictionary<string, PendingOrder> Waiting = new Dictionary<string, PendingOrder>();
+        /// <summary>지금 서버에 묻는 중인 거래 (같은 결제를 동시에 두 번 묻지 않게)</summary>
+        private static readonly HashSet<string> Asking = new HashSet<string>();
+        /// <summary>다시 묻기를 걸어 둔 거래 + 몇 번째인지</summary>
+        private static readonly Dictionary<string, int> AskCount = new Dictionary<string, int>();
+        private static readonly HashSet<string> AskScheduled = new HashSet<string>();
+        /// <summary>이번 실행에서 서버 장부와 맞춘 UGS 플레이어 (계정이 바뀌면 다시 맞춘다)</summary>
+        private static string _serverPlayer;
+        /// <summary>마지막으로 받은 서버 장부에서: 서버에 구글 서비스 계정이 있다</summary>
+        private static bool _serverConfigured;
+        private static bool _serverSyncing;
+
+        /// <summary>지급을 서버가 정한다: 안드로이드 기기 (에디터 · 가짜 상점은 아님)</summary>
+        public static bool ServerAuthority
+        {
+            get
+            {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                return true;
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <summary>이번 실행에서 지금 로그인한 플레이어의 서버 장부를 받아 이 기기 장부에 맞췄다</summary>
+        public static bool ServerSynced => _serverPlayer != null && _serverPlayer == Account.AccountService.PlayerId;
+
+        /// <summary>
+        /// 이 기기 장부의 계정당 1번 · 첫 구매 2배를 믿고 팔아도 되나 (상점 카드 · 확인 창 · Buy).
+        /// 기기: 이번 실행에서 서버 장부와 맞춘 뒤 (지급은 어차피 서버가 정하고, 맞춘 장부라 표시도 서버와 같다).
+        /// 에디터: 지금처럼 클라우드 동기화 (AccountService.SyncSettled)
+        /// </summary>
+        public static bool LedgerSettled => ServerAuthority ? ServerSynced : Account.AccountService.SyncSettled;
+
         public static void Start()
         {
+            if (ServerAuthority)
+            {
+                Account.AccountService.Changed -= OnAccountChanged;
+                Account.AccountService.Changed += OnAccountChanged;
+                SyncServer();
+                AskWaitingAgain();
+            }
+
             if (State == Status.Connecting) return;
             if (State == Status.Ready)
             {
@@ -121,13 +172,16 @@ namespace HistoryHeroes.Economy
             return p != null && p.availableToPurchase ? p.metadata.localizedPriceString : null;
         }
 
-        /// <summary>영수증을 검사할 수 있다 (에디터 · 가짜 상점은 늘 true, 안드로이드는 GooglePlayTangle이 있을 때만). 아니면 팔지 않는다</summary>
+        /// <summary>
+        /// 결제를 검사할 준비가 됐다 (에디터 · 가짜 상점은 늘 true). 안드로이드는 GooglePlayTangle이 있고, 서버 장부를 받았다면 서버에 구글 서비스 계정이 있을 때만.
+        /// 아니면 팔지 않는다 ("결제 준비 중"). 서버 장부를 아직 못 받았으면 LedgerSettled가 막는다 ("계정 확인 중")
+        /// </summary>
         public static bool ValidationReady
         {
             get
             {
 #if UNITY_ANDROID && !UNITY_EDITOR
-                return GooglePublicKey() != null;
+                return GooglePublicKey() != null && (!ServerSynced || _serverConfigured);
 #else
                 return true;
 #endif
@@ -142,7 +196,9 @@ namespace HistoryHeroes.Economy
         {
             IapCatalog.Item item = IapCatalog.Find(productId);
             if (BuyingId != null || item == null || Price(productId) == null || !ValidationReady) return false;
-            if (!IapLedger.Sellable(SaveSystem.Data, item, Account.AccountService.SyncSettled)) return false; // 계정당 1번 상품을 두 번 결제하지 않게 (동기화 전에는 안 판다)
+            if (!IapLedger.Sellable(SaveSystem.Data, item, LedgerSettled)) return false; // 계정당 1번 상품을 두 번 결제하지 않게 (장부를 맞추기 전에는 안 판다)
+            // 이 결제를 지금 플레이어에 묶는다: 서버는 구글이 돌려준 계정 표시가 부른 플레이어와 같을 때만 지급한다 (남의 토큰으로 받기 막기)
+            if (ServerAuthority) _store.GooglePlayStoreExtendedService?.SetObfuscatedAccountId(IapLedger.Hash(Account.AccountService.PlayerId));
             BuyingId = productId;
             _shown = shown;
             Changed?.Invoke();
@@ -211,25 +267,205 @@ namespace HistoryHeroes.Economy
             string productId = ProductOf(order);
             string transactionId = order.Info.TransactionID;
             EndBuying(productId);
-            PurchaseEntry granted = Process(productId, transactionId, ReceiptProblem(order), () => Confirm(order), out string notice);
-            if (granted != null)
+            string problem = ReceiptProblem(order);
+            if (ServerAuthority && problem == null)
             {
-                Granted?.Invoke(granted);
-                PurchaseEntry shown = _shown;
-                if (shown != null && shown.productId == granted.productId)
-                {
-                    _shown = null;
-                    // 보여 준 것보다 적게 받았을 때만 알린다 (동기화 전이라 2배를 약속하지 않았는데 받았으면 그냥 더 받은 것)
-                    if (granted.paidGems + granted.freeGems < shown.paidGems + shown.freeGems)
-                        Say($"첫 구매 2배는 먼저 들어온 같은 상품 결제에 쓰였어요. 이번 결제로 {IapLedger.Text(granted)}을 받았어요.");
-                }
+                // 서버가 정한 지급을 이미 넣고 저장했는데 확정 전에 꺼졌다 (또는 다른 기기에서 받아 장부를 맞췄다) → 확정만
+                if (IapLedger.Find(SaveSystem.Data, transactionId) != null) Confirm(order);
+                else AskServer(order);
+                return;
             }
 
-            if (notice != null && (string.IsNullOrEmpty(transactionId) || Noticed.Add(transactionId))) Say(notice);
+            PurchaseEntry granted = Process(productId, transactionId, problem, () => Confirm(order), out string notice);
+            if (granted != null) OnGranted(granted);
+            SayOnce(transactionId, notice);
+        }
+
+        private static void OnGranted(PurchaseEntry granted)
+        {
+            Granted?.Invoke(granted);
+            PurchaseEntry shown = _shown;
+            if (shown == null || shown.productId != granted.productId) return;
+            _shown = null;
+            // 보여 준 것보다 적게 받았을 때만 알린다 (동기화 전이라 2배를 약속하지 않았는데 받았으면 그냥 더 받은 것)
+            if (granted.paidGems + granted.freeGems < shown.paidGems + shown.freeGems)
+                Say($"첫 구매 2배는 먼저 들어온 같은 상품 결제에 쓰였어요. 이번 결제로 {IapLedger.Text(granted)}을 받았어요.");
+        }
+
+        /// <summary>같은 거래의 같은 안내는 이번 실행에서 한 번만 (결제가 다시 올 때마다 띄우지 않게)</summary>
+        private static void SayOnce(string transactionId, string notice)
+        {
+            if (notice != null && (string.IsNullOrEmpty(transactionId) || Noticed.Add(transactionId + "\n" + notice))) Say(notice);
+        }
+
+        // ------------------------------------------------------------------ 서버 검증 (기기)
+
+        /// <summary>서버에 이 결제를 묻고 답대로 처리한다. 로그인 전 · 오프라인 · 서버 오류면 결제를 남겨 두고 잠시 뒤 다시 묻는다</summary>
+        private static async void AskServer(PendingOrder order)
+        {
+            string transactionId = order.Info.TransactionID;
+            string productId = ProductOf(order);
+            if (string.IsNullOrEmpty(transactionId) || !Asking.Add(transactionId)) return;
+            Waiting[transactionId] = order;
+            int session = _session;
+            PurchaseServer.Verdict verdict = null;
+            try
+            {
+                if (Account.AccountService.PlayerId == null) Account.AccountService.Start(); // 로그인되면 OnAccountChanged가 다시 묻는다
+                else verdict = await PurchaseServer.VerifyAsync(productId, transactionId);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[IAP] 서버 결제 확인 실패 ({productId}, 다시 시도): {e.Message}");
+            }
+
+            if (session != _session) return;
+            Asking.Remove(transactionId);
+            if (verdict != null && verdict.status != PurchaseServer.Granted && verdict.status != PurchaseServer.Already)
+                Debug.LogWarning($"[IAP] 서버 판정 {productId}: {verdict.status} {verdict.reason}");
+            PurchaseEntry granted = ApplyVerdict(verdict, transactionId, () => Confirm(order), out string notice, out bool retry);
+            if (retry) AskAgainSoon(transactionId);
+            else
+            {
+                Waiting.Remove(transactionId);
+                AskCount.Remove(transactionId);
+            }
+
+            if (granted != null) OnGranted(granted);
+            SayOnce(transactionId, notice);
         }
 
         /// <summary>
-        /// 결제 하나의 처리 순서 (상점 없이 테스트한다). 영수증 문제가 있으면 지급도 확정도 안 한다 → 지급 · 저장 → 저장이 끝난 뒤에만 confirm.
+        /// 서버 답 하나의 처리 (상점 없이 테스트한다). granted · already → 서버가 준 수량 그대로 장부에 넣고 저장한 뒤에만 confirm
+        /// (이미 이 기기 장부에 있으면 확정만). already_claimed · invalid · not_configured → 지급도 확정도 안 함 (구글이 3일 안에 환불).
+        /// retry · 답 없음(오프라인 · 오류) · 저장 실패 → 지급 · 확정 없이 retry=true (결제를 남겨 두고 다시 묻는다).
+        /// 돌려주는 값: 이번에 새로 지급한 내역 (없으면 null)
+        /// </summary>
+        public static PurchaseEntry ApplyVerdict(PurchaseServer.Verdict verdict, string transactionId, Action confirm, out string notice, out bool retry)
+        {
+            notice = null;
+            retry = false;
+            switch (verdict?.status)
+            {
+                case PurchaseServer.Granted:
+                case PurchaseServer.Already:
+                    if (!verdict.HasPurchase) break;
+                    IapLedger.Result result = GrantServerAndSave(verdict.purchase, transactionId, out PurchaseEntry entry, out SaveSystem.CommitResult saved);
+                    if (result == IapLedger.Result.AlreadyGranted)
+                    {
+                        confirm();
+                        return null;
+                    }
+
+                    if (saved == SaveSystem.CommitResult.Saved)
+                    {
+                        confirm(); // 저장이 끝난 뒤에만 확정한다
+                        return entry;
+                    }
+
+                    Debug.LogWarning($"[IAP] 서버가 정한 지급을 넣지 못함: {result} / {saved}");
+                    notice = saved == SaveSystem.CommitResult.SaveFailed ? SaveFailedText : UngrantableText;
+                    retry = saved == SaveSystem.CommitResult.SaveFailed; // 다시 물으면 서버가 already로 같은 지급을 준다
+                    return null;
+                case PurchaseServer.AlreadyClaimed:
+                    notice = AlreadyClaimedText;
+                    return null;
+                case PurchaseServer.Invalid:
+                    notice = InvalidReceiptText;
+                    return null;
+                case PurchaseServer.NotConfigured:
+                    notice = NotReadyText;
+                    return null;
+            }
+
+            retry = true;
+            notice = CheckingText;
+            return null;
+        }
+
+        /// <summary>서버가 정한 지급을 장부에 넣고 바로 저장한다. 저장이 실패하면 통째로 되돌린다</summary>
+        public static IapLedger.Result GrantServerAndSave(PurchaseServer.Purchase purchase, string transactionId, out PurchaseEntry entry, out SaveSystem.CommitResult saved)
+        {
+            IapLedger.Result result = IapLedger.Result.Invalid;
+            PurchaseEntry granted = null;
+            saved = SaveSystem.Commit(() =>
+            {
+                result = IapLedger.ApplyServer(SaveSystem.Data, purchase, transactionId, out granted);
+                return result == IapLedger.Result.Granted;
+            });
+            entry = granted;
+            return result;
+        }
+
+        /// <summary>다시 묻기 간격 (초): 5 · 10 · 20 · 40 · 80 · 160 · 그 뒤로 300</summary>
+        public static int AskRetrySeconds(int attempt) => Math.Min(300, 5 << Math.Clamp(attempt - 1, 0, 6));
+
+        private static async void AskAgainSoon(string transactionId)
+        {
+            if (!AskScheduled.Add(transactionId)) return;
+            int attempt = AskCount.TryGetValue(transactionId, out int n) ? n + 1 : 1;
+            AskCount[transactionId] = attempt;
+            int session = _session;
+            await Task.Delay(AskRetrySeconds(attempt) * 1000);
+            if (session != _session) return;
+            AskScheduled.Remove(transactionId);
+            if (Waiting.TryGetValue(transactionId, out PendingOrder order)) AskServer(order);
+        }
+
+        /// <summary>답을 못 받은 결제를 지금 다시 묻는다 (로그인됐을 때 · 상점을 열 때)</summary>
+        private static void AskWaitingAgain()
+        {
+            if (Account.AccountService.PlayerId == null) return;
+            foreach (PendingOrder order in new List<PendingOrder>(Waiting.Values)) AskServer(order);
+        }
+
+        private static void OnAccountChanged()
+        {
+            if (Account.AccountService.PlayerId == null) return;
+            if (!ServerSynced) SyncServer();
+            AskWaitingAgain();
+        }
+
+        /// <summary>
+        /// 로그인한 플레이어의 서버 장부를 받아 이 기기에 없는 결제를 넣는다 (LiveOps 3-4 — 저장을 잃었거나 같은 계정 다른 기기에서 산 것).
+        /// 끝나면 ServerSynced → 상점이 팔기 시작한다. 실패하면 다음 로비 · 상점 열기 · 계정 바뀜에서 다시
+        /// </summary>
+        private static async void SyncServer()
+        {
+            string player = Account.AccountService.PlayerId;
+            if (player == null || _serverSyncing || ServerSynced) return;
+            _serverSyncing = true;
+            int session = _session;
+            try
+            {
+                PurchaseServer.Ledger ledger = await PurchaseServer.GetPurchasesAsync();
+                if (session != _session || ledger == null || player != Account.AccountService.PlayerId) return;
+                int added = 0;
+                SaveSystem.CommitResult saved = SaveSystem.Commit(() => (added = IapLedger.MergeServer(SaveSystem.Data, ledger.purchases)) > 0);
+                if (saved == SaveSystem.CommitResult.SaveFailed)
+                {
+                    Debug.LogWarning("[IAP] 서버 장부를 맞췄지만 저장하지 못함 (다음에 다시)");
+                    return;
+                }
+
+                _serverConfigured = ledger.configured;
+                _serverPlayer = player;
+                Debug.Log($"[IAP] 서버 장부 {ledger.purchases?.Count ?? 0}건 · 새로 넣음 {added} · 검증 준비 {ledger.configured}");
+                if (added > 0) Say($"서버에 기록된 결제 {added}건을 이 기기에 다시 넣었어요.");
+                Changed?.Invoke();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[IAP] 서버 장부를 받지 못함 (다음에 다시): " + e.Message);
+            }
+            finally
+            {
+                if (session == _session) _serverSyncing = false;
+            }
+        }
+
+        /// <summary>
+        /// 결제 하나의 처리 순서 — 이 기기 장부로 지급을 정하는 길 (에디터 · 가짜 상점, 기기는 영수증 키가 없을 때 거절만). 상점 없이 테스트한다. 영수증 문제가 있으면 지급도 확정도 안 한다 → 지급 · 저장 → 저장이 끝난 뒤에만 confirm.
         /// 이미 지급한 거래는 확정만 한다. 지급하지 못하면(저장 실패 · 이미 받은 패키지 · 모르는 상품) 확정하지 않는다 (구글이 3일 안에 환불).
         /// 돌려주는 값: 이번에 새로 지급한 내역 (없으면 null). notice: 사용자에게 보여 줄 안내 (없으면 null)
         /// </summary>
@@ -256,12 +492,9 @@ namespace HistoryHeroes.Economy
             }
 
             Debug.LogWarning($"[IAP] {productId} 지급 안 함: {result} / {saved}");
-            if (saved == SaveSystem.CommitResult.SaveFailed)
-                notice = "저장하지 못해서 아직 지급하지 않았어요. 저장 공간을 확인해 주세요. 다음에 게임을 열면 다시 받아요.";
-            else if (result == IapLedger.Result.AlreadyClaimed)
-                notice = "첫 결제 패키지는 계정당 1번만 받을 수 있어요. 이번 결제는 확정하지 않아 환불 대기 중이에요 (3일 안에 자동 환불).";
-            else
-                notice = "이 결제를 지급하지 못해 환불 대기 중이에요 (3일 안에 자동 환불). 계속되면 문의해 주세요.";
+            if (saved == SaveSystem.CommitResult.SaveFailed) notice = SaveFailedText;
+            else if (result == IapLedger.Result.AlreadyClaimed) notice = AlreadyClaimedText;
+            else notice = UngrantableText;
             return null;
         }
 
@@ -422,6 +655,13 @@ namespace HistoryHeroes.Economy
             Noticed.Clear();
             _shown = null;
             _retryScheduled = false;
+            Waiting.Clear();
+            Asking.Clear();
+            AskCount.Clear();
+            AskScheduled.Clear();
+            _serverPlayer = null;
+            _serverConfigured = false;
+            _serverSyncing = false;
             _session++;
         }
     }

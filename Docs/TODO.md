@@ -102,7 +102,8 @@ Codex 점수: 전체 4 · UI 3.5 · 전투 가독성 4 · 뽕맛 4.5 · 스토�
 | | 계정: 게스트(UGS 익명) → 구글 플레이 게임즈 · 카카오 연동, 클라우드 저장, 계정 삭제 (앱 + 웹) ([LiveOps 3장](Design/LiveOps.md)) | 👤 Unity 클라우드 · Play Console · 카카오 디벨로퍼스 + 🤖 연결 |
 | | 진짜 광고 SDK (LevelPlay) | 👤 계정 + 🤖 연결 |
 | | 인앱 결제 켜기: 🤖 코드는 됨 (2026-11-01, 보석 6 + 첫 결제 패키지, 가짜 상점 시험) → 👤 결제 프로필 · 상품 7개 등록 · 라이선스 키로 영수증 검사 키(Tangle) 만들기 ([출시 점검표 3장](Release/GooglePlay-Checklist.md)) | 👤 |
-| | 결제 서버 검증 (Cloud Code + 구글 API) · 환불 회수 · 나머지 상품 (영웅 · 성장 패키지, 월정액, 시즌 패스, 광고 제거) | 🤖 (Play 앱 생긴 뒤) |
+| | 결제 서버 검증: 🤖 2026-11-01 됨 (Cloud Code `HistoryHeroesServer` production 배포) → 👤 Play Console 신분 확인 뒤 구글 서비스 계정 키를 Secret Manager에 ([출시 점검표 3장 "서버 결제 검증 켜기"](Release/GooglePlay-Checklist.md#서버-결제-검증-켜기)) | 👤 |
+| | 환불 회수 (Voided Purchases) · 보석 쓰기 서버로 · 나머지 상품 (영웅 · 성장 패키지, 월정액, 시즌 패스, 광고 제거) | 🤖 |
 | | 개인정보 처리방침 · 이용약관 공개 주소 | 👤 |
 | | Google Play "자동 보호" 등 앱 보호 설정 확인 | 👤 |
 

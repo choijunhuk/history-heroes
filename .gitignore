@@ -41,6 +41,10 @@ ExportedObj/
 *.opendb
 *.VC.db
 
+# 서버 Cloud Code 모듈(Server/)은 손으로 쓴 솔루션 · 프로젝트라 위 무시에서 뺀다 (빌드 결과는 Server/.../.gitignore가 막는다)
+!/Server/**/*.csproj
+!/Server/**/*.sln
+
 # Unity crash / build output
 *.pidb.meta
 *.pdb.meta
@@ -58,6 +62,7 @@ crashlytics-build.properties
 *.p12
 *.mobileprovision
 google-services.json
+*service-account*.json
 GoogleService-Info.plist
 .env
 .env.*
