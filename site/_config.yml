@@ -1,0 +1,5 @@
+# 공개 페이지 (GitHub Pages) — 글은 Docs/에서 워크플로가 복사해 온다 (.github/workflows/pages.yml)
+title: History Heroes
+description: 역사영웅 로그라이크 — 개인정보 처리방침 · 이용약관 · 계정 삭제 · 확률 공개
+lang: ko
+theme: jekyll-theme-primer

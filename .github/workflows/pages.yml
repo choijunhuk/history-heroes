@@ -1,0 +1,47 @@
+# 공개 페이지: 개인정보 처리방침 · 이용약관 · 계정 삭제 · 확률 공개를 GitHub Pages로 올린다.
+# 구글 플레이 등록에 쓰는 주소: https://choijunhuk.github.io/history-heroes/privacy.html 등.
+# 글의 원본은 Docs/ (게임 안 글과 같은 원본) — 여기서는 복사만 한다.
+name: 공개 페이지
+
+on:
+  push:
+    branches: [main]
+    paths: ["Docs/Legal/**", "Docs/Public/**", "site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docs에서 글 복사
+        run: |
+          cp Docs/Legal/privacy-ko.md site/privacy.md
+          cp Docs/Legal/terms-ko.md site/terms.md
+          cp Docs/Public/account-deletion.md site/account-deletion.md
+          cp Docs/Public/probabilities.md site/probabilities.md
+      - uses: actions/configure-pages@v5
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./site
+          destination: ./_site
+      - uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
