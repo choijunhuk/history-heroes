@@ -112,21 +112,37 @@ namespace HistoryHeroes.UI
             SaveData data = SaveSystem.Data;
             if (SaveSystem.UnsupportedNewerSave)
             {
-                CanvasGroup controls = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
-                controls.interactable = false;
-                controls.blocksRaycasts = false;
-                if (unsupportedSaveNotice != null)
-                {
-                    unsupportedSaveNotice.SetActive(true);
-                    unsupportedSaveNotice.transform.SetAsLastSibling();
-                }
-                else ShowNotice(SaveSystem.UnsupportedNewerSaveText);
-                enabled = false;
+                Block(null, SaveSystem.UnsupportedNewerSaveText);
+                return;
+            }
+
+            // 지운 계정의 진행을 아직 다 못 지웠다: 새 진행을 쌓지 않게 로비를 막는다 (다시 열면 이어서 지운다)
+            if (SaveSystem.WipePending)
+            {
+                Block("이 기기 진행을 지우는 중이에요\n\n<size=70%>" + SaveSystem.WipeFailedText + "</size>", SaveSystem.WipeFailedText);
                 return;
             }
             // 첫 실행 동의가 먼저다: 튜토리얼 자동 시작 · 출석 · 안내보다 앞. 동의하면 그때 나머지를 시작한다.
             if (consent != null && Progress.Consent.NeedsConsent(data)) consent.Open(Begin);
             else Begin();
+        }
+
+        /// <summary>로비를 못 쓰게 막고 화면 전체 안내를 띄운다. text가 null이면 안내의 원래 글 (더 새 저장)</summary>
+        private void Block(string text, string fallback)
+        {
+            // ??는 에디터의 "가짜 null"을 못 거른다 → == null
+            CanvasGroup controls = GetComponent<CanvasGroup>();
+            if (controls == null) controls = gameObject.AddComponent<CanvasGroup>();
+            controls.interactable = false;
+            controls.blocksRaycasts = false;
+            if (unsupportedSaveNotice != null)
+            {
+                if (text != null) unsupportedSaveNotice.GetComponentInChildren<TMP_Text>(true).text = text;
+                unsupportedSaveNotice.SetActive(true);
+                unsupportedSaveNotice.transform.SetAsLastSibling();
+            }
+            else ShowNotice(fallback);
+            enabled = false;
         }
 
         /// <summary>동의가 끝난 뒤의 로비 시작 절차 (예전 Start 본문)</summary>

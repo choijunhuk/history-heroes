@@ -268,6 +268,8 @@ namespace HistoryHeroes.Records
                 {
                     report.Source = path;
                     report.FromBackup = path != MainPath;
+                    // 교체 도중 꺼져 남은 임시 파일은 같은 저장의 완성본이다. 그 밖의 백업(.bak · 판 백업)은 본 파일보다 오래됐다
+                    report.FromOlderCopy = path != MainPath && path != TempPath;
 
                     // 교체 도중에 꺼져서 임시 파일만 완성본으로 남았다 → 바로 본 파일로 확정한다.
                     // 그대로 두면 다음 저장이 임시 파일을 새로 쓰면서(잘라내며) 유일한 정상 파일을 지운다.
@@ -303,6 +305,7 @@ namespace HistoryHeroes.Records
             {
                 report.Source = tamperedPath;
                 report.FromBackup = tamperedPath != MainPath;
+                report.FromOlderCopy = tamperedPath != MainPath && tamperedPath != TempPath;
                 report.Tampered = true;
                 tampered.integrityFailures++;
                 return tampered;
@@ -804,6 +807,8 @@ namespace HistoryHeroes.Records
             /// <summary>실제로 읽은 파일 (새로 시작이면 null)</summary>
             public string Source;
             public bool FromBackup;
+            /// <summary>본 파일(또는 그 완성된 임시 파일) 대신 더 오래된 백업을 읽었다 → 최근 진행 일부가 빠졌을 수 있다</summary>
+            public bool FromOlderCopy;
             public bool IsFresh;
             /// <summary>백업을 읽거나 새 계정을 시작하면 최신 저장을 덮을 수 있어서 로드를 멈췄다.</summary>
             public bool UnsupportedNewerSchema;

@@ -18,7 +18,8 @@ namespace HistoryHeroes.Account
     /// 계정 (LiveOps 3장): 게스트(UGS 익명) → 카카오 연결 → 클라우드 저장 → 계정 삭제.
     /// 서버가 없거나 실패해도 게임은 지금처럼 이 기기 저장으로만 돈다 (상태 "오프라인"). 모든 서버 호출은 async로 메인 스레드를 막지 않는다.
     /// 클라우드 키: "save" = 마지막으로 파일에 저장된 글 그대로 (해시 포함 → 받을 때 손댄 글을 알아챈다), "meta" = AccountSummary (+ 올린 번호).
-    /// 올리기 전에 meta만 읽어, 이 기기가 마지막으로 맞춘 뒤 다른 기기가 올렸으면 덮지 않고 고르게 한다 (서버 기준 합치기는 아직 없음).
+    /// 올리기 전에 클라우드를 읽어, 이 기기가 마지막으로 맞춘 뒤 다른 기기가 올렸으면 덮지 않고 고르게 한다.
+    /// 쓰기는 읽은 판의 write lock을 붙여서만 한다 → 그사이 다른 기기가 쓰면 서버가 거절하고(충돌) 다시 고르게 한다 (서버 기준 합치기는 아직 없음).
     /// </summary>
     public static class AccountService
     {
@@ -80,7 +81,16 @@ namespace HistoryHeroes.Account
         private static bool _uploading;
         /// <summary>고르기에서 "나중에"를 골랐다: 이번 실행에서는 자동으로 올리지 않는다 ("지금 클라우드에 저장"을 누르면 다시 고른다)</summary>
         private static bool _conflictDeferred;
+        /// <summary>이번 실행에서 클라우드와 맞췄다 (올리기 성공 · 클라우드 진행 받기). 결제의 계정당 1번 · 첫 구매 2배가 이걸 본다</summary>
+        private static bool _cloudChecked;
         private static double _lastUpload = double.NegativeInfinity;
+
+        /// <summary>
+        /// 결제가 이 기기 장부의 "계정당 1번 · 첫 구매 2배"를 믿어도 되나 (LiveOps 3-2 · Monetization 7장).
+        /// 게스트는 이 기기 장부가 전부라 늘 된다. 연결된 계정은 이번 실행에서 클라우드와 맞췄고 고를 일이 남지 않았을 때만.
+        /// 오프라인 · 연결 중 · 처리 중은 알 수 없으니 안 된다.
+        /// </summary>
+        public static bool SyncSettled => AccountRules.SyncSettled(State, _cloudChecked, ConflictPending || _conflictDeferred, ChoicePending, SaveSystem.CloudRecheckNeeded);
 
         public static string PlayerId
         {
@@ -126,6 +136,8 @@ namespace HistoryHeroes.Account
         public static async void Start()
         {
             if (_starting || State == AccountState.Guest || State == AccountState.Linked || State == AccountState.Busy) return;
+            // 동의 전에는 서버에 닿지 않는다 (설정 화면의 계정 칸이 장면을 열 때 한 번 켜졌다 꺼지면서 부를 수 있다)
+            if (Progress.Consent.NeedsConsent(SaveSystem.Data) || SaveSystem.WipePending) return;
             _starting = true;
             Set(AccountState.Connecting, null);
             try
@@ -183,15 +195,16 @@ namespace HistoryHeroes.Account
             }
 
             if (LinkedName == null && SandboxLinked) LinkedName = "시험";
-            Set(LinkedName != null ? AccountState.Linked : AccountState.Guest, null);
-            if (State != AccountState.Linked) return;
-
-            // 저장을 못 읽어 새로 시작했다: 맞춘 기록을 지워 두면 다음 올리기가 덮지 않고 클라우드 복구를 권한다 (다시 켜도 그대로)
-            if (SaveSystem.LostSaveOnLoad)
+            _cloudChecked = false;
+            // 최근 저장을 잃었다(못 읽음 · 오래된 백업): 맞춘 기록을 지워 두면 다음 올리기가 덮지 않고 클라우드 복구를 권한다 (다시 켜도 그대로)
+            if (LinkedName != null && SaveSystem.CloudRecheckNeeded)
             {
                 PlayerPrefs.DeleteKey(SyncedKey);
                 PlayerPrefs.Save();
             }
+
+            Set(LinkedName != null ? AccountState.Linked : AccountState.Guest, null);
+            if (State != AccountState.Linked) return;
 
             // 지난번 실행에서 못 올렸을 수 있다 (60초 · 클라우드 확인 규칙은 그대로)
             _cloudChanged = true;
@@ -279,11 +292,11 @@ namespace HistoryHeroes.Account
                 }
 
                 await provider.SignIn(token);
-                CloudCopy cloud = await LoadCloud();
-                if (cloud == null)
+                CloudCopy cloud = await LoadCloud(true);
+                if (!cloud.HasSave)
                 {
-                    // 연결된 계정이지만 클라우드 저장이 없다 → 이 기기 진행을 올린다
-                    await FinishWithDevice(provider);
+                    // 연결된 계정이지만 클라우드 저장이 없다 → 이 기기 진행을 올린다 (처음 만들기, 동시에 만든 기기가 있으면 다시 고르기)
+                    await FinishWithDevice(provider, cloud);
                     return;
                 }
 
@@ -308,7 +321,7 @@ namespace HistoryHeroes.Account
                         await BackToGuest("저장하지 못했어요. 기기 저장 공간을 확인하고 다시 해 주세요");
                         return;
                     }
-                    await FinishWithDevice(provider);
+                    await FinishWithDevice(provider, cloud);
                     return;
                 }
 
@@ -330,16 +343,19 @@ namespace HistoryHeroes.Account
             }
         }
 
-        /// <summary>사용자가 "이 기기 진행"을 골랐다 (또는 클라우드가 비었다): 클라우드를 확인 없이 덮는다</summary>
-        private static async Task FinishWithDevice(LoginProvider provider)
+        /// <summary>
+        /// 사용자가 "이 기기 진행"을 골랐다 (또는 클라우드가 비었다): 사용자가 본 클라우드 판(seen)의 write lock으로 덮는다.
+        /// 그 뒤 다른 기기가 썼으면 서버가 거절하고 고르기가 다시 뜬다 (본 적 없는 진행을 말없이 덮지 않게).
+        /// </summary>
+        private static async Task FinishWithDevice(LoginProvider provider, CloudCopy seen)
         {
             ClearPending();
             LinkedName = provider.DisplayName;
             Set(AccountState.Linked, null);
             _cloudChanged = true;
-            bool uploaded = await UploadAsync(true, overwrite: true);
-            Set(AccountState.Linked, uploaded
-                ? $"{provider.DisplayName} 계정에 이 기기 진행을 올렸어요"
+            bool uploaded = await UploadAsync(true, seen);
+            Set(AccountState.Linked, uploaded ? $"{provider.DisplayName} 계정에 이 기기 진행을 올렸어요"
+                : ConflictPending ? "그사이 클라우드가 바뀌었어요. 다시 골라 주세요"
                 : $"{provider.DisplayName} 계정을 연결했어요. 클라우드 저장은 다음에 다시 해요");
         }
 
@@ -366,8 +382,12 @@ namespace HistoryHeroes.Account
 
         // ------------------------------------------------------------------ 클라우드 읽기 · 고르기
 
+        /// <summary>읽은 클라우드 한 판: 값 + 키마다 write lock (없는 키는 null → 쓰면 새로 만든다)</summary>
         private sealed class CloudCopy
         {
+            public bool HasSave;
+            public string SaveLock;
+            public string MetaLock;
             public SaveStore.ParseResult Parsed;
             public SaveData Data;
             public string Problem;
@@ -380,20 +400,22 @@ namespace HistoryHeroes.Account
                 : "클라우드 진행을 읽지 못했어요. 문의해 주세요";
         }
 
-        private static async Task<AccountSummary> LoadCloudMeta()
-        {
-            Dictionary<string, Item> items = await CloudSaveService.Instance.Data.Player.LoadAsync(new HashSet<string> { MetaKey });
-            return items.TryGetValue(MetaKey, out Item meta) ? JsonUtility.FromJson<AccountSummary>(meta.Value.GetAs<string>()) : null;
-        }
-
-        /// <summary>클라우드 저장 받기 (파일 읽기와 같은 검사). 저장이 없으면 null</summary>
-        private static async Task<CloudCopy> LoadCloud()
+        /// <summary>클라우드 읽기 (값 + write lock). parse면 저장 글을 파일 읽기와 같은 검사로 읽는다 (고르기 · 받기 때만)</summary>
+        private static async Task<CloudCopy> LoadCloud(bool parse)
         {
             Dictionary<string, Item> items = await CloudSaveService.Instance.Data.Player.LoadAsync(new HashSet<string> { SaveKey, MetaKey });
-            if (!items.TryGetValue(SaveKey, out Item save)) return null;
             var copy = new CloudCopy();
+            if (items.TryGetValue(MetaKey, out Item meta))
+            {
+                copy.MetaLock = meta.WriteLock;
+                copy.Meta = JsonUtility.FromJson<AccountSummary>(meta.Value.GetAs<string>());
+            }
+
+            if (!items.TryGetValue(SaveKey, out Item save)) return copy;
+            copy.HasSave = true;
+            copy.SaveLock = save.WriteLock;
+            if (!parse) return copy;
             copy.Parsed = SaveStore.Parse(save.Value.GetAs<string>(), out copy.Data, out copy.Problem);
-            if (items.TryGetValue(MetaKey, out Item meta)) copy.Meta = JsonUtility.FromJson<AccountSummary>(meta.Value.GetAs<string>());
             if (!copy.Readable) Debug.LogWarning($"[Account] 클라우드 저장을 못 읽음 ({copy.Parsed}): {copy.Problem}");
             else if (copy.Parsed == SaveStore.ParseResult.Tampered) Debug.LogWarning("[Account] 클라우드 저장 해시 불일치 (표시만 남기고 쓴다)");
             return copy;
@@ -413,7 +435,10 @@ namespace HistoryHeroes.Account
             Economy.IapLedger.MergeInto(cloud.Data, SaveSystem.Data);
             if (!SaveSystem.Replace(cloud.Data)) return false;
             SetSynced(cloud.Meta?.uploadId);
-            _cloudChanged = false;
+            SaveSystem.CloudRechecked();
+            _cloudChecked = true;
+            // 이 기기 결제를 합쳤으면 클라우드보다 앞서 있다 → 받은 판의 lock으로 곧 올린다 (meta 번호가 같으니 자동 올리기가 통과한다)
+            _cloudChanged = true;
             return true;
         }
 
@@ -434,12 +459,12 @@ namespace HistoryHeroes.Account
             Set(AccountState.Busy, "클라우드 진행을 확인하는 중…");
             try
             {
-                CloudCopy cloud = await LoadCloud();
-                if (cloud == null)
+                CloudCopy cloud = await LoadCloud(true);
+                if (!cloud.HasSave)
                 {
                     Set(AccountState.Linked, null);
                     _cloudChanged = true;
-                    await UploadAsync(true);
+                    await UploadAsync(true, cloud);
                     return;
                 }
 
@@ -450,7 +475,7 @@ namespace HistoryHeroes.Account
                     return;
                 }
 
-                bool lost = SaveSystem.LostSaveOnLoad;
+                bool lost = SaveSystem.CloudRecheckNeeded;
                 Choice choice = await Ask(lost ? "이 기기 저장을 읽지 못했어요" : "다른 기기에서 저장한 진행이 있어요",
                     lost ? "클라우드에 저장된 진행을 불러올 수 있어요" : "고른 진행으로 이어서 해요. 고르지 않은 쪽 진행은 사라져요", cloud);
                 if (choice == Choice.Cancel)
@@ -470,8 +495,10 @@ namespace HistoryHeroes.Account
                     }
                     Set(AccountState.Linked, null);
                     _cloudChanged = true;
-                    bool ok = await UploadAsync(true, overwrite: true);
-                    Set(AccountState.Linked, ok ? "이 기기 진행을 클라우드에 올렸어요" : "클라우드에 저장하지 못했어요. 인터넷을 확인해 주세요");
+                    bool ok = await UploadAsync(true, cloud);
+                    Set(AccountState.Linked, ok ? "이 기기 진행을 클라우드에 올렸어요"
+                        : ConflictPending ? "그사이 클라우드가 바뀌었어요. 다시 골라 주세요"
+                        : "클라우드에 저장하지 못했어요. 인터넷을 확인해 주세요");
                     return;
                 }
 
@@ -515,13 +542,16 @@ namespace HistoryHeroes.Account
         /// <summary>
         /// 연결된 계정만, 로비에서만 올린다 (게스트는 이 기기에만, 전투 중에는 안 올린다). force가 아니면 60초에 한 번까지.
         /// 올리는 글은 마지막으로 파일에 저장된 글 그대로다 (판 도중 메모리 상태를 올리지 않는다).
-        /// overwrite가 아니면 먼저 meta만 읽어 이 기기가 마지막으로 맞춘 뒤 바뀌었는지 보고, 바뀌었으면 올리지 않고 ConflictPending.
+        /// seen이 없으면 먼저 클라우드를 읽어 이 기기가 마지막으로 맞춘 뒤 바뀌었는지 보고(meta 올린 번호), 바뀌었으면 올리지 않고 ConflictPending.
+        /// seen이 있으면(고르기에서 "이 기기"를 골랐다) 번호 확인 없이 그 판을 덮는다.
+        /// 어느 쪽이든 읽은 판의 write lock을 붙여 쓴다 → 그사이 다른 기기가 쓰면 서버가 거절(충돌) → ConflictPending.
+        /// 키가 없어 처음 만들 때는 lock이 없어 동시에 만든 기기를 못 막으므로, 쓴 뒤 다시 읽어 내 번호인지 확인한다.
         /// 더 새 게임의 저장을 읽은 기기는 빈 저장을 들고 있으니 절대 올리지 않는다.
         /// </summary>
-        private static async Task<bool> UploadAsync(bool force, bool overwrite = false)
+        private static async Task<bool> UploadAsync(bool force, CloudCopy seen = null)
         {
-            if (_uploading || SaveSystem.UnsupportedNewerSave || !InLobby) return false;
-            if (_conflictDeferred && !overwrite) return false;
+            if (_uploading || SaveSystem.UnsupportedNewerSave || SaveSystem.WipePending || !InLobby) return false;
+            if (_conflictDeferred && seen == null) return false;
             double now = Time.realtimeSinceStartupAsDouble;
             if (!AccountRules.ShouldUpload(State, ChoicePending, _cloudChanged || SaveSystem.IsDirty, force, now, _lastUpload)) return false;
             if (!SaveSystem.SaveIfDirty() || !ReadSavedFile(out string json, out SaveData saved)) return false;
@@ -532,10 +562,11 @@ namespace HistoryHeroes.Account
             bool conflict = false;
             try
             {
-                if (!overwrite)
+                CloudCopy target = seen;
+                if (target == null)
                 {
-                    AccountSummary cloudMeta = await LoadCloudMeta();
-                    conflict = AccountRules.CloudChangedElsewhere(cloudMeta != null, cloudMeta?.uploadId, SyncedUploadId);
+                    target = await LoadCloud(false);
+                    conflict = AccountRules.CloudChangedElsewhere(target.HasSave, target.Meta?.uploadId, SyncedUploadId);
                 }
 
                 if (!conflict)
@@ -550,10 +581,29 @@ namespace HistoryHeroes.Account
                         return false;
                     }
 
-                    await CloudSaveService.Instance.Data.Player.SaveAsync(new Dictionary<string, object> { [SaveKey] = json, [MetaKey] = metaJson });
-                    SetSynced(meta.uploadId);
-                    return true;
+                    await CloudSaveService.Instance.Data.Player.SaveAsync(new Dictionary<string, SaveItem>
+                    {
+                        [SaveKey] = new SaveItem(json, target.SaveLock),
+                        [MetaKey] = new SaveItem(metaJson, target.MetaLock),
+                    });
+                    if (target.SaveLock == null || target.MetaLock == null)
+                        conflict = (await LoadCloud(false)).Meta?.uploadId != meta.uploadId; // 처음 만들기 경쟁: 다른 기기가 나중에 썼다
+
+                    if (!conflict)
+                    {
+                        SetSynced(meta.uploadId);
+                        SaveSystem.CloudRechecked();
+                        bool first = !_cloudChecked;
+                        _cloudChecked = true;
+                        if (first) Changed?.Invoke(); // 결제 화면: 계정당 1번 상품 · 첫 구매 2배가 열린다
+                        return true;
+                    }
                 }
+            }
+            catch (CloudSaveConflictException e)
+            {
+                Debug.Log("[Account] 쓰는 사이 클라우드가 바뀜 (write lock 충돌): " + e.Message);
+                conflict = true;
             }
             catch (Exception e)
             {
@@ -568,7 +618,9 @@ namespace HistoryHeroes.Account
 
             Debug.Log("[Account] 클라우드가 이 기기가 맞춘 뒤 바뀜 (다른 기기 · 저장 복구) → 덮지 않고 고르기를 기다림");
             _cloudChanged = true;
+            _cloudChecked = false;
             ConflictPending = true;
+            Changed?.Invoke();
             return false;
         }
 
@@ -666,7 +718,9 @@ namespace HistoryHeroes.Account
             LinkedName = null;
             _cloudChanged = false;
             _conflictDeferred = false;
-            if (!SaveSystem.ResetToNewGame()) Debug.LogError("[Account] 계정은 지웠지만 이 기기 진행을 지우지 못함: " + SaveSystem.LastError);
+            _cloudChecked = false;
+            // 지우기 표시를 먼저 남기고 지운다. 실패해도 옛 진행은 메모리에 남지 않고, 로비는 막히며 다음 실행에서 이어서 지운다
+            if (!SaveSystem.ResetToNewGame()) Debug.LogError("[Account] 계정은 지웠지만 이 기기 진행을 다 지우지 못함 (다음 실행에서 이어서): " + SaveSystem.LastError);
             Set(AccountState.Connecting, null); // 로비가 동의를 다시 받은 뒤 Start()가 새 게스트를 만든다
             Common.GameSession.ToLobby();
         }
@@ -690,6 +744,7 @@ namespace HistoryHeroes.Account
             _cloudChanged = false;
             _uploading = false;
             _conflictDeferred = false;
+            _cloudChecked = false;
             _lastUpload = double.NegativeInfinity;
         }
 

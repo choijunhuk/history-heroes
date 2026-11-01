@@ -35,10 +35,19 @@ namespace HistoryHeroes.Economy
         /// <summary>상점에 보여도 되나 (계정당 1번 상품은 받은 뒤 숨긴다)</summary>
         public static bool Available(SaveData d, IapCatalog.Item item) => !item.OncePerAccount || !d.purchases.starterClaimed;
 
-        /// <summary>지금 사면 받을 것. 확인 창과 실제 지급이 같은 계산을 쓴다</summary>
-        public static PurchaseEntry Preview(SaveData d, IapCatalog.Item item)
+        /// <summary>
+        /// 지금 팔아도 되나: 계정당 1번 상품은 계정 동기화가 끝났을 때만 (클라우드를 맞추기 전의 오래된 장부로는 "아직 안 받음"을 믿을 수 없다).
+        /// 보석 상품은 늘 판다 (Codex 교차 리뷰 2026-11-01 3번)
+        /// </summary>
+        public static bool Sellable(SaveData d, IapCatalog.Item item, bool syncSettled) => Available(d, item) && (!item.OncePerAccount || syncSettled);
+
+        /// <summary>첫 구매 2배를 약속해도 되나 (배지 · 확인 창). 동기화가 안 끝났으면 약속하지 않는다 — 실제 지급이 2배면 더 받을 뿐</summary>
+        public static bool FirstBonusShown(SaveData d, IapCatalog.Item item, bool syncSettled) => syncSettled && FirstBonusLeft(d, item);
+
+        /// <summary>지금 사면 받을 것. 확인 창과 실제 지급이 같은 계산을 쓴다. promiseBonus가 false면 첫 구매 2배를 빼고 보여 준다 (약속 못 할 때)</summary>
+        public static PurchaseEntry Preview(SaveData d, IapCatalog.Item item, bool promiseBonus = true)
         {
-            bool first = FirstBonusLeft(d, item);
+            bool first = promiseBonus && FirstBonusLeft(d, item);
             return new PurchaseEntry
             {
                 productId = item.Id,

@@ -56,6 +56,16 @@ namespace HistoryHeroes.Account
             return string.IsNullOrEmpty(cloudUploadId) || cloudUploadId != lastSyncedUploadId;
         }
 
+        /// <summary>
+        /// 이 기기 결제 장부를 믿어도 되나 (계정당 1번 상품 · 첫 구매 2배). 게스트는 늘 된다 (이 기기 장부가 전부).
+        /// 연결된 계정은 이번 실행에서 클라우드와 맞췄고(checkedThisRun) 충돌 · 고르기 대기 · 저장 복구 확인이 없을 때만. 그 밖의 상태는 모르니 안 된다.
+        /// </summary>
+        public static bool SyncSettled(AccountState state, bool checkedThisRun, bool conflict, bool choicePending, bool recheckNeeded)
+        {
+            if (state == AccountState.Guest) return true;
+            return state == AccountState.Linked && checkedThisRun && !conflict && !choicePending && !recheckNeeded;
+        }
+
         [Serializable]
         private sealed class JwtClaims
         {

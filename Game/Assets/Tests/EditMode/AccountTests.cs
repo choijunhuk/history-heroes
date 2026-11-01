@@ -285,6 +285,106 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void OlderBackupRestore_NeedsCloudRecheck_ButFinishedTempPromotionDoesNot()
+        {
+            var store = new SaveStore(_folder);
+            SaveSystem.Use(store);
+            SaveSystem.Data.gold = 1;
+            Assert.IsTrue(SaveSystem.Save());
+            SaveSystem.Data.gold = 2;
+            Assert.IsTrue(SaveSystem.Save()); // .bak = gold 1 (더 오래됨)
+            File.WriteAllText(store.MainPath, "{ 깨진 글");
+
+            SaveSystem.Use(new SaveStore(_folder));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new System.Text.RegularExpressions.Regex("저장 파일 문제"));
+            Assert.AreEqual(1, SaveSystem.Data.gold, "오래된 백업에서 읽었다");
+            Assert.IsTrue(SaveSystem.LostSaveOnLoad);
+            Assert.IsTrue(SaveSystem.CloudRecheckNeeded, "이 오래된 진행으로 클라우드를 덮지 않게");
+            SaveSystem.CloudRechecked();
+            Assert.IsFalse(SaveSystem.CloudRecheckNeeded);
+
+            // 교체 도중 꺼져 남은 임시 파일 = 같은 저장의 완성본 → 잃은 게 아니다
+            string other = _folder + "-tmp";
+            try
+            {
+                var tmpStore = new SaveStore(other);
+                Directory.CreateDirectory(other);
+                SaveData d = SaveStore.NewGame();
+                d.gold = 9;
+                File.WriteAllText(tmpStore.TempPath, SaveStore.Serialize(d));
+                SaveSystem.Use(tmpStore);
+                Assert.AreEqual(9, SaveSystem.Data.gold);
+                Assert.IsFalse(SaveSystem.LostSaveOnLoad);
+                Assert.IsFalse(SaveSystem.CloudRecheckNeeded);
+            }
+            finally
+            {
+                if (Directory.Exists(other)) Directory.Delete(other, true);
+            }
+        }
+
+        [Test]
+        public void ResetToNewGame_WhenFilesCantBeWritten_DropsOldProgressAndBlocksSavingUntilRetried()
+        {
+            var store = new SaveStore(_folder);
+            SaveSystem.Use(store);
+            SaveSystem.Data.gold = 77;
+            Consent.Accept(SaveSystem.Data, DateTime.UtcNow);
+            Assert.IsTrue(SaveSystem.Save());
+            string blocker = store.TempPath; // 임시 파일 자리에 폴더 → 새 게임을 쓸 수 없다
+            Directory.CreateDirectory(blocker);
+
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new System.Text.RegularExpressions.Regex("지우지 못함"));
+            Assert.IsFalse(SaveSystem.ResetToNewGame());
+            Assert.IsTrue(SaveSystem.WipePending);
+            Assert.AreEqual(0, SaveSystem.Data.gold, "지운 계정의 진행은 메모리에도 남지 않는다");
+            Assert.IsTrue(Consent.NeedsConsent(SaveSystem.Data));
+            SaveSystem.Data.gold = 5;
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new System.Text.RegularExpressions.Regex("지우지 못함"));
+            Assert.IsFalse(SaveSystem.Save(), "지우기가 끝나기 전에는 아무것도 쓰지 않는다");
+            Assert.AreEqual(SaveSystem.WipeFailedText, SaveSystem.LastError);
+
+            Directory.Delete(blocker);
+            Assert.IsTrue(SaveSystem.Save(), "다시 시도하면 지우고 새 게임을 쓴다");
+            Assert.IsFalse(SaveSystem.WipePending);
+            Assert.AreEqual(5, new SaveStore(_folder).Load().gold);
+            Assert.AreEqual(1, Directory.GetFiles(_folder, SaveStore.FileName + "*").Length);
+        }
+
+        [Test]
+        public void SyncSettled_GuestAlways_LinkedOnlyAfterCleanCheck()
+        {
+            Assert.IsTrue(AccountRules.SyncSettled(AccountState.Guest, false, false, false, false), "게스트는 이 기기 장부가 전부");
+            Assert.IsTrue(AccountRules.SyncSettled(AccountState.Linked, true, false, false, false));
+            Assert.IsFalse(AccountRules.SyncSettled(AccountState.Linked, false, false, false, false), "이번 실행에서 아직 클라우드를 안 봤다");
+            Assert.IsFalse(AccountRules.SyncSettled(AccountState.Linked, true, true, false, false), "충돌 · 고르기 미룸");
+            Assert.IsFalse(AccountRules.SyncSettled(AccountState.Linked, true, false, true, false), "계정 전환 고르기 중");
+            Assert.IsFalse(AccountRules.SyncSettled(AccountState.Linked, true, false, false, true), "저장을 잃어 클라우드 복구 확인 전");
+            Assert.IsFalse(AccountRules.SyncSettled(AccountState.Offline, true, false, false, false), "연결됐는지 모른다");
+            Assert.IsFalse(AccountRules.SyncSettled(AccountState.Connecting, true, false, false, false));
+            Assert.IsFalse(AccountRules.SyncSettled(AccountState.Busy, true, false, false, false));
+        }
+
+        [Test]
+        public void UnsettledSync_BlocksStarterAndDoesNotPromiseFirstDouble_GemPacksStillSell()
+        {
+            SaveData d = SaveStore.NewGame();
+            Economy.IapCatalog.Item starter = Economy.IapCatalog.Find(Economy.IapCatalog.StarterPack);
+            Economy.IapCatalog.Item gems = Economy.IapCatalog.Find("gems_t1");
+
+            Assert.IsTrue(Economy.IapLedger.Sellable(d, starter, true));
+            Assert.IsFalse(Economy.IapLedger.Sellable(d, starter, false), "동기화 전에는 계정당 1번 상품을 안 판다");
+            Assert.IsTrue(Economy.IapLedger.Sellable(d, gems, false), "보석은 그대로 판다");
+
+            Assert.IsTrue(Economy.IapLedger.FirstBonusShown(d, gems, true));
+            Assert.IsFalse(Economy.IapLedger.FirstBonusShown(d, gems, false), "2배 배지는 동기화 뒤에만");
+            Records.PurchaseEntry promised = Economy.IapLedger.Preview(d, gems, false);
+            Assert.IsFalse(promised.firstBonus);
+            Assert.AreEqual(gems.FreeGems, promised.freeGems, "확인 창도 2배를 약속하지 않는다");
+            Assert.IsTrue(Economy.IapLedger.Preview(d, gems).firstBonus, "실제 지급 계산은 그대로 (더 받을 수는 있어도 덜 받지는 않는다)");
+        }
+
+        [Test]
         public void FreshStart_HasUserIdRightAway()
         {
             Assert.IsFalse(string.IsNullOrEmpty(new SaveStore(_folder).Load().userId));

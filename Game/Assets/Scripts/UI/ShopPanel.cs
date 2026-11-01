@@ -112,6 +112,7 @@ namespace HistoryHeroes.UI
             relicTabButton.onClick.AddListener(() => { _relicMode = true; _gemMode = false; Render(true); });
             gemTabButton.onClick.AddListener(() => { _gemMode = true; _relicMode = false; Render(true); });
             IapService.Changed += OnIapChanged;
+            Account.AccountService.Changed += OnIapChanged; // 계정 동기화가 끝나면 첫 결제 패키지 · 2배 배지가 열린다
             IapService.Granted += OnIapGranted;
             IapService.Notice += OnIapNotice;
             relicPayButton.onClick.AddListener(() => { _payWithGems = !_payWithGems; Render(false); });
@@ -148,6 +149,7 @@ namespace HistoryHeroes.UI
         private void OnDestroy()
         {
             IapService.Changed -= OnIapChanged;
+            Account.AccountService.Changed -= OnIapChanged;
             IapService.Granted -= OnIapGranted;
             IapService.Notice -= OnIapNotice;
         }
@@ -410,11 +412,12 @@ namespace HistoryHeroes.UI
         {
             var rows = new List<ButtonList.Row>();
             bool busy = IapService.BuyingId != null || !IapService.ValidationReady;
+            bool settled = Account.AccountService.SyncSettled;
             foreach (IapCatalog.Item item in IapCatalog.All)
             {
                 if (!IapLedger.Available(save, item)) continue; // 첫 결제 패키지는 받은 뒤 숨긴다
                 string price = IapService.Price(item.Id);
-                bool ok = price != null && !busy;
+                bool ok = price != null && !busy && IapLedger.Sellable(save, item, settled);
                 string id = item.Id;
                 Color color = !ok ? RowDisabled : item.OncePerAccount ? RowStarter : RowNormal;
                 rows.Add(new ButtonList.Row(GemCardText(save, item, price), color, () => ConfirmBuy(id), ok));
@@ -426,9 +429,11 @@ namespace HistoryHeroes.UI
         /// <summary>이름 · 배지 · 가격 (상점이 준 글 그대로) / 내용 / 보너스 줄</summary>
         private static string GemCardText(SaveData save, IapCatalog.Item item, string price)
         {
-            bool first = IapLedger.FirstBonusLeft(save, item);
+            bool settled = Account.AccountService.SyncSettled;
+            bool first = IapLedger.FirstBonusShown(save, item, settled);
             string badge = item.OncePerAccount ? "  <color=#FFB347>계정당 1번</color>" : first ? "  <color=#FF9F43>첫 구매 2배</color>" : string.Empty;
             string priceText = price != null && !IapService.ValidationReady ? "<color=#A9B4C2>결제 준비 중</color>"
+                : price != null && !IapLedger.Sellable(save, item, settled) ? "<color=#A9B4C2>계정 확인 중</color>"
                 : price != null ? $"<size=115%><color=#7CE38B><b>{price}</b></color></size>"
                 : IapService.State == IapService.Status.Connecting ? "<color=#A9B4C2>상점 연결 중…</color>"
                 : $"<color=#A9B4C2>{IapService.UnavailableText}</color>";
@@ -461,7 +466,7 @@ namespace HistoryHeroes.UI
                 return;
             }
 
-            PurchaseEntry get = IapLedger.Preview(SaveSystem.Data, item);
+            PurchaseEntry get = IapLedger.Preview(SaveSystem.Data, item, Account.AccountService.SyncSettled);
             string split = $"유료 보석 {Wallet.Format(get.paidGems)} · 무료 보석 {Wallet.Format(get.freeGems)}{(get.firstBonus ? " (첫 구매 2배 포함)" : string.Empty)}";
             string withdrawal = item.OncePerAccount
                 ? "패키지는 구매 후 7일 이내, 구성품을 하나도 쓰지 않았으면 청약철회할 수 있어요. 하나라도 쓰면 철회가 제한돼요."

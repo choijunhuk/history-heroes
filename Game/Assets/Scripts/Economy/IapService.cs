@@ -142,7 +142,7 @@ namespace HistoryHeroes.Economy
         {
             IapCatalog.Item item = IapCatalog.Find(productId);
             if (BuyingId != null || item == null || Price(productId) == null || !ValidationReady) return false;
-            if (!IapLedger.Available(SaveSystem.Data, item)) return false; // 계정당 1번 상품을 두 번 결제하지 않게
+            if (!IapLedger.Sellable(SaveSystem.Data, item, Account.AccountService.SyncSettled)) return false; // 계정당 1번 상품을 두 번 결제하지 않게 (동기화 전에는 안 판다)
             BuyingId = productId;
             _shown = shown;
             Changed?.Invoke();
@@ -219,7 +219,8 @@ namespace HistoryHeroes.Economy
                 if (shown != null && shown.productId == granted.productId)
                 {
                     _shown = null;
-                    if (shown.paidGems != granted.paidGems || shown.freeGems != granted.freeGems)
+                    // 보여 준 것보다 적게 받았을 때만 알린다 (동기화 전이라 2배를 약속하지 않았는데 받았으면 그냥 더 받은 것)
+                    if (granted.paidGems + granted.freeGems < shown.paidGems + shown.freeGems)
                         Say($"첫 구매 2배는 먼저 들어온 같은 상품 결제에 쓰였어요. 이번 결제로 {IapLedger.Text(granted)}을 받았어요.");
                 }
             }
