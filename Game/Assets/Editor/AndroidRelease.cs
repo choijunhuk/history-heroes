@@ -390,6 +390,7 @@ namespace HistoryHeroes.EditorTools
                 PlayerSettings.Android.keystorePass = "";
                 PlayerSettings.Android.keyaliasName = "";
                 PlayerSettings.Android.keyaliasPass = "";
+                AssetDatabase.SaveAssets(); // 빌드 도중 Unity가 빌드용 값(버전 · 키 경로)을 저장해 두므로, 되돌린 값으로 다시 저장
             }
         }
 
