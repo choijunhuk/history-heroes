@@ -7,7 +7,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 작업 가지 | **`feature/art-3d`** (main보다 49커밋 앞, 폰 시험 뒤 main에 합친다) |
+| 작업 가지 | **`feature/art-3d`** = `main` (2026-11-01 합침). 합치기 전에는 `bash Tools/gate.sh` (비밀 검사 + EditMode 테스트) |
 | 마지막 커밋 | 이 문서를 올린 커밋 |
 | 보관 | 3D 그대로: 태그 `art-3d-v1` · 가지 `archive/art-3d` / 2D 시험판: 태그 `art-2d-trial` · 가지 `archive/art-2d` |
 | 테스트 | EditMode **661개** 전부 통과 (2026-10-29 맥북) |
