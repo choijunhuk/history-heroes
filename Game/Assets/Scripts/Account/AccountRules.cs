@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using HistoryHeroes.Records;
 using UnityEngine;
 
 namespace HistoryHeroes.Account
@@ -60,6 +61,9 @@ namespace HistoryHeroes.Account
         /// 이 기기 결제 장부를 믿어도 되나 (계정당 1번 상품 · 첫 구매 2배). 게스트는 늘 된다 (이 기기 장부가 전부).
         /// 연결된 계정은 이번 실행에서 클라우드와 맞췄고(checkedThisRun) 충돌 · 고르기 대기 · 저장 복구 확인이 없을 때만. 그 밖의 상태는 모르니 안 된다.
         /// </summary>
+        /// <summary>이 기기 장부에 결제가 하나라도 있나 (있으면 이미 다른 진행이 있는 카카오 계정으로 바꾸지 않는다 — LiveOps 3-2)</summary>
+        public static bool HasPurchases(SaveData d) => d?.purchases?.ledger != null && d.purchases.ledger.Count > 0;
+
         public static bool SyncSettled(AccountState state, bool checkedThisRun, bool conflict, bool choicePending, bool recheckNeeded)
         {
             if (state == AccountState.Guest) return true;

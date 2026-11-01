@@ -9,5 +9,5 @@ public sealed class MaintenanceResult
     [JsonProperty("voided")] public int Voided { get; set; }
     [JsonProperty("acks")] public int AcksDone { get; set; }
     [JsonProperty("archivesDeleted")] public int ArchivesDeleted { get; set; }
-    [JsonProperty("transfers")] public int TransfersDone { get; set; }
+    [JsonProperty("closings")] public int ClosingsDone { get; set; }
 }

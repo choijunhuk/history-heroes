@@ -29,8 +29,6 @@ namespace HistoryHeroes.Account
 
         /// <summary>진행 고르기를 끝내기 전에 앱이 꺼졌다는 표시 (다음 실행에서 카카오 계정에 이어 붙어 클라우드를 덮지 않게)</summary>
         private const string PendingChoiceKey = "hh.account.pendingChoice";
-        /// <summary>게스트 결제를 새 계정으로 옮길 이전권 (PrepareTransfer가 준 것 — 가져갈 때까지 기기에만, 7일)</summary>
-        private const string TransferTicketKey = "hh.iap.transferTicket";
         /// <summary>+ UGS 플레이어 ID: 이 기기가 마지막으로 올리거나 받은 클라우드 저장의 올린 번호</summary>
         private const string SyncedKeyPrefix = "hh.account.synced.";
 
@@ -164,7 +162,6 @@ namespace HistoryHeroes.Account
                 if (!auth.IsSignedIn) await auth.SignInAnonymouslyAsync();
                 await RefreshLinked();
                 Debug.Log($"[Account] 로그인: {State} ({auth.PlayerId})");
-                await ClaimPendingTransferAsync(); // 지난번 계정 바꾸기에서 못 가져간 게스트 결제
             }
             catch (Exception e)
             {
@@ -283,41 +280,23 @@ namespace HistoryHeroes.Account
             PlayerPrefs.Save();
             try
             {
-                // 게스트의 서버 결제는 버리지 않고 새 계정으로 옮긴다 (환불 회수가 새 계정을 따라간다): 게스트로 이전권을 받아 두고(서버는 게스트를 닫는다),
-                // 진행을 고른 뒤 새 계정에서 가져간다. 이전권을 못 받으면 계정을 바꾸지 않는다 (게스트 그대로, 다음에 다시).
-                // 게스트 계정은 지우지 않고 로그아웃만 한다 — 가져가기 전에 지우면 다시 시도할 곳이 없다. 서버에서 닫히고 결제가 빠져 비어 있는 익명 계정으로 남는다
-                Economy.PurchaseServer.Transfer prepared;
-                try
-                {
-                    prepared = await Economy.PurchaseServer.PrepareTransferAsync();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning("[Account] 결제 이전권을 받지 못함: " + e.Message);
-                    prepared = null;
-                }
-
-                if (prepared?.status != "ok" && prepared?.status != "none")
+                // 결제한 게스트는 이미 다른 진행이 있는 카카오 계정으로 바꾸지 않는다 (결제 기록을 다른 계정으로 옮기는 길을 두지 않는다 — 환불 회수 · 보관이 꼬인다).
+                // 결제하지 않은 게스트는 서버 결제 장부를 보관 · 닫고(빈 장부) UGS 계정을 지운 뒤에 들어간다 — 게스트로 로그인된 지금만 지울 수 있다.
+                // 확인 · 보관 · 삭제 중 하나라도 실패하면 바꾸지 않는다 (게스트 그대로, 다시 하면 된다)
+                string blocked = await PrepareGuestForSwitchAsync();
+                if (blocked != null)
                 {
                     ClearPending();
-                    Set(AccountState.Guest, "서버에 연결하지 못해 계정을 바꾸지 않았어요. 잠시 뒤에 다시 해 주세요");
+                    Set(AccountState.Guest, blocked);
                     return;
                 }
 
-                if (!string.IsNullOrEmpty(prepared.ticket))
-                {
-                    PlayerPrefs.SetString(TransferTicketKey, prepared.ticket);
-                    PlayerPrefs.Save();
-                }
-
-                auth.SignOut(true);
                 await provider.SignIn(token);
                 CloudCopy cloud = await LoadCloud(true);
                 if (!cloud.HasSave)
                 {
                     // 연결된 계정이지만 클라우드 저장이 없다 → 이 기기 진행을 올린다 (처음 만들기, 동시에 만든 기기가 있으면 다시 고르기)
                     await FinishWithDevice(provider, cloud);
-                    await ClaimPendingTransferAsync();
                     return;
                 }
 
@@ -343,7 +322,6 @@ namespace HistoryHeroes.Account
                         return;
                     }
                     await FinishWithDevice(provider, cloud);
-                    await ClaimPendingTransferAsync();
                     return;
                 }
 
@@ -356,7 +334,6 @@ namespace HistoryHeroes.Account
                 ClearPending();
                 LinkedName = provider.DisplayName;
                 Set(AccountState.Linked, $"{provider.DisplayName} 계정의 진행을 불러왔어요");
-                await ClaimPendingTransferAsync();
                 Common.GameSession.ToLobby(); // 바뀐 저장으로 로비를 다시 그린다
             }
             catch (Exception e)
@@ -394,7 +371,6 @@ namespace HistoryHeroes.Account
                 LinkedName = null;
                 await auth.SignInAnonymouslyAsync();
                 Set(AccountState.Guest, message);
-                await ClaimPendingTransferAsync(); // 바꾸기를 그만둬도 결제는 이 기기 진행을 따라 새 게스트로
             }
             catch (Exception e)
             {
@@ -404,27 +380,30 @@ namespace HistoryHeroes.Account
             }
         }
 
+        public const string PaidGuestSwitchText = "이 기기에서 결제한 기록이 있어서 이미 다른 진행이 있는 카카오 계정으로는 바꿀 수 없어요. 바꾸려면 문의해 주세요 (choijunhuk2007@gmail.com, 사용자 ID 함께).";
+        public const string SwitchRetryText = "서버에 연결하지 못해 계정을 바꾸지 않았어요. 잠시 뒤에 다시 해 주세요";
+
         /// <summary>
-        /// 남은 결제 이전권이 있으면 지금 계정으로 가져간다 (서버가 게스트 결제를 이 계정 장부로 옮긴다). 끝났거나 더는 쓸 수 없는 이전권(기한 · 다른 계정 · 모름)은 지운다 —
-        /// 아무도 못 가져간 게스트 결제는 서버 정리 작업이 기한 뒤 보관본으로 옮긴다. 서버 오류면 남겨 두고 다음 로그인에 다시
+        /// 이미 있는 카카오 계정으로 바꾸기 전 (게스트로 로그인된 채): 결제 기록이 있으면(이 기기 장부 또는 서버 장부) 막고, 없으면 서버 결제 장부를 보관 · 닫은 뒤 게스트 UGS 계정을 지운다.
+        /// 돌려주는 값: 바꾸지 못하는 이유 (null이면 게스트를 지웠고 들어가도 된다)
         /// </summary>
-        private static async Task ClaimPendingTransferAsync()
+        private static async Task<string> PrepareGuestForSwitchAsync()
         {
-            string ticket = PlayerPrefs.GetString(TransferTicketKey, string.Empty);
-            if (string.IsNullOrEmpty(ticket) || PlayerId == null) return;
+            if (AccountRules.HasPurchases(SaveSystem.Data)) return PaidGuestSwitchText;
             try
             {
-                Economy.PurchaseServer.Transfer claimed = await Economy.PurchaseServer.ClaimTransferAsync(ticket);
-                bool keep = claimed == null || claimed.status == "retry" || claimed.reason == "self" || claimed.reason == "account_closed";
-                Debug.Log($"[Account] 결제 이전: {claimed?.status} {claimed?.reason} 옮김 {claimed?.moved ?? 0}");
-                if (keep) return;
-                PlayerPrefs.DeleteKey(TransferTicketKey);
-                PlayerPrefs.Save();
-                if (claimed.status == "ok" && claimed.moved > 0) Economy.IapService.InvalidateServerSync(); // 서버 장부가 바뀌었다 → 다시 맞춘다
+                Economy.PurchaseServer.Ledger server = await Economy.PurchaseServer.GetPurchasesAsync();
+                if (server == null || (server.status != null && server.status != "ok" && server.status != Economy.PurchaseServer.Closed)) return SwitchRetryText;
+                if (server.purchases != null && server.purchases.Count > 0) return PaidGuestSwitchText;
+                string archived = await Economy.PurchaseServer.ArchiveAndDeleteAsync();
+                if (archived != "ok") return SwitchRetryText;
+                await AuthenticationService.Instance.DeleteAccountAsync(); // 끝나면 로그아웃 + 세션도 지운다
+                return null;
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[Account] 결제 이전권을 가져가지 못함 (다음에 다시): " + e.Message);
+                Debug.LogWarning("[Account] 게스트를 정리하지 못해 계정을 바꾸지 않음: " + e.Message);
+                return SwitchRetryText;
             }
         }
 

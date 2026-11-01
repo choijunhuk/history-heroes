@@ -85,6 +85,7 @@
 
 10. 👤 **정리 작업 예약 만들기 (Unity 대시보드, production 환경):**
     1. [cloud.unity.com](https://cloud.unity.com) → 프로젝트 History Heroes → **Triggers** (또는 **Products → Triggers**) → **Schedules** → 환경 **production** → **New schedule**.
+    > ⚠ 2026-11-01 시도: 대시보드에서 **"Failed to create schedule. Please try again."** — 직접 쓴 식(`*/10 * * * *`)과 기본 "Hourly" 둘 다 같은 오류 (개발자 직접 클릭도 같음). 출시 직전에 다시 시도하고, 그래도 안 되면 UGS CLI(`ugs triggers` · `ugs scheduler`)로 배포하거나 조직의 결제 수단 · 서비스 사용 설정을 확인한다. 그 전까지는 GetPurchases 때 최대 10분에 한 번 도는 대체 경로로 정리된다.
     2. **Details:** Name `iap-maintenance` · Event name `iap-maintenance` (이름에서 자동으로 채워진다 — 글자 그대로인지 확인) · 종류 **Recurring** → **Expression** → `*/10 * * * *` (UTC, 10분마다) · Firing window: Start immediately · Run indefinitely → Next.
     3. **Payload:** `{}` → **Create**. (만든 뒤에는 고칠 수 없다 — 틀리면 지우고 다시)
     4. **Triggers** → **New trigger** → Name `iap-maintenance-run` → 원천 **Schedule** → Next.

@@ -36,11 +36,11 @@ internal sealed class FakeStore : IPurchaseStore
     /// <summary>플레이어 → protected 키 → (글, lock)</summary>
     public readonly Dictionary<string, Dictionary<string, (string json, string writeLock)>> Protected = new();
     public readonly HashSet<string> Closed = new();
-    public readonly Dictionary<string, HashSet<string>> Reserved = new();
-    public readonly Dictionary<string, string> Index = new();
+    /// <summary>토큰 해시 → (글, lock)</summary>
+    public readonly Dictionary<string, (string json, string writeLock)> Index = new();
     public readonly Dictionary<string, string> Acks = new();
     public readonly Dictionary<string, (string json, string writeLock)> Archives = new();
-    public readonly Dictionary<string, (string json, string writeLock)> Transfers = new();
+    public readonly Dictionary<string, string> Closing = new();
     public string? GateLock;
     public string? JobStateJson;
     /// <summary>protected 쓰기 기록: (플레이어, 키, 읽은 lock으로 지켜졌나)</summary>
@@ -56,6 +56,9 @@ internal sealed class FakeStore : IPurchaseStore
     /// <summary>작업 상태 쓰기 직전 (몇 번째 쓰기인지)</summary>
     public Action<FakeStore, int>? BeforeJobSave;
     private int _jobSaves;
+    /// <summary>색인 한 칸을 쓰기 직전 · 직후 (다른 호출 끼워 넣기 · 시간 초과 흉내)</summary>
+    public Action<FakeStore, string>? BeforeIndexSet;
+    public Action<FakeStore, string>? AfterIndexSet;
     public Exception? LoadError;
     /// <summary>읽기가 끝나지 않는다 (시간 한도 시험)</summary>
     public bool Hang;
@@ -71,7 +74,7 @@ internal sealed class FakeStore : IPurchaseStore
     private Dictionary<string, (string json, string writeLock)> P(string player) =>
         Protected.TryGetValue(player, out var d) ? d : Protected[player] = new Dictionary<string, (string, string)>();
 
-    private HashSet<string> R(string player) => Reserved.TryGetValue(player, out var r) ? r : Reserved[player] = new HashSet<string>();
+    public List<string> ReservedOf(string player = Make.Player) => P(player).Keys.Where(k => k.StartsWith("r_")).Select(k => k[2..]).ToList();
 
     private async Task Gate(CancellationToken ct)
     {
@@ -131,18 +134,31 @@ internal sealed class FakeStore : IPurchaseStore
         return P(playerId).TryGetValue("p_" + tokenHash, out var v) ? (Deser<PurchaseRecord>(v.json), v.writeLock) : (null, null);
     }
 
-    public Task<bool> TryAddPurchasesAsync(IExecutionContext context, string playerId, string headLock, IReadOnlyList<PurchaseRecord> records, CancellationToken ct)
+    public Task<bool> TryAddPurchaseAsync(IExecutionContext context, string playerId, string headLock, PurchaseRecord record, CancellationToken ct)
     {
         if (BeforeAdd != null && BeforeAdd(this)) return Task.FromResult(false);
         if (!P(playerId).TryGetValue("iap_head", out var head) || head.writeLock != headLock) return Task.FromResult(false);
-        P(playerId)["iap_head"] = (HeadJson(records[^1].TokenHash), NewLock());
-        foreach (PurchaseRecord record in records)
-        {
-            P(playerId)["p_" + record.TokenHash] = (Ser(record), NewLock());
-            Writes.Add((playerId, "p_" + record.TokenHash, true));
-        }
-
+        P(playerId)["iap_head"] = (HeadJson(record.TokenHash), NewLock());
+        P(playerId)["p_" + record.TokenHash] = (Ser(record), NewLock());
+        Writes.Add((playerId, "p_" + record.TokenHash, true));
         return Task.FromResult(true);
+    }
+
+    public Task<bool> TryReserveAsync(IExecutionContext context, string playerId, string headLock, string tokenHash, CancellationToken ct)
+    {
+        if (!P(playerId).TryGetValue("iap_head", out var head) || head.writeLock != headLock) return Task.FromResult(false);
+        P(playerId)["iap_head"] = (HeadJson("r:" + tokenHash), NewLock());
+        P(playerId)["r_" + tokenHash] = ("true", NewLock());
+        Writes.Add((playerId, "r_" + tokenHash, true));
+        return Task.FromResult(true);
+    }
+
+    public Task<List<string>> ListReservedAsync(IExecutionContext context, string playerId, CancellationToken ct) => Task.FromResult(ReservedOf(playerId));
+
+    public Task DeleteReservedAsync(IExecutionContext context, string playerId, IReadOnlyCollection<string> tokenHashes, CancellationToken ct)
+    {
+        foreach (string h in tokenHashes) P(playerId).Remove("r_" + h);
+        return Task.CompletedTask;
     }
 
     public Task<bool> TryUpdatePurchaseAsync(IExecutionContext context, string playerId, PurchaseRecord record, string writeLock, CancellationToken ct)
@@ -173,29 +189,24 @@ internal sealed class FakeStore : IPurchaseStore
         return Task.CompletedTask;
     }
 
-    public Task AddReservedAsync(IExecutionContext context, string playerId, string tokenHash, CancellationToken ct)
-    {
-        R(playerId).Add(tokenHash);
-        return Task.CompletedTask;
-    }
+    public IndexEntry? IndexOf(string tokenHash) => Index.TryGetValue(tokenHash, out var v) ? Deser<IndexEntry>(v.json) : null;
 
-    public Task<List<string>> ListReservedAsync(IExecutionContext context, string playerId, CancellationToken ct) => Task.FromResult(R(playerId).ToList());
-
-    public Task DeleteReservedAsync(IExecutionContext context, string playerId, IReadOnlyCollection<string> tokenHashes, CancellationToken ct)
-    {
-        foreach (string h in tokenHashes) R(playerId).Remove(h);
-        return Task.CompletedTask;
-    }
-
-    public IndexEntry? IndexOf(string tokenHash) => Index.TryGetValue(tokenHash, out string? json) ? Deser<IndexEntry>(json) : null;
+    /// <summary>다른 호출의 색인 쓰기 (lock이 바뀐다)</summary>
+    public void PutIndex(string tokenHash, IndexEntry entry) => Index[tokenHash] = (Ser(entry), NewLock());
 
     public Task<Dictionary<string, IndexEntry>> FindIndexAsync(IExecutionContext context, IReadOnlyCollection<string> tokenHashes, CancellationToken ct) =>
         Task.FromResult(tokenHashes.Distinct().Where(Index.ContainsKey).ToDictionary(h => h, h => IndexOf(h)!));
 
-    public Task SetIndexAsync(IExecutionContext context, string tokenHash, IndexEntry entry, CancellationToken ct)
+    public Task<(IndexEntry? entry, string? writeLock)> LoadIndexAsync(IExecutionContext context, string tokenHash, CancellationToken ct) =>
+        Task.FromResult(Index.TryGetValue(tokenHash, out var v) ? (Deser<IndexEntry>(v.json), v.writeLock) : ((IndexEntry?)null, (string?)null));
+
+    public Task<bool> TrySetIndexAsync(IExecutionContext context, string tokenHash, IndexEntry entry, string? writeLock, CancellationToken ct)
     {
-        Index[tokenHash] = Ser(entry);
-        return Task.CompletedTask;
+        BeforeIndexSet?.Invoke(this, tokenHash);
+        if (writeLock != null && (!Index.TryGetValue(tokenHash, out var v) || v.writeLock != writeLock)) return Task.FromResult(false);
+        PutIndex(tokenHash, entry);
+        AfterIndexSet?.Invoke(this, tokenHash);
+        return Task.FromResult(true);
     }
 
     public Task SetAckAsync(IExecutionContext context, string tokenHash, PendingAck ack, CancellationToken ct)
@@ -267,23 +278,18 @@ internal sealed class FakeStore : IPurchaseStore
         return Task.CompletedTask;
     }
 
-    public Task<(TransferTicket? ticket, string? writeLock)> LoadTransferAsync(IExecutionContext context, string ticketHash, CancellationToken ct) =>
-        Task.FromResult(Transfers.TryGetValue(ticketHash, out var t) ? (Deser<TransferTicket>(t.json), t.writeLock) : ((TransferTicket?)null, (string?)null));
-
-    public Task<string?> TrySetTransferAsync(IExecutionContext context, string ticketHash, TransferTicket ticket, string? writeLock, CancellationToken ct)
+    public Task SetClosingAsync(IExecutionContext context, string archiveId, ClosingPlayer item, CancellationToken ct)
     {
-        if (writeLock != null && (!Transfers.TryGetValue(ticketHash, out var t) || t.writeLock != writeLock)) return Task.FromResult<string?>(null);
-        string next = NewLock();
-        Transfers[ticketHash] = (Ser(ticket), next);
-        return Task.FromResult<string?>(next);
+        Closing[archiveId] = Ser(item);
+        return Task.CompletedTask;
     }
 
-    public Task<Dictionary<string, TransferTicket>> ListTransfersAsync(IExecutionContext context, CancellationToken ct) =>
-        Task.FromResult(Transfers.ToDictionary(kv => kv.Key, kv => Deser<TransferTicket>(kv.Value.json)));
+    public Task<Dictionary<string, ClosingPlayer>> ListClosingAsync(IExecutionContext context, CancellationToken ct) =>
+        Task.FromResult(Closing.ToDictionary(kv => kv.Key, kv => Deser<ClosingPlayer>(kv.Value)));
 
-    public Task DeleteTransferAsync(IExecutionContext context, string ticketHash, CancellationToken ct)
+    public Task DeleteClosingAsync(IExecutionContext context, string archiveId, CancellationToken ct)
     {
-        Transfers.Remove(ticketHash);
+        Closing.Remove(archiveId);
         return Task.CompletedTask;
     }
 }

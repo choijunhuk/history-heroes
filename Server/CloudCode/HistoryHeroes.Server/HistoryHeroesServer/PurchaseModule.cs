@@ -25,17 +25,9 @@ public sealed class PurchaseModule
     [CloudCodeFunction("GetPurchases")]
     public Task<PurchaseList> GetPurchases(IExecutionContext context) => _verifier.GetPurchasesAsync(context);
 
-    /// <summary>계정 삭제 직전에만: 이 플레이어를 닫고(되돌릴 수 없음) 결제를 보관본(5년 뒤 지움)으로 옮긴 뒤 장부를 지운다</summary>
+    /// <summary>계정을 지우기 직전에만 (설정의 계정 삭제 · 결제 안 한 게스트를 이미 있는 카카오 계정으로 바꿀 때): 이 플레이어를 닫고(되돌릴 수 없음) 결제를 보관본(5년 뒤 지움)으로 옮긴 뒤 장부를 지운다</summary>
     [CloudCodeFunction("ArchiveAndDeletePurchases")]
     public Task<ArchiveResult> ArchiveAndDeletePurchases(IExecutionContext context) => _verifier.ArchiveAndDeleteAsync(context);
-
-    /// <summary>게스트가 이미 있는 카카오 계정으로 바꾸기 직전: 게스트를 닫고 결제 이전권을 받는다</summary>
-    [CloudCodeFunction("PrepareTransfer")]
-    public Task<TransferResult> PrepareTransfer(IExecutionContext context) => _verifier.PrepareTransferAsync(context);
-
-    /// <summary>바꾼 계정으로 들어간 뒤: 이전권으로 게스트 결제를 이 계정으로 옮긴다</summary>
-    [CloudCodeFunction("ClaimTransfer")]
-    public Task<TransferResult> ClaimTransfer(IExecutionContext context, string ticket) => _verifier.ClaimTransferAsync(context, ticket);
 
     /// <summary>정리 작업 (UGS Scheduler → Trigger가 10분마다 부른다, 플레이어 호출은 거절): 환불 반영 · 확정 대기 정리 · 기한 지난 보관본 지우기</summary>
     [CloudCodeFunction("RunMaintenance")]

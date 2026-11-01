@@ -82,31 +82,6 @@ namespace HistoryHeroes.Economy
             return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<Ledger>(json);
         }
 
-        /// <summary>PrepareTransfer · ClaimTransfer의 답 (서버 TransferResult와 같은 이름)</summary>
-        [Serializable]
-        public sealed class Transfer
-        {
-            public string status;
-            public string reason;
-            /// <summary>PrepareTransfer: 새 계정이 가져갈 이전권 (기기에만 잠깐)</summary>
-            public string ticket;
-            public int moved;
-        }
-
-        /// <summary>게스트가 이미 있는 카카오 계정으로 바꾸기 직전 (게스트로 부른다): 서버가 게스트를 닫고 결제 이전권을 준다. status: ok(ticket) · none(옮길 결제 없음) · 그 밖은 실패</summary>
-        public static async Task<Transfer> PrepareTransferAsync()
-        {
-            string json = await CloudCodeService.Instance.CallModuleEndpointAsync(Module, "PrepareTransfer", new Dictionary<string, object>());
-            return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<Transfer>(json);
-        }
-
-        /// <summary>바꾼 계정으로 이전권을 가져간다 (게스트 결제가 이 계정 서버 장부로 옮겨진다). 다시 불러도 안전</summary>
-        public static async Task<Transfer> ClaimTransferAsync(string ticket)
-        {
-            string json = await CloudCodeService.Instance.CallModuleEndpointAsync(Module, "ClaimTransfer", new Dictionary<string, object> { ["ticket"] = ticket });
-            return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<Transfer>(json);
-        }
-
         [Serializable]
         private sealed class StatusOnly
         {
@@ -115,7 +90,7 @@ namespace HistoryHeroes.Economy
 
         /// <summary>
         /// 계정 삭제 직전 (AccountService.DeleteAsync): 서버 결제 장부를 보관본(되돌릴 수 없는 ID, 5년 뒤 지움)으로 옮기고 장부 · 색인을 지운다.
-        /// 서버는 그 뒤 이 플레이어를 닫는다 (되돌릴 수 없음 — 결제 · 장부 받기 모두 거절). 그래서 계정을 지우는 길에서만 부른다 (설정의 계정 삭제, 카카오 계정으로 바꿀 때 지우는 게스트).
+        /// 서버는 그 뒤 이 플레이어를 닫는다 (되돌릴 수 없음 — 결제 · 장부 받기 모두 거절). 그래서 계정을 지우는 길에서만 부른다 (설정의 계정 삭제, 결제 안 한 게스트를 이미 있는 카카오 계정으로 바꿀 때 지우는 게스트).
         /// 돌려주는 값: "ok"면 끝 (이미 닫혔어도 ok). 그 밖은 실패 — 계정 삭제를 멈추고 다시 하게 한다 (장부가 지운 계정 밑에 남지 않게)
         /// </summary>
         public static async Task<string> ArchiveAndDeleteAsync()

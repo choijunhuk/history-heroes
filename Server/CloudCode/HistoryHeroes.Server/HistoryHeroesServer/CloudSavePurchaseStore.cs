@@ -12,10 +12,10 @@ namespace HistoryHeroes.Server;
 /// 서버 저장소 = Cloud Save (모두 서버 토큰으로만 쓴다). Cloud Save에는 "없을 때만 만들기"가 없어서, 진짜 내용은 lock으로 고치거나 lock으로 지킨 batch 안에서,
 /// 또는 겹칠 수 없는 새 키에만 쓴다. batch는 한 접근 등급 안에서 전부 되거나 전부 안 된다
 /// (Cloud Save Data API: "The batch set operation is considered atomic and if any of the set key operation fails, the entire operation is failed", 충돌 409).
-/// - 결제 장부 (protected 플레이어 데이터, 게임은 자기 것을 읽기만): iap_head(머리) · p_{토큰 해시}(결제 한 건)
-/// - 플레이어 서버 전용 (private 플레이어 데이터): iap_closed(닫힘 표시) · r_{토큰 해시}(색인에 적은 토큰)
+/// - 결제 장부 (protected 플레이어 데이터, 게임은 자기 것을 읽기만): iap_head(머리) · p_{토큰 해시}(결제 한 건) · r_{토큰 해시}(예약 — 색인에 이 플레이어를 적을 수 있는 토큰)
+/// - 플레이어 서버 전용 (private 플레이어 데이터): iap_closed(닫힘 표시)
 /// - 게임 전체 (private custom, 게임은 못 읽는다): 토큰 색인 iap_index_{해시 앞 2자}/{해시} · 확정 대기 iap_ack/{해시} · 작업 iap_jobs/gate · state ·
-///   지운 계정 보관본 iap_archive_{ID 앞 2자}/{ID} · 결제 이전권 iap_transfer/{이전권 해시}
+///   지운 계정 보관본 iap_archive_{ID 앞 2자}/{ID} · 계정 삭제 마무리 iap_closing/{보관본 ID}
 /// </summary>
 public sealed class CloudSavePurchaseStore : IPurchaseStore
 {
@@ -27,7 +27,7 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
     private const string JobsId = "iap_jobs";
     private const string GateKey = "gate";
     private const string StateKey = "state";
-    private const string TransferId = "iap_transfer";
+    private const string ClosingId = "iap_closing";
     /// <summary>Cloud Save는 한 번에 키 20개까지 읽고, batch도 20칸까지</summary>
     private const int KeysPerRead = 20;
     /// <summary>쪽 넘기기 한도 (한 플레이어 · 한 칸의 키 2000개 한도 / 쪽당 20개 = 100쪽)</summary>
@@ -135,13 +135,32 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
         return item == null ? (null, null) : (Read<PurchaseRecord>(item), item.WriteLock);
     }
 
-    public Task<bool> TryAddPurchasesAsync(IExecutionContext context, string playerId, string headLock, IReadOnlyList<PurchaseRecord> records, CancellationToken ct)
+    public Task<bool> TryAddPurchaseAsync(IExecutionContext context, string playerId, string headLock, PurchaseRecord record, CancellationToken ct) =>
+        NotConflict(() => _api.CloudSaveData.SetProtectedItemBatchAsync(context, context.ServiceToken, context.ProjectId, playerId, new SetItemBatchBody(new List<SetItemBody>
+        {
+            new(HeadKey, Head(record.TokenHash), headLock),
+            new(PurchaseKey(record.TokenHash), JObject.FromObject(record)), // 새 키: 머리 lock이 같은 판정 둘을 막으니 겹치지 않는다
+        }), ct));
+
+    public Task<bool> TryReserveAsync(IExecutionContext context, string playerId, string headLock, string tokenHash, CancellationToken ct) =>
+        NotConflict(() => _api.CloudSaveData.SetProtectedItemBatchAsync(context, context.ServiceToken, context.ProjectId, playerId, new SetItemBatchBody(new List<SetItemBody>
+        {
+            new(HeadKey, Head("r:" + tokenHash), headLock),
+            new(ReservedPrefix + tokenHash, true),
+        }), ct));
+
+    public async Task<List<string>> ListReservedAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
-        if (records.Count is 0 or >= KeysPerRead) throw new ArgumentOutOfRangeException(nameof(records), "한 batch에 결제 1~19개");
-        var data = new List<SetItemBody> { new(HeadKey, Head(records[^1].TokenHash), headLock) };
-        // 새 키: 머리 lock이 같은 판정 둘을 막으니 겹치지 않는다
-        data.AddRange(records.Select(r => new SetItemBody(PurchaseKey(r.TokenHash), JObject.FromObject(r))));
-        return NotConflict(() => _api.CloudSaveData.SetProtectedItemBatchAsync(context, context.ServiceToken, context.ProjectId, playerId, new SetItemBatchBody(data), ct));
+        List<Item> items = await AllPagesAsync(after => _api.CloudSaveData.GetProtectedItemsAsync(
+            context, context.ServiceToken, context.ProjectId, playerId, null!, after!, ct));
+        return items.Where(i => i.Key.StartsWith(ReservedPrefix, StringComparison.Ordinal)).Select(i => i.Key[ReservedPrefix.Length..]).ToList();
+    }
+
+    public async Task DeleteReservedAsync(IExecutionContext context, string playerId, IReadOnlyCollection<string> tokenHashes, CancellationToken ct)
+    {
+        foreach (string[] batch in tokenHashes.Distinct().Chunk(10))
+            await Task.WhenAll(batch.Select(h => IgnoreMissing(() =>
+                _api.CloudSaveData.DeleteProtectedItemAsync(context, context.ServiceToken, context.ProjectId, playerId, ReservedPrefix + h, cancellationToken: ct))));
     }
 
     public Task<bool> TryUpdatePurchaseAsync(IExecutionContext context, string playerId, PurchaseRecord record, string writeLock, CancellationToken ct) =>
@@ -170,26 +189,6 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
             new SetItemBody(ClosedKey, new JObject { ["utc"] = utcNow.ToString("o") }), ct);
     }
 
-    public async Task AddReservedAsync(IExecutionContext context, string playerId, string tokenHash, CancellationToken ct)
-    {
-        await _api.CloudSaveData.SetPrivateItemAsync(context, context.ServiceToken, context.ProjectId, playerId,
-            new SetItemBody(ReservedPrefix + tokenHash, true), ct);
-    }
-
-    public async Task<List<string>> ListReservedAsync(IExecutionContext context, string playerId, CancellationToken ct)
-    {
-        List<Item> items = await AllPagesAsync(after => _api.CloudSaveData.GetPrivateItemsAsync(
-            context, context.ServiceToken, context.ProjectId, playerId, null!, after!, ct));
-        return items.Where(i => i.Key.StartsWith(ReservedPrefix, StringComparison.Ordinal)).Select(i => i.Key[ReservedPrefix.Length..]).ToList();
-    }
-
-    public async Task DeleteReservedAsync(IExecutionContext context, string playerId, IReadOnlyCollection<string> tokenHashes, CancellationToken ct)
-    {
-        foreach (string[] batch in tokenHashes.Distinct().Chunk(10))
-            await Task.WhenAll(batch.Select(h => IgnoreMissing(() =>
-                _api.CloudSaveData.DeletePrivateItemAsync(context, context.ServiceToken, context.ProjectId, playerId, ReservedPrefix + h, cancellationToken: ct))));
-    }
-
     // ------------------------------------------------------------------ 토큰 색인 · 확정 대기
 
     public async Task<Dictionary<string, IndexEntry>> FindIndexAsync(IExecutionContext context, IReadOnlyCollection<string> tokenHashes, CancellationToken ct)
@@ -209,11 +208,17 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
         return found;
     }
 
-    public async Task SetIndexAsync(IExecutionContext context, string tokenHash, IndexEntry entry, CancellationToken ct)
+    public async Task<(IndexEntry? entry, string? writeLock)> LoadIndexAsync(IExecutionContext context, string tokenHash, CancellationToken ct)
     {
-        await _api.CloudSaveData.SetPrivateCustomItemAsync(context, context.ServiceToken, context.ProjectId, IndexId(tokenHash),
-            new SetItemBody(tokenHash, JObject.FromObject(entry)), ct);
+        ApiResponse<GetItemsResponse> response = await _api.CloudSaveData.GetPrivateCustomItemsAsync(
+            context, context.ServiceToken, context.ProjectId, IndexId(tokenHash), new List<string> { tokenHash }, cancellationToken: ct);
+        Item? item = response.Data?.Results?.Find(i => i.Key == tokenHash);
+        return item == null ? (null, null) : (Read<IndexEntry>(item), item.WriteLock);
     }
+
+    public Task<bool> TrySetIndexAsync(IExecutionContext context, string tokenHash, IndexEntry entry, string? writeLock, CancellationToken ct) =>
+        NotConflict(() => _api.CloudSaveData.SetPrivateCustomItemAsync(context, context.ServiceToken, context.ProjectId, IndexId(tokenHash),
+            new SetItemBody(tokenHash, JObject.FromObject(entry), writeLock!), ct));
 
     public async Task SetAckAsync(IExecutionContext context, string tokenHash, PendingAck ack, CancellationToken ct)
     {
@@ -316,40 +321,24 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
     public Task DeleteArchiveAsync(IExecutionContext context, string archiveId, CancellationToken ct) =>
         IgnoreMissing(() => _api.CloudSaveData.DeletePrivateCustomItemAsync(context, context.ServiceToken, context.ProjectId, ArchiveShardId(archiveId), archiveId, cancellationToken: ct));
 
-    // ------------------------------------------------------------------ 결제 이전권
+    // ------------------------------------------------------------------ 계정 삭제 마무리
 
-    public async Task<(TransferTicket? ticket, string? writeLock)> LoadTransferAsync(IExecutionContext context, string ticketHash, CancellationToken ct)
+    public async Task SetClosingAsync(IExecutionContext context, string archiveId, ClosingPlayer item, CancellationToken ct)
     {
-        ApiResponse<GetItemsResponse> response = await _api.CloudSaveData.GetPrivateCustomItemsAsync(
-            context, context.ServiceToken, context.ProjectId, TransferId, new List<string> { ticketHash }, cancellationToken: ct);
-        Item? item = response.Data?.Results?.Find(i => i.Key == ticketHash);
-        return item == null ? (null, null) : (Read<TransferTicket>(item), item.WriteLock);
+        await _api.CloudSaveData.SetPrivateCustomItemAsync(context, context.ServiceToken, context.ProjectId, ClosingId,
+            new SetItemBody(archiveId, JObject.FromObject(item)), ct);
     }
 
-    public async Task<string?> TrySetTransferAsync(IExecutionContext context, string ticketHash, TransferTicket ticket, string? writeLock, CancellationToken ct)
-    {
-        try
-        {
-            ApiResponse<SetItemResponse> response = await _api.CloudSaveData.SetPrivateCustomItemAsync(context, context.ServiceToken, context.ProjectId, TransferId,
-                new SetItemBody(ticketHash, JObject.FromObject(ticket), writeLock!), ct);
-            return response.Data?.WriteLock ?? string.Empty;
-        }
-        catch (ApiException e) when (IsStatus(e, HttpStatusCode.Conflict))
-        {
-            return null;
-        }
-    }
-
-    public async Task<Dictionary<string, TransferTicket>> ListTransfersAsync(IExecutionContext context, CancellationToken ct)
+    public async Task<Dictionary<string, ClosingPlayer>> ListClosingAsync(IExecutionContext context, CancellationToken ct)
     {
         List<Item> items = await AllPagesAsync(after => _api.CloudSaveData.GetPrivateCustomItemsAsync(
-            context, context.ServiceToken, context.ProjectId, TransferId, null!, after!, ct));
-        var all = new Dictionary<string, TransferTicket>();
+            context, context.ServiceToken, context.ProjectId, ClosingId, null!, after!, ct));
+        var all = new Dictionary<string, ClosingPlayer>();
         foreach (Item item in items)
-            if (Read<TransferTicket>(item) is { } t) all[item.Key] = t;
+            if (Read<ClosingPlayer>(item) is { } c) all[item.Key] = c;
         return all;
     }
 
-    public Task DeleteTransferAsync(IExecutionContext context, string ticketHash, CancellationToken ct) =>
-        IgnoreMissing(() => _api.CloudSaveData.DeletePrivateCustomItemAsync(context, context.ServiceToken, context.ProjectId, TransferId, ticketHash, cancellationToken: ct));
+    public Task DeleteClosingAsync(IExecutionContext context, string archiveId, CancellationToken ct) =>
+        IgnoreMissing(() => _api.CloudSaveData.DeletePrivateCustomItemAsync(context, context.ServiceToken, context.ProjectId, ClosingId, archiveId, cancellationToken: ct));
 }

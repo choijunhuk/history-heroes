@@ -396,6 +396,18 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void PaidGuest_CannotSwitchToExistingKakaoAccount()
+        {
+            // 결제 기록이 하나라도 있으면(회수된 것 포함) 이미 다른 진행이 있는 카카오 계정으로 바꾸지 않는다 (4차 결정, LiveOps 3-2)
+            var d = new SaveData();
+            Assert.IsFalse(Account.AccountRules.HasPurchases(d));
+            IapLedger.MergeServer(d, new[] { Server("gems_t1", "t", 100, 100, true, voided: true) });
+            Assert.IsTrue(Account.AccountRules.HasPurchases(d));
+            StringAssert.Contains("문의해 주세요", Account.AccountService.PaidGuestSwitchText);
+            StringAssert.Contains("choijunhuk2007@gmail.com", Account.AccountService.PaidGuestSwitchText);
+        }
+
+        [Test]
         public void Hash_MatchesServer()
         {
             // 서버 PurchaseVerifierTests.Hash_IsLowercaseSha256Hex와 같은 기대값 (토큰 해시 · 계정 표시가 양쪽에서 같아야 한다)
