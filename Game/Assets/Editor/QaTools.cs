@@ -25,6 +25,19 @@ namespace HistoryHeroes.EditorTools
             Application.runInBackground = true;
         }
 
+        /// <summary>클리어 · 패배 연출 확인용: 지금 던전 판을 바로 끝낸다 (Play 중에만). 결과 화면은 연출 뒤에 열린다</summary>
+        public static string ForceFinish(bool victory)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            var run = Object.FindAnyObjectByType<DungeonRun>();
+            if (run == null) return "던전 판이 아님";
+            Object.FindAnyObjectByType<LevelUpScreen>()?.DevCancel(); // 열린 레벨업 창이 결과 밑에 남지 않게
+            typeof(DungeonRun).GetMethod("Finish", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(run, new object[] { victory });
+            return victory ? "클리어 연출 시작" : "패배 연출 시작";
+        }
+
         /// <param name="heal">true면 매번 체력을 가득 채운다 (흐름만 확인할 때)</param>
         public static string Step(int cardIndex = 0, bool heal = false)
         {

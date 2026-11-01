@@ -1043,7 +1043,10 @@ namespace HistoryHeroes.Dungeon
             Missions.MissionEvents.DungeonFinished(skills.HeroId, GameSession.Chapter, victory, skills.ChoseLegendary);
             if (!string.IsNullOrEmpty(skills.HeroId)) SaveSystem.Data.Hero(skills.HeroId).runs++; // 첫 판 전용 액티브 확정용
             if (victory && _hitsTaken <= 10) Missions.MissionEvents.Raise(Missions.Newcomer.LowHitEvent); // 신규 7일 미션 "피격 10회 이하로 클리어"
+            summary.FirstClear = victory && !Stars.Has(SaveSystem.Data, GameSession.Chapter, Stars.Dungeon, 1); // 구간 클리어 별이 이번에 처음이면 "첫 클리어!"
+            bool[] hadStar = { Stars.Has(SaveSystem.Data, GameSession.Chapter, Stars.Dungeon, 1), Stars.Has(SaveSystem.Data, GameSession.Chapter, Stars.Dungeon, 2), Stars.Has(SaveSystem.Data, GameSession.Chapter, Stars.Dungeon, 3) };
             summary.RewardLines = GrantRewards(victory, roomsCleared);
+            if (victory) summary.StarRows = StarRowsFor(GameSession.Chapter, hadStar);
             if (!victory && Economy.Hearts.TryRefundEarlyDeath(SaveSystem.Data, GameSession.Chapter, _room, GameSession.HeartSpent, Clock.UnixSeconds, Clock.Today))
                 summary.RewardLines.Add("<color=#FF8FA3>♥</color> 아직 1구간을 못 깨서 하트 1개를 돌려받았어요");
 
@@ -1069,6 +1072,30 @@ namespace HistoryHeroes.Dungeon
             }
 
             SaveSystem.Save(); // 보상·이어하기 종료·기록 후보를 한 파일로 남긴다.
+            StartCoroutine(ShowResultAfterBeat(victory, summary, saveRecord));
+        }
+
+        /// <summary>결과 화면 별 줄: 전에 땄나 · 이번에 새로 땄나 · 조건 글 (Stars.EvaluateDungeon의 조건과 같은 글)</summary>
+        private static StarRow[] StarRowsFor(int chapter, bool[] hadBefore)
+        {
+            string[] labels = { "구간 클리어", $"맞은 횟수 {Stars.DungeonHitLimit(chapter)}번 이하", "전설 스킬 없이" };
+            var rows = new StarRow[3];
+            for (int i = 0; i < 3; i++)
+            {
+                bool now = Stars.Has(SaveSystem.Data, chapter, Stars.Dungeon, i + 1);
+                rows[i] = new StarRow { Owned = now, New = now && !hadBefore[i], Label = labels[i] };
+            }
+
+            return rows;
+        }
+
+        /// <summary>클리어 · 패배 연출(HypeFx)이 한 박자 돈 다음에 결과 화면을 연다. 화면을 누르면 바로 넘어간다</summary>
+        private IEnumerator ShowResultAfterBeat(bool victory, RunSummary summary, System.Action saveRecord)
+        {
+            if (victory) HypeFx.Clear("클리어!");
+            else HypeFx.Defeat();
+            yield return HypeFx.Beat(victory ? HypeFx.ClearSeconds : HypeFx.DefeatSeconds);
+            levelUp.DevCancel(); // 연출 중 마지막 보석으로 레벨업 창이 떴어도 결과가 그 위에 겹치지 않게 닫는다
             result.Show(summary, saveRecord);
         }
 
@@ -1139,7 +1166,7 @@ namespace HistoryHeroes.Dungeon
             }
 
             SaveSystem.Save(); // 튜토리얼 후보를 보상 지급 전 디스크에 남긴다.
-            result.Show(summary, saveRecord);
+            StartCoroutine(ShowResultAfterBeat(true, summary, saveRecord));
         }
 
         // ---------------------------------------------------------------- 균열·일일 도전 결과 (기록은 남기지 않는다)
@@ -1239,7 +1266,7 @@ namespace HistoryHeroes.Dungeon
                 if (drop != null) lines.Add(Equipment.EquipmentInventory.AddLine(Equipment.EquipmentInventory.Add(save, metaTable.equipment, drop), drop));
             }
 
-            foreach (string star in Stars.EvaluateDungeon(save, chapter, victory, _hitsTaken, skills.ChoseLegendary)) lines.Add("새 별  " + star);
+            Stars.EvaluateDungeon(save, chapter, victory, _hitsTaken, skills.ChoseLegendary); // 새 별은 결과 화면 별 줄(StarRows)이 보여 준다
             Reward box = Stars.ClaimBoxes(save);
             if (!box.IsEmpty) lines.Add("별 상자  " + box);
 
@@ -1329,5 +1356,16 @@ namespace HistoryHeroes.Dungeon
         public string TopDamage;
         /// <summary>받은 것: 골드, 계정 경험치, 새 별, 별 상자</summary>
         public List<string> RewardLines;
+        /// <summary>이번이 그 구간 던전 첫 클리어 ("첫 클리어!" 띠)</summary>
+        public bool FirstClear;
+        /// <summary>던전 ★1~3 (이긴 판만, 없으면 별 줄 없음)</summary>
+        public StarRow[] StarRows;
+    }
+
+    public struct StarRow
+    {
+        public bool Owned;
+        public bool New;
+        public string Label;
     }
 }

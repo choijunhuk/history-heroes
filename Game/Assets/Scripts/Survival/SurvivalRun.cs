@@ -474,12 +474,14 @@ namespace HistoryHeroes.Survival
                 Fusions = new List<string>(_fusions),
                 RewardLines = lines,
             };
-            StartCoroutine(ShowResultAfter(victory ? 1f : 0.6f, summary));
+            if (victory) UI.HypeFx.Clear("생존!");
+            else UI.HypeFx.Defeat();
+            StartCoroutine(ShowResultAfter(victory ? HypeFx.ClearSeconds : HypeFx.DefeatSeconds, summary));
         }
 
         private IEnumerator ShowResultAfter(float seconds, SurvivalSummary summary)
         {
-            yield return new WaitForSeconds(seconds);
+            yield return HypeFx.Beat(seconds); // 실제 시간 (느려짐 · 멈춤과 상관없이)
             result.ShowSurvival(summary);
         }
 

@@ -87,6 +87,9 @@ namespace HistoryHeroes.Common
         /// <summary>화면 맨 위 광선(기울기 + 시야/2)이 MaxTopAngle을 넘지 않는 기울기 → 화면 네 모서리가 늘 땅에 닿는다 (Codex 3D 코드 리뷰 3번)</summary>
         public static float SafeTilt(float tiltDegrees, float fovDegrees) => Mathf.Clamp(tiltDegrees, 0f, Mathf.Max(0f, MaxTopAngle - fovDegrees * 0.5f));
 
+        /// <summary>클리어 연출의 살짝 당겨 보기 (0 = 그대로, 0.08 = 시야 8% 좁게). 연출(HypeFx)이 켜고 끈다</summary>
+        public float PushIn { get; set; }
+
         private void LateUpdate() => Apply();
 
         /// <summary>지금 화면 비율로 풀어서 거치대에 놓는다 (값이 그대로면 다시 풀지 않는다)</summary>
@@ -104,7 +107,7 @@ namespace HistoryHeroes.Common
             }
 
             viewCamera.orthographic = false;
-            viewCamera.fieldOfView = fieldOfView;
+            viewCamera.fieldOfView = fieldOfView * (1f - PushIn);
             viewCamera.nearClipPlane = 0.3f;
             viewCamera.farClipPlane = _solution.Distance * 3f + 20f;
             transform.localPosition = (Vector3)center + _solution.Position;

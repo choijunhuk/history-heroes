@@ -977,9 +977,24 @@ namespace HistoryHeroes.EditorTools
             Button primary = Btn("Primary", panel, "기록 남기기", new Vector2(0f, -640f), new Vector2(600f, 140f), new Color(0.2f, 0.55f, 0.32f), out TMP_Text primaryLabel);
             Button secondary = Btn("Secondary", panel, "로비로", new Vector2(0f, -800f), new Vector2(440f, 110f), new Color(0.3f, 0.32f, 0.38f), out TMP_Text secondaryLabel);
 
+            // 결과 단추 글자: 둘 다 52 (일시정지 단추 58/150과 같은 비율), ButtonTextGroup이 같은 크기로 맞춘다
+            foreach (TMP_Text l in new[] { primaryLabel, secondaryLabel })
+            {
+                l.fontSize = 52;
+                l.enableAutoSizing = true;
+                l.fontSizeMin = 28f;
+                l.fontSizeMax = 52f;
+                l.textWrappingMode = TextWrappingModes.NoWrap;
+                l.rectTransform.offsetMin = new Vector2(16f, 0f);
+                l.rectTransform.offsetMax = new Vector2(-16f, 0f);
+            }
+
+            using (var group = new Props(panel.gameObject.AddComponent<ButtonTextGroup>())) group.Refs("buttons", new[] { primary, secondary });
+
             using (var props = new Props(screen))
             {
-                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("bodyLabel", body)
+                props.Ref("starSprite", _kit != null ? _kit.Star : null).Ref("sparkleSprite", _kit != null ? _kit.Sparkle : null)
+                    .Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("bodyLabel", body)
                     .Ref("primaryButton", primary).Ref("primaryLabel", primaryLabel).Ref("secondaryButton", secondary).Ref("secondaryLabel", secondaryLabel)
                     .Ref("cardRow", cardRow).Ref("cardTemplate", card.gameObject).Refs("rewardSprites", rewardSprites);
             }
