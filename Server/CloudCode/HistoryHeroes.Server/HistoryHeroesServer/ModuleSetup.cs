@@ -10,7 +10,7 @@ namespace HistoryHeroes.Server;
 /// <summary>Cloud Code가 모듈을 올릴 때 한 번 부른다: 의존성 연결</summary>
 public sealed class ModuleSetup : ICloudCodeSetup
 {
-    /// <summary>구글 호출 하나의 한도. Cloud Code 함수 전체 한도가 15초라 토큰 받기 + 구매 확인 + 장부 쓰기가 들어가게 짧게 둔다</summary>
+    /// <summary>구글 호출 하나의 한도 (함수 전체는 PurchaseVerifier의 12초 안 — Cloud Code 한도 15초)</summary>
     private static readonly TimeSpan GoogleTimeout = TimeSpan.FromSeconds(5);
 
     public void Setup(ICloudCodeConfig config)
@@ -20,16 +20,16 @@ public sealed class ModuleSetup : ICloudCodeSetup
         config.Dependencies.AddSingleton<IGooglePlay>(sp =>
         {
             IGameApiClient api = sp.GetRequiredService<IGameApiClient>();
-            return new GooglePlayClient(context => ReadSecret(api, context), new HttpClient { Timeout = GoogleTimeout });
+            return new GooglePlayClient((context, ct) => ReadSecret(api, context, ct), new HttpClient { Timeout = GoogleTimeout });
         });
     }
 
     /// <summary>비밀값 글. 아직 만들지 않았으면 null (그 밖의 오류는 그대로 올린다 → 검증은 retry)</summary>
-    private static async Task<string?> ReadSecret(IGameApiClient api, IExecutionContext context)
+    private static async Task<string?> ReadSecret(IGameApiClient api, IExecutionContext context, CancellationToken ct)
     {
         try
         {
-            return (await api.SecretManager.GetSecret(context, GooglePlayClient.SecretName))?.Value;
+            return (await api.SecretManager.GetSecret(context, GooglePlayClient.SecretName).WaitAsync(ct))?.Value;
         }
         catch (ApiException e) when (e.Response?.StatusCode == HttpStatusCode.NotFound)
         {

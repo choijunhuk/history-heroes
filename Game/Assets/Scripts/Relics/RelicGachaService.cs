@@ -64,6 +64,7 @@ namespace HistoryHeroes.Relics
             pulls = null;
             if (save == null || !CanOpen(table) || !RelicService.Unlocked(save) || !ValidDay(today)
                 || (count != 1 && count != 10) || save.relicGacha.totalPulls > int.MaxValue - count) return false;
+            if (Wallet.InDebt(save)) return false; // 환불 회수로 보석이 음수인 동안은 뽑지 않는다 (LiveOps 3-4)
 
             int cost;
             switch (pay)

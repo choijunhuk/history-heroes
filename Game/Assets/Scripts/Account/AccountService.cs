@@ -659,7 +659,7 @@ namespace HistoryHeroes.Account
         // ------------------------------------------------------------------ 계정 삭제
 
         /// <summary>
-        /// 계정 삭제 (LiveOps 3-3, 바로 삭제): 외부 계정 연결 끊기 → 클라우드 저장 지우기 → UGS 계정 지우기 → 이 기기 진행 지우기 → 로비 (동의부터 새로).
+        /// 계정 삭제 (LiveOps 3-3, 바로 삭제): 외부 계정 연결 끊기 → 서버 결제 장부 보관 · 지우기 → 클라우드 저장 지우기 → UGS 계정 지우기 → 이 기기 진행 지우기 → 로비 (동의부터 새로).
         /// UGS 계정 삭제는 Cloud Save를 지우지 않으므로 먼저 지운다. 서버 단계가 실패하면 이 기기 진행은 그대로 둔다.
         /// 외부 연결을 끊지 못하면(취소 · 다른 계정 · 실패) 건너뛰고 지울지 묻는다 — 앱 안 삭제는 언제나 끝까지 갈 수 있어야 한다 (구글 정책).
         /// </summary>
@@ -710,6 +710,9 @@ namespace HistoryHeroes.Account
                 }
 
                 Set(AccountState.Busy, "계정을 지우는 중…");
+                // 서버 결제 장부를 먼저 보관본(되돌릴 수 없는 ID, 5년 뒤 지움)으로 옮기고 지운다 — 게임은 보호된 장부를 지울 수 없어서 서버가 한다 (개인정보 처리방침 3장)
+                string archived = await Economy.PurchaseServer.ArchiveAndDeleteAsync();
+                if (archived != "ok") throw new InvalidOperationException("결제 기록 보관 실패: " + (archived ?? "빈 답"));
                 await CloudSaveService.Instance.Data.Player.DeleteAllAsync();
                 await auth.DeleteAccountAsync(); // 끝나면 로그아웃 + 세션도 지운다
             }

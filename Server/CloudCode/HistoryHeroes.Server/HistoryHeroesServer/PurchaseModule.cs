@@ -21,7 +21,11 @@ public sealed class PurchaseModule
     public Task<VerifyResult> VerifyPurchase(IExecutionContext context, string productId, string purchaseToken) =>
         _verifier.VerifyAsync(context, productId, purchaseToken);
 
-    /// <summary>이 플레이어의 서버 장부 (게임이 로그인 뒤 이 기기 장부와 맞춘다) + 결제 검증 준비 여부</summary>
+    /// <summary>이 플레이어의 서버 장부 (게임이 로그인 뒤 이 기기 장부와 맞춘다 — 환불된 것은 회수) + 결제 검증 준비 여부. 10분에 한 번 게임 전체 환불 정리도 여기서</summary>
     [CloudCodeFunction("GetPurchases")]
     public Task<PurchaseList> GetPurchases(IExecutionContext context) => _verifier.GetPurchasesAsync(context);
+
+    /// <summary>계정 삭제 직전: 이 플레이어 결제 장부를 보관본(5년 뒤 지움)으로 옮기고 장부 · 색인을 지운다</summary>
+    [CloudCodeFunction("ArchiveAndDeletePurchases")]
+    public Task<ArchiveResult> ArchiveAndDeletePurchases(IExecutionContext context) => _verifier.ArchiveAndDeleteAsync(context);
 }

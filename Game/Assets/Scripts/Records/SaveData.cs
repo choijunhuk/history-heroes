@@ -939,7 +939,7 @@ namespace HistoryHeroes.Records
         public bool starterClaimed;
     }
 
-    /// <summary>거래 하나로 지급한 것. transactionId = 구글 구매 토큰 (가짜 상점은 무작위 GUID)</summary>
+    /// <summary>거래 하나로 지급한 것. transactionId = "sha256:" + SHA-256(구글 구매 토큰) (가짜 상점은 무작위 GUID의 해시) — 토큰 원문은 저장하지 않는다</summary>
     [Serializable]
     public sealed class PurchaseEntry
     {
@@ -954,7 +954,7 @@ namespace HistoryHeroes.Records
         public int gold;
         /// <summary>이 거래에서 첫 구매 2배를 받았다</summary>
         public bool firstBonus;
-        /// <summary>구글 환불이 확인됐다 / 결제가 취소(차지백 등)됐다. 아직 쓰는 곳 없음 — 회수를 넣을 때 구조를 또 올리지 않게 미리 둔다</summary>
+        /// <summary>refunded: 아직 쓰는 곳 없음 (청약철회를 게임 안에서 처리하게 되면). voided: 구글 환불 · 취소 · 차지백이 서버에서 확인돼 이 결제로 준 것을 회수했다 (IapLedger.ClawBack, LiveOps 3-4)</summary>
         public bool refunded;
         public bool voided;
 

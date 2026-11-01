@@ -17,10 +17,44 @@ namespace HistoryHeroes.Economy
 
         public static void AddGold(SaveData d, int amount) => d.gold = Math.Max(0, d.gold + Math.Max(0, amount));
 
-        public static void AddFreeGems(SaveData d, int amount) => d.gemsFree = Math.Max(0, d.gemsFree + Math.Max(0, amount));
+        /// <summary>무료 보석을 더한다. 환불 회수로 빚(음수)이 있으면 그 빚부터 메운다 (Settle)</summary>
+        public static void AddFreeGems(SaveData d, int amount)
+        {
+            d.gemsFree += Math.Max(0, amount);
+            Settle(d);
+        }
 
         /// <summary>결제로 산 기본 보석 (유료분). 청약철회·환불은 이 몫을 기준으로 계산한다 (Monetization 3-1)</summary>
-        public static void AddPaidGems(SaveData d, int amount) => d.gemsPaid = Math.Max(0, d.gemsPaid + Math.Max(0, amount));
+        public static void AddPaidGems(SaveData d, int amount)
+        {
+            d.gemsPaid += Math.Max(0, amount);
+            Settle(d);
+        }
+
+        /// <summary>환불 회수로 보석이 음수다 (LiveOps 3-4). 0 이상이 될 때까지 상점 · 뽑기를 막는다 (보석 쓰기는 잔액 검사로 이미 막힌다)</summary>
+        public static bool InDebt(SaveData d) => Gems(d) < 0;
+
+        public const string DebtText = "환불된 결제를 회수해서 보석이 모자라요. 보석이 0 이상이 될 때까지 상점 · 뽑기를 쓸 수 없어요 (새로 얻는 보석으로 먼저 채워요).";
+
+        /// <summary>
+        /// 환불 회수(유료 · 무료에서 그 결제로 준 만큼 뺀다) 뒤 한쪽만 음수면 다른 쪽으로 메운다 — 그래서 전체가 0 이상이면 둘 다 0 이상이다.
+        /// LiveOps 3-4 "회수할 보석이 모자라면 음수, 이후 얻는 보석으로 먼저 채운다"
+        /// </summary>
+        public static void Settle(SaveData d)
+        {
+            if (d.gemsPaid < 0 && d.gemsFree > 0)
+            {
+                int move = Math.Min(d.gemsFree, -d.gemsPaid);
+                d.gemsFree -= move;
+                d.gemsPaid += move;
+            }
+            else if (d.gemsFree < 0 && d.gemsPaid > 0)
+            {
+                int move = Math.Min(d.gemsPaid, -d.gemsFree);
+                d.gemsPaid -= move;
+                d.gemsFree += move;
+            }
+        }
 
         public static bool TrySpendGold(SaveData d, int amount)
         {

@@ -21,6 +21,8 @@ namespace HistoryHeroes.Economy
         public const string Already = "already";
         public const string AlreadyClaimed = "already_claimed";
         public const string Invalid = "invalid";
+        /// <summary>지급했던 결제가 환불 · 취소됐다 → 지급하지 않고, 이 기기에 있으면 회수</summary>
+        public const string Voided = "voided";
         public const string NotConfigured = "not_configured";
         public const string Retry = "retry";
 
@@ -40,6 +42,8 @@ namespace HistoryHeroes.Economy
             public bool firstBonus;
             /// <summary>라이선스 테스터 결제 (지급은 같다)</summary>
             public bool test;
+            /// <summary>구글 환불 · 취소 · 차지백 → 회수 (LiveOps 3-4)</summary>
+            public bool voided;
         }
 
         [Serializable]
@@ -56,6 +60,8 @@ namespace HistoryHeroes.Economy
         [Serializable]
         public sealed class Ledger
         {
+            /// <summary>"ok"가 아니면(서버 오류 · 시간 초과) 장부를 믿지 말고 나중에 다시</summary>
+            public string status;
             /// <summary>서버에 구글 서비스 계정이 들어 있다 (아니면 기기에서는 팔지 않는다)</summary>
             public bool configured;
             public List<Purchase> purchases = new List<Purchase>();
@@ -72,6 +78,22 @@ namespace HistoryHeroes.Economy
         {
             string json = await CloudCodeService.Instance.CallModuleEndpointAsync(Module, "GetPurchases", new Dictionary<string, object>());
             return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<Ledger>(json);
+        }
+
+        [Serializable]
+        private sealed class StatusOnly
+        {
+            public string status;
+        }
+
+        /// <summary>
+        /// 계정 삭제 직전 (AccountService.DeleteAsync): 서버 결제 장부를 보관본(되돌릴 수 없는 ID, 5년 뒤 지움)으로 옮기고 장부 · 색인을 지운다.
+        /// 돌려주는 값: "ok"면 끝. 그 밖은 실패 — 계정 삭제를 멈추고 다시 하게 한다 (장부가 지운 계정 밑에 남지 않게)
+        /// </summary>
+        public static async Task<string> ArchiveAndDeleteAsync()
+        {
+            string json = await CloudCodeService.Instance.CallModuleEndpointAsync(Module, "ArchiveAndDeletePurchases", new Dictionary<string, object>());
+            return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<StatusOnly>(json)?.status;
         }
     }
 }

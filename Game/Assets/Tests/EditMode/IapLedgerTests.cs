@@ -80,7 +80,7 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual((preview.paidGems, preview.freeGems, preview.firstBonus), (granted.paidGems, granted.freeGems, granted.firstBonus));
             Assert.AreEqual((9900, 12500), (granted.paidGems, granted.freeGems), "보너스 2,600 + 첫 구매 9,900");
             Assert.AreEqual("2026-11-01T03:00:00.0000000Z", granted.utc);
-            Assert.AreEqual("t-6", granted.transactionId);
+            Assert.AreEqual(IapLedger.IdOf("t-6"), granted.transactionId, "거래 번호는 해시로만 적는다 (서버 리뷰 Y1)");
         }
 
         [Test]
@@ -107,7 +107,7 @@ namespace HistoryHeroes.Tests
             Assert.AreEqual(IapLedger.Result.Granted, Buy(d, "gems_t3", "dup"));
             int paid = d.gemsPaid, free = d.gemsFree;
             Assert.AreEqual(IapLedger.Result.AlreadyGranted, IapLedger.Apply(d, "gems_t3", "dup", Now, out PurchaseEntry again));
-            Assert.AreEqual("dup", again.transactionId, "이미 준 내역을 돌려준다 (확정만 하면 된다)");
+            Assert.AreEqual(IapLedger.IdOf("dup"), again.transactionId, "이미 준 내역을 돌려준다 (확정만 하면 된다)");
             Assert.AreEqual((paid, free), (d.gemsPaid, d.gemsFree));
             Assert.AreEqual(1, d.purchases.ledger.Count);
 

@@ -203,6 +203,8 @@ namespace HistoryHeroes.UI
                 : _relicMode
                 ? $"<sprite name=gem>보석 {Wallet.Gems(save):N0} · <sprite name=ancient_shard>고대 파편 {RelicService.Shards(save):N0}"
                 : $"<sprite name=gold>골드 {save.gold:N0} · <sprite name=gem>보석 {Wallet.Gems(save):N0} · <sprite name=ticket>고급 소환권 {save.ItemCount(Wallet.Ticket)} · <sprite name=equip_shard>장비 조각 {save.ItemCount(Wallet.GearShard)}";
+            // 환불 회수로 보석이 음수: 이유를 늘 보여 주고 상자 · 뽑기를 막는다 (LiveOps 3-4). 보석 결제는 열어 둔다 (사면 빚부터 메운다)
+            if (Wallet.InDebt(save)) walletLabel.text += "\n<size=80%><color=#FF7A6B>환불 회수로 보석이 모자라요 · 0 이상이 될 때까지 상자 · 뽑기 잠김</color></size>";
             gemSection.SetActive(_gemMode);
             relicSection.SetActive(_relicMode);
             equipmentSection.SetActive(!_relicMode && !_gemMode);
@@ -222,9 +224,10 @@ namespace HistoryHeroes.UI
             }
 
             normalBuyLabel.text = $"일반 상자 · 골드 {gacha.normal.goldCost:N0}\n<size=75%>희귀 {gacha.normal.rarity[(int)EquipRarity.Rare] * 100f:0.##}% · 보장 없음</size>";
-            normalBuyButton.interactable = unlocked && save.gold >= gacha.normal.goldCost;
+            bool open = unlocked && !Wallet.InDebt(save);
+            normalBuyButton.interactable = open && save.gold >= gacha.normal.goldCost;
             bool free = GachaService.CanFreeNormal(save, today);
-            normalFreeButton.interactable = unlocked && free && !_waitingForAd;
+            normalFreeButton.interactable = open && free && !_waitingForAd;
             normalFreeLabel.text = _waitingForAd ? "광고 보는 중…" : free ? "광고 보고 무료 (오늘 1번)" : "오늘 무료는 받았어요";
 
             int legendaryLeft = GachaService.PullsUntilPity(save, gacha.premium);
@@ -236,11 +239,11 @@ namespace HistoryHeroes.UI
             premiumPityLabel.text = unlocked ? $"전설 확정까지 {legendaryLeft}회 · 희귀 이상 확정까지 {rareLeft}회" : "";
             premium1Label.text = $"보석 {gacha.premium.gemCost:N0}\n<size=75%>{legendaryRate} · 확정 {legendaryLeft}회</size>";
             premium10Label.text = $"10회 {gacha.premium.gem10Cost:N0}\n<size=75%>첫회 {legendaryRate} · {legendaryLeft}회</size>";
-            premium1Button.interactable = unlocked && Wallet.Gems(save) >= gacha.premium.gemCost;
-            premium10Button.interactable = unlocked && Wallet.Gems(save) >= gacha.premium.gem10Cost;
+            premium1Button.interactable = open && Wallet.Gems(save) >= gacha.premium.gemCost;
+            premium10Button.interactable = open && Wallet.Gems(save) >= gacha.premium.gem10Cost;
             int tickets = save.ItemCount(Wallet.Ticket);
             ticketLabel.text = $"소환권 1장 ({tickets})\n<size=75%>{legendaryRate} · 확정 {legendaryLeft}회</size>";
-            ticketButton.interactable = unlocked && tickets > 0;
+            ticketButton.interactable = open && tickets > 0;
             // 잠긴 상자는 초록 대신 회색 (유물 뽑기와 같게 — 어두운 초록은 눌러도 되는 것처럼 보였다, 2026-10-31 화면 점검)
             premium1Button.image.color = premium10Button.image.color = ticketButton.image.color = unlocked ? _premiumColor : RowDisabled;
             exchangeButton.interactable = unlocked;
@@ -295,11 +298,12 @@ namespace HistoryHeroes.UI
                 : $"각 유물 {100f / relics.relics.Count:0.##}% · 보장 종료";
             relic1Label.text = $"1회 · <sprite name={icon}>{oneCost:N0}\n<size=70%>{relicOdds}</size>";
             relic10Label.text = $"10회 · <sprite name={icon}>{tenCost:N0}\n<size=70%>{relicOdds}</size>";
-            relic1Button.interactable = unlocked && balance >= oneCost;
-            relic10Button.interactable = unlocked && balance >= tenCost;
+            bool relicOpen = unlocked && !Wallet.InDebt(save);
+            relic1Button.interactable = relicOpen && balance >= oneCost;
+            relic10Button.interactable = relicOpen && balance >= tenCost;
             bool free = RelicGachaService.CanFree(save, today);
             relicFreeLabel.text = free ? "무료 1회 (오늘)" : "오늘 무료는 받았어요";
-            relicFreeButton.interactable = unlocked && free;
+            relicFreeButton.interactable = relicOpen && free;
             relicPayButton.interactable = unlocked;
             relicRatesButton.interactable = relics != null;
         }

@@ -25,8 +25,12 @@ public sealed class GoogleCheck
     /// <summary>purchases.products.get의 ProductPurchase 중 쓰는 칸 (https://developers.google.com/android-publisher/api-ref/rest/v3/purchases.products)</summary>
     public sealed class Purchase
     {
-        /// <summary>0 결제됨 · 1 취소 · 2 대기 중</summary>
-        [JsonProperty("purchaseState")] public int PurchaseState { get; set; }
+        /// <summary>0 결제됨 · 1 취소 · 2 대기 중. 칸이 없으면 결제된 것으로 보지 않는다</summary>
+        [JsonProperty("purchaseState")] public int? PurchaseState { get; set; }
+        /// <summary>0 아직 소비 안 함 · 1 소비됨 (게임이 확정했다)</summary>
+        [JsonProperty("consumptionState")] public int? ConsumptionState { get; set; }
+        /// <summary>0 아직 확정 안 함 · 1 확정됨</summary>
+        [JsonProperty("acknowledgementState")] public int? AcknowledgementState { get; set; }
         /// <summary>0 테스트(라이선스 테스터) · 1 프로모션 코드 · 2 보상형. 보통 결제는 칸이 없다</summary>
         [JsonProperty("purchaseType")] public int? PurchaseType { get; set; }
         [JsonProperty("orderId")] public string? OrderId { get; set; }
@@ -36,5 +40,8 @@ public sealed class GoogleCheck
         [JsonProperty("quantity")] public int? Quantity { get; set; }
         /// <summary>결제할 때 게임이 넣은 계정 표시 = SHA-256(UGS 플레이어 ID)</summary>
         [JsonProperty("obfuscatedExternalAccountId")] public string? ObfuscatedAccountId { get; set; }
+
+        /// <summary>구글 쪽에서 이미 확정 · 소비가 끝났다 (서버가 따로 확정할 필요 없음)</summary>
+        public bool Settled => AcknowledgementState == 1 || ConsumptionState == 1;
     }
 }

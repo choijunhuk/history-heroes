@@ -40,23 +40,20 @@ namespace HistoryHeroes.Economy
             }
         }
 
-        /// <summary>같은 결제인지 볼 열쇠: 토큰 원문이면 그 해시, "sha256:"로 적힌 칸이면 그 해시</summary>
-        private static string TokenKey(string transactionId) =>
-            transactionId.StartsWith(HashedPrefix, StringComparison.Ordinal) ? transactionId.Substring(HashedPrefix.Length) : Hash(transactionId);
+        /// <summary>
+        /// 장부에 적는 거래 번호: "sha256:" + SHA-256(토큰). 이미 그 모양이면 그대로. 구매 토큰 원문은 기기 · 클라우드 저장에 남기지 않는다 (개인정보 처리방침 1장).
+        /// 서버 장부의 tokenHash와 같은 해시라 서버 기록과 바로 맞춰진다
+        /// </summary>
+        public static string IdOf(string transactionId) =>
+            string.IsNullOrEmpty(transactionId) || transactionId.StartsWith(HashedPrefix, StringComparison.Ordinal) ? transactionId : HashedPrefix + Hash(transactionId);
 
-        /// <summary>이 거래가 장부에 있나 (토큰 원문 · 서버에서 되살린 해시 칸 어느 쪽이든 같은 결제면 찾는다)</summary>
+        /// <summary>이 거래가 장부에 있나 (토큰 원문으로 물어도, 해시로 적힌 칸을 찾는다)</summary>
         public static PurchaseEntry Find(SaveData d, string transactionId)
         {
             if (string.IsNullOrEmpty(transactionId)) return null;
-            string key = null;
+            string id = IdOf(transactionId);
             foreach (PurchaseEntry e in d.purchases.ledger)
-            {
-                if (e.transactionId == transactionId) return e;
-                if (string.IsNullOrEmpty(e.transactionId)) continue;
-                key ??= TokenKey(transactionId);
-                if (TokenKey(e.transactionId) == key) return e;
-            }
-
+                if (e != null && IdOf(e.transactionId) == id) return e;
             return null;
         }
 
@@ -103,7 +100,7 @@ namespace HistoryHeroes.Economy
             if (!Available(d, item)) return Result.AlreadyClaimed;
 
             entry = Preview(d, item);
-            entry.transactionId = transactionId;
+            entry.transactionId = IdOf(transactionId);
             entry.utc = utcNow.ToUniversalTime().ToString("o");
             Wallet.AddPaidGems(d, entry.paidGems);
             Wallet.AddFreeGems(d, entry.freeGems);
@@ -117,15 +114,23 @@ namespace HistoryHeroes.Economy
 
         /// <summary>
         /// 서버가 정한 지급을 이 기기 장부에 넣는다 (기기 상점의 서버 검증 · 로그인 뒤 서버 장부 맞추기). 수량 · 첫 구매 2배는 서버 값 그대로.
-        /// transactionId: 상점이 준 토큰. 없으면(맞추기) "sha256:" + 서버 해시. 같은 결제가 이미 있으면 AlreadyGranted (두 번 주지 않는다).
+        /// transactionId: 상점이 준 토큰 (없으면 서버 해시로). 같은 결제가 이미 있으면 AlreadyGranted (두 번 주지 않는다).
+        /// 서버가 환불됐다고 한 결제(voided)는 지급하지 않는다: 이 기기에 있으면 회수하고, 없으면 "회수됨"으로만 적어 다시는 넣지 않는다.
         /// 저장은 부르는 쪽이 SaveSystem.Commit으로
         /// </summary>
         public static Result ApplyServer(SaveData d, PurchaseServer.Purchase p, string transactionId, out PurchaseEntry entry)
         {
             entry = null;
             if (p == null || string.IsNullOrEmpty(p.tokenHash) || string.IsNullOrEmpty(p.productId)) return Result.Invalid;
-            string id = string.IsNullOrEmpty(transactionId) ? HashedPrefix + p.tokenHash : transactionId;
+            string id = string.IsNullOrEmpty(transactionId) ? HashedPrefix + p.tokenHash : IdOf(transactionId);
             entry = Find(d, id);
+            if (p.voided)
+            {
+                if (entry != null) ClawBack(d, entry);
+                else d.purchases.ledger.Add(entry = new PurchaseEntry { transactionId = id, productId = p.productId, utc = p.utc, voided = true });
+                return Result.Invalid;
+            }
+
             if (entry != null) return Result.AlreadyGranted;
 
             entry = new PurchaseEntry
@@ -150,16 +155,60 @@ namespace HistoryHeroes.Economy
         }
 
         /// <summary>
-        /// 로그인 뒤 서버 장부와 맞추기: 서버에만 있는 결제를 이 기기에 다시 넣는다 (기기 저장을 잃었을 때 · 같은 계정의 다른 기기에서 산 것).
-        /// 그래서 이 기기의 계정당 1번 · 첫 구매 2배 표시가 서버와 같아진다. 몇 번 불러도 두 번 주지 않는다. 돌려주는 값: 넣은 결제 수
+        /// 환불 · 취소된 결제로 준 것을 회수한다 (LiveOps 3-4): 유료 · 무료 보석을 그만큼 빼고(모자라면 음수 — 상점 · 뽑기 잠김),
+        /// 골드 · 고급 소환권은 남은 만큼만 뺀다 (이미 쓴 것 · 뽑은 장비는 그대로). 이미 회수한 칸은 다시 빼지 않는다. 돌려주는 값: 뺀 보석
         /// </summary>
-        public static int MergeServer(SaveData d, IEnumerable<PurchaseServer.Purchase> purchases)
+        public static int ClawBack(SaveData d, PurchaseEntry e)
         {
-            int added = 0;
-            if (purchases == null) return 0;
+            if (e == null || e.voided) return 0;
+            e.voided = true;
+            if (e.refunded) return 0; // 다른 길로 이미 돌려받은 결제
+            d.gemsPaid -= e.paidGems;
+            d.gemsFree -= e.freeGems;
+            Wallet.Settle(d);
+            d.gold = Math.Max(0, d.gold - e.gold);
+            int tickets = Math.Min(e.tickets, d.ItemCount(Wallet.Ticket));
+            if (tickets > 0) d.AddItem(Wallet.Ticket, -tickets);
+            return e.paidGems + e.freeGems;
+        }
+
+        /// <summary>서버 장부 맞추기 결과: 새로 넣은 결제 · 회수한 결제 · 회수한 보석</summary>
+        public struct ServerMerge
+        {
+            public int Added;
+            public int Voided;
+            public int GemsTaken;
+        }
+
+        /// <summary>
+        /// 로그인 뒤 서버 장부와 맞추기: 서버에만 있는 결제를 이 기기에 다시 넣고, 서버가 환불됐다고 한 결제는 회수한다 (다시는 넣지 않는다).
+        /// 그래서 이 기기의 계정당 1번 · 첫 구매 2배 표시가 서버와 같아진다. 몇 번 불러도 두 번 주거나 두 번 빼지 않는다.
+        /// 일부러 그렇게 둔 것: 클라우드 고르기로 더 옛 진행을 받으면 그 뒤에 산 결제가 여기서 다시 들어온다 (산 것은 되살린다).
+        /// 그 결제로 산 보석을 쓴 기록은 옛 진행에 없으니 보석이 다시 생긴 것처럼 보인다 — 지갑이 아직 기기 기준이라 생기는 알려진 한계 (Monetization 7-1)
+        /// </summary>
+        public static ServerMerge MergeServer(SaveData d, IEnumerable<PurchaseServer.Purchase> purchases)
+        {
+            var result = new ServerMerge();
+            if (purchases == null) return result;
             foreach (PurchaseServer.Purchase p in purchases)
-                if (ApplyServer(d, p, null, out _) == Result.Granted) added++;
-            return added;
+            {
+                if (p == null) continue;
+                if (p.voided)
+                {
+                    PurchaseEntry local = string.IsNullOrEmpty(p.tokenHash) ? null : Find(d, HashedPrefix + p.tokenHash);
+                    bool wasGranted = local != null && !local.voided;
+                    int taken = wasGranted ? ClawBack(d, local) : 0;
+                    if (local == null) ApplyServer(d, p, null, out _); // 회수됨으로만 적는다
+                    if (!wasGranted) continue;
+                    result.Voided++;
+                    result.GemsTaken += taken;
+                    continue;
+                }
+
+                if (ApplyServer(d, p, null, out _) == Result.Granted) result.Added++;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -174,7 +223,13 @@ namespace HistoryHeroes.Economy
             int added = 0;
             foreach (PurchaseEntry e in source.purchases.ledger)
             {
-                if (e == null || string.IsNullOrEmpty(e.transactionId) || Find(target, e.transactionId) != null) continue;
+                if (e == null || string.IsNullOrEmpty(e.transactionId)) continue;
+                PurchaseEntry existing = Find(target, e.transactionId);
+                if (existing != null)
+                {
+                    if (e.voided) ClawBack(target, existing); // 한쪽에서 회수한 결제는 고른 쪽에서도 회수한다 (되살리지 않는다)
+                    continue;
+                }
                 if (!e.refunded && !e.voided)
                 {
                     Wallet.AddPaidGems(target, e.paidGems);
@@ -182,7 +237,9 @@ namespace HistoryHeroes.Economy
                     Wallet.AddGold(target, e.gold);
                     if (e.tickets > 0) target.AddItem(Wallet.Ticket, e.tickets);
                 }
-                target.purchases.ledger.Add(e.Copy());
+                PurchaseEntry copy = e.Copy();
+                copy.transactionId = IdOf(copy.transactionId);
+                target.purchases.ledger.Add(copy);
                 added++;
             }
 

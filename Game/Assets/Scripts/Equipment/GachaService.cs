@@ -123,6 +123,7 @@ namespace HistoryHeroes.Equipment
         /// <summary>값을 치를 수 있는지 보고 치른다 (실패하면 아무것도 안 바뀜)</summary>
         public static bool TryPay(SaveData save, GachaTable table, BoxRates box, int count, Pay pay, string today)
         {
+            if (Wallet.InDebt(save)) return false; // 환불 회수로 보석이 음수인 동안은 상자를 열지 않는다 (LiveOps 3-4)
             switch (pay)
             {
                 case Pay.Gold:

@@ -45,6 +45,13 @@ namespace HistoryHeroes.Economy
         public const string SaveFailedText = "저장하지 못해서 아직 지급하지 않았어요. 저장 공간을 확인해 주세요. 다음에 게임을 열면 다시 받아요.";
         public const string AlreadyClaimedText = "첫 결제 패키지는 계정당 1번만 받을 수 있어요. 이번 결제는 확정하지 않아 환불 대기 중이에요 (3일 안에 자동 환불).";
         public const string UngrantableText = "이 결제를 지급하지 못해 환불 대기 중이에요 (3일 안에 자동 환불). 계속되면 문의해 주세요.";
+        public const string PendingText = "결제가 아직 끝나지 않았어요. 결제가 끝나면 들어와요.";
+        public const string NotPaidText = "무료 결제(프로모션 코드 · 보상형)는 이 게임에서 지급하지 않아요. 확정하지 않아 3일 안에 자동으로 취소돼요.";
+        public const string VoidedText = "환불 · 취소된 결제라서 지급하지 않았어요.";
+        /// <summary>막 산 결제를 구글이 아직 모른다고(404) 하면 이 시간 동안은 "확인 중"으로 다시 묻는다 (구글 쪽 반영이 늦을 수 있다)</summary>
+        public static readonly TimeSpan JustBoughtWindow = TimeSpan.FromMinutes(10);
+        /// <summary>확정(소비) 실패를 이만큼 다시 하면 멈춘다 — 다음 실행에 상점이 다시 보내면 그때 또 (끝없이 돌지 않게)</summary>
+        public const int MaxConfirmTries = 6;
         /// <summary>확정이 실패하면 이만큼 뒤에 다시 (구글은 3일 안에 확정하지 않으면 환불한다)</summary>
         private const int ConfirmRetryMilliseconds = 10000;
 
@@ -66,6 +73,30 @@ namespace HistoryHeroes.Economy
         /// <summary>다시 묻기를 걸어 둔 거래 + 몇 번째인지</summary>
         private static readonly Dictionary<string, int> AskCount = new Dictionary<string, int>();
         private static readonly HashSet<string> AskScheduled = new HashSet<string>();
+        /// <summary>이번 실행에서 처음 서버에 물은 시각 (막 산 결제의 404를 잠시 기다리려고)</summary>
+        private static readonly Dictionary<string, DateTime> FirstAsked = new Dictionary<string, DateTime>();
+        /// <summary>확정이 실패한 횟수 (MaxConfirmTries까지)</summary>
+        private static readonly Dictionary<string, int> ConfirmTries = new Dictionary<string, int>();
+
+        /// <summary>
+        /// 서버에 묻기 직전의 주인: 로그인한 플레이어 + 메모리 저장의 세대(SaveSystem.Generation). 답이 왔을 때 둘 중 하나라도 바뀌었으면
+        /// (계정 전환 · 클라우드 진행 받기 · 계정 삭제) 그 답을 지금 진행에 넣지도, 결제를 확정하지도 않는다 — 결제는 남겨 두고 지금 주인으로 다시 묻는다
+        /// </summary>
+        public readonly struct Owner
+        {
+            public readonly string Player;
+            public readonly int Generation;
+
+            public Owner(string player, int generation)
+            {
+                Player = player;
+                Generation = generation;
+            }
+
+            public static Owner Now => new Owner(Account.AccountService.PlayerId, SaveSystem.Generation);
+
+            public bool Same(Owner other) => Player == other.Player && Generation == other.Generation;
+        }
         /// <summary>이번 실행에서 서버 장부와 맞춘 UGS 플레이어 (계정이 바뀌면 다시 맞춘다)</summary>
         private static string _serverPlayer;
         /// <summary>마지막으로 받은 서버 장부에서: 서버에 구글 서비스 계정이 있다</summary>
@@ -307,7 +338,9 @@ namespace HistoryHeroes.Economy
             string productId = ProductOf(order);
             if (string.IsNullOrEmpty(transactionId) || !Asking.Add(transactionId)) return;
             Waiting[transactionId] = order;
+            if (!FirstAsked.ContainsKey(transactionId)) FirstAsked[transactionId] = DateTime.UtcNow;
             int session = _session;
+            Owner askedAs = Owner.Now;
             PurchaseServer.Verdict verdict = null;
             try
             {
@@ -323,12 +356,14 @@ namespace HistoryHeroes.Economy
             Asking.Remove(transactionId);
             if (verdict != null && verdict.status != PurchaseServer.Granted && verdict.status != PurchaseServer.Already)
                 Debug.LogWarning($"[IAP] 서버 판정 {productId}: {verdict.status} {verdict.reason}");
-            PurchaseEntry granted = ApplyVerdict(verdict, transactionId, () => Confirm(order), out string notice, out bool retry);
+            bool justBought = DateTime.UtcNow - FirstAsked[transactionId] < JustBoughtWindow;
+            PurchaseEntry granted = ApplyVerdict(verdict, transactionId, askedAs, justBought, () => Confirm(order), out string notice, out bool retry);
             if (retry) AskAgainSoon(transactionId);
             else
             {
                 Waiting.Remove(transactionId);
                 AskCount.Remove(transactionId);
+                FirstAsked.Remove(transactionId);
             }
 
             if (granted != null) OnGranted(granted);
@@ -336,15 +371,24 @@ namespace HistoryHeroes.Economy
         }
 
         /// <summary>
-        /// 서버 답 하나의 처리 (상점 없이 테스트한다). granted · already → 서버가 준 수량 그대로 장부에 넣고 저장한 뒤에만 confirm
-        /// (이미 이 기기 장부에 있으면 확정만). already_claimed · invalid · not_configured → 지급도 확정도 안 함 (구글이 3일 안에 환불).
-        /// retry · 답 없음(오프라인 · 오류) · 저장 실패 → 지급 · 확정 없이 retry=true (결제를 남겨 두고 다시 묻는다).
+        /// 서버 답 하나의 처리 (상점 없이 테스트한다). askedAs: 물을 때의 주인 — 지금과 다르면 아무것도 하지 않고 retry (다른 진행에 넣지 않는다).
+        /// granted · already → 서버가 준 수량 그대로 장부에 넣고 저장한 뒤에만 confirm (이미 이 기기 장부에 있으면 확정만).
+        /// voided → 지급 · 확정 안 함, 이 기기에 있으면 회수. already_claimed · invalid · not_configured → 지급도 확정도 안 함 (구글이 3일 안에 환불).
+        /// 막 산 결제(justBought)의 구글 404는 반영이 늦은 것일 수 있어 retry. retry · 답 없음(오프라인 · 오류) · 저장 실패 → 지급 · 확정 없이 retry=true.
         /// 돌려주는 값: 이번에 새로 지급한 내역 (없으면 null)
         /// </summary>
-        public static PurchaseEntry ApplyVerdict(PurchaseServer.Verdict verdict, string transactionId, Action confirm, out string notice, out bool retry)
+        public static PurchaseEntry ApplyVerdict(PurchaseServer.Verdict verdict, string transactionId, Owner askedAs, bool justBought, Action confirm,
+            out string notice, out bool retry)
         {
             notice = null;
             retry = false;
+            if (!askedAs.Same(Owner.Now))
+            {
+                Debug.LogWarning("[IAP] 서버에 묻는 사이 계정 · 저장이 바뀜 → 이 답은 쓰지 않고 다시 묻는다");
+                retry = true;
+                return null;
+            }
+
             switch (verdict?.status)
             {
                 case PurchaseServer.Granted:
@@ -367,11 +411,18 @@ namespace HistoryHeroes.Economy
                     notice = saved == SaveSystem.CommitResult.SaveFailed ? SaveFailedText : UngrantableText;
                     retry = saved == SaveSystem.CommitResult.SaveFailed; // 다시 물으면 서버가 already로 같은 지급을 준다
                     return null;
+                case PurchaseServer.Voided:
+                    if (verdict.HasPurchase)
+                        SaveSystem.Commit(() => IapLedger.ApplyServer(SaveSystem.Data, verdict.purchase, transactionId, out _) == IapLedger.Result.Invalid);
+                    notice = VoidedText + (Wallet.InDebt(SaveSystem.Data) ? " " + Wallet.DebtText : string.Empty);
+                    return null;
                 case PurchaseServer.AlreadyClaimed:
                     notice = AlreadyClaimedText;
                     return null;
                 case PurchaseServer.Invalid:
-                    notice = InvalidReceiptText;
+                    string reason = verdict.reason ?? string.Empty;
+                    if (justBought && reason.StartsWith("google_404", StringComparison.Ordinal)) break; // 구글 반영 대기 → 다시 묻기
+                    notice = reason.StartsWith("not_paid", StringComparison.Ordinal) ? NotPaidText : InvalidReceiptText;
                     return null;
                 case PurchaseServer.NotConfigured:
                     notice = NotReadyText;
@@ -379,7 +430,7 @@ namespace HistoryHeroes.Economy
             }
 
             retry = true;
-            notice = CheckingText;
+            notice = verdict?.reason == "pending" ? PendingText : CheckingText;
             return null;
         }
 
@@ -440,8 +491,19 @@ namespace HistoryHeroes.Economy
             {
                 PurchaseServer.Ledger ledger = await PurchaseServer.GetPurchasesAsync();
                 if (session != _session || ledger == null || player != Account.AccountService.PlayerId) return;
-                int added = 0;
-                SaveSystem.CommitResult saved = SaveSystem.Commit(() => (added = IapLedger.MergeServer(SaveSystem.Data, ledger.purchases)) > 0);
+                if (ledger.status != null && ledger.status != "ok")
+                {
+                    Debug.LogWarning($"[IAP] 서버 장부를 받지 못함 ({ledger.status}, 다음에 다시)");
+                    return;
+                }
+
+                IapLedger.ServerMerge merged = default;
+                SaveSystem.CommitResult saved = SaveSystem.Commit(() =>
+                {
+                    int before = SaveSystem.Data.purchases.ledger.Count;
+                    merged = IapLedger.MergeServer(SaveSystem.Data, ledger.purchases);
+                    return merged.Added > 0 || merged.Voided > 0 || SaveSystem.Data.purchases.ledger.Count != before; // 회수됨 표시만 더해도 저장
+                });
                 if (saved == SaveSystem.CommitResult.SaveFailed)
                 {
                     Debug.LogWarning("[IAP] 서버 장부를 맞췄지만 저장하지 못함 (다음에 다시)");
@@ -450,8 +512,11 @@ namespace HistoryHeroes.Economy
 
                 _serverConfigured = ledger.configured;
                 _serverPlayer = player;
-                Debug.Log($"[IAP] 서버 장부 {ledger.purchases?.Count ?? 0}건 · 새로 넣음 {added} · 검증 준비 {ledger.configured}");
-                if (added > 0) Say($"서버에 기록된 결제 {added}건을 이 기기에 다시 넣었어요.");
+                Debug.Log($"[IAP] 서버 장부 {ledger.purchases?.Count ?? 0}건 · 새로 넣음 {merged.Added} · 회수 {merged.Voided} · 검증 준비 {ledger.configured}");
+                if (merged.Added > 0) Say($"서버에 기록된 결제 {merged.Added}건을 이 기기에 다시 넣었어요.");
+                if (merged.Voided > 0)
+                    Say($"환불 · 취소된 결제 {merged.Voided}건으로 받았던 보석 {Wallet.Format(merged.GemsTaken)}개(와 골드 · 소환권)를 회수했어요."
+                        + (Wallet.InDebt(SaveSystem.Data) ? " " + Wallet.DebtText : string.Empty));
                 Changed?.Invoke();
             }
             catch (Exception e)
@@ -539,14 +604,24 @@ namespace HistoryHeroes.Economy
         private static void OnPurchaseConfirmed(Order order)
         {
             string id = order.Info.TransactionID ?? string.Empty;
-            if (order is FailedOrder failed && failed.FailureReason != PurchaseFailureReason.DuplicateTransaction)
+            if (order is FailedOrder failed && failed.FailureReason != PurchaseFailureReason.DuplicateTransaction
+                && failed.FailureReason != PurchaseFailureReason.PurchaseMissing) // 이미 소비된 결제 → 끝난 것
             {
-                // 지급은 끝났다. 확정만 다시 하면 된다
-                Debug.LogWarning($"[IAP] {ProductOf(order)} 확정 실패 (다시 시도): {failed.FailureReason} {failed.Details}");
-                RetryConfirmSoon();
-                return;
+                // 지급은 끝났다. 확정만 다시 하면 된다 (서버가 이미 구글에 확정했어도 소비는 따로 해야 다시 살 수 있다)
+                int tries = (ConfirmTries.TryGetValue(id, out int n) ? n : 0) + 1;
+                ConfirmTries[id] = tries;
+                if (tries < MaxConfirmTries)
+                {
+                    Debug.LogWarning($"[IAP] {ProductOf(order)} 확정 실패 (다시 시도 {tries}): {failed.FailureReason}");
+                    RetryConfirmSoon();
+                    return;
+                }
+
+                Debug.LogWarning($"[IAP] {ProductOf(order)} 확정을 {tries}번 실패해 멈춤 — 다음 실행에 상점이 다시 보내면 또 확정한다");
             }
+
             Unconfirmed.Remove(id);
+            ConfirmTries.Remove(id);
         }
 
         private static void OnPurchaseFailed(FailedOrder failed)
@@ -659,6 +734,8 @@ namespace HistoryHeroes.Economy
             Asking.Clear();
             AskCount.Clear();
             AskScheduled.Clear();
+            FirstAsked.Clear();
+            ConfirmTries.Clear();
             _serverPlayer = null;
             _serverConfigured = false;
             _serverSyncing = false;

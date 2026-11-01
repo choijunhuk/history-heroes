@@ -109,6 +109,12 @@ namespace HistoryHeroes.Records
 
         private static bool Flag(string key) => Application.isPlaying && PlayerPrefs.GetInt(key, 0) == 1;
 
+        /// <summary>
+        /// 메모리의 저장이 통째로 바뀔 때마다 하나씩 커진다 (다시 읽기 · 저장 장치 바꾸기 · 클라우드 진행으로 바꾸기 · 계정 삭제).
+        /// 서버에 결제를 묻는 동안 저장이 바뀌었으면 그 답을 다른 진행에 넣지 않으려고 본다 (IapService.AskServer)
+        /// </summary>
+        public static int Generation { get; private set; }
+
         public static SaveData Data
         {
             get
@@ -121,11 +127,13 @@ namespace HistoryHeroes.Records
                         // 지운 계정의 진행은 메모리에도 다시 읽지 않는다. 남은 파일을 지우고 새 게임으로 (실패하면 표시가 남아 저장이 막힌다)
                         _wipePending = true;
                         _data = SaveStore.NewGame();
+                        Generation++;
                         FinishWipe();
                         return _data;
                     }
 
                     _data = Store.Load();
+                    Generation++;
                     SaveStore.LoadReport report = Store.LastLoad;
                     if (report.Problems.Count > 0)
                     {
@@ -205,6 +213,7 @@ namespace HistoryHeroes.Records
             RotateRunBackups();
             SaveData before = _data;
             _data = data;
+            Generation++;
             if (Save()) return true;
             _data = before;
             return false;
@@ -218,6 +227,7 @@ namespace HistoryHeroes.Records
         {
             SetFlag(ref _wipePending, WipePendingKey, true);
             _data = SaveStore.NewGame();
+            Generation++;
             _dirty = false;
             CloudRechecked();
             return FinishWipe();
