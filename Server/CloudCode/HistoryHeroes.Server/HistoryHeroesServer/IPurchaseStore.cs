@@ -20,6 +20,9 @@ public interface IPurchaseStore
     /// <summary>머리를 읽은 lock으로 "닫힘"으로 바꾼다 (그 뒤 옛 lock을 든 batch는 모두 거절). 충돌이면 false</summary>
     Task<bool> TryCloseHeadAsync(IExecutionContext context, string playerId, string headLock, CancellationToken ct);
 
+    /// <summary>계정 바꾸기를 그만둘 때만: 머리를 읽은 lock으로 다시 "열림"으로. 충돌이면 false</summary>
+    Task<bool> TryOpenHeadAsync(IExecutionContext context, string playerId, string headLock, CancellationToken ct);
+
     /// <summary>이 플레이어의 결제 전부 (키 p_*)</summary>
     Task<List<PurchaseRecord>> LoadPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct);
 
@@ -49,12 +52,23 @@ public interface IPurchaseStore
 
     Task DeleteReservedAsync(IExecutionContext context, string playerId, IReadOnlyCollection<string> tokenHashes, CancellationToken ct);
 
+    /// <summary>옛 배포가 private 플레이어 데이터에 남긴 예약 (r_*) — 보관 · 마무리 · 계정 바꾸기 확인이 함께 본다</summary>
+    Task<List<string>> ListLegacyReservedAsync(IExecutionContext context, string playerId, CancellationToken ct);
+
+    Task DeleteLegacyReservedAsync(IExecutionContext context, string playerId, IReadOnlyCollection<string> tokenHashes, CancellationToken ct);
+
     // ---- 플레이어 서버 전용 (private): 닫힘 표시
 
     Task<bool> IsClosedAsync(IExecutionContext context, string playerId, CancellationToken ct);
 
-    /// <summary>닫힘 표시 (한 방향: 쓰면 다시 열리지 않는다)</summary>
-    Task CloseAsync(IExecutionContext context, string playerId, DateTime utcNow, CancellationToken ct);
+    /// <summary>닫힌 이유 ("deleted" 계정 삭제 · "switch" 계정 바꾸기 준비). 열려 있으면 null. 이유 없는 옛 표시는 "deleted"</summary>
+    Task<string?> LoadClosedReasonAsync(IExecutionContext context, string playerId, CancellationToken ct);
+
+    /// <summary>닫힘 표시. 계정 삭제("deleted")는 한 방향 — 다시 열리지 않는다. 계정 바꾸기 준비("switch")만 그만둘 때 ReopenAsync로 지운다</summary>
+    Task CloseAsync(IExecutionContext context, string playerId, DateTime utcNow, string reason, CancellationToken ct);
+
+    /// <summary>닫힘 표시를 지운다 (계정 바꾸기 준비를 그만둘 때만)</summary>
+    Task ReopenAsync(IExecutionContext context, string playerId, CancellationToken ct);
 
     // ---- 게임 전체 (private custom: 서버만)
 

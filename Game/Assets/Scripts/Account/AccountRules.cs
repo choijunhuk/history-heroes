@@ -61,6 +61,30 @@ namespace HistoryHeroes.Account
         /// 이 기기 결제 장부를 믿어도 되나 (계정당 1번 상품 · 첫 구매 2배). 게스트는 늘 된다 (이 기기 장부가 전부).
         /// 연결된 계정은 이번 실행에서 클라우드와 맞췄고(checkedThisRun) 충돌 · 고르기 대기 · 저장 복구 확인이 없을 때만. 그 밖의 상태는 모르니 안 된다.
         /// </summary>
+        /// <summary>지난 실행이 게스트 정리(바꾸기 준비) 도중 꺼졌을 때 할 일</summary>
+        public enum SwitchResume
+        {
+            /// <summary>준비 표시 없음</summary>
+            Nothing,
+            /// <summary>표시만 지운다: 그 게스트는 이미 지워졌거나(지우면 세션도 지워져 새 게스트로 들어왔다), 서버가 다시 열었다(게스트 그대로)</summary>
+            Clear,
+            /// <summary>보관까지 끝나 다시 열 수 없다 → 지우기를 마저 하고 새 게스트로</summary>
+            FinishDeletion,
+            /// <summary>서버에 못 닿았다 → 표시를 남겨 다음 실행에서 다시</summary>
+            KeepForLater,
+        }
+
+        /// <summary>preparedFor: 준비 표시의 게스트 ID, current: 지금 로그인한 플레이어, cancelStatus: 그 게스트로 CancelSwitch를 부른 결과 (안 불렀거나 실패면 null)</summary>
+        public static SwitchResume DecideSwitchResume(string preparedFor, string current, string cancelStatus)
+        {
+            if (string.IsNullOrEmpty(preparedFor)) return SwitchResume.Nothing;
+            if (string.IsNullOrEmpty(current)) return SwitchResume.KeepForLater; // 아직 로그인 전 (오프라인)
+            if (current != preparedFor) return SwitchResume.Clear;
+            if (cancelStatus == "ok") return SwitchResume.Clear;
+            if (cancelStatus == "closed") return SwitchResume.FinishDeletion;
+            return SwitchResume.KeepForLater;
+        }
+
         /// <summary>이 기기 장부에 결제가 하나라도 있나 (있으면 이미 다른 진행이 있는 카카오 계정으로 바꾸지 않는다 — LiveOps 3-2)</summary>
         public static bool HasPurchases(SaveData d) => d?.purchases?.ledger != null && d.purchases.ledger.Count > 0;
 

@@ -13,7 +13,7 @@ namespace HistoryHeroes.Server;
 /// 또는 겹칠 수 없는 새 키에만 쓴다. batch는 한 접근 등급 안에서 전부 되거나 전부 안 된다
 /// (Cloud Save Data API: "The batch set operation is considered atomic and if any of the set key operation fails, the entire operation is failed", 충돌 409).
 /// - 결제 장부 (protected 플레이어 데이터, 게임은 자기 것을 읽기만): iap_head(머리) · p_{토큰 해시}(결제 한 건) · r_{토큰 해시}(예약 — 색인에 이 플레이어를 적을 수 있는 토큰)
-/// - 플레이어 서버 전용 (private 플레이어 데이터): iap_closed(닫힘 표시)
+/// - 플레이어 서버 전용 (private 플레이어 데이터): iap_closed(닫힘 표시 + 이유) · 옛 배포의 예약 r_*(읽고 지우기만)
 /// - 게임 전체 (private custom, 게임은 못 읽는다): 토큰 색인 iap_index_{해시 앞 2자}/{해시} · 확정 대기 iap_ack/{해시} · 작업 iap_jobs/gate · state ·
 ///   지운 계정 보관본 iap_archive_{ID 앞 2자}/{ID} · 계정 삭제 마무리 iap_closing/{보관본 ID}
 /// </summary>
@@ -115,6 +115,10 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
         NotConflict(() => _api.CloudSaveData.SetProtectedItemAsync(context, context.ServiceToken, context.ProjectId, playerId,
             new SetItemBody(HeadKey, Head("closed", closed: true), headLock), ct));
 
+    public Task<bool> TryOpenHeadAsync(IExecutionContext context, string playerId, string headLock, CancellationToken ct) =>
+        NotConflict(() => _api.CloudSaveData.SetProtectedItemAsync(context, context.ServiceToken, context.ProjectId, playerId,
+            new SetItemBody(HeadKey, Head("reopened"), headLock), ct));
+
     public async Task<List<PurchaseRecord>> LoadPurchasesAsync(IExecutionContext context, string playerId, CancellationToken ct)
     {
         List<Item> items = await AllPagesAsync(after => _api.CloudSaveData.GetProtectedItemsAsync(
@@ -174,6 +178,20 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
                 _api.CloudSaveData.DeleteProtectedItemAsync(context, context.ServiceToken, context.ProjectId, playerId, PurchaseKey(h), cancellationToken: ct))));
     }
 
+    public async Task<List<string>> ListLegacyReservedAsync(IExecutionContext context, string playerId, CancellationToken ct)
+    {
+        List<Item> items = await AllPagesAsync(after => _api.CloudSaveData.GetPrivateItemsAsync(
+            context, context.ServiceToken, context.ProjectId, playerId, null!, after!, ct));
+        return items.Where(i => i.Key.StartsWith(ReservedPrefix, StringComparison.Ordinal)).Select(i => i.Key[ReservedPrefix.Length..]).ToList();
+    }
+
+    public async Task DeleteLegacyReservedAsync(IExecutionContext context, string playerId, IReadOnlyCollection<string> tokenHashes, CancellationToken ct)
+    {
+        foreach (string[] batch in tokenHashes.Distinct().Chunk(10))
+            await Task.WhenAll(batch.Select(h => IgnoreMissing(() =>
+                _api.CloudSaveData.DeletePrivateItemAsync(context, context.ServiceToken, context.ProjectId, playerId, ReservedPrefix + h, cancellationToken: ct))));
+    }
+
     // ------------------------------------------------------------------ 플레이어 서버 전용
 
     public async Task<bool> IsClosedAsync(IExecutionContext context, string playerId, CancellationToken ct)
@@ -183,11 +201,23 @@ public sealed class CloudSavePurchaseStore : IPurchaseStore
         return response.Data?.Results?.Exists(i => i.Key == ClosedKey) == true;
     }
 
-    public async Task CloseAsync(IExecutionContext context, string playerId, DateTime utcNow, CancellationToken ct)
+    public async Task<string?> LoadClosedReasonAsync(IExecutionContext context, string playerId, CancellationToken ct)
+    {
+        ApiResponse<GetItemsResponse> response = await _api.CloudSaveData.GetPrivateItemsAsync(
+            context, context.ServiceToken, context.ProjectId, playerId, new List<string> { ClosedKey }, cancellationToken: ct);
+        Item? item = response.Data?.Results?.Find(i => i.Key == ClosedKey);
+        if (item == null) return null;
+        return (string?)JObject.FromObject(item.Value ?? new JObject())["reason"] ?? "deleted";
+    }
+
+    public async Task CloseAsync(IExecutionContext context, string playerId, DateTime utcNow, string reason, CancellationToken ct)
     {
         await _api.CloudSaveData.SetPrivateItemAsync(context, context.ServiceToken, context.ProjectId, playerId,
-            new SetItemBody(ClosedKey, new JObject { ["utc"] = utcNow.ToString("o") }), ct);
+            new SetItemBody(ClosedKey, new JObject { ["utc"] = utcNow.ToString("o"), ["reason"] = reason }), ct);
     }
+
+    public Task ReopenAsync(IExecutionContext context, string playerId, CancellationToken ct) =>
+        IgnoreMissing(() => _api.CloudSaveData.DeletePrivateItemAsync(context, context.ServiceToken, context.ProjectId, playerId, ClosedKey, cancellationToken: ct));
 
     // ------------------------------------------------------------------ 토큰 색인 · 확정 대기
 

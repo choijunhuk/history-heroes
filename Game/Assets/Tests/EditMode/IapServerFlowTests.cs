@@ -33,6 +33,7 @@ namespace HistoryHeroes.Tests
         [TearDown]
         public void RestoreSave()
         {
+            IapService.SetSwitching(false);
             SaveSystem.Use(_previous);
             if (Directory.Exists(_folder)) Directory.Delete(_folder, true);
         }
@@ -219,6 +220,38 @@ namespace HistoryHeroes.Tests
         }
 
         // ------------------------------------------------------------------ 서버 장부 맞추기 · 회수
+
+        [Test]
+        public void Switching_ServerLedgerOfOtherAccount_NotApplied_CancelKeepsDeviceSave()
+        {
+            // C = 이 기기 진행 (게스트). B = 바꾸려는 카카오 계정, 서버 장부에 결제가 있다
+            SaveSystem.Commit(() => { SaveSystem.Data.gemsFree = 30; return true; });
+            string deviceBefore = SaveStore.Serialize(SaveSystem.Data);
+            string diskBefore = SaveStore.Serialize(new SaveStore(_folder).Load());
+            var ledgerB = new PurchaseServer.Ledger
+            {
+                status = "ok",
+                configured = true,
+                purchases = new List<PurchaseServer.Purchase> { Server("gems_t4", "b-paid", 2750, 3300, true), Server("gems_t1", "b-refunded", 100, 100, voided: true) },
+            };
+
+            // 진행 고르기 창이 떠 있는 동안 B 장부가 도착 (로그인 이벤트 · 이미 보내 둔 요청) → 맞추지 않는다
+            IapService.SetSwitching(true);
+            Assert.IsFalse(IapService.ApplyServerLedger(ledgerB, out IapLedger.ServerMerge merged));
+            Assert.AreEqual((0, 0), (merged.Added, merged.Voided));
+            Assert.IsFalse(IapService.LedgerSettled, "바꾸는 동안 상점은 장부를 믿지 않는다");
+
+            // "나중에" → 바꾸기를 그만두고 게스트로 → 원래 기기 저장 그대로 (메모리 · 디스크)
+            IapService.SetSwitching(false);
+            Assert.AreEqual(deviceBefore, SaveStore.Serialize(SaveSystem.Data));
+            Assert.AreEqual(diskBefore, SaveStore.Serialize(new SaveStore(_folder).Load()));
+            Assert.AreEqual(30, Wallet.Gems(SaveSystem.Data));
+
+            // 바꾸기가 끝난 뒤(그 계정으로 정해짐)에는 맞춘다
+            Assert.IsTrue(IapService.ApplyServerLedger(ledgerB, out merged));
+            Assert.AreEqual(1, merged.Added);
+            Assert.AreEqual(30 + 2750 + 3300, Wallet.Gems(SaveSystem.Data));
+        }
 
         [Test]
         public void MergeServer_AddsOnlyMissing_Idempotent_SetsFlags()

@@ -386,6 +386,25 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void SwitchPrep_InterruptedAtEachStep_ResumesCorrectly()
+        {
+            const string guest = "guest-1";
+            // 준비 표시가 없다 (평소 · 바꾸기를 끝냈거나 그만둠)
+            Assert.AreEqual(AccountRules.SwitchResume.Nothing, AccountRules.DecideSwitchResume(null, guest, null));
+            Assert.AreEqual(AccountRules.SwitchResume.Nothing, AccountRules.DecideSwitchResume(string.Empty, guest, null));
+            // ① 표시만 쓰고 꺼짐 / ② 서버가 바꾸기용으로 닫은 뒤 꺼짐 → 같은 게스트 세션으로 그만두기 = 서버가 다시 연다 (ok) → 게스트 그대로
+            Assert.AreEqual(AccountRules.SwitchResume.Clear, AccountRules.DecideSwitchResume(guest, guest, "ok"));
+            // ③ 빈 장부 보관까지 끝나고 꺼짐 → 다시 열 수 없다 (closed) → UGS 계정 지우기를 마저 하고 새 게스트로
+            Assert.AreEqual(AccountRules.SwitchResume.FinishDeletion, AccountRules.DecideSwitchResume(guest, guest, "closed"));
+            // ④ 게스트를 지운 뒤 꺼짐 (세션도 지워졌다) → 새 게스트로 들어왔다 → 표시만 지운다
+            Assert.AreEqual(AccountRules.SwitchResume.Clear, AccountRules.DecideSwitchResume(guest, "guest-2", null));
+            // 서버에 못 닿음 · 알 수 없는 답 → 표시를 남겨 다음 실행에서 다시 (그동안 결제는 멈춤)
+            Assert.AreEqual(AccountRules.SwitchResume.KeepForLater, AccountRules.DecideSwitchResume(guest, guest, null));
+            Assert.AreEqual(AccountRules.SwitchResume.KeepForLater, AccountRules.DecideSwitchResume(guest, guest, "error"));
+            Assert.AreEqual(AccountRules.SwitchResume.KeepForLater, AccountRules.DecideSwitchResume(guest, null, null), "로그인 전 (오프라인)");
+        }
+
+        [Test]
         public void FreshStart_HasUserIdRightAway()
         {
             Assert.IsFalse(string.IsNullOrEmpty(new SaveStore(_folder).Load().userId));

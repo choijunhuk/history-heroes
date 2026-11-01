@@ -29,6 +29,14 @@ public sealed class PurchaseModule
     [CloudCodeFunction("ArchiveAndDeletePurchases")]
     public Task<ArchiveResult> ArchiveAndDeletePurchases(IExecutionContext context) => _verifier.ArchiveAndDeleteAsync(context);
 
+    /// <summary>결제 안 한 게스트를 이미 있는 카카오 계정으로 바꾸기 전: 결제 · 예약이 없을 때만 게스트를 닫는다 (있으면 has_purchases)</summary>
+    [CloudCodeFunction("CloseForSwitch")]
+    public Task<SwitchResult> CloseForSwitch(IExecutionContext context) => _verifier.CloseForSwitchAsync(context);
+
+    /// <summary>계정 바꾸기를 그만둘 때: 바꾸기 준비로 닫은 게스트를 다시 연다 (계정 삭제로 닫혔으면 closed)</summary>
+    [CloudCodeFunction("CancelSwitch")]
+    public Task<SwitchResult> CancelSwitch(IExecutionContext context) => _verifier.CancelSwitchAsync(context);
+
     /// <summary>정리 작업 (UGS Scheduler → Trigger가 10분마다 부른다, 플레이어 호출은 거절): 환불 반영 · 확정 대기 정리 · 기한 지난 보관본 지우기</summary>
     [CloudCodeFunction("RunMaintenance")]
     public Task<MaintenanceResult> RunMaintenance(IExecutionContext context) => _verifier.RunMaintenanceAsync(context);

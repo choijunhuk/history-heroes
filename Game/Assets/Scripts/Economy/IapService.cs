@@ -117,15 +117,34 @@ namespace HistoryHeroes.Economy
             }
         }
 
+        /// <summary>
+        /// 계정 바꾸기 중 (이미 있는 카카오 계정으로 — 게스트 정리부터 진행 고르기가 끝날 때까지): 새 결제 · 서버 묻기 · 서버 장부 맞추기를 모두 멈춘다.
+        /// 온 결제는 확정하지 않고 남겨 두었다가(상점이 다시 보낸다) 끝나면 그때의 계정으로 묻는다. 고르기 전의 계정 장부를 이 기기 저장에 넣지 않으려고 (LiveOps 3-2)
+        /// </summary>
+        public static bool Switching { get; private set; }
+
+        public static void SetSwitching(bool on)
+        {
+            if (Switching == on) return;
+            Switching = on;
+            if (!on && ServerAuthority)
+            {
+                SyncServer();
+                AskWaitingAgain();
+            }
+
+            Changed?.Invoke();
+        }
+
         /// <summary>이번 실행에서 지금 로그인한 플레이어의 서버 장부를 받아 이 기기 장부에 맞췄다</summary>
         public static bool ServerSynced => _serverPlayer != null && _serverPlayer == Account.AccountService.PlayerId;
 
         /// <summary>
         /// 이 기기 장부의 계정당 1번 · 첫 구매 2배를 믿고 팔아도 되나 (상점 카드 · 확인 창 · Buy).
         /// 기기: 이번 실행에서 서버 장부와 맞춘 뒤 (지급은 어차피 서버가 정하고, 맞춘 장부라 표시도 서버와 같다).
-        /// 에디터: 지금처럼 클라우드 동기화 (AccountService.SyncSettled)
+        /// 에디터: 지금처럼 클라우드 동기화 (AccountService.SyncSettled). 계정 바꾸기 중에는 어느 쪽도 아니다
         /// </summary>
-        public static bool LedgerSettled => ServerAuthority ? ServerSynced : Account.AccountService.SyncSettled;
+        public static bool LedgerSettled => !Switching && (ServerAuthority ? ServerSynced : Account.AccountService.SyncSettled);
 
         public static void Start()
         {
@@ -227,7 +246,7 @@ namespace HistoryHeroes.Economy
         public static bool Buy(string productId, PurchaseEntry shown = null)
         {
             IapCatalog.Item item = IapCatalog.Find(productId);
-            if (BuyingId != null || item == null || Price(productId) == null || !ValidationReady) return false;
+            if (Switching || BuyingId != null || item == null || Price(productId) == null || !ValidationReady) return false;
             if (!IapLedger.Sellable(SaveSystem.Data, item, LedgerSettled)) return false; // 계정당 1번 상품을 두 번 결제하지 않게 (장부를 맞추기 전에는 안 판다)
             // 이 결제를 지금 플레이어에 묶는다: 서버는 구글이 돌려준 계정 표시가 부른 플레이어와 같을 때만 지급한다 (남의 토큰으로 받기 막기)
             if (ServerAuthority) _store.GooglePlayStoreExtendedService?.SetObfuscatedAccountId(IapLedger.Hash(Account.AccountService.PlayerId));
@@ -337,7 +356,14 @@ namespace HistoryHeroes.Economy
         {
             string transactionId = order.Info.TransactionID;
             string productId = ProductOf(order);
-            if (string.IsNullOrEmpty(transactionId) || !Asking.Add(transactionId)) return;
+            if (string.IsNullOrEmpty(transactionId)) return;
+            if (Switching)
+            {
+                Waiting[transactionId] = order; // 계정 바꾸기가 끝나면 그때의 계정으로 묻는다 (확정하지 않고 남겨 둠)
+                return;
+            }
+
+            if (!Asking.Add(transactionId)) return;
             Waiting[transactionId] = order;
             if (!FirstAsked.ContainsKey(transactionId)) FirstAsked[transactionId] = DateTime.UtcNow;
             int session = _session;
@@ -479,13 +505,32 @@ namespace HistoryHeroes.Economy
         }
 
         /// <summary>
+        /// 받은 서버 장부를 이 기기 저장에 맞추고 저장한다 (상점 없이 테스트한다). 계정 바꾸기 중이면 아무것도 하지 않고 false —
+        /// 진행 고르기가 끝나기 전의 계정 장부가 지금 저장에 들어가지 않게 ("나중에"를 고르면 원래 저장 그대로). 저장 실패도 false (통째로 되돌림)
+        /// </summary>
+        public static bool ApplyServerLedger(PurchaseServer.Ledger ledger, out IapLedger.ServerMerge merged)
+        {
+            merged = default;
+            if (Switching || ledger == null) return false;
+            IapLedger.ServerMerge result = default;
+            SaveSystem.CommitResult saved = SaveSystem.Commit(() =>
+            {
+                int before = SaveSystem.Data.purchases.ledger.Count;
+                result = IapLedger.MergeServer(SaveSystem.Data, ledger.purchases);
+                return result.Added > 0 || result.Voided > 0 || SaveSystem.Data.purchases.ledger.Count != before; // 회수됨 표시만 더해도 저장
+            });
+            merged = result;
+            return saved != SaveSystem.CommitResult.SaveFailed;
+        }
+
+        /// <summary>
         /// 로그인한 플레이어의 서버 장부를 받아 이 기기에 없는 결제를 넣는다 (LiveOps 3-4 — 저장을 잃었거나 같은 계정 다른 기기에서 산 것).
         /// 끝나면 ServerSynced → 상점이 팔기 시작한다. 실패하면 다음 로비 · 상점 열기 · 계정 바뀜에서 다시
         /// </summary>
         private static async void SyncServer()
         {
             string player = Account.AccountService.PlayerId;
-            if (player == null || _serverSyncing || ServerSynced) return;
+            if (Switching || player == null || _serverSyncing || ServerSynced) return;
             _serverSyncing = true;
             int session = _session;
             try
@@ -506,16 +551,9 @@ namespace HistoryHeroes.Economy
                     return;
                 }
 
-                IapLedger.ServerMerge merged = default;
-                SaveSystem.CommitResult saved = SaveSystem.Commit(() =>
+                if (!ApplyServerLedger(ledger, out IapLedger.ServerMerge merged))
                 {
-                    int before = SaveSystem.Data.purchases.ledger.Count;
-                    merged = IapLedger.MergeServer(SaveSystem.Data, ledger.purchases);
-                    return merged.Added > 0 || merged.Voided > 0 || SaveSystem.Data.purchases.ledger.Count != before; // 회수됨 표시만 더해도 저장
-                });
-                if (saved == SaveSystem.CommitResult.SaveFailed)
-                {
-                    Debug.LogWarning("[IAP] 서버 장부를 맞췄지만 저장하지 못함 (다음에 다시)");
+                    Debug.LogWarning("[IAP] 서버 장부를 맞추지 않음 (계정 바꾸기 중 · 저장 실패 — 다음에 다시)");
                     return;
                 }
 
@@ -748,6 +786,7 @@ namespace HistoryHeroes.Economy
             _serverPlayer = null;
             _serverConfigured = false;
             _serverSyncing = false;
+            Switching = false;
             _session++;
         }
     }
