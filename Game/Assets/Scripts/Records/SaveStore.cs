@@ -111,8 +111,7 @@ namespace HistoryHeroes.Records
 
             data.schemaVersion = SaveData.CurrentSchemaVersion;
             data.savedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            data.integrity = string.Empty;
-            string json = Sign(JsonUtility.ToJson(data, true));
+            string json = Serialize(data);
 
             Directory.CreateDirectory(Folder);
 
@@ -160,6 +159,60 @@ namespace HistoryHeroes.Records
 
             File.Move(TempPath, MainPath);
             _mainIsValid = true;
+        }
+
+        /// <summary>저장 파일과 똑같은 글 (해시 포함). 파일 쓰기와 클라우드 올리기가 같이 쓴다 → 클라우드에서 받은 글도 같은 해시로 검사된다</summary>
+        public static string Serialize(SaveData data)
+        {
+            data.integrity = string.Empty;
+            return Sign(JsonUtility.ToJson(data, true));
+        }
+
+        /// <summary>새 게임 저장 (빈 목록 채우기 · 사용자 ID까지). 처음 실행과 계정 삭제 뒤에 쓴다</summary>
+        public static SaveData NewGame()
+        {
+            var data = new SaveData();
+            Normalize(data);
+            return data;
+        }
+
+        public enum ParseResult
+        {
+            Ok,
+            /// <summary>읽었지만 해시가 틀렸다 (손으로 고친 글). 진행을 날리지 않게 쓰되 integrityFailures를 올렸다</summary>
+            Tampered,
+            /// <summary>더 새 게임이 만든 글: 읽지 않는다 (업데이트 필요)</summary>
+            NewerSchema,
+            Broken,
+        }
+
+        /// <summary>
+        /// 파일이 아닌 글(클라우드 저장)을 파일 읽기와 같은 검사로 읽는다: 해시 · 더 새 구조 · 옛 구조 옮기기 · 값 바로잡기.
+        /// 손으로 고친 글은 로컬 백업이 하나도 없을 때와 같이 쓰되 표시를 남긴다.
+        /// </summary>
+        public static ParseResult Parse(string json, out SaveData data, out string problem)
+        {
+            bool read = TryParse(json, out data, out problem, out bool hashFailed, out int newerSchema);
+            if (newerSchema > 0) return ParseResult.NewerSchema;
+            if (!read) return ParseResult.Broken;
+            if (!hashFailed) return ParseResult.Ok;
+            data.integrityFailures++;
+            return ParseResult.Tampered;
+        }
+
+        /// <summary>계정 삭제: 이 기기의 저장 파일을 백업 · 보존 사본까지 모두 지운다</summary>
+        public void DeleteAllFiles()
+        {
+            if (Directory.Exists(Folder))
+            {
+                foreach (string file in Directory.GetFiles(Folder, FileName + "*")) File.Delete(file);
+            }
+
+            _mainIsValid = true;
+            _brokenMainPreserved = false;
+            _tempIsOnlyCopy = false;
+            _unsupportedNewerSchema = false;
+            LastLoad = new LoadReport();
         }
 
         /// <summary>저장 파일을 읽는다. 파일이 하나도 없거나 전부 읽지 못하면 새 데이터를 돌려준다 (기존 파일은 그대로 둔다).</summary>
@@ -256,7 +309,7 @@ namespace HistoryHeroes.Records
             }
 
             report.IsFresh = true;
-            return new SaveData();
+            return NewGame();
         }
 
         /// <summary>판이 끝날 때: 지금 본 파일을 백업 1로, 1 → 2 → 3으로 민다 (Game 12-2 · LiveOps 20장 "최근 3개")</summary>
@@ -282,12 +335,27 @@ namespace HistoryHeroes.Records
 
         private static bool TryRead(string path, out SaveData data, out string problem, out bool hashFailed, out int newerSchema)
         {
+            try
+            {
+                return TryParse(File.ReadAllText(path, Encoding.UTF8), out data, out problem, out hashFailed, out newerSchema);
+            }
+            catch (Exception e)
+            {
+                data = null;
+                hashFailed = false;
+                newerSchema = 0;
+                problem = e.GetType().Name + ": " + e.Message;
+                return false;
+            }
+        }
+
+        private static bool TryParse(string json, out SaveData data, out string problem, out bool hashFailed, out int newerSchema)
+        {
             data = null;
             hashFailed = false;
             newerSchema = 0;
             try
             {
-                string json = File.ReadAllText(path, Encoding.UTF8);
                 if (string.IsNullOrWhiteSpace(json))
                 {
                     problem = "빈 파일";

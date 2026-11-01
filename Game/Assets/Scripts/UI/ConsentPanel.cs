@@ -83,7 +83,9 @@ namespace HistoryHeroes.UI
             bool ready = _terms && _privacy && _age;
             startButton.interactable = ready;
             // 못 누르는 상태가 눈에 띄도록 흐리게 (단추 색만으로는 구분이 약하다)
-            CanvasGroup fade = startButton.GetComponent<CanvasGroup>() ?? startButton.gameObject.AddComponent<CanvasGroup>();
+            // ??는 에디터의 "가짜 null"(빠진 컴포넌트 자리표시)을 못 걸러서 에디터에서 MissingComponentException이 났다 → == null로 본다
+            CanvasGroup fade = startButton.GetComponent<CanvasGroup>();
+            if (fade == null) fade = startButton.gameObject.AddComponent<CanvasGroup>();
             fade.alpha = ready ? 1f : 0.45f;
         }
 

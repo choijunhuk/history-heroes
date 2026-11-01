@@ -1,0 +1,29 @@
+// 카카오 로그인 다리 (Assets/Scripts/Account/KakaoLogin.cs가 부른다).
+// 카카오 SDK 저장소(devrepo.kakao.com)는 settings.gradle에 있어야 한다 (RepositoriesMode.PREFER_SETTINGS) →
+// Editor/AndroidManifestPatch가 빌드 때 넣는다. 앱 키도 빌드 때 매니페스트에 들어간다 (저장소에는 없음).
+apply plugin: 'com.android.library'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.kakao.sdk:v2-user:2.26.0'
+}
+
+android {
+    namespace "com.choijunhuk.historyheroes.kakaobridge"
+    compileSdk getProperty("unity.compileSdkVersion") as int
+    buildToolsVersion getProperty("unity.buildToolsVersion")
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        minSdk getProperty("unity.minSdkVersion") as int
+        targetSdk getProperty("unity.targetSdkVersion") as int
+    }
+
+    lint {
+        abortOnError false
+    }
+}

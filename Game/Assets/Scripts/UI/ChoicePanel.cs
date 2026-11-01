@@ -26,16 +26,37 @@ namespace HistoryHeroes.UI
 
         private static readonly Color Row = new Color(0.32f, 0.24f, 0.1f);
 
+        /// <summary>"나중에"를 눌렀을 때 (고르기를 기다리는 쪽이 그만뒀다고 알아야 할 때)</summary>
+        private Action _onLater;
+
         public bool IsOpen => root.activeSelf;
 
         private void Awake()
         {
             root.SetActive(false);
-            laterButton.onClick.AddListener(() => root.SetActive(false));
+            laterButton.onClick.AddListener(() =>
+            {
+                root.SetActive(false);
+                Later();
+            });
         }
 
-        public void Open(string title, string info, IReadOnlyList<Option> options)
+        /// <summary>기다리는 쪽에 "고르지 않았다"를 한 번만 알린다</summary>
+        private void Later()
         {
+            Action later = _onLater;
+            _onLater = null;
+            later?.Invoke();
+        }
+
+        /// <summary>장면이 바뀌어 창이 사라져도 기다리는 쪽이 답을 받는다 (계정 고르기가 "처리 중"에 갇히지 않게)</summary>
+        private void OnDestroy() => Later();
+
+        /// <summary>다른 고르기가 떠 있었으면 그 고르기는 "나중에"로 끝내고 새로 연다</summary>
+        public void Open(string title, string info, IReadOnlyList<Option> options, Action onLater = null)
+        {
+            Later();
+            _onLater = onLater;
             titleLabel.text = title;
             infoLabel.text = info;
             var rows = new List<ButtonList.Row>();
@@ -45,6 +66,7 @@ namespace HistoryHeroes.UI
                 rows.Add(new ButtonList.Row(o.Text, Row, () =>
                 {
                     root.SetActive(false);
+                    _onLater = null;
                     option.OnChosen?.Invoke();
                 }));
             }

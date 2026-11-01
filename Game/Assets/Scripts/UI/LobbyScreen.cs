@@ -134,6 +134,8 @@ namespace HistoryHeroes.UI
         {
             SaveData data = SaveSystem.Data;
             _begun = true;
+            AccountSection.Bind(choice, roster); // 계정 진행 고르기 · 확인 창
+            Account.AccountService.Start(); // 동의 뒤에만 서버에 닿는다. 실패해도 게임은 그대로 (오프라인)
             GameSession.ConfigureMetaTable(metaTable);
             string lobbyHero = GameSession.ConsumeLobbyHero();
             SettingsApplier.Apply(data.settings);
@@ -310,7 +312,11 @@ namespace HistoryHeroes.UI
             ShowNotice($"{roster.Find(chat.a).displayName}: \"{chat.lineA}\"   {roster.Find(chat.b).displayName}: \"{chat.lineB}\"");
         }
 
-        private void OnDestroy() => Missions.MissionEvents.Completed -= OnMissionCompleted;
+        private void OnDestroy()
+        {
+            Missions.MissionEvents.Completed -= OnMissionCompleted;
+            AccountSection.Unbind();
+        }
 
         /// <summary>5구간 보스 최초 격파: 전설 장비 1개 고르기 (Equipment 8장). "나중에"를 누르면 다음에 로비에서 또</summary>
         private bool OfferLegendaryChoice()
@@ -426,6 +432,9 @@ namespace HistoryHeroes.UI
         private void Update()
         {
             if (!_begun) return; // 동의 대기 중
+            // 클라우드가 다른 기기에서 바뀌었거나 저장을 못 읽었다: 다른 창이 없을 때 한 번 고르게 한다 (LiveOps 3-2)
+            if (Account.AccountService.ConflictPending && choice != null && !choice.IsOpen && (opening == null || !opening.IsOpen))
+                _ = Account.AccountService.ResolveConflictAsync();
             if (Time.unscaledTime >= _nextWallet)
             {
                 RenderWallet();

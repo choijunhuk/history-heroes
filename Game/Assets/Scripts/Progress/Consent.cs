@@ -12,7 +12,8 @@ namespace HistoryHeroes.Progress
     public static class Consent
     {
         public const int TermsVersion = 1;
-        public const int PrivacyVersion = 1;
+        /// <summary>2 (2026-11-01): 계정(UGS) · 카카오 로그인 · 클라우드 저장 · 계정 삭제를 처리방침에 넣었다</summary>
+        public const int PrivacyVersion = 2;
 
         /// <summary>동의 화면에 보이는 등급 줄. IARC 등급이 나오면 여기만 고친다.</summary>
         public const string RatingText = "이용 등급: 등급 분류 전 (테스트판)";

@@ -716,5 +716,81 @@ namespace HistoryHeroes.EditorTools
                    $"HP{Mathf.CeilToInt(player.Health.Current)}/{Mathf.CeilToInt(player.Health.Max)} " +
                    $"멈춤={GamePause.IsPaused} 끝={run.IsFinished} 특수={run.CurrentSpecial} 갈림길={run.ForkOpen} [{string.Join(",", owned)}]";
         }
+
+        // ───── 계정 · 클라우드 저장 (진짜 UGS 서버, Play 중에만) ─────
+
+        private static string _accountCheck = "아직 안 함";
+
+        /// <summary>계정 상태 한 줄: 상태 · 연결 이름 · UGS 플레이어 ID · 마지막 안내</summary>
+        public static string AccountStatus()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            KeepRunning();
+            return $"{Account.AccountService.State} 연결={Account.AccountService.LinkedName ?? "-"} 플레이어={Account.AccountService.PlayerId ?? "-"} " +
+                   $"시험={Account.AccountService.SandboxLinked} 안내={Account.AccountService.Message ?? "-"} | 클라우드 점검: {_accountCheck}";
+        }
+
+        /// <summary>에디터 게스트를 연결된 계정처럼 (올리기 · 받기 · 삭제 시험). 끄면 다시 게스트</summary>
+        public static string AccountSandbox(bool on)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            Account.AccountService.SetSandbox(on);
+            return AccountStatus();
+        }
+
+        /// <summary>설정의 "지금 클라우드에 저장"과 같은 일 (결과는 AccountStatus의 안내)</summary>
+        public static string AccountUpload()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            _ = Account.AccountService.UploadNowAsync();
+            return "올리는 중 → AccountStatus()";
+        }
+
+        /// <summary>
+        /// 클라우드 왕복 점검: "save"를 받아 이 기기 본 저장 파일 글과 같은지, 해시 검사(Parse)가 Ok인지, "meta"가 읽히는지 본다.
+        /// replace면 받은 저장으로 SaveSystem.Replace까지 (계정 전환 길과 같다, 백업이 남는다). 결과는 AccountStatus 끝에.
+        /// </summary>
+        public static string AccountCloudCheck(bool replace = false)
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            _accountCheck = "받는 중";
+            CloudCheck(replace);
+            return "받는 중 → AccountStatus()";
+        }
+
+        private static async void CloudCheck(bool replace)
+        {
+            try
+            {
+                var items = await Unity.Services.CloudSave.CloudSaveService.Instance.Data.Player.LoadAsync(
+                    new HashSet<string> { Account.AccountService.SaveKey, Account.AccountService.MetaKey });
+                if (!items.TryGetValue(Account.AccountService.SaveKey, out var save))
+                {
+                    _accountCheck = "클라우드에 save 없음";
+                    return;
+                }
+
+                string cloudJson = save.Value.GetAs<string>();
+                string localJson = System.IO.File.ReadAllText(Records.SaveSystem.Store.MainPath);
+                var parsed = Records.SaveStore.Parse(cloudJson, out Records.SaveData data, out string problem);
+                string meta = items.TryGetValue(Account.AccountService.MetaKey, out var m) ? m.Value.GetAs<string>() : null;
+                var summary = meta != null ? JsonUtility.FromJson<Account.AccountSummary>(meta) : null;
+                string result = $"글 {cloudJson.Length:N0}자 파일과같음={cloudJson == localJson} 검사={parsed} {problem} meta={(summary != null ? $"{summary.Text(null)} 번호={summary.uploadId} 플레이어={summary.playerId} 사용자={summary.userId}" : "없음")}";
+                if (replace && data != null) result += $" 바꾸기={Records.SaveSystem.Replace(data)} 구간={Records.SaveSystem.Data.unlockedChapter} 사용자ID={Records.SaveSystem.Data.userId}";
+                _accountCheck = result;
+            }
+            catch (System.Exception e)
+            {
+                _accountCheck = "실패: " + e.Message;
+            }
+        }
+
+        /// <summary>계정 삭제 (설정의 확인 뒤와 같은 일): 클라우드 · UGS 계정 · 이 기기 저장을 지우고 로비로</summary>
+        public static string AccountDelete()
+        {
+            if (!Application.isPlaying) return "Play 모드가 아님";
+            _ = Account.AccountService.DeleteAsync();
+            return "지우는 중 → AccountStatus()";
+        }
     }
 }

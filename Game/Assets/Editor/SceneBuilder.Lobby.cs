@@ -53,6 +53,8 @@ namespace HistoryHeroes.EditorTools
             PetPanel petPanel = BuildPetPanel(safe, meta);
             MissionPanel missionPanel = BuildMissionPanel(safe, meta, roster);
             ChoicePanel choicePanel = BuildChoicePanel(safe);
+            // 계정 진행 고르기 · 삭제 확인은 고르기 창을 빌린다 (설정보다 나중에 만들어 위에 덮인다)
+            using (var props = new Props(settingsPanel.GetComponentInChildren<AccountSection>(true))) props.Ref("choice", choicePanel);
             ModeInfoPanel modeInfo = BuildModeInfoPanel(safe);
             NewcomerPanel newcomerPanel = BuildNewcomerPanel(safe);
             OpeningPanel opening = BuildOpeningPanel(root);
@@ -595,16 +597,30 @@ namespace HistoryHeroes.EditorTools
             TMP_Text noticeHelp = Label("NoticeHelp", panel, "밤 9시~아침 8시에는 보내지 않아요 · 하루 2번까지", 24, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
             Place(noticeHelp.rectTransform, Center, Center, new Vector2(0f, -322f), new Vector2(940f, 44f));
 
-            Button replay = null, infoButton = null;
+            Button replay = null, infoButton = null, back;
             InfoPanel info = null;
             if (lobby)
             {
                 replay = Half("ReplayTutorial", "튜토리얼 다시 보기", left, -430f, new Color(0.38f, 0.3f, 0.18f), out _);
                 infoButton = Half("Info", "정보 · 약관 · 크레딧", right, -430f, ButtonGray, out _);
                 info = BuildInfoPanel(parent);
-            }
 
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -600f), new Vector2(400f, 110f), ButtonGray, out _);
+                // 계정 (LiveOps 3장): 상태 줄 + 카카오 연결 · 지금 클라우드 저장 / 계정 삭제(위험) · 뒤로
+                Section("SectionAccount", "계정", -515f);
+                TMP_Text accountStatus = Label("AccountStatus", panel, "계정: 연결 중…", 28, TextAlignmentOptions.Left);
+                Place(accountStatus.rectTransform, Center, Center, new Vector2(0f, -585f), new Vector2(940f, 90f));
+                Button kakao = Half("KakaoLink", "카카오 계정 연결", left, -690f, new Color(0.2f, 0.55f, 0.32f), out TMP_Text kakaoLabel);
+                Button cloud = Half("CloudSave", "지금 클라우드에 저장", right, -690f, ButtonBlue, out _);
+                Button delete = Half("DeleteAccount", "계정 삭제", left, -810f, new Color(0.7f, 0.2f, 0.2f), out _);
+                back = Half("Back", "뒤로", right, -810f, ButtonGray, out _);
+                var account = panel.gameObject.AddComponent<AccountSection>();
+                using (var props = new Props(account))
+                {
+                    props.Ref("statusLabel", accountStatus).Ref("kakaoButton", kakao).Ref("kakaoLabel", kakaoLabel)
+                        .Ref("cloudButton", cloud).Ref("deleteButton", delete);
+                }
+            }
+            else back = Btn("Back", panel, "뒤로", new Vector2(0f, -600f), new Vector2(400f, 110f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {

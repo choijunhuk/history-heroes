@@ -35,6 +35,9 @@ namespace HistoryHeroes.Records
         /// <summary>마지막 저장 실패 이유 (화면에 보여줄 때)</summary>
         public static string LastError { get; private set; }
 
+        /// <summary>파일에 저장이 끝났다 (계정이 클라우드에 올릴 차례를 센다)</summary>
+        public static event Action Saved;
+
         public const string UnsupportedNewerSaveText = "더 새 버전에서 만든 저장 파일이에요. 게임을 업데이트한 뒤 다시 열어 주세요. 저장 파일은 그대로 보관했어요.";
 
         public static bool UnsupportedNewerSave
@@ -43,6 +46,19 @@ namespace HistoryHeroes.Records
             {
                 _ = Data;
                 return Store.LastLoad.UnsupportedNewerSchema;
+            }
+        }
+
+        /// <summary>
+        /// 저장 파일이 있었는데 전부 못 읽어서 새 게임으로 시작했다 (원본은 broken 사본으로 보존).
+        /// 이 상태의 빈 저장을 클라우드에 올리면 멀쩡한 클라우드 진행을 덮는다 → 계정은 올리지 않고 클라우드 복구를 권한다.
+        /// </summary>
+        public static bool LostSaveOnLoad
+        {
+            get
+            {
+                _ = Data;
+                return Store.LastLoad.IsFresh && Store.LastLoad.Problems.Count > 0;
             }
         }
 
@@ -91,6 +107,7 @@ namespace HistoryHeroes.Records
                 Store.Save(Data);
                 _dirty = false;
                 LastError = null;
+                Saved?.Invoke();
                 return true;
             }
             catch (Exception e)
@@ -103,6 +120,40 @@ namespace HistoryHeroes.Records
         }
 
         public static bool SaveIfDirty() => !_dirty || Save();
+
+        /// <summary>
+        /// 계정 전환 (클라우드 진행 고르기): 저장을 통째로 바꾼다. 지금 본 파일은 판 백업(.run1)으로 먼저 남기고,
+        /// 저장하면서 본 파일이 .bak로도 남는다. 저장하지 못하면 바꾸기 전으로 되돌리고 false.
+        /// </summary>
+        public static bool Replace(SaveData data)
+        {
+            if (data == null || UnsupportedNewerSave) return false;
+            SaveIfDirty(); // 로비에서 막 바뀐 것까지 백업에 들어가게
+            RotateRunBackups();
+            SaveData before = _data;
+            _data = data;
+            if (Save()) return true;
+            _data = before;
+            return false;
+        }
+
+        /// <summary>계정 삭제: 이 기기의 저장을 백업까지 지우고 새 게임으로 (동의 기록도 없어져 다음 로비에서 다시 묻는다)</summary>
+        public static bool ResetToNewGame()
+        {
+            try
+            {
+                Store.DeleteAllFiles();
+            }
+            catch (Exception e)
+            {
+                LastError = e.Message;
+                Debug.LogError("[SaveSystem] 저장 파일을 지우지 못함: " + e.Message);
+                return false;
+            }
+
+            _data = SaveStore.NewGame();
+            return Save();
+        }
 
         public enum CommitResult
         {
@@ -134,6 +185,7 @@ namespace HistoryHeroes.Records
             _data = null;
             _dirty = false;
             LastError = null;
+            Saved = null;
         }
 
         /// <summary>

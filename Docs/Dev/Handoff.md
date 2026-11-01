@@ -88,6 +88,6 @@
 - **키 해시 (카카오 · 구글 등록용):** 출시 키 SHA-1 `D5:E4:26:BD:EC:B3:53:43:FA:7A:8B:11:1D:9B:4C:B0:A5:C6:57:C1` = 카카오 키 해시 `1eQmveyzU0P6eosRHZtMsKXGV8E=`, 맥 디버그 키 해시 `ChUP1yBDR7PS0eEQNtmJTL2nDcc=`. 플레이 앱 서명 키 해시는 첫 AAB를 올린 뒤 Play Console에서 받아 카카오에 추가
 - **카카오 디벨로퍼스 (앱 "herohistory", ID 1632287):** 안드로이드 패키지 `com.choijunhuk.historyheroes` · 키 해시 2개 등록, 카카오 로그인 ON, OpenID Connect ON (2026-11-01, Claude가 화면 조작으로). 동의항목은 일부러 안 켬 (회원 번호만 씀)
 - **Play Console:** 개인 계정 "megasonics" 가입됨. **본인 인증(신분증) · 안드로이드 기기 확인 · 전화번호 인증**이 끝나야 "앱 만들기"가 열린다 (개발자 본인만). 그다음 앱 만들기 → 비공개 테스트 (테스터 12명 × 14일) — [점검표](../Release/GooglePlay-Checklist.md)
-- **Unity 클라우드:** 아직 연결 안 됨 (`CloudProjectSettings.projectId` 비어 있음). 에디터 Project Settings → Services에서 연결 (게스트 로그인 · 클라우드 저장 · 카카오 OIDC 공급자 설정에 필요)
+- **Unity 클라우드:** 연결됨 (프로젝트 `4c301e37-…`, 조직 `choijunhuk2007`). UGS 대시보드에 OIDC 공급자 **`oidc-kakao`** (발급자 `https://kauth.kakao.com`). 계정 코드는 `Game/Assets/Scripts/Account/` (LiveOps 3장), 카카오 자바 다리는 `Game/Assets/Plugins/Android/KakaoBridge.androidlib/`
 - **화면 조작:** `orca computer ...` (computer-use 스킬)로 크롬 · 에디터 창을 직접 누를 수 있다. 크롬 입력칸은 `type-text`가 두 번 들어가는 일이 있어 `set-value` 뒤 스페이스 · 지우기 키로 확정하고, 저장 뒤 다시 열어 값 확인
 - **글씨 점검:** Play 중 `QaTools.TextAudit()` → 칸 밖 · 화면 밖 · 작은 글씨 · 겹침을 한 줄씩 ([기록](../Reviews/2026-11-01-ui-text-audit.md))

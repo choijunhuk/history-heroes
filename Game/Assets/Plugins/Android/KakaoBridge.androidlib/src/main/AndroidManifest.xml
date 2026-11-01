@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 카카오 로그인 리다이렉트 액티비티(kakao<앱 키>://oauth)와 앱 키 메타데이터는 빌드 때 AndroidManifestPatch가 넣는다 (키가 저장소 밖에 있어서) -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

@@ -352,9 +352,10 @@ namespace HistoryHeroes.EditorTools
             var screen = holder.AddComponent<ChoicePanel>();
             TMP_Text title = Label("Title", panel, "", 56, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 820f), new Vector2(900f, 90f));
+            // 안내는 두 줄까지 (계정 삭제 확인 · 진행 고르기 설명)
             TMP_Text info = Label("Info", panel, "", 30, TextAlignmentOptions.Center);
-            Place(info.rectTransform, Center, Center, new Vector2(0f, 730f), new Vector2(1000f, 70f));
-            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 40f), new Vector2(1000f, 1240f), 120f, 30f);
+            Place(info.rectTransform, Center, Center, new Vector2(0f, 690f), new Vector2(1000f, 150f));
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 0f), new Vector2(1000f, 1200f), 120f, 30f);
             Button later = Btn("Later", panel, "나중에", new Vector2(0f, -760f), new Vector2(400f, 100f), ButtonGray, out _);
             using (var props = new Props(screen))
             {
