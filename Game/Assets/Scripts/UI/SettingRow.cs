@@ -21,9 +21,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private RectTransform knob;
 
         private static readonly Color On = new Color(0.3f, 0.82f, 0.45f);
-        private static readonly Color Off = new Color(0.32f, 0.35f, 0.44f);
+        private static readonly Color Off = UiTone.Muted;
         private static readonly Color Picked = new Color(1f, 0.8f, 0.25f);
-        private static readonly Color Idle = new Color(0.2f, 0.25f, 0.38f);
+        private static readonly Color Idle = UiTone.Idle;
         private static readonly Color PickedText = Color.white;
         private static readonly Color IdleText = new Color(0.85f, 0.9f, 1f, 0.9f);
 

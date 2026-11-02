@@ -90,6 +90,40 @@ namespace HistoryHeroes.UI
             _instance.Enqueue(new Entry { text = rewardText, title = title, closed = onClosed });
         }
 
+        /// <summary>
+        /// 작은 성장 순간(레벨 업 · 강화 · 훈련)용: 소리 + 대상이 0.2초 통 튄다 (unscaled). 연출 장면이 없으면 소리만.
+        /// 큰 순간은 Show (카드 연출)
+        /// </summary>
+        public static void Pop(Transform target, string sound = "reward", float peak = 1.15f)
+        {
+            if (!string.IsNullOrEmpty(sound)) Audio.AudioManager.Play(sound, 0.8f);
+            if (target == null || _instance == null || !_instance.isActiveAndEnabled || !target.gameObject.activeInHierarchy) return;
+            if (_instance._pops.TryGetValue(target, out Coroutine running) && running != null) _instance.StopCoroutine(running);
+            _instance._pops[target] = _instance.StartCoroutine(_instance.PopRoutine(target, peak));
+        }
+
+        private readonly Dictionary<Transform, Coroutine> _pops = new Dictionary<Transform, Coroutine>();
+
+        private IEnumerator PopRoutine(Transform target, float peak)
+        {
+            const float time = 0.2f;
+            try
+            {
+                for (float t = 0f; t < time; t += Time.unscaledDeltaTime)
+                {
+                    if (target == null) yield break; // 도중에 사라져도 괜찮게
+                    target.localScale = Vector3.one * (1f + (peak - 1f) * Mathf.Sin(Mathf.PI * (t / time)));
+                    yield return null;
+                }
+            }
+            finally
+            {
+                // 끝나도 · 도중에 멈춰도 (창이 꺼짐) 크기를 되돌리고 목록에서 뺀다
+                if (target != null) target.localScale = Vector3.one;
+                _pops.Remove(target);
+            }
+        }
+
         private void Awake()
         {
             _instance = this;
@@ -123,6 +157,13 @@ namespace HistoryHeroes.UI
 
         private void OnDisable()
         {
+            // 튀던 대상은 원래 크기로 (멈춘 코루틴은 finally가 돌지 않는다)
+            foreach (Transform t in _pops.Keys)
+            {
+                if (t != null) t.localScale = Vector3.one;
+            }
+
+            _pops.Clear();
             if (!_running) return;
             // 도중에 꺼지면 정리하고 남은 것도 닫힘 처리
             StopAllCoroutines();

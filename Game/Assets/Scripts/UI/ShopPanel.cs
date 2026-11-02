@@ -6,6 +6,7 @@ using HistoryHeroes.Records;
 using HistoryHeroes.Relics;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace HistoryHeroes.UI
@@ -78,6 +79,7 @@ namespace HistoryHeroes.UI
 
         private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
         private static readonly Color RowDisabled = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
+        private static readonly Color RowRare = UiTone.Lift(new Color(0.12f, 0.2f, 0.36f));
         private static readonly Color RowStarter = UiTone.Lift(new Color(0.36f, 0.22f, 0.08f));
 
         private bool _exchangeMode;
@@ -86,7 +88,6 @@ namespace HistoryHeroes.UI
         private bool _relicMode;
         private bool _gemMode;
         private bool _payWithGems;
-        private Color _relicTabColor;
         private Color _relic1Color;
         private Color _premiumColor; // 고급 상자 단추 원래 색 (잠겼을 때만 회색)
         private Color _relic10Color;
@@ -99,7 +100,6 @@ namespace HistoryHeroes.UI
 
         private void Awake()
         {
-            _relicTabColor = relicTabButton.image.color;
             _relic1Color = relic1Button.image.color;
             _premiumColor = premium1Button.image.color;
             _relic10Color = relic10Button.image.color;
@@ -120,7 +120,7 @@ namespace HistoryHeroes.UI
             relic10Button.onClick.AddListener(() => BuyRelics(10, _payWithGems ? RelicGachaService.Pay.Gems : RelicGachaService.Pay.Shards));
             relicFreeButton.onClick.AddListener(() => BuyRelics(1, RelicGachaService.Pay.Free));
             relicRatesButton.onClick.AddListener(ShowRates);
-            relicResultsCloseButton.onClick.AddListener(() => relicResultsRoot.SetActive(false));
+            relicResultsCloseButton.onClick.AddListener(() => { EndReveal(); relicResultsRoot.SetActive(false); });
             normalBuyButton.onClick.AddListener(() => Buy(gacha.normal, 1, GachaService.Pay.Gold));
             normalFreeButton.onClick.AddListener(WatchAdForNormal);
             premium1Button.onClick.AddListener(() => Buy(gacha.premium, 1, GachaService.Pay.Gems));
@@ -145,6 +145,8 @@ namespace HistoryHeroes.UI
             }
             backButton.onClick.AddListener(Close);
         }
+
+        private void OnDisable() => EndReveal();
 
         private void OnDestroy()
         {
@@ -185,6 +187,7 @@ namespace HistoryHeroes.UI
 
         private void Close()
         {
+            EndReveal();
             ratesRoot.SetActive(false);
             relicResultsRoot.SetActive(false);
             root.SetActive(false);
@@ -195,6 +198,7 @@ namespace HistoryHeroes.UI
 
         private void Render(bool scrollToTop)
         {
+            EndReveal(); // 다시 그리면 공개 연출은 끝 상태로 (줄이 다시 쓰인다)
             SaveData save = SaveSystem.Data;
             string today = Clock.Today;
             bool unlocked = EquipmentInventory.Unlocked(save);
@@ -208,10 +212,9 @@ namespace HistoryHeroes.UI
             gemSection.SetActive(_gemMode);
             relicSection.SetActive(_relicMode);
             equipmentSection.SetActive(!_relicMode && !_gemMode);
-            equipmentTabButton.interactable = _relicMode || _gemMode;
-            relicTabButton.interactable = !_relicMode;
-            gemTabButton.interactable = !_gemMode;
-            relicTabButton.image.color = RelicService.Unlocked(save) ? _relicTabColor : RowDisabled;
+            TabStyle.Apply(equipmentTabButton, !_relicMode && !_gemMode);
+            TabStyle.Apply(relicTabButton, _relicMode, !RelicService.Unlocked(save));
+            TabStyle.Apply(gemTabButton, _gemMode);
             if (_gemMode)
             {
                 RenderGems(save, scrollToTop);
@@ -255,13 +258,14 @@ namespace HistoryHeroes.UI
             else list.Show(_lastResults.Count > 0 ? _lastResults : Hint(), scrollToTop);
         }
 
+        /// <summary>처음 안내: 빈 상자처럼 보이지 않게 바탕 없이 글만 (2026-11-02 화면 점검)</summary>
         private static List<ButtonList.Row> Hint()
         {
             return new List<ButtonList.Row>
             {
-                new ButtonList.Row("<color=#A9B4C2>상자에서 나온 장비가 여기에 표시됩니다.</color>", RowDisabled, null, false),
-                new ButtonList.Row("<color=#A9B4C2>고급 상자는 한 번씩 열어도 희귀 이상 보장 횟수가 이어집니다.</color>", RowDisabled, null, false),
-                new ButtonList.Row("<color=#A9B4C2>희귀·전설 중복은 장비 조각으로 바뀝니다. 장비 화면에서 설정할 수 있습니다.</color>", RowDisabled, null, false),
+                new ButtonList.Row("<color=#A9B4C2>상자에서 나온 장비가 여기에 표시됩니다.</color>", Color.clear, null, false),
+                new ButtonList.Row("<color=#A9B4C2>고급 상자는 한 번씩 열어도 희귀 이상 보장 횟수가 이어집니다.</color>", Color.clear, null, false),
+                new ButtonList.Row("<color=#A9B4C2>희귀·전설 중복은 장비 조각으로 바뀝니다. 장비 화면에서 설정할 수 있습니다.</color>", Color.clear, null, false),
             };
         }
 
@@ -326,7 +330,9 @@ namespace HistoryHeroes.UI
             else
             {
                 relicMessageLabel.text = $"유물 {pulls.Count}개를 받았어요. 결과를 확인하세요.";
+                Render(false); // 먼저 그린다 — Render는 하나씩 보여 주기를 끝내 버린다 (EndReveal)
                 ShowRelicResults(pulls);
+                return;
             }
 
             Render(false);
@@ -335,6 +341,9 @@ namespace HistoryHeroes.UI
         private void ShowRelicResults(List<RelicGachaService.Pull> pulls)
         {
             relicResultsLabel.text = $"유물 뽑기 결과 · {pulls.Count}개";
+            EndReveal();
+            var items = new List<RevealItem>();
+            int bestIndex = -1, bestScore = -1;
             for (int i = 0; i < relicResultLabels.Length; i++)
             {
                 bool visible = i < pulls.Count;
@@ -347,11 +356,21 @@ namespace HistoryHeroes.UI
                     : pull.Shards > 0 ? $"<sprite name=ancient_shard>+{pull.Shards}" : $"다음 별 {pull.Duplicates}/{relics.DuplicatesNeeded(pull.Stars)}";
                 string pity = pull.FromPity ? " · 새 유물 보장" : string.Empty;
                 relicResultLabels[i].text = $"{pull.Data.displayName}\n<color=#FFD966>★{pull.Stars}</color>  {state}{pity}";
+                int score = pull.IsNew ? 2 : pull.StarUp ? 1 : 0; // 새 유물 > 별 오름 > 나머지 (같으면 뒤쪽)
+                if (score >= bestScore)
+                {
+                    bestScore = score;
+                    bestIndex = items.Count;
+                }
+
+                items.Add(new RevealItem { tr = relicResultLabels[i].transform.parent, sound = "card" });
             }
 
             relicResultsRoot.SetActive(true);
             Canvas.ForceUpdateCanvases();
             relicResultsScroll.verticalNormalizedPosition = 1f;
+            if (bestIndex >= 0 && bestScore >= 1) items[bestIndex].sound = "legendary";
+            BeginReveal(items, bestIndex);
         }
 
         private void RenderExchange(SaveData save, bool scrollToTop)
@@ -560,18 +579,131 @@ namespace HistoryHeroes.UI
             _goldShopMode = false;
             _lastResults = new List<ButtonList.Row>();
             int best = 0;
+            int bestRow = -1;
             foreach (GachaService.Pull p in pulls)
             {
                 if (p.Data == null) continue;
-                best = Mathf.Max(best, (int)p.Data.rarity);
+                if ((int)p.Data.rarity >= best)
+                {
+                    best = (int)p.Data.rarity;
+                    bestRow = _lastResults.Count; // 같은 등급이면 뒤쪽
+                }
+
                 string note = p.FromPity ? "  <color=#FFC94A>[천장]</color>" : p.FromTenGuarantee ? "  <color=#6FA8FF>[희귀 이상 보장]</color>" : string.Empty;
-                string line = EquipmentInventory.AddLine(p.Added, p.Data).Replace("장비  ", string.Empty);
-                _lastResults.Add(new ButtonList.Row(line + note, RowNormal, null, false));
+                string line = EquipmentInventory.AddLine(p.Added, p.Data).Replace("장비  ", string.Empty) + note;
+                // 전설 · 희귀는 눈에 띄게: 글 크기 · 굵게 · 바탕색
+                Color back = RowNormal;
+                if (p.Data.rarity == EquipRarity.Legendary)
+                {
+                    line = $"<size=115%><b>{line}</b></size>";
+                    back = RowStarter;
+                }
+                else if (p.Data.rarity == EquipRarity.Rare)
+                {
+                    line = $"<b>{line}</b>";
+                    back = RowRare;
+                }
+
+                _lastResults.Add(new ButtonList.Row(line, back, null, false));
             }
 
             var top = (EquipRarity)best;
             messageLabel.text = $"{box.displayName} {pulls.Count}개 열었어요 · 가장 좋은 것 <color={EquipmentText.RarityColor(top)}>{EquipmentText.RarityName(top)}</color>";
             Render(true);
+
+            // 줄이 하나씩 튀어나온다 (줄 목록의 활성 줄을 위에서부터 결과 수만큼)
+            var items = new List<RevealItem>();
+            foreach (Button row in list.GetComponentsInChildren<Button>(false))
+            {
+                if (items.Count >= _lastResults.Count) break;
+                items.Add(new RevealItem { tr = row.transform, sound = "card" });
+            }
+
+            if (bestRow >= 0 && bestRow < items.Count && top == EquipRarity.Legendary) items[bestRow].sound = "legendary";
+            BeginReveal(items, bestRow);
+        }
+
+        // ---------------------------------------------------------------- 뽑기 결과 공개 연출
+
+        private sealed class RevealItem
+        {
+            public Transform tr;
+            public string sound;
+            public CanvasGroup group;
+            public bool played;
+        }
+
+        private const float RevealGap = 0.1f, RevealPop = 0.24f;
+        private readonly List<RevealItem> _reveal = new List<RevealItem>(); // 나타나는 차례대로 (가장 좋은 것이 마지막)
+        private int _revealBest = -1;
+        private float _revealStart;
+
+        /// <summary>결과 칸들을 숨겼다가 차례로 튀어나오게 한다. best는 마지막에 더 크게. 켜져 있지 않으면 그냥 다 보인다</summary>
+        private void BeginReveal(List<RevealItem> items, int best)
+        {
+            EndReveal();
+            if (items.Count == 0 || !isActiveAndEnabled) return;
+            if (best >= 0 && best < items.Count)
+            {
+                RevealItem b = items[best];
+                items.RemoveAt(best);
+                items.Add(b);
+                _revealBest = items.Count - 1;
+            }
+
+            foreach (RevealItem it in items)
+            {
+                if (it.tr == null) continue;
+                it.group = it.tr.TryGetComponent(out CanvasGroup g) ? g : it.tr.gameObject.AddComponent<CanvasGroup>();
+                _reveal.Add(it);
+            }
+
+            if (_revealBest >= _reveal.Count) _revealBest = _reveal.Count - 1;
+            _revealStart = Time.unscaledTime + 0.1f;
+            ApplyReveal(-1f, false);
+        }
+
+        /// <summary>연출을 끝 상태(원래 크기 · 보임)로 맞추고 멈춘다. 창이 닫혀도 아무것도 숨은 채 남지 않게</summary>
+        private void EndReveal()
+        {
+            foreach (RevealItem it in _reveal)
+            {
+                if (it.tr == null) continue;
+                it.tr.localScale = Vector3.one;
+                if (it.group != null) it.group.alpha = 1f;
+            }
+
+            _reveal.Clear();
+            _revealBest = -1;
+        }
+
+        private void ApplyReveal(float t, bool skip)
+        {
+            for (int i = 0; i < _reveal.Count; i++)
+            {
+                RevealItem it = _reveal[i];
+                if (it.tr == null) continue;
+                float k = skip ? 1f : Mathf.Clamp01((t - i * RevealGap) / RevealPop);
+                if (k > 0f && !it.played)
+                {
+                    it.played = true;
+                    if (!skip || i == _revealBest) Audio.AudioManager.Play(it.sound, 0.8f); // 건너뛸 땐 가장 좋은 것의 소리만
+                }
+
+                float bump = i == _revealBest ? 1f + 0.18f * Mathf.Sin(Mathf.PI * k) : 1f; // 가장 좋은 것은 더 크게 튄다
+                it.tr.localScale = Vector3.one * (k <= 0f ? 0f : Mathf.Max(0f, PanelIntro.OutBack(k)) * bump);
+                it.group.alpha = Mathf.Clamp01(k * 3f);
+            }
+        }
+
+        // 같은 프레임의 다른 줄 애니메이션(목록 줄 등장)이 쓴 뒤에 덮어 쓴다
+        private void LateUpdate()
+        {
+            if (_reveal.Count == 0) return;
+            float t = Time.unscaledTime - _revealStart;
+            bool skip = t > 0.1f && Pointer.current != null && Pointer.current.press.wasPressedThisFrame;
+            ApplyReveal(t, skip);
+            if (skip || t >= (_reveal.Count - 1) * RevealGap + RevealPop) EndReveal();
         }
 
         private void Exchange(string dataId)

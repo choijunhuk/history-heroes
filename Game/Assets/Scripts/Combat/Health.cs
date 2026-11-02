@@ -48,6 +48,11 @@ namespace HistoryHeroes.Combat
         /// <summary>피해 숫자·타격 불꽃은 실제로 맞은 몸체를 받는다.</summary>
         public static event Action<Health, DamageInfo, float> AnyVisualDamaged;
 
+        /// <summary>실제로 회복된 양 (가득 찬 체력에서 넘친 몫은 뺀다)</summary>
+        public event Action<float> Healed;
+        /// <summary>누군가 회복했을 때 (초록 "+N" · 연기 연출용, DamageNumbers)</summary>
+        public static event Action<Health, float> AnyHealed;
+
         /// <summary>적이 받는 피해를 고친다 (엘리트 "지키는" 속성: 둘레 적 -30%). 없으면 그대로</summary>
         public static Func<Health, DamageInfo, DamageInfo> EnemyIncoming;
 
@@ -56,6 +61,7 @@ namespace HistoryHeroes.Combat
         {
             AnyDamaged = null;
             AnyVisualDamaged = null;
+            AnyHealed = null;
         }
 
         /// <param name="stats">피해 감소·회피를 읽을 능력치. 적은 null이어도 된다.</param>
@@ -208,7 +214,12 @@ namespace HistoryHeroes.Combat
         public void Heal(float amount)
         {
             if (IsDead || amount <= 0f) return;
+            float before = Current;
             Current = Mathf.Min(Max, Current + amount);
+            float healed = Current - before;
+            if (healed <= 0f) return;
+            Healed?.Invoke(healed);
+            AnyHealed?.Invoke(this, healed);
         }
     }
 }

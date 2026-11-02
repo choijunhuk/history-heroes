@@ -31,11 +31,11 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button removeButton;
         [SerializeField] private Button backButton;
 
-        private static readonly Color SlotNormal = UiTone.Lift(new Color(0.16f, 0.18f, 0.24f));
-        private static readonly Color SlotFocused = new Color(0.25f, 0.42f, 0.7f);
+        private static readonly Color SlotNormal = UiTone.Row;
+        private static readonly Color SlotFocused = UiTone.Selected;
         private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
-        private static readonly Color RowSelected = new Color(0.22f, 0.36f, 0.6f);
-        private static readonly Color RowChoice = UiTone.Lift(new Color(0.38f, 0.3f, 0.12f));
+        private static readonly Color RowSelected = UiTone.Selected;
+        private static readonly Color RowChoice = new Color(0.96f, 0.58f, 0.16f); // 받기 줄 = 미션 [받기]와 같은 주황 (흰 글이 잘 보이게)
         private static readonly Color RowDisabled = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
 
         private RuneTable Table => metaTable != null ? metaTable.runes : null;
@@ -112,7 +112,7 @@ namespace HistoryHeroes.UI
                 foreach (RuneData r in RuneService.ChoiceOptions(save, table))
                 {
                     string id = r.id;
-                    string refund = RuneService.Owns(save, id) ? $" <color=#7CE38B>(이미 샀으니 골드 {table.shopPrice:N0} 돌려받기)</color>" : string.Empty;
+                    string refund = RuneService.Owns(save, id) ? $" (이미 샀으니 골드 {table.shopPrice:N0} 돌려받기)" : string.Empty;
                     rows.Add(new ButtonList.Row($"<b>{r.displayName}</b> 고르기{refund}\n<size=85%>{r.aim}</size>", RowChoice, () => TakeChoice(id)));
                 }
             }
@@ -198,6 +198,7 @@ namespace HistoryHeroes.UI
             if (r == SaveSystem.CommitResult.Rejected) return;
             _message = r == SaveSystem.CommitResult.Saved ? okMessage() : SaveSystem.SaveFailedText;
             Render();
+            if (r == SaveSystem.CommitResult.Saved) RewardPopup.Pop(detailLabel.transform, "reward");
         }
 
         private void TakeChoice(string runeId)

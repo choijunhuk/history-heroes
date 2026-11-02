@@ -59,9 +59,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text detailName;
         [SerializeField] private TMP_Text detailBody;
 
-        private static readonly Color Normal = new Color(0.32f, 0.4f, 0.6f);
+        private static readonly Color Normal = UiTone.Row;
         private static readonly Color Focused = new Color(1f, 0.78f, 0.25f);
-        private static readonly Color Locked = new Color(0.2f, 0.21f, 0.26f);
+        private static readonly Color Locked = UiTone.Muted;
 
         private int _focus;
         private Action _onChanged;
@@ -150,6 +150,7 @@ namespace HistoryHeroes.UI
             {
                 Missions.MissionEvents.Raise(Missions.MissionEvents.HeroLevel);
                 SaveSystem.SaveIfDirty();
+                RewardPopup.Pop(messageLabel != null ? messageLabel.transform : null, "levelup");
             }
 
             if (messageLabel != null) messageLabel.text = r == SaveSystem.CommitResult.Saved ? $"<color=#7CE38B>{focus.displayName} Lv {SaveSystem.Data.Hero(focus.id).level}</color>" : SaveSystem.SaveFailedText;
@@ -163,6 +164,7 @@ namespace HistoryHeroes.UI
             if (r == SaveSystem.CommitResult.Rejected) return;
             if (messageLabel != null) messageLabel.text = r == SaveSystem.CommitResult.Saved ? $"<color=#FFD966>{focus.displayName} ★{SaveSystem.Data.Hero(focus.id).stars}</color>" : SaveSystem.SaveFailedText;
             Render();
+            if (r == SaveSystem.CommitResult.Saved) RewardPopup.Show($"{focus.displayName} ★{SaveSystem.Data.Hero(focus.id).stars}", $"★{SaveSystem.Data.Hero(focus.id).stars} 각성!");
         }
 
         /// <summary>고른 영웅의 장비 화면 (장비는 영웅마다 따로 낀다)</summary>
@@ -358,14 +360,20 @@ namespace HistoryHeroes.UI
                 });
                 if (result == SaveSystem.CommitResult.SaveFailed && messageLabel != null) messageLabel.text = SaveSystem.SaveFailedText;
                 Render();
-                if (result == SaveSystem.CommitResult.Saved) _onChanged?.Invoke();
+                if (result == SaveSystem.CommitResult.Saved)
+                {
+                    _onChanged?.Invoke();
+                    RewardPopup.Show(focus.displayName, "영웅 합류!");
+                }
+
                 return;
             }
             if (!HeroUnlock.TryClaimFree(SaveSystem.Data, focus) && !HeroUnlock.TryBuy(SaveSystem.Data, focus)) return;
             SaveSystem.Data.selectedHero = focus.id;
-            SaveSystem.Save();
+            bool saved = SaveSystem.Save();
             Render();
             _onChanged?.Invoke();
+            if (saved) RewardPopup.Show(focus.displayName, "영웅 합류!");
         }
     }
 }

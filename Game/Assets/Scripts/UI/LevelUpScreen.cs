@@ -43,10 +43,15 @@ namespace HistoryHeroes.UI
         /// <summary>지금 층(방 번호). 전설 확률이 층에 따라 바뀐다 (GameDesign 6-5). 던전이 넣어준다.</summary>
         public int Floor { get; set; } = 1;
 
-        public bool IsOpen => root.activeSelf;
+        /// <summary>창이 떠 있거나, 레벨업 연출 뒤 곧 뜰 참이다 (연출 0.35초 동안도 "열림"으로 쳐서 방 이동 · 저장이 끼어들지 않게)</summary>
+        public bool IsOpen => root.activeSelf || _opening;
+
+        // 레벨업 연출(폭발 · 소리)을 보여 준 뒤 창을 연다 (보석을 먹자마자 멈춰 버리는 느낌을 없앤다)
+        private const float OpenDelay = 0.35f;
+        private bool _opening;
 
         /// <summary>지금 카드에 조합 카드가 있나 (튜토리얼 안내)</summary>
-        public bool ShowsFusion => IsOpen && _current.Exists(c => c.Type == CardType.Fusion);
+        public bool ShowsFusion => root.activeSelf && _current.Exists(c => c.Type == CardType.Fusion);
 
         /// <summary>판 이어하기: 남은 리롤 (껐다 켜서 리롤을 다시 채우지 못하게)</summary>
         public int RerollsLeft => _rerollsLeft;
@@ -66,13 +71,27 @@ namespace HistoryHeroes.UI
         }
 
         private void OnEnable() => experience.LeveledUp += OnLeveledUp;
-        private void OnDisable() => experience.LeveledUp -= OnLeveledUp;
+        private void OnDisable()
+        {
+            experience.LeveledUp -= OnLeveledUp;
+            StopAllCoroutines();
+            _opening = false;
+        }
 
         private void OnLeveledUp(int level)
         {
-            if (!IsOpen) Audio.AudioManager.Play("levelup");
             _pending++;
-            if (!IsOpen) Open();
+            if (IsOpen) return; // 창이 떠 있거나 곧 뜬다: 남은 레벨업은 한 장씩 이어서 보여 준다
+            Audio.AudioManager.Play("levelup");
+            _opening = true;
+            StartCoroutine(OpenAfterCue());
+        }
+
+        private System.Collections.IEnumerator OpenAfterCue()
+        {
+            yield return new WaitForSecondsRealtime(OpenDelay);
+            _opening = false;
+            if (_pending > 0 && !root.activeSelf) Open(); // 그새 DevCancel로 비워졌으면 열지 않는다
         }
 
         private bool _legendaryWarning;
@@ -85,7 +104,7 @@ namespace HistoryHeroes.UI
 
         private void Update()
         {
-            if (!IsOpen) return;
+            if (!root.activeSelf) return;
             if (_noticeUntil > 0f && Time.unscaledTime >= _noticeUntil)
             {
                 _noticeUntil = 0f;
@@ -186,7 +205,9 @@ namespace HistoryHeroes.UI
         {
             _banMode = false;
             _pending = 0;
-            if (!IsOpen) return;
+            StopAllCoroutines();
+            _opening = false;
+            if (!root.activeSelf) return;
             root.SetActive(false);
             GamePause.Resume(this);
         }
@@ -194,7 +215,7 @@ namespace HistoryHeroes.UI
         /// <summary>index번째 카드 고르기 (개발용 단축키, 테스트용)</summary>
         public void ChooseIndex(int index)
         {
-            if (IsOpen && index >= 0 && index < _current.Count) Choose(_current[index]);
+            if (root.activeSelf && index >= 0 && index < _current.Count) Choose(_current[index]);
         }
 
         private void Choose(SkillCard card)

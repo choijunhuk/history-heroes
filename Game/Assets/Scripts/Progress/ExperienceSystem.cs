@@ -34,7 +34,20 @@ namespace HistoryHeroes.Progress
         private void Awake()
         {
             _gems = new ComponentPool<ExperienceGem>(gemPrefab, transform, prewarm: 64);
-            Level.LeveledUp += level => LeveledUp?.Invoke(level);
+            Level.LeveledUp += level =>
+            {
+                LevelUpFx();
+                LeveledUp?.Invoke(level);
+            };
+        }
+
+        /// <summary>레벨업 순간: 영웅 둘레 금빛 폭발 + 연기 (카드 창은 0.35초 뒤에 뜬다)</summary>
+        private void LevelUpFx()
+        {
+            if (player == null) return;
+            Vector3 at = player.transform.position;
+            Combat.FxBursts.Explosion(at, 1.4f, new Color(1f, 0.85f, 0.3f));
+            Combat.FxBursts.Puff(at + Vector3.back * 0.5f, new Color(1f, 0.95f, 0.6f), 1.3f);
         }
 
         public void Register(EnemyBase enemy)

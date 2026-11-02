@@ -414,6 +414,7 @@ namespace HistoryHeroes.Survival
         {
             if (_finished) return;
             _finished = true;
+            levelUp.DevCancel(); // 레벨업 연출 0.35초 안에 끝나도 카드 창이 결과 위에 뜨지 않게
             SaveSystem.Data.run = new RunSnapshot(); // 판이 끝났다 → 이어하기 없음
             player.Health.Invulnerable = true;
             experience.AttractAll();

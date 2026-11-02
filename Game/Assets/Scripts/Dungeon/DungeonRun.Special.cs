@@ -344,12 +344,12 @@ namespace HistoryHeroes.Dungeon
                 Wallet.Grant(SaveSystem.Data, new Reward { Gold = gold });
                 SaveSystem.MarkDirty();
             }
-            skills.DetourOffersNext++; // 보상 카드는 갈림길 난수로
-            experience.GrantLevelUp();
             HypeFx.Banner("도전 성공!", new Color(1f, 0.82f, 0.3f));
+            Combat.FxBursts.Explosion(player.transform.position, 1.6f, new Color(1f, 0.82f, 0.3f));
+            if (gold > 0) PlayerGoldFx();
             _pendingNotice = GameSession.Practice ? "도전 성공: 레벨업 1번" : $"도전 보상: 레벨업 1번 + 골드 {gold}"; // 방 깰 때 알림(기록 용량)보다 뒤에 보이게
             MarkRewardTaken();
-            SaveAfterRewards();
+            StartCoroutine(LevelUpAfterBanner(_room, true, false, true));
         }
 
         // ---------------------------------------------------------------- 저주받은 엘리트
@@ -370,13 +370,36 @@ namespace HistoryHeroes.Dungeon
             if (enemy != _cursedElite) return;
             _cursedElite = null;
             if (_resumeRewardTaken && _room == _resumeRoom) return;
-            skills.MinRareNext = 2;
-            skills.DetourOffersNext++; // 보상 카드는 갈림길 난수로
-            experience.GrantLevelUp();
             HypeFx.Banner("저주를 이겼다!", CursedColor);
+            Combat.FxBursts.Explosion(enemy.transform.position, 1.6f, CursedColor);
             hud.ShowNotice("저주 보상: 희귀 카드 보장 1번 더", 2.5f);
             MarkRewardTaken();
-            SaveAfterRewards();
+            StartCoroutine(LevelUpAfterBanner(_room, true, true, true));
+        }
+
+        private int _pendingLevelUps; // 띠를 보이는 중이라 아직 안 연 레벨업 수 (균열 층 정리가 기다린다)
+
+        /// <summary>
+        /// 띠 · 터짐을 본 뒤 (실제 시간 0.6초) 레벨업 카드를 연다. 판이 끝났거나 방이 바뀌면 그만둔다.
+        /// 카드 난수 설정은 열기 직전에 (엘리트 → 저주 순서가 예전과 같게)
+        /// </summary>
+        private IEnumerator LevelUpAfterBanner(int room, bool detour, bool minRare, bool save)
+        {
+            _pendingLevelUps++;
+            try
+            {
+                for (float t = 0f; t < 0.6f; t += Time.unscaledDeltaTime) yield return null;
+                if (_finished || room != _room) yield break;
+                if (minRare) skills.MinRareNext = 2;
+                if (detour) skills.DetourOffersNext++; // 보상 카드는 갈림길 난수로
+                experience.GrantLevelUp();
+            }
+            finally
+            {
+                _pendingLevelUps--;
+            }
+
+            if (save) SaveAfterRewards();
         }
 
         // ---------------------------------------------------------------- 기억의 석비
@@ -384,7 +407,7 @@ namespace HistoryHeroes.Dungeon
         private void OpenStele()
         {
             _alive = 0;
-            PlacePedestalModel(specialArt.steleModel, 1.1f);
+            GameObject stele = PlacePedestalModel(specialArt.steleModel, 1.1f);
             if (rewardRoom == null || !_special.Steles.TryGetValue(_room, out string[] offer))
             {
                 OnRoomCleared();
@@ -398,19 +421,20 @@ namespace HistoryHeroes.Dungeon
             };
             var icons = new[] { BlessingIcon(offer[0]), BlessingIcon(offer[1]), specialArt.pass };
             var colors = new[] { new Color(0.25f, 0.62f, 0.85f), new Color(0.42f, 0.4f, 0.9f), new Color(0.42f, 0.47f, 0.52f) };
-            rewardRoom.OpenChoice("기억의 석비 — 축복과 대가", texts, icons, index =>
+            AwaitPedestalTouch(stele, "석비에 닿으면 축복을 골라요", new Color(0.55f, 0.8f, 1f), () => rewardRoom.OpenChoice("기억의 석비 — 축복과 대가", texts, icons, index =>
             {
                 if (index < 2) ChooseBlessing(offer[index]);
                 else
                 {
                     player.Health.Heal(player.Health.Max * SpecialRooms.PassHeal);
                     hud.ShowNotice($"체력 회복 +{Mathf.RoundToInt(SpecialRooms.PassHeal * 100f)}%");
+                    Combat.FxBursts.Puff(player.transform.position, new Color(0.45f, 0.95f, 0.5f), 1.2f);
                 }
 
                 MarkRewardTaken();
                 SaveAfterRewards();
                 if (!_finished) OnRoomCleared();
-            }, colors);
+            }, colors));
         }
 
         private Sprite BlessingIcon(string id)
@@ -462,17 +486,23 @@ namespace HistoryHeroes.Dungeon
 
         // ---------------------------------------------------------------- 받침대 모델
 
-        /// <summary>보상 방 가운데 받침대(첫 장애물)를 보상 상자 · 석비 모델로 바꾼다 (판정은 그대로)</summary>
-        private void PlacePedestalModel(GameObject prefab, float footprint)
+        /// <summary>보상 방 가운데 받침대(첫 장애물)를 보상 상자 · 석비 모델로 바꾼다 (판정은 그대로). 못 놓으면 null</summary>
+        private GameObject PlacePedestalModel(GameObject prefab, float footprint)
         {
             RoomLayout layout = CurrentLayout;
-            if (prefab == null || layout == null || layout.use != RoomUse.Reward || layout.obstacles.Count == 0 || _layoutObjects.Count == 0) return;
+            if (prefab == null || layout == null || layout.use != RoomUse.Reward || layout.obstacles.Count == 0 || _layoutObjects.Count == 0) return null;
             GameObject pedestal = _layoutObjects[0];
-            if (pedestal == null) return;
+            if (pedestal == null) return null;
             foreach (Transform child in pedestal.transform) child.gameObject.SetActive(false); // 돌기둥 모양 숨김
 
+            return FitModel(prefab, layout.obstacles[0].position, footprint);
+        }
+
+        /// <summary>모델을 놓고 가로 footprint에 맞춰 키운다. 방과 같이 치워지게 _layoutObjects에 넣는다</summary>
+        private GameObject FitModel(GameObject prefab, Vector2 position, float footprint)
+        {
             GameObject model = Instantiate(prefab, layoutRoot);
-            model.transform.position = layout.obstacles[0].position;
+            model.transform.position = position;
             var bounds = new Bounds();
             bool any = false;
             foreach (Renderer r in model.GetComponentsInChildren<Renderer>())
@@ -486,6 +516,95 @@ namespace HistoryHeroes.Dungeon
             if (size > 0.01f) model.transform.localScale *= footprint / size;
             StageLook.Retint(model);
             _layoutObjects.Add(model);
+            return model;
+        }
+
+        /// <summary>
+        /// 받침대가 없는 방(균열 엘리트 층)에 상자를 놓는다: 방 가운데 → 플레이어와 문 사이 순으로
+        /// 장애물 위가 아니고 플레이어에게서 떨어진 자리. 못 놓으면 null
+        /// </summary>
+        private GameObject PlaceFreeChest(float footprint, out Vector2 spot)
+        {
+            spot = default;
+            if (specialArt.chestModel == null || layoutRoot == null) return null;
+            if (_obstacleMask < 0) _obstacleMask = LayerMask.GetMask("Wall") | 1;
+            Vector2 from = player.transform.position;
+            Vector2 doorAt = door != null ? (Vector2)door.transform.position : spawnArea.center;
+            Vector2[] candidates = { spawnArea.center, Vector2.Lerp(from, doorAt, 0.5f), Vector2.Lerp(from, doorAt, 0.35f), Vector2.Lerp(from, doorAt, 0.65f) };
+            spot = PickSpawnPoint(); // 위가 다 막혔을 때: 장애물 밖 아무 자리
+            foreach (Vector2 c in candidates)
+            {
+                if (Vector2.Distance(c, from) < 2.5f || Physics2D.OverlapCircle(c, 0.9f, _obstacleMask) != null) continue;
+                spot = c;
+                break;
+            }
+
+            return FitModel(specialArt.chestModel, spot, footprint);
+        }
+
+        // ---------------------------------------------------------------- 받침대에 닿으면 열림
+
+        private System.Action _onPedestalTouched;
+        private Vector2 _pedestalSpot;
+
+        /// <summary>QA: 받침대(상자 · 석비)에 닿기를 기다리는 중이면 그 자리 (열리는 연출 동안도)</summary>
+        public Vector2? PedestalSpot => _onPedestalTouched != null ? _pedestalSpot : (Vector2?)null;
+
+        /// <summary>
+        /// 보상 방 · 석비: 받침대에 닿아야 열린다. 기다리는 동안 모델이 두근거리고, 닿으면 흔들리다 펑 (빛기둥) → 0.5초 뒤 창.
+        /// 모델을 못 놓았으면 (레이아웃 없음) 예전처럼 바로 연다
+        /// </summary>
+        private void AwaitPedestalTouch(GameObject model, string hint, Color color, System.Action open, Vector2? freeSpot = null, float freeReach = 1.3f)
+        {
+            RoomLayout layout = CurrentLayout;
+            bool pedestal = !freeSpot.HasValue;
+            if (model == null || (pedestal && (layout == null || layout.obstacles.Count == 0)))
+            {
+                open();
+                return;
+            }
+
+            // 받침대 가장자리 + 플레이어 몸(0.4) + 여유 → 모서리로 다가가도 닿는다. 받침대 없는 상자는 freeReach
+            Vector2 center = pedestal ? layout.obstacles[0].position : freeSpot.Value;
+            float reach = pedestal ? Mathf.Max(layout.obstacles[0].size.x, layout.obstacles[0].size.y) * 0.5f + 0.8f : freeReach;
+            _onPedestalTouched = open;
+            _pedestalSpot = center;
+            hud.ShowNotice(hint, 3f);
+            StartCoroutine(PedestalRoutine(model.transform, center, reach, color, _room));
+        }
+
+        private IEnumerator PedestalRoutine(Transform model, Vector2 center, float reach, Color color, int room)
+        {
+            Vector3 baseScale = model.localScale;
+            while (Waiting())
+            {
+                model.localScale = baseScale * (1f + 0.05f * Mathf.Abs(Mathf.Sin(Time.time * 3f))); // 두근두근: 여기로 오라는 표시
+                if (((Vector2)player.transform.position - center).sqrMagnitude <= reach * reach) break;
+                yield return null;
+            }
+
+            if (!Waiting())
+            {
+                if (room == _room) _onPedestalTouched = null; // 방이 바뀌었으면 새 방의 기다림은 그대로
+                yield break;
+            }
+
+            model.localScale = baseScale;
+            bool popped = false;
+            Survival.ChestOpening.PlayOn(this, model, color, () =>
+            {
+                popped = true;
+                Audio.AudioManager.Play("reward", 0.8f);
+            });
+            while (!popped && Waiting()) yield return null;
+            for (float t = 0f; t < 0.5f && Waiting(); t += Time.unscaledDeltaTime) yield return null; // 펑 · 빛기둥을 보고 나서
+
+            if (room != _room) yield break;
+            System.Action open = _onPedestalTouched;
+            _onPedestalTouched = null;
+            if (open != null && !_finished) open();
+
+            bool Waiting() => _onPedestalTouched != null && room == _room && !_finished && model != null;
         }
     }
 }

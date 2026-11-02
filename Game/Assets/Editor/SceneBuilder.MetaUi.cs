@@ -47,6 +47,10 @@ namespace HistoryHeroes.EditorTools
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 40f;
 
+            // 못 누르는 줄(안내 · 잠김)은 줄 색으로 이미 흐리게 칠한다 → 버튼 '못 누름' 회색 틴트는 살짝만 (겹치면 거의 검정이었다)
+            ColorBlock rowTint = template.colors;
+            rowTint.disabledColor = new Color(0.88f, 0.88f, 0.92f, 1f);
+            template.colors = rowTint;
             var list = viewport.gameObject.AddComponent<ButtonList>();
             using (var props = new Props(list)) props.Ref("template", template).Ref("content", content).Ref("scroll", scroll);
             return list;
@@ -143,6 +147,33 @@ namespace HistoryHeroes.EditorTools
             if (label != null) label.margin = new Vector4(label.margin.x, size + 4f, label.margin.z, label.margin.w);
         }
 
+        /// <summary>
+        /// 가운데 어두운 상자였던 구역을 화면 전체 구역으로 (바탕 없음): 상점 탭 셋이 같은 틀 · 같은 바탕 (2026-11-02 개발자: "유물 뽑기 혼자 색이 다르다").
+        /// 자식 위치는 그대로 두고 (구역 가운데만큼 옮김) 위 띠 · 위아래 붙이기(PinToEdges)가 장비 상자 구역과 똑같이 다룬다
+        /// </summary>
+        private static void FlattenSection(RectTransform section)
+        {
+            Vector2 shift = section.anchoredPosition;
+            foreach (Transform child in section)
+            {
+                if (child is RectTransform rt && rt.anchorMin == Center && rt.anchorMax == Center) rt.anchoredPosition += shift;
+            }
+
+            section.anchorMin = Vector2.zero;
+            section.anchorMax = Vector2.one;
+            section.offsetMin = section.offsetMax = Vector2.zero;
+        }
+
+        /// <summary>잠긴 탭 표시: 오른쪽 위 자물쇠 (TabStyle.Apply가 켜고 끈다)</summary>
+        private static void TabLock(Button tab)
+        {
+            Sprite sprite = Icon("lock");
+            if (tab == null || sprite == null) return;
+            RectTransform pic = Rect("Lock", tab.transform, Vector2.one, Vector2.one, Vector2.one, new Vector2(-8f, -6f), new Vector2(44f, 44f));
+            Img(pic, Color.white, sprite).preserveAspect = true;
+            pic.gameObject.SetActive(false);
+        }
+
         private static ShopPanel BuildShopPanel(Transform parent, GachaTable gacha)
         {
             RectTransform panel = Overlay(parent, "ShopPanel", out GameObject holder);
@@ -157,6 +188,7 @@ namespace HistoryHeroes.EditorTools
             Button equipmentTab = Btn("EquipmentTab", panel, "장비 상자", new Vector2(-335f, 690f), new Vector2(325f, 96f), ButtonBlue, out _);
             Button relicTab = Btn("RelicTab", panel, "유물 뽑기", new Vector2(0f, 690f), new Vector2(325f, 96f), ButtonBlue, out _);
             Button gemTab = Btn("GemTab", panel, "보석", new Vector2(335f, 690f), new Vector2(325f, 96f), ButtonBlue, out _);
+            TabLock(relicTab);
 
             RectTransform equipmentSection = Rect("EquipmentSection", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             Button normalBuy = Btn("NormalBuy", equipmentSection, "일반 상자", new Vector2(-252f, 545f), new Vector2(496f, 150f), ButtonBlue, out TMP_Text normalBuyLabel);
@@ -200,12 +232,11 @@ namespace HistoryHeroes.EditorTools
 
             // 장비 상자와 같은 화면 안에 두어 도감에서도 한 화면만 열면 된다.
             RectTransform relicSection = Rect("RelicSection", panel, Center, Center, Center, new Vector2(0f, -20f), new Vector2(1040f, 1320f));
-            Img(relicSection, PanelColor, null).raycastTarget = true;
             TMP_Text relicInfo = Label("RelicInfo", relicSection, "", 34, TextAlignmentOptions.Center);
             Place(relicInfo.rectTransform, Center, Center, new Vector2(0f, 545f), new Vector2(1000f, 160f));
             Button relicPay = Btn("RelicPay", relicSection, "결제 재화", new Vector2(0f, 395f), new Vector2(940f, 86f), ButtonBlue, out TMP_Text relicPayLabel);
             relicPayLabel.fontSize = 27f;
-            Button relic1 = Btn("Relic1", relicSection, "1회", new Vector2(-252f, 140f), new Vector2(496f, 108f), ButtonBlue, out TMP_Text relic1Label);
+            Button relic1 = Btn("Relic1", relicSection, "1회", new Vector2(-252f, 140f), new Vector2(496f, 108f), ButtonGreen, out TMP_Text relic1Label); // 사기 = 초록 (10회 · 장비 상자와 같게)
             Button relic10 = Btn("Relic10", relicSection, "10회", new Vector2(252f, 140f), new Vector2(496f, 108f), ButtonGreen, out TMP_Text relic10Label);
             Button relicFree = Btn("RelicFree", relicSection, "무료 1회 (오늘)", new Vector2(0f, 15f), new Vector2(700f, 90f), ButtonBlue, out TMP_Text relicFreeLabel);
             LeftPicture(relic1, "ancient_shard");
@@ -220,16 +251,17 @@ namespace HistoryHeroes.EditorTools
             Place(relicLegal.rectTransform, Center, Center, new Vector2(0f, 280f), new Vector2(980f, 110f));
             TMP_Text relicMessage = Label("RelicMessage", relicSection, "", 30, TextAlignmentOptions.Center);
             Place(relicMessage.rectTransform, Center, Center, new Vector2(0f, -335f), new Vector2(980f, 100f));
+            FlattenSection(relicSection);
 
             // 보석 (실제 결제): 청약철회 고지를 구매 카드 바로 위에 (Monetization 5-1)
             RectTransform gemSection = Rect("GemSection", panel, Center, Center, Center, new Vector2(0f, -20f), new Vector2(1040f, 1320f));
-            Img(gemSection, PanelColor, null).raycastTarget = true;
             TMP_Text gemNotice = Label("GemNotice", gemSection,
                 "<color=#A9B4C2>유료 보석은 구매 후 7일 이내, 사용하지 않았으면 청약철회할 수 있어요. 사용한 보석·뽑기는 철회가 제한돼요. 패키지는 구성품을 하나도 쓰지 않았을 때만 철회할 수 있어요.</color>", 26, TextAlignmentOptions.Center);
             Place(gemNotice.rectTransform, Center, Center, new Vector2(0f, 570f), new Vector2(1000f, 130f));
             ButtonList gemList = BuildButtonList(gemSection, "GemList", new Vector2(0f, -30f), new Vector2(1000f, 1040f), 140f, 27f);
             TMP_Text gemMessage = Label("GemMessage", gemSection, "", 27, TextAlignmentOptions.Center);
             Place(gemMessage.rectTransform, Center, Center, new Vector2(0f, -605f), new Vector2(1000f, 100f));
+            FlattenSection(gemSection);
 
             // 확률 보기 (덮는 판)
             RectTransform ratesPanel = Rect("RatesPanel", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);

@@ -87,6 +87,7 @@ namespace HistoryHeroes.UI
                 ? $"<color=#7CE38B>{metaTable.training[(int)type].name} Lv {HeroGrowth.TrainingLevel(SaveSystem.Data, type)}</color>"
                 : SaveSystem.SaveFailedText;
             Render();
+            if (r == SaveSystem.CommitResult.Saved) RewardPopup.Pop(messageLabel.transform, "reward");
         }
     }
 }

@@ -13,8 +13,14 @@ namespace HistoryHeroes.UI
         public static readonly Color Row = new Color(0.24f, 0.4f, 0.74f);
         /// <summary>안 고른 탭 · 칸 (조금 어둡게 — 고른 쪽이 튀게)</summary>
         public static readonly Color Idle = new Color(0.2f, 0.3f, 0.54f);
-        /// <summary>못 누름 · 잠김 · 안내 줄</summary>
-        public static readonly Color Muted = new Color(0.16f, 0.21f, 0.34f);
+        /// <summary>못 누름 · 잠김 · 안내 줄 (같은 파랑을 흐리게 — 거의 검정이면 고장 난 것처럼 보였다)</summary>
+        public static readonly Color Muted = new Color(0.2f, 0.27f, 0.45f);
+        /// <summary>고른 줄 · 칸: 보통 줄보다 밝게 (예전엔 더 어두워 '못 누름'처럼 보였다, 2026-11-02 화면 점검)</summary>
+        public static readonly Color Selected = new Color(0.36f, 0.62f, 1f);
+        /// <summary>받기 · 준비됨 · 지금 보는 탭</summary>
+        public static readonly Color Gold = new Color(1f, 0.72f, 0.2f);
+        /// <summary>받음 · 끝남 (초록을 조금 흐리게)</summary>
+        public static readonly Color Done = new Color(0.2f, 0.52f, 0.34f);
 
         /// <summary>
         /// 화면 스크립트가 옛 어두운 색을 주면 같은 뜻의 밝은 색으로 바꾼다 (목록 줄은 ButtonList가 여기를 지난다).
@@ -23,7 +29,7 @@ namespace HistoryHeroes.UI
         public static Color Lift(Color c)
         {
             Color.RGBToHSV(c, out float h, out float s, out float v);
-            if (v >= 0.4f || c == Row || c == Idle || c == Muted) return c; // 이미 밝은 색 · 바꾼 색은 그대로 (두 번 지나도 같다)
+            if (c.a < 0.01f || v >= 0.4f || c == Row || c == Idle || c == Muted) return c; // 투명 (글만 있는 안내 줄) · 이미 밝은 색 · 바꾼 색은 그대로 (두 번 지나도 같다)
             Color o;
             if (s < 0.35f) o = v < 0.13f ? Muted : v < 0.22f ? Row : Idle;
             else o = Color.HSVToRGB(h, Mathf.Max(s, 0.6f), Mathf.Max(v * 2.4f, 0.55f));

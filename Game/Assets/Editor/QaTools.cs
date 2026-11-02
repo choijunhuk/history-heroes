@@ -62,6 +62,13 @@ namespace HistoryHeroes.EditorTools
                 return "보상 고름 | " + State();
             }
 
+            // 보상 방 · 석비: 받침대 바로 아래로 옮겨 닿게 한다 (열리는 연출 뒤 창이 뜬다 → 다음 Step에서 고른다)
+            if (run.PedestalSpot is Vector2 pedestal)
+            {
+                Object.FindAnyObjectByType<PlayerController>().Teleport(pedestal + Vector2.down * 1.1f);
+                return "보상 받침대 | " + State();
+            }
+
             if (EnemyBase.Alive.Count > 0)
             {
                 Dev.DevCheats.KillAll();

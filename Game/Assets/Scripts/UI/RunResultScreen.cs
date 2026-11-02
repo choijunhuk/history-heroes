@@ -184,7 +184,53 @@ namespace HistoryHeroes.UI
             if (rest.Count == 0) return;
             sb.AppendLine();
             sb.AppendLine(cards.Count > 0 ? "<color=#FFD966>그리고</color>" : "<color=#FFD966>받은 것</color>");
-            foreach (string line in rest) sb.AppendLine("  " + line);
+            foreach (string line in rest) sb.AppendLine(IsBigLine(line) ? "  " + BigOpen + line + BigClose : "  " + line);
+        }
+
+        // 큰 보상 줄 (새 유물 · 펫 · 장비 · 계정 레벨업 · 별 상자 · 새 별 · 구간 해금): 금색 큰 글로, 숫자가 다 오른 뒤 하나씩 나타난다
+        private const char BigOpen = '\u0001';
+        private const char BigClose = '\u0002';
+        private const float BigDelay = 0.08f;
+        private readonly List<string> _bodyPre = new List<string>(); // 큰 줄 사이의 일반 글 (큰 줄 수 + 1개)
+        private readonly List<string> _bigLines = new List<string>();
+        private int _bigShown = -1;
+
+        private static bool IsBigLine(string line) =>
+            line.StartsWith("유물") || line.StartsWith("펫 획득") || line.StartsWith("장비") || line.StartsWith("별 상자") || line.StartsWith("새 별")
+            || (line.Contains("→ ") && line.Contains("Lv ")) || line.Contains("구간이 열");
+
+        /// <summary>본문 글에서 큰 줄 표시를 떼어 두고 아직 안 보이는 상태로 시작한다</summary>
+        private void ParseBigLines()
+        {
+            _bodyPre.Clear();
+            _bigLines.Clear();
+            _bigShown = -1;
+            string[] parts = bodyLabel.text.Split(BigOpen);
+            _bodyPre.Add(parts[0]);
+            for (int i = 1; i < parts.Length; i++)
+            {
+                int close = parts[i].IndexOf(BigClose);
+                _bigLines.Add(parts[i].Substring(0, close));
+                _bodyPre.Add(parts[i].Substring(close + 1));
+            }
+        }
+
+        private void ShowBigLines(int count, bool sound)
+        {
+            if (_bigLines.Count == 0 || count == _bigShown) return;
+            if (sound && count > _bigShown && _bigShown >= 0) Audio.AudioManager.Play("reward", 0.7f);
+            _bigShown = count;
+            var sb = new StringBuilder();
+            for (int i = 0; i <= _bigLines.Count; i++)
+            {
+                sb.Append(_bodyPre[i]);
+                if (i == _bigLines.Count) break;
+                // 아직 안 보이는 줄은 투명 글자로 자리만 잡는다 (뒤 글이 밀리지 않게)
+                if (i < count) sb.Append("<size=125%><color=#FFD54A><b>").Append(_bigLines[i]).Append("</b></color></size>");
+                else sb.Append("<size=125%><color=#FFFFFF00>").Append(System.Text.RegularExpressions.Regex.Replace(_bigLines[i], "<[^>]+>", string.Empty)).Append("</color></size>");
+            }
+
+            bodyLabel.text = sb.ToString();
         }
 
         private void ShowCards(List<Economy.RewardCards.Card> cards)
@@ -258,6 +304,7 @@ namespace HistoryHeroes.UI
         {
             _victory = victory;
             _t0 = Time.unscaledTime;
+            ParseBigLines();
             _lastTick = -1f;
             _lastCountShown = 0;
             _ribbonShown = false;
@@ -340,8 +387,12 @@ namespace HistoryHeroes.UI
 
             ApplyStars(e);
 
+            // 큰 보상 줄: 숫자가 다 오른 뒤 하나씩 (건너뛰면 한꺼번에)
+            int bigCount = _bigLines.Count;
+            ShowBigLines(e >= 100f ? bigCount : Mathf.Clamp(Mathf.FloorToInt((e - CountEnd) / BigDelay) + 1, 0, bigCount), e < 100f);
+
             // 첫 클리어 띠 (숫자가 다 오른 뒤 통)
-            float ribbonAt = CountEnd + 0.05f;
+            float ribbonAt = CountEnd + bigCount * BigDelay + 0.05f;
             if (_pendingFirstClear && _firstRibbon != null)
             {
                 bool on = e >= ribbonAt;

@@ -42,10 +42,10 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text dismantleLabel;
         [SerializeField] private Button backButton;
 
-        private static readonly Color SlotNormal = UiTone.Lift(new Color(0.16f, 0.18f, 0.24f));
-        private static readonly Color SlotFocused = new Color(0.25f, 0.42f, 0.7f);
+        private static readonly Color SlotNormal = UiTone.Row;
+        private static readonly Color SlotFocused = UiTone.Selected;
         private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
-        private static readonly Color RowSelected = new Color(0.22f, 0.36f, 0.6f);
+        private static readonly Color RowSelected = UiTone.Selected;
         private static readonly Color RowDisabled = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
         private const float ConfirmSeconds = 3f;
 
@@ -171,8 +171,8 @@ namespace HistoryHeroes.UI
             enhanceMaxButton.interactable = levels > 0;
             enhanceMaxLabel.text = levels > 0 ? $"최대까지 +{levels} · 골드 {total:N0}" : "최대까지";
 
-            bagTab.GetComponent<Image>().color = _synthMode ? SlotNormal : SlotFocused;
-            synthTab.GetComponent<Image>().color = _synthMode ? SlotFocused : SlotNormal;
+            TabStyle.Apply(bagTab, !_synthMode);
+            TabStyle.Apply(synthTab, _synthMode);
             autoLabel.text = $"중복 자동 분해: {(save.equipment.autoDismantle ? "켜기" : "끄기")}";
 
             if (_synthMode) RenderSynthesis(save, table, scrollToTop);
@@ -384,6 +384,7 @@ namespace HistoryHeroes.UI
                 _selected = null;
                 _message = $"<color=#7CE38B>분해했어요 · 장비 조각 +{shards}</color>";
                 Render(false);
+                RewardPopup.Pop(detailLabel.transform, "coin"); // 반복 동작이라 카드 연출 없이 소리 + 튐
             }
         }
 
@@ -393,6 +394,7 @@ namespace HistoryHeroes.UI
             {
                 _message = $"<color=#7CE38B>{EquipmentText.SlotName(_slot)} 칸 Lv {EquipmentInventory.SlotLevel(SaveSystem.Data, _slot)}</color>";
                 Render(false);
+                RewardPopup.Pop(detailLabel.transform, "levelup");
             }
         }
 
@@ -403,6 +405,7 @@ namespace HistoryHeroes.UI
             {
                 _message = $"<color=#7CE38B>{EquipmentText.SlotName(_slot)} 칸 +{levels} → Lv {EquipmentInventory.SlotLevel(SaveSystem.Data, _slot)}</color>";
                 Render(false);
+                RewardPopup.Pop(detailLabel.transform, "levelup");
             }
         }
 
@@ -421,6 +424,7 @@ namespace HistoryHeroes.UI
             {
                 _message = $"<color=#7CE38B>합성: {Table.Find(made.dataId).displayName}</color>";
                 Render(false);
+                RewardPopup.Show(Table.Find(made.dataId).displayName, "합성 성공!");
             }
         }
 

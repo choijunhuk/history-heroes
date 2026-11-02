@@ -35,15 +35,14 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text rerollLabel;
         [SerializeField] private Button backButton;
 
-        private static readonly Color TabNormal = UiTone.Lift(new Color(0.16f, 0.18f, 0.24f));
-        private static readonly Color TabFocused = new Color(0.25f, 0.42f, 0.7f);
         private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
         private static readonly Color RowDone = UiTone.Lift(new Color(0.14f, 0.3f, 0.2f));
-        private static readonly Color RowSelected = new Color(0.22f, 0.36f, 0.6f);
-        private static readonly Color RowClaim = new Color(0.42f, 0.33f, 0.1f);
-        private static readonly Color ChestReady = new Color(0.55f, 0.42f, 0.12f);
-        private static readonly Color ChestLocked = UiTone.Lift(new Color(0.16f, 0.18f, 0.24f));
-        private static readonly Color ChestTaken = UiTone.Lift(new Color(0.1f, 0.22f, 0.15f));
+        private static readonly Color RowSelected = UiTone.Selected;
+        // 받을 수 있는 것이 가장 튀게: 받기 = 금색, 받음 = 흐린 초록, 아직 = 보통 파랑 (예전엔 받기가 칙칙한 갈색이었다)
+        private static readonly Color RowClaim = new Color(0.96f, 0.58f, 0.16f);
+        private static readonly Color ChestReady = UiTone.Gold;
+        private static readonly Color ChestLocked = UiTone.Row;
+        private static readonly Color ChestTaken = UiTone.Done;
 
         private MissionTable Table => metaTable != null ? metaTable.missions : null;
 
@@ -122,7 +121,7 @@ namespace HistoryHeroes.UI
             int[] ready = { dailyReady, weeklyReady, achReady };
             for (int i = 0; i < tabButtons.Length; i++)
             {
-                tabButtons[i].GetComponent<Image>().color = (int)_tab == i ? TabFocused : TabNormal;
+                TabStyle.Apply(tabButtons[i], (int)_tab == i);
                 tabLabels[i].text = ready[i] > 0 ? $"{names[i]} <color=#FFD966>●{ready[i]}</color>" : names[i];
             }
 
@@ -201,7 +200,7 @@ namespace HistoryHeroes.UI
                 if (can)
                 {
                     AchievementDef def = a;
-                    claimable.Add(new ButtonList.Row(text + "  <color=#FFD966>[받기]</color>", RowClaim, () => ClaimAchievement(def), true, target > 0 ? Mathf.Clamp01((float)progress / target) : 1f));
+                    claimable.Add(new ButtonList.Row(text + "  <b>[받기]</b>", RowClaim, () => ClaimAchievement(def), true, target > 0 ? Mathf.Clamp01((float)progress / target) : 1f));
                 }
                 else
                 {
@@ -242,6 +241,10 @@ namespace HistoryHeroes.UI
                 bool ready = canClaim(c);
                 bool done = taken(c);
                 chestButtons[i].interactable = ready;
+                // 못 누름 회색 틴트를 덮지 않는다 — 받음 · 잠김은 색과 [받음] · [잠김] 글로 보여 준다 (틴트까지 겹치면 칙칙했다)
+                ColorBlock tint = chestButtons[i].colors;
+                tint.disabledColor = Color.white;
+                chestButtons[i].colors = tint;
                 chestButtons[i].GetComponent<Image>().color = done ? ChestTaken : ready ? ChestReady : ChestLocked;
                 if (chestGlows != null && i < chestGlows.Length && chestGlows[i] != null) chestGlows[i].gameObject.SetActive(ready);
                 string state = done ? " <color=#7CE38B>[받음]</color>" : ready ? " <color=#FFD966>[받기]</color>" : " <color=#A9B4C2>[잠김]</color>";

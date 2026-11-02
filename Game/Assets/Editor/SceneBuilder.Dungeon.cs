@@ -198,11 +198,13 @@ namespace HistoryHeroes.EditorTools
             var buttons = new Button[3];
             var labels = new TMP_Text[3];
             var iconImages = new Image[3];
-            Color[] colors = { new Color(0.3f, 0.8f, 0.45f), new Color(0.35f, 0.55f, 1f), new Color(1f, 0.75f, 0.2f) };
+            // 뜻대로 색: 회복 초록 · 카드 파랑 · 골드 금색 (단추 역할 색으로 바꾸면 골드가 초록이 되어 카드만 혼자 달라 보였다, 2026-11-02)
+            Color[] colors = { new Color(0.24f, 0.72f, 0.4f), new Color(0.26f, 0.5f, 0.9f), new Color(0.96f, 0.62f, 0.16f) };
             string[] icons = { "heal", "cards", "chest" };
             for (int i = 0; i < 3; i++)
             {
                 buttons[i] = Btn($"Reward{i + 1}", panel, "", new Vector2(0f, 180f - i * 240f), new Vector2(840f, 210f), colors[i], out labels[i]);
+                buttons[i].image.color = colors[i];
                 labels[i].fontSize = 48;
                 labels[i].alignment = TextAlignmentOptions.MidlineLeft;
                 labels[i].rectTransform.offsetMin = new Vector2(220f, 0f);

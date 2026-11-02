@@ -40,6 +40,7 @@ namespace HistoryHeroes.Combat
             public float LastHit;
             public float Amount;
             public bool Crit;
+            public bool Heal;
             public Color Color;
             public Vector3 Start;
         }
@@ -50,11 +51,20 @@ namespace HistoryHeroes.Combat
         /// <summary>지금 떠 있는 숫자 수 (QA용)</summary>
         public int ActiveCount => _active.Count;
 
-        private void OnEnable() => Health.AnyVisualDamaged += OnAnyDamaged;
+        public static readonly Color HealColor = new Color(0.45f, 1f, 0.55f);
+        /// <summary>최대 체력의 이 비율 이상 회복할 때만 "+N"을 띄운다 (잔 회복 · 흡혈 틱은 무시)</summary>
+        private const float HealShowFraction = 0.03f;
+
+        private void OnEnable()
+        {
+            Health.AnyVisualDamaged += OnAnyDamaged;
+            Health.AnyHealed += OnAnyHealed;
+        }
 
         private void OnDisable()
         {
             Health.AnyVisualDamaged -= OnAnyDamaged;
+            Health.AnyHealed -= OnAnyHealed;
             for (int i = _active.Count - 1; i >= 0; i--) Recycle(i);
         }
 
@@ -65,6 +75,7 @@ namespace HistoryHeroes.Combat
 
             foreach (Entry e in _active)
             {
+                if (e.Heal) continue;
                 if (e.Target != target || now - e.LastHit > mergeWindow) continue;
                 e.Amount += dealt;
                 e.LastHit = now;
@@ -93,9 +104,29 @@ namespace HistoryHeroes.Combat
             Refresh(entry);
         }
 
+        private void OnAnyHealed(Health target, float healed)
+        {
+            if (target == null || target.Team != Team.Player || healed < target.Max * HealShowFraction) return;
+            FxBursts.Puff(target.transform.position + Vector3.back * 0.5f, HealColor, 1.1f);
+            if (!SaveSystem.Data.settings.damageNumbers) return;
+            if (_active.Count >= maxActive) Recycle(0);
+            var entry = new Entry
+            {
+                Text = Take(),
+                Target = null,
+                Born = Time.unscaledTime,
+                Amount = healed,
+                Heal = true,
+                Color = HealColor,
+                Start = target.transform.position + new Vector3(0f, 0f, -headHeight * Mathf.Max(0.6f, target.transform.lossyScale.x)),
+            };
+            _active.Add(entry);
+            Refresh(entry);
+        }
+
         private void Refresh(Entry e)
         {
-            e.Text.text = Format(e.Amount);
+            e.Text.text = e.Heal ? "+" + Format(e.Amount) : Format(e.Amount);
             e.Text.fontSize = fontSize * (e.Crit ? critScale : 1f);
             e.Text.color = e.Crit ? CritColor : e.Color;
             e.Text.transform.SetPositionAndRotation(e.Start, Facing());

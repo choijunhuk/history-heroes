@@ -628,12 +628,15 @@ namespace HistoryHeroes.Pets
             if (fruit)
             {
                 _pet.Player.Health.Heal(_pet.Player.Health.Max * FruitHeal);
+                Audio.AudioManager.Play("gem", 0.8f, 0.1f); // 초록 연기 · "+N"은 Health.Healed 연출
                 if (hud != null) hud.ShowNotice("흰 비둘기: 회복 열매 (체력 +15%)");
             }
             else if (gold > 0)
             {
                 Economy.Wallet.Grant(Records.SaveSystem.Data, new Economy.Reward { Gold = gold });
                 Records.SaveSystem.MarkDirty(); // 앱이 바로 꺼져도 다음 안전한 저장에서 남는다 (Codex v0.5 5번)
+                FxBursts.Puff(_pet.Player.transform.position + Vector3.back * 0.5f, new Color(1f, 0.85f, 0.3f), 1.2f);
+                Audio.AudioManager.Play("coin", 0.9f);
                 if (hud != null) hud.ShowNotice($"흰 비둘기: 보물 골드 +{gold}");
             }
             else if (hud != null) hud.ShowNotice("흰 비둘기: 연습은 골드 보상이 없어요");

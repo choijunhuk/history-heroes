@@ -1124,7 +1124,7 @@ namespace HistoryHeroes.EditorTools
 
         // 단추는 세 가지뿐 (전체 UI 검토 4번): 주 행동 = 선명한 초록 · 보조 = 차분한 남회색 · 위험 = 어두운 빨강 (덜 튀게)
         private static readonly Color ButtonSecondaryTone = new Color(0.26f, 0.5f, 0.9f); // 회색빛 → 선명한 파랑 (회색은 못 누를 때만)
-        private static readonly Color ButtonDangerTone = new Color(0.56f, 0.24f, 0.26f);
+        private static readonly Color ButtonDangerTone = new Color(0.82f, 0.3f, 0.28f); // 고르기 창 DangerTint와 같은 빨강 (예전 어두운 자주색은 칙칙했다)
 
         /// <summary>빌더가 넘긴 색을 세 역할 중 하나로: 빨강 → 위험, 초록·금색(강화·레벨업) → 주 행동, 나머지 → 보조</summary>
         private static Color ButtonRole(Color c)

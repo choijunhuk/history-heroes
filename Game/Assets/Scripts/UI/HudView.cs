@@ -152,16 +152,91 @@ namespace HistoryHeroes.UI
         }
 
         private void OnEnable() => Missions.MissionEvents.Completed += OnMissionCompleted;
-        private void OnDisable() => Missions.MissionEvents.Completed -= OnMissionCompleted;
-        private void OnMissionCompleted(string line) => ShowNotice(line, 2.2f);
 
-        /// <summary>잠깐 뜨는 알림 (방 클리어 때 기록 용량 등)</summary>
+        private void OnDisable()
+        {
+            Missions.MissionEvents.Completed -= OnMissionCompleted;
+            _noticeQueue.Clear();
+            _noticeShowing = false;
+            if (noticeLabel != null) noticeLabel.gameObject.SetActive(false);
+        }
+
+        private void OnMissionCompleted(string line)
+        {
+            Audio.AudioManager.Play("reward", 0.8f); // 전투 중엔 배너 대신 소리로 알린다
+            ShowNotice(line, 2.2f);
+        }
+
+        // 알림: 0.15초 튀어나옴 → 유지 → 0.2초 사라짐. 빠르게 연달아 오면 줄을 세운다 (최대 3개)
+        private const float NoticePop = 0.15f, NoticeFade = 0.2f, NoticeMinShow = 0.7f;
+        private const int NoticeQueueMax = 3;
+        private readonly System.Collections.Generic.List<(string text, float seconds)> _noticeQueue = new System.Collections.Generic.List<(string, float)>();
+        private bool _noticeShowing;
+        private string _noticeText;
+        private float _noticeStart;
+
+        /// <summary>잠깐 뜨는 알림 (방 클리어 때 기록 용량 등). 시간 멈춤에도 보이게 unscaled</summary>
         public void ShowNotice(string text, float seconds = 1.8f)
         {
             if (noticeLabel == null) return;
+            float now = Time.unscaledTime;
+            if (!_noticeShowing)
+            {
+                StartNotice(text, seconds);
+                return;
+            }
+
+            if (text == _noticeText)
+            {
+                _noticeUntil = Mathf.Max(_noticeUntil, now + seconds); // 같은 알림은 새로 띄우지 않고 시간만 늘린다
+                return;
+            }
+
+            foreach (var queued in _noticeQueue) if (queued.text == text) return;
+            if (_noticeQueue.Count >= NoticeQueueMax) _noticeQueue.RemoveAt(0);
+            _noticeQueue.Add((text, seconds));
+            // 뒤에 기다리는 알림이 있으면 지금 것은 최소 시간만 보이고 넘긴다
+            _noticeUntil = Mathf.Min(_noticeUntil, Mathf.Max(now, _noticeStart + NoticeMinShow));
+        }
+
+        private void StartNotice(string text, float seconds)
+        {
+            _noticeShowing = true;
+            _noticeText = text;
+            _noticeStart = Time.unscaledTime;
+            _noticeUntil = _noticeStart + seconds;
             noticeLabel.text = text;
+            noticeLabel.alpha = 1f;
+            noticeLabel.transform.localScale = Vector3.one * 0.7f;
             noticeLabel.gameObject.SetActive(true);
-            _noticeUntil = Time.unscaledTime + seconds;
+        }
+
+        private void UpdateNotice()
+        {
+            if (!_noticeShowing || noticeLabel == null) return;
+            float now = Time.unscaledTime;
+            if (now >= _noticeUntil)
+            {
+                if (_noticeQueue.Count > 0)
+                {
+                    var next = _noticeQueue[0];
+                    _noticeQueue.RemoveAt(0);
+                    StartNotice(next.text, next.seconds);
+                }
+                else
+                {
+                    _noticeShowing = false;
+                    noticeLabel.transform.localScale = Vector3.one;
+                    noticeLabel.alpha = 1f;
+                    noticeLabel.gameObject.SetActive(false);
+                }
+                return;
+            }
+
+            float age = now - _noticeStart;
+            float scale = age < NoticePop ? Mathf.LerpUnclamped(0.7f, 1f, PanelIntro.OutBack(age / NoticePop)) : 1f;
+            noticeLabel.transform.localScale = Vector3.one * scale;
+            noticeLabel.alpha = Mathf.Clamp01((_noticeUntil - now) / NoticeFade);
         }
 
         private System.Func<int> _hits;
@@ -201,7 +276,7 @@ namespace HistoryHeroes.UI
 
         private void Update()
         {
-            if (noticeLabel != null && noticeLabel.gameObject.activeSelf && Time.unscaledTime > _noticeUntil) noticeLabel.gameObject.SetActive(false);
+            UpdateNotice();
 
             if (experience != null)
             {

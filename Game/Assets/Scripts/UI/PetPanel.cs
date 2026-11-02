@@ -28,7 +28,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button backButton;
 
         private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
-        private static readonly Color RowSelected = new Color(0.22f, 0.36f, 0.6f);
+        private static readonly Color RowSelected = UiTone.Selected;
         private static readonly Color RowEquipped = UiTone.Lift(new Color(0.16f, 0.32f, 0.22f));
         private static readonly Color RowLocked = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
 
@@ -173,6 +173,9 @@ namespace HistoryHeroes.UI
             string awaken = level == table.awakenFirst || level == table.awakenSecond ? " — 각성! 새 행동이 생겼어요" : string.Empty;
             _message = r == SaveSystem.CommitResult.Saved ? $"<color=#FFD966>{pet.displayName} Lv {level}{awaken}</color>" : SaveSystem.SaveFailedText;
             Render();
+            if (r != SaveSystem.CommitResult.Saved) return;
+            if (awaken.Length > 0) RewardPopup.Show($"{pet.displayName} Lv {level}", "각성!");
+            else RewardPopup.Pop(detailLabel.transform, "levelup");
         }
     }
 }

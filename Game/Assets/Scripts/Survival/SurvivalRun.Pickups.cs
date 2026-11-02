@@ -171,6 +171,8 @@ namespace HistoryHeroes.Survival
             {
                 case PickupKind.Magnet:
                     StartCoroutine(MagnetSoon());
+                    FxBursts.Explosion(player.transform.position, 2.5f, SurvivalPickup.ColorOf(PickupKind.Magnet)); // 퍼지는 파란 고리
+                    Audio.AudioManager.Play("reward", 0.7f);
                     hud.ShowNotice("자석! 보석이 모여요", 1.2f);
                     break;
                 case PickupKind.Bomb:
@@ -178,6 +180,7 @@ namespace HistoryHeroes.Survival
                     break;
                 case PickupKind.Meat:
                     player.Health.Heal(player.Health.Max * 0.2f);
+                    Audio.AudioManager.Play("gem", 0.8f, 0.1f); // 초록 연기 · "+N"은 Health.Healed 연출이 낸다
                     hud.ShowNotice("고기: 체력 +20%", 1.2f);
                     break;
                 case PickupKind.GoldBag:
@@ -185,7 +188,8 @@ namespace HistoryHeroes.Survival
                     int gold = Mathf.Clamp(cap - _bagGold, 0, data.bagGold);
                     _bagGold += gold;
                     hud.ShowNotice(gold > 0 ? $"금화 주머니 +{gold}" : "금화 주머니 (이번 분은 가득)", 1.2f);
-                    Audio.AudioManager.Play("coin", 0.7f);
+                    if (gold > 0) FxBursts.Explosion(player.transform.position, 1.2f, SurvivalPickup.ColorOf(PickupKind.GoldBag)); // 금빛 터짐
+                    Audio.AudioManager.Play("coin", 0.9f);
                     break;
                 case PickupKind.Chest:
                     OpenChest(pickup.transform.position);

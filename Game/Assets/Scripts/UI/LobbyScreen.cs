@@ -181,11 +181,13 @@ namespace HistoryHeroes.UI
 
             // v1.0: 신규 7일 미션 시작 · 오늘 출석 · 순찰 시계
             if (Missions.Newcomer.EnsureStarted(data, Clock.Now())) SaveSystem.MarkDirty();
+            // 입장 보상은 같은 프레임에 알림이 서로 덮어쓰지 않게 모아 두었다가 저장 뒤에 보상 연출로 하나씩 보여 준다
+            var popups = new List<KeyValuePair<string, string>>(); // 제목, 보상 글
             List<string> attended = Missions.Attendance.CheckIn(data, Clock.Now());
             if (attended.Count > 0)
             {
                 SaveSystem.MarkDirty();
-                ShowNotice(string.Join(" · ", attended));
+                popups.Add(new KeyValuePair<string, string>("출석 보상!", RewardTail(attended)));
             }
 
             if (Patrol.Ensure(data, Clock.UnixSeconds)) SaveSystem.MarkDirty();
@@ -216,7 +218,7 @@ namespace HistoryHeroes.UI
             if (!box.IsEmpty)
             {
                 SaveSystem.Save();
-                ShowNotice("별 상자를 열었어요: " + box);
+                popups.Add(new KeyValuePair<string, string>("별 상자!", box.ToString()));
             }
 
             // 유물 (업적·별·보스 — 늦게 채운 조건도 여기서 확인, v0.4)
@@ -232,7 +234,7 @@ namespace HistoryHeroes.UI
                 if (relics.Count > 0)
                 {
                     SaveSystem.Save();
-                    ShowNotice(string.Join(" · ", relics));
+                    popups.Add(new KeyValuePair<string, string>("새 유물!", RewardTail(relics)));
                 }
             }
 
@@ -243,7 +245,7 @@ namespace HistoryHeroes.UI
                 if (pets.Count > 0)
                 {
                     SaveSystem.Save();
-                    ShowNotice(string.Join(" · ", pets));
+                    popups.Add(new KeyValuePair<string, string>("새 펫!", RewardTail(pets)));
                 }
             }
 
@@ -276,7 +278,7 @@ namespace HistoryHeroes.UI
                 if (gear.Count > 0)
                 {
                     SaveSystem.Save();
-                    ShowNotice("보스 격파 보상: " + string.Join(", ", gear).Replace("장비  ", ""));
+                    popups.Add(new KeyValuePair<string, string>("보스 격파 보상!", RewardTail(gear)));
                 }
 
                 if (!tutorial && !justFinished && string.IsNullOrEmpty(lobbyHero) && !OfferPendingRecord() && !OfferResume() && !OfferLegendaryChoice()) OfferNotifications();
@@ -286,7 +288,14 @@ namespace HistoryHeroes.UI
                 OfferNotifications();
             }
 
-            SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
+            bool persisted = SaveSystem.SaveIfDirty(); // 지난 저장이 실패했으면 다시 시도
+            // 저장된 뒤에만 보상 연출 (저장 실패면 예전처럼 알림 글로)
+            foreach (KeyValuePair<string, string> p in popups)
+            {
+                if (persisted && !string.IsNullOrWhiteSpace(p.Value)) RewardPopup.Show(p.Value, p.Key);
+                else ShowNotice(p.Key.TrimEnd('!') + ": " + p.Value);
+            }
+
             if (!tutorial) ShowHeroChat(data);
             Render();
             if (!string.IsNullOrEmpty(lobbyHero) && heroPanel != null) heroPanel.Open(Render, lobbyHero);
@@ -453,7 +462,24 @@ namespace HistoryHeroes.UI
             return true;
         }
 
-        private void OnMissionCompleted(string line) => ShowNotice(line);
+        private void OnMissionCompleted(string line)
+        {
+            Audio.AudioManager.Play("reward", 0.8f);
+            ShowNotice(line);
+        }
+
+        /// <summary>"출석 3일째  보상글" 같은 줄들에서 앞 이름표를 떼고 " · "로 이어 붙인다 (보상 카드 한 장씩)</summary>
+        private static string RewardTail(List<string> lines)
+        {
+            var parts = new List<string>();
+            foreach (string line in lines)
+            {
+                string t = RewardPopup.Tail(line).Replace("조건 달성 보상 · ", string.Empty).Replace("장비  ", string.Empty).Trim();
+                if (t.Length > 0) parts.Add(t);
+            }
+
+            return string.Join(" · ", parts);
+        }
 
         // 상점이 열려 있으면 상점 화면이 알린다
         private void OnIapGranted(PurchaseEntry entry)
@@ -481,7 +507,7 @@ namespace HistoryHeroes.UI
                 RenderNewcomer(SaveSystem.Data);
                 TryFirstUseHint();
             }
-            if (noticeLabel != null && noticeLabel.gameObject.activeSelf && Time.unscaledTime > _noticeUntil) noticeLabel.gameObject.SetActive(false);
+            UpdateNotice();
         }
 
         private void TryFirstUseHint()
@@ -503,12 +529,74 @@ namespace HistoryHeroes.UI
                 () => SaveSystem.Commit(() => Progress.FirstUseHints.MarkShown(save, id)) == SaveSystem.CommitResult.Saved);
         }
 
+        // 알림: 0.15초 튀어나옴 → 유지 → 0.2초 사라짐. 연달아 오면 줄을 세운다 (최대 3개, 같은 글은 한 번만)
+        private const float NoticePop = 0.15f, NoticeFade = 0.2f, NoticeMinShow = 0.8f, NoticeSeconds = 5f;
+        private const int NoticeQueueMax = 3;
+        private readonly List<string> _noticeQueue = new List<string>();
+        private bool _noticeShowing;
+        private string _noticeText;
+        private float _noticeStart;
+
         private void ShowNotice(string text)
         {
-            if (noticeLabel == null) return;
+            if (noticeLabel == null || string.IsNullOrEmpty(text)) return;
+            if (!_noticeShowing || !noticeLabel.gameObject.activeInHierarchy)
+            {
+                StartNotice(text);
+                return;
+            }
+
+            if (text == _noticeText)
+            {
+                _noticeUntil = Time.unscaledTime + NoticeSeconds;
+                return;
+            }
+
+            if (_noticeQueue.Contains(text)) return;
+            if (_noticeQueue.Count >= NoticeQueueMax) _noticeQueue.RemoveAt(0);
+            _noticeQueue.Add(text);
+            // 뒤에 기다리는 알림이 있으면 지금 것은 최소 시간만 보이고 넘긴다
+            _noticeUntil = Mathf.Min(_noticeUntil, Mathf.Max(Time.unscaledTime, _noticeStart + NoticeMinShow));
+        }
+
+        private void StartNotice(string text)
+        {
+            _noticeShowing = true;
+            _noticeText = text;
+            _noticeStart = Time.unscaledTime;
+            _noticeUntil = _noticeStart + NoticeSeconds;
             noticeLabel.text = text;
+            noticeLabel.alpha = 1f;
+            noticeLabel.transform.localScale = Vector3.one * 0.7f;
             noticeLabel.gameObject.SetActive(true);
-            _noticeUntil = Time.unscaledTime + 5f;
+        }
+
+        private void UpdateNotice()
+        {
+            if (!_noticeShowing || noticeLabel == null) return;
+            float now = Time.unscaledTime;
+            if (now >= _noticeUntil)
+            {
+                if (_noticeQueue.Count > 0)
+                {
+                    string next = _noticeQueue[0];
+                    _noticeQueue.RemoveAt(0);
+                    StartNotice(next);
+                }
+                else
+                {
+                    _noticeShowing = false;
+                    noticeLabel.transform.localScale = Vector3.one;
+                    noticeLabel.alpha = 1f;
+                    noticeLabel.gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
+            float age = now - _noticeStart;
+            noticeLabel.transform.localScale = Vector3.one * (age < NoticePop ? Mathf.LerpUnclamped(0.7f, 1f, PanelIntro.OutBack(age / NoticePop)) : 1f);
+            noticeLabel.alpha = Mathf.Clamp01((_noticeUntil - now) / NoticeFade);
         }
 
         /// <summary>골드 · 보석 · 하트(다음 충전까지) · 계정 레벨. 하트 시계 때문에 0.5초마다</summary>

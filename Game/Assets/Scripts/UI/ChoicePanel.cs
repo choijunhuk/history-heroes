@@ -52,7 +52,7 @@ namespace HistoryHeroes.UI
 
         private static readonly Color Row = UiTone.Lift(new Color(0.32f, 0.24f, 0.1f));
         private static readonly Color InfoRow = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
-        private static readonly Color DangerTint = new Color(0.78f, 0.27f, 0.27f);
+        private static readonly Color DangerTint = new Color(0.82f, 0.3f, 0.28f); // 장면 빌더 ButtonDangerTone과 같은 빨강
         private const float MinButtonHeight = 150f;
 
         /// <summary>"나중에"를 눌렀을 때 (고르기를 기다리는 쪽이 그만뒀다고 알아야 할 때)</summary>

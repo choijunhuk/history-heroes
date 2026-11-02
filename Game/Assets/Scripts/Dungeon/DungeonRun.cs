@@ -669,7 +669,7 @@ namespace HistoryHeroes.Dungeon
         private void OpenRewardRoom()
         {
             _alive = 0;
-            PlacePedestalModel(specialArt.chestModel, 1.15f); // 받침대 자리에 금 상자
+            GameObject chest = PlacePedestalModel(specialArt.chestModel, 1.15f); // 받침대 자리에 금 상자
             int gold = GameSession.Practice ? 0 : SpecialRooms.RewardGold(GameSession.Chapter);
             if (rewardRoom == null)
             {
@@ -677,7 +677,8 @@ namespace HistoryHeroes.Dungeon
                 return;
             }
 
-            rewardRoom.Open(_rewardHeal, gold, choice =>
+            // 상자에 닿아야 흔들리다 열리고 (빛기둥) 그때 고르기 창 (2026-11-02 개발자: "들어가자마자 보상이 나오는 건 별로")
+            AwaitPedestalTouch(chest, "상자에 닿으면 열려요", new Color(1f, 0.85f, 0.35f), () => rewardRoom.Open(_rewardHeal, gold, choice =>
             {
                 switch (choice)
                 {
@@ -693,13 +694,14 @@ namespace HistoryHeroes.Dungeon
                         Wallet.Grant(SaveSystem.Data, new Reward { Gold = gold });
                         SaveSystem.MarkDirty();
                         hud.ShowNotice($"골드 +{gold}");
+                        PlayerGoldFx();
                         break;
                 }
 
                 MarkRewardTaken();
                 SaveAfterRewards();
                 if (!_finished) OnRoomCleared();
-            });
+            }));
         }
 
         // ---------------------------------------------------------------- 레이아웃
@@ -841,7 +843,14 @@ namespace HistoryHeroes.Dungeon
 
         private void OnEnemyKilled(EnemyBase enemy)
         {
-            if (enemy.IsElite) experience.GrantLevelUp();
+            if (enemy.IsElite)
+            {
+                // 띠 · 터짐을 먼저 보이고 0.6초 뒤에 카드 창 (같은 프레임에 게임이 멈추지 않게)
+                HypeFx.Banner("엘리트 격파!", new Color(1f, 0.82f, 0.3f));
+                Combat.FxBursts.Explosion(enemy.transform.position, 1.4f, new Color(1f, 0.82f, 0.3f));
+                StartCoroutine(LevelUpAfterBanner(_room, false, false, false));
+            }
+
             OnCursedKilled(enemy);
             _alive--;
             if (_alive <= 0 && !_finished && !_holdClear) OnRoomCleared(); // "20초 버티기"는 시간이 끝낸다
@@ -891,7 +900,7 @@ namespace HistoryHeroes.Dungeon
         {
             int floor = _room;
             float until = Time.realtimeSinceStartup + 6f;
-            while (Time.realtimeSinceStartup < until && !_finished && (experience.ActiveGems > 0 || levelUp.IsOpen)) yield return null;
+            while (Time.realtimeSinceStartup < until && !_finished && (experience.ActiveGems > 0 || levelUp.IsOpen || _pendingLevelUps > 0)) yield return null;
             if (_finished) yield break;
 
             SaveData save = SaveSystem.Data;
@@ -903,13 +912,22 @@ namespace HistoryHeroes.Dungeon
             }
             else
             {
+                var milestone = new List<string>();
                 foreach (string line in Modes.RiftRules.ReachFloor(save, floor))
                 {
                     _modeLines.Add(line);
-                    hud.ShowNotice(line, 2.5f);
+                    milestone.Add(line);
                 }
 
-                if (Modes.RiftRules.IsBossFloor(floor)) SaveCheckpoint();
+                // 층 보상은 한 줄만 보이던 알림 대신 금색 띠 + 터짐 + 소리 (체크포인트 글이 덮지 않게 뒤로 미룬다)
+                if (milestone.Count > 0)
+                {
+                    HypeFx.Banner(string.Join("\n", milestone), new Color(1f, 0.82f, 0.3f));
+                    Audio.AudioManager.Play("reward", 0.9f);
+                    Combat.FxBursts.Explosion(player.transform.position, 1.6f, new Color(1f, 0.82f, 0.3f));
+                }
+
+                if (Modes.RiftRules.IsBossFloor(floor)) SaveCheckpoint(milestone.Count > 0 ? 1.5f : 0f);
             }
 
             SaveSystem.SaveIfDirty();
@@ -917,7 +935,8 @@ namespace HistoryHeroes.Dungeon
             if (Modes.RiftRules.IsEliteFloor(_room) && rewardRoom != null && !(_resumeRewardTaken && _room == _resumeRoom))
             {
                 int gold = 50 + 25 * Modes.RiftRules.ChapterFor(_room);
-                rewardRoom.Open(_rewardHeal, gold, choice =>
+                GameObject chest = PlaceFreeChest(1.15f, out Vector2 chestSpot); // 보상 방처럼: 상자에 닿아야 열리고 그때 고르기 창
+                AwaitPedestalTouch(chest, "상자에 닿으면 열려요", new Color(1f, 0.85f, 0.35f), () => rewardRoom.Open(_rewardHeal, gold, choice =>
                 {
                     if (choice == RewardRoomPanel.Choice.Heal) player.Health.Heal(player.Health.Max * _rewardHeal);
                     else if (choice == RewardRoomPanel.Choice.Card) experience.GrantLevelUp();
@@ -925,19 +944,33 @@ namespace HistoryHeroes.Dungeon
                     {
                         Wallet.Grant(SaveSystem.Data, new Reward { Gold = gold });
                         SaveSystem.MarkDirty();
+                        PlayerGoldFx();
                     }
 
                     MarkRewardTaken();
                     door.SetOpen(true);
-                });
+                }), chestSpot);
                 yield break;
             }
 
             door.SetOpen(true);
         }
 
+        /// <summary>골드를 받은 순간: 플레이어 자리에 금빛 연기 + 동전 소리</summary>
+        private void PlayerGoldFx()
+        {
+            Combat.FxBursts.Puff(player.transform.position, new Color(1f, 0.82f, 0.3f), 1.4f);
+            Audio.AudioManager.Play("coin", 0.8f);
+        }
+
+        private IEnumerator CheckpointNoticeAfter(float seconds, int room)
+        {
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime) yield return null;
+            if (!_finished && room == _room) hud.ShowNotice($"체크포인트 저장 ({room}층)", 2f);
+        }
+
         /// <summary>10층 보스를 깰 때마다: 빌드·레벨·체력·시드를 남긴다 (나갔다가 여기서 이어하기, 주간 시즌 안에서)</summary>
-        private void SaveCheckpoint()
+        private void SaveCheckpoint(float noticeDelay = 0f)
         {
             var cp = new RiftCheckpoint
             {
@@ -958,12 +991,14 @@ namespace HistoryHeroes.Dungeon
             foreach (SkillInstance s in skills.Loadout.Passives) cp.skills.Add(new RecordSkill(s.Data.id, s.Level, s.IsFusionResult));
             cp.boosts = skills.RiftBoostCounts();
             SaveSystem.Data.rift.checkpoint = cp;
-            hud.ShowNotice($"체크포인트 저장 ({_room}층)", 2f);
+            if (noticeDelay > 0f) StartCoroutine(CheckpointNoticeAfter(noticeDelay, _room));
+            else hud.ShowNotice($"체크포인트 저장 ({_room}층)", 2f);
             SaveSystem.Save();
         }
 
         private IEnumerator GoToNextRoom()
         {
+            while (_pendingLevelUps > 0 && !_finished) yield return null; // 도전 성공 · 저주 엘리트 띠 뒤 카드가 먼저
             yield return Fade(1f);
             player.Teleport(playerStart.position);
             EnterRoom(_room + 1);
@@ -996,7 +1031,7 @@ namespace HistoryHeroes.Dungeon
             if (GameSession.IsHeroTrial)
             {
                 StopAllCoroutines();
-                result.ShowHeroTrial(player.Hero);
+                StartCoroutine(ShowTrialAfterBeat(victory));
                 return;
             }
 
@@ -1004,7 +1039,7 @@ namespace HistoryHeroes.Dungeon
             SaveSystem.MarkDirty();
             if (_rift)
             {
-                FinishRift();
+                FinishRift(victory);
                 return;
             }
 
@@ -1099,6 +1134,16 @@ namespace HistoryHeroes.Dungeon
             result.Show(summary, saveRecord);
         }
 
+        /// <summary>체험이 끝났을 때도 클리어 · 패배 연출 한 박자 뒤에 결과를 연다</summary>
+        private IEnumerator ShowTrialAfterBeat(bool victory)
+        {
+            if (victory) HypeFx.Clear("클리어!");
+            else HypeFx.Defeat();
+            yield return HypeFx.Beat(victory ? HypeFx.ClearSeconds : HypeFx.DefeatSeconds);
+            levelUp.DevCancel();
+            result.ShowHeroTrial(player.Hero);
+        }
+
         // ---------------------------------------------------------------- v1.0 튜토리얼 끝 (UX 4장)
 
         /// <summary>
@@ -1128,14 +1173,14 @@ namespace HistoryHeroes.Dungeon
             if (GameSession.Practice)
             {
                 summary.RewardLines.Add("튜토리얼 다시 보기라 보상·기록은 없어요");
-                result.Show(summary, null);
+                StartCoroutine(ShowResultAfterBeat(victory, summary, null));
                 return;
             }
 
             if (!victory)
             {
                 summary.RewardLines.Add("튜토리얼을 그만뒀어요 — 다시 하면 처음부터예요");
-                result.Show(summary, null);
+                StartCoroutine(ShowResultAfterBeat(false, summary, null));
                 return;
             }
 
@@ -1171,7 +1216,7 @@ namespace HistoryHeroes.Dungeon
 
         // ---------------------------------------------------------------- 균열·일일 도전 결과 (기록은 남기지 않는다)
 
-        private void FinishRift()
+        private void FinishRift(bool victory)
         {
             SaveData save = SaveSystem.Data;
             float seconds = Time.time - _startTime;
@@ -1196,7 +1241,7 @@ namespace HistoryHeroes.Dungeon
             RiftCheckpoint cp = save.rift.checkpoint;
             string primary = cp.valid ? $"{cp.floor + 1}층부터 이어하기" : "1층부터 다시";
             System.Action onPrimary = cp.valid ? () => GameSession.StartRift(true) : (System.Action)(() => GameSession.StartRift(false));
-            StartCoroutine(ShowTextAfter(0.8f, $"균열 {floor}층", sb.ToString(), primary, onPrimary));
+            StartCoroutine(ShowTextAfter(victory, $"균열 {floor}층", sb.ToString(), primary, onPrimary));
         }
 
         private void FinishDaily(bool victory)
@@ -1235,12 +1280,15 @@ namespace HistoryHeroes.Dungeon
                 foreach (string line in lines) sb.AppendLine("  " + line);
             }
 
-            StartCoroutine(ShowTextAfter(victory ? 1.2f : 0.8f, victory ? "일일 도전 클리어!" : "일일 도전 끝", sb.ToString(), "연습 한 번 더", () => GameSession.StartDaily(false)));
+            StartCoroutine(ShowTextAfter(victory, victory ? "일일 도전 클리어!" : "일일 도전 끝", sb.ToString(), "연습 한 번 더", () => GameSession.StartDaily(false)));
         }
 
-        private IEnumerator ShowTextAfter(float seconds, string title, string body, string primary, System.Action onPrimary)
+        private IEnumerator ShowTextAfter(bool victory, string title, string body, string primary, System.Action onPrimary)
         {
-            yield return new WaitForSeconds(seconds);
+            if (victory) HypeFx.Clear("클리어!");
+            else HypeFx.Defeat();
+            yield return HypeFx.Beat(victory ? HypeFx.ClearSeconds : HypeFx.DefeatSeconds);
+            levelUp.DevCancel(); // 결과가 레벨업 창 위에 겹치지 않게
             result.ShowText(title, body, primary, onPrimary, "로비로", GameSession.ToLobby);
         }
 

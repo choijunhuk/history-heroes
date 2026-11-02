@@ -96,9 +96,9 @@ namespace HistoryHeroes.EditorTools
                     continue;
                 }
 
-                if (rt.anchorMin != Center || rt.anchorMax != Center || rt.GetComponent<ContentSizeFitter>() != null || rt.sizeDelta.y > FrameHalf) continue;
-                if (rt.TryGetComponent(out ScrollRect scroll) && scroll.vertical && list == null) list = rt;
-                else items.Add(rt);
+                if (rt.anchorMin != Center || rt.anchorMax != Center || rt.GetComponent<ContentSizeFitter>() != null) continue;
+                if (rt.TryGetComponent(out ScrollRect scroll) && scroll.vertical && list == null) list = rt; // 키 큰 목록도 늘린다 (보석 목록 1040)
+                else if (rt.sizeDelta.y <= FrameHalf) items.Add(rt);
             }
 
             float divider = list != null ? Mid(list) : Divider(items);

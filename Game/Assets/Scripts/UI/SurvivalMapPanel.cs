@@ -74,7 +74,7 @@ namespace HistoryHeroes.UI
             SurvivalMapSave save = d.survival.FindMap(map.mapId);
             int stars = save != null ? SurvivalProgress.StarCount(save.stars) : 0;
 
-            if (banner != null) banner.color = open ? map.mapColor : Color.Lerp(map.mapColor, new Color(0.25f, 0.25f, 0.28f), 0.7f);
+            if (banner != null) banner.color = open ? map.mapColor : Color.Lerp(map.mapColor, UiTone.Muted, 0.5f);
             indexLabel.text = $"맵 {_index + 1} / {maps.Length}";
             nameLabel.text = map.mapName;
             blurbLabel.text = map.mapBlurb;

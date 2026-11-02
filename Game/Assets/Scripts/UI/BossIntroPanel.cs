@@ -47,8 +47,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private RecordSaveScreen reselect;
         [SerializeField] private HeartPanel hearts;
 
-        private static readonly Color Normal = UiTone.Lift(new Color(0.16f, 0.18f, 0.24f));
-        private static readonly Color Selected = new Color(0.25f, 0.42f, 0.7f);
+        private static readonly Color Normal = UiTone.Row;
+        private static readonly Color Selected = UiTone.Selected;
 
         private BossData _boss;
         private BossData _normalBoss;
@@ -198,8 +198,8 @@ namespace HistoryHeroes.UI
         {
             SaveData data = SaveSystem.Data;
             bool trialUnlocked = !_trial || GodTrialRules.IsUnlocked(data, _boss.id);
-            if (normalTab != null) normalTab.GetComponent<Image>().color = _trial ? Normal : Selected;
-            if (trialTab != null) trialTab.GetComponent<Image>().color = _trial ? Selected : Normal;
+            TabStyle.Apply(normalTab, !_trial);
+            TabStyle.Apply(trialTab, _trial);
             if (trialButtons != null)
                 for (int i = 0; i < trialButtons.Length && i < GodTrialRules.Trials.Count; i++)
                 {
@@ -269,7 +269,7 @@ namespace HistoryHeroes.UI
             RunRecord selected = data.FindRecord(_selectedRecordId);
             startButton.interactable = trialUnlocked && selected != null;
             // 못 누르는 주 단추는 초록 대신 회색 (어두운 초록은 눌러도 되는 것처럼 보였다)
-            startButton.image.color = startButton.interactable ? _startColor : new Color(0.3f, 0.32f, 0.38f);
+            startButton.image.color = startButton.interactable ? _startColor : new Color(0.62f, 0.65f, 0.72f); // 못 누름 틴트와 겹쳐 회색 (겹쳐도 너무 어둡지 않게)
             bool over = selected != null && RecordValidator.Validate(selected, database).OverCapacity;
             if (practiceButton != null) practiceButton.interactable = trialUnlocked && selected != null && !over;
             startLabel.text = !trialUnlocked ? "잠긴 시련" : selected == null ? "기록을 고르세요" : over ? "다시 고르고 시작" : "도전";
