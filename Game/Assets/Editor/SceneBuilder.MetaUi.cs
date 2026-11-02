@@ -383,7 +383,14 @@ namespace HistoryHeroes.EditorTools
         {
             RectTransform panel = Overlay(parent, "ChoicePanel", out GameObject holder);
             var screen = holder.AddComponent<ChoicePanel>();
-            Image backdrop = panel.GetComponent<Image>();
+            GameObject screenBackdrop = panel.Find("Bleed").gameObject;
+            // 팝업 모양 바탕: 무늬 없이 뒤 화면을 어둡게만 (안전 영역 밖까지)
+            RectTransform dim = Rect("Dim", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            dim.offsetMin = new Vector2(-40f, -BleedPad);
+            dim.offsetMax = new Vector2(40f, BleedPad);
+            dim.SetSiblingIndex(1);
+            Img(dim, new Color(0f, 0f, 0f, 0.72f), null);
+            dim.gameObject.SetActive(false);
 
             // ---- 목록 모양
             RectTransform listMode = Rect("ListMode", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
@@ -490,7 +497,7 @@ namespace HistoryHeroes.EditorTools
 
             using (var props = new Props(screen))
             {
-                props.Ref("root", panel.gameObject).Ref("backdrop", backdrop)
+                props.Ref("root", panel.gameObject).Ref("screenBackdrop", screenBackdrop).Ref("dim", dim.gameObject)
                     .Ref("listMode", listMode.gameObject).Ref("titleLabel", title).Ref("infoLabel", info).Ref("list", list).Ref("laterButton", later)
                     .Ref("dialogMode", dialogMode.gameObject).Ref("dialogCard", dialog).Ref("dialogTitle", dialogTitle).Ref("dialogInfo", dialogInfo)
                     .Ref("dialogBody", dialogBody).Ref("buttonRow", rowElement).Ref("leftButton", left).Ref("rightButton", right).Ref("dialogLater", dialogLater);

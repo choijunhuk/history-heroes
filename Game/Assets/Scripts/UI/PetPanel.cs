@@ -27,10 +27,10 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text levelLabel;
         [SerializeField] private Button backButton;
 
-        private static readonly Color RowNormal = new Color(0.13f, 0.15f, 0.2f);
+        private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
         private static readonly Color RowSelected = new Color(0.22f, 0.36f, 0.6f);
-        private static readonly Color RowEquipped = new Color(0.16f, 0.32f, 0.22f);
-        private static readonly Color RowLocked = new Color(0.1f, 0.1f, 0.12f);
+        private static readonly Color RowEquipped = UiTone.Lift(new Color(0.16f, 0.32f, 0.22f));
+        private static readonly Color RowLocked = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
 
         private PetTable Table => metaTable != null ? metaTable.pets : null;
 

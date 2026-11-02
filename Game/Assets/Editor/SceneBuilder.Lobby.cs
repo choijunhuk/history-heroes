@@ -101,6 +101,10 @@ namespace HistoryHeroes.EditorTools
             ConsentPanel consentPanel = BuildConsentPanel(root);
             using (var props = new Props(lobby)) props.Ref("consent", consentPanel);
 
+            // 보상 받기 연출: 안전 영역 안 모든 창 위 (마지막 자식). 동의 창은 root에 따로 있어 그보다 위
+            BuildRewardPopup(safe).transform.SetAsLastSibling();
+
+            ApplyTopBars(safe);
             AddUiSounds(root);
             ApplyTypeScale();
             ApplyButtonGroups();
@@ -238,7 +242,37 @@ namespace HistoryHeroes.EditorTools
             holder = h.gameObject;
             RectTransform panel = Rect("Panel", h, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             Img(panel, color ?? PanelColor, null).raycastTarget = true;
+            Bleed(panel);
+            panel.gameObject.AddComponent<PanelIntro>(); // 열릴 때 살짝 커지며 나타남 (UI-Research 5장)
             return panel;
+        }
+
+        /// <summary>안전 영역 밖까지 늘리는 바탕 여유 (상태 표시줄 · 카메라 구멍 · 아래 제스처 바보다 넉넉히)</summary>
+        private const float BleedPad = 400f;
+
+        /// <summary>
+        /// 창 바탕을 안전 영역 밖까지 늘린다 (2026-11-02 개발자: "홈 화면을 뺀 화면에서 위 공간이 안 채워져 홈 화면이 비친다").
+        /// 판(Panel)은 안전 영역 그대로라 내용 위치는 안 바뀐다. 바탕 그림 · 무늬 · 가장자리는 첫 자식 "Bleed"로 옮기고,
+        /// 판 자체는 투명하게 남겨 누름만 막는다.
+        /// </summary>
+        private static Image Bleed(RectTransform panel)
+        {
+            Image source = panel.GetComponent<Image>();
+            var moved = new System.Collections.Generic.List<Transform>();
+            foreach (Transform child in panel) moved.Add(child); // ScreenBackdrop이 붙인 무늬 · 가장자리
+            RectTransform bleed = Rect("Bleed", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            bleed.offsetMin = new Vector2(-40f, -BleedPad);
+            bleed.offsetMax = new Vector2(40f, BleedPad);
+            bleed.SetAsFirstSibling();
+            var image = bleed.gameObject.AddComponent<Image>();
+            image.sprite = source.sprite;
+            image.type = source.type;
+            image.color = source.color;
+            image.raycastTarget = false;
+            foreach (Transform child in moved) child.SetParent(bleed, false);
+            source.sprite = null;
+            source.color = Color.clear;
+            return image;
         }
 
         private static BossIntroPanel BuildBossIntroPanel(Transform parent, SkillDatabase database)
@@ -292,7 +326,7 @@ namespace HistoryHeroes.EditorTools
 
             Button start = Btn("Start", panel, "도전", new Vector2(-150f, -620f), new Vector2(560f, 125f), ButtonGreen, out TMP_Text startLabel); // 주 행동
             startLabel.fontSize = 46;
-            Button practice = Btn("Practice", panel, "연습\n<size=60%>하트·보상 없음</size>", new Vector2(320f, -620f), new Vector2(330f, 125f), ButtonGray, out TMP_Text practiceLabel);
+            Button practice = Btn("Practice", panel, "연습\n<size=72%>하트·보상 없음</size>", new Vector2(320f, -620f), new Vector2(330f, 125f), ButtonGray, out TMP_Text practiceLabel);
             practiceLabel.fontSize = 36;
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -780f), new Vector2(400f, 100f), ButtonGray, out _);
 

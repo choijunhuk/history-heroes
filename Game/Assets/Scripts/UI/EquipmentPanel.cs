@@ -42,11 +42,11 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text dismantleLabel;
         [SerializeField] private Button backButton;
 
-        private static readonly Color SlotNormal = new Color(0.16f, 0.18f, 0.24f);
+        private static readonly Color SlotNormal = UiTone.Lift(new Color(0.16f, 0.18f, 0.24f));
         private static readonly Color SlotFocused = new Color(0.25f, 0.42f, 0.7f);
-        private static readonly Color RowNormal = new Color(0.13f, 0.15f, 0.2f);
+        private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
         private static readonly Color RowSelected = new Color(0.22f, 0.36f, 0.6f);
-        private static readonly Color RowDisabled = new Color(0.1f, 0.1f, 0.12f);
+        private static readonly Color RowDisabled = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
         private const float ConfirmSeconds = 3f;
 
         private EquipmentTable Table => metaTable != null ? metaTable.equipment : null;

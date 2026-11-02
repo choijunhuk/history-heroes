@@ -356,6 +356,9 @@ namespace HistoryHeroes.EditorTools
             ui.Gold = Pill(topBar, "gold", new Color(1f, 0.84f, 0.3f), new Vector2(-244f, 0f), 296f);
             ui.Gem = Pill(topBar, "gem", new Color(0.55f, 0.85f, 1f), new Vector2(64f, 0f), 296f);
             ui.Heart = Pill(topBar, "heart", new Color(1f, 0.4f, 0.45f), new Vector2(372f, 0f), 296f);
+            // 보상 아이콘이 날아올 곳 (숫자는 LobbyScreen이 쓴다)
+            WalletChipOn(ui.Gold, "gold", false);
+            WalletChipOn(ui.Gem, "gem", false);
             ui.Wallet = null;
 
             // ----- 홈 미션 띠 (2026-10-29 개발자: "미션이 홈에 없고 따로 있어서 불편") — 누르면 미션 창 -----

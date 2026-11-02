@@ -23,9 +23,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private ShopPanel shop;
         [SerializeField] private Button backButton;
 
-        private static readonly Color RowOwned = new Color(0.16f, 0.2f, 0.26f);
-        private static readonly Color RowMissing = new Color(0.1f, 0.1f, 0.12f);
-        private static readonly Color RowSet = new Color(0.3f, 0.24f, 0.1f);
+        private static readonly Color RowOwned = UiTone.Lift(new Color(0.16f, 0.2f, 0.26f));
+        private static readonly Color RowMissing = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
+        private static readonly Color RowSet = UiTone.Lift(new Color(0.3f, 0.24f, 0.1f));
         private static readonly Color RowSelected = new Color(0.22f, 0.36f, 0.6f);
 
         private string _selected;

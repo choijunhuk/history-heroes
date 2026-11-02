@@ -35,15 +35,15 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text rerollLabel;
         [SerializeField] private Button backButton;
 
-        private static readonly Color TabNormal = new Color(0.16f, 0.18f, 0.24f);
+        private static readonly Color TabNormal = UiTone.Lift(new Color(0.16f, 0.18f, 0.24f));
         private static readonly Color TabFocused = new Color(0.25f, 0.42f, 0.7f);
-        private static readonly Color RowNormal = new Color(0.13f, 0.15f, 0.2f);
-        private static readonly Color RowDone = new Color(0.14f, 0.3f, 0.2f);
+        private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
+        private static readonly Color RowDone = UiTone.Lift(new Color(0.14f, 0.3f, 0.2f));
         private static readonly Color RowSelected = new Color(0.22f, 0.36f, 0.6f);
         private static readonly Color RowClaim = new Color(0.42f, 0.33f, 0.1f);
         private static readonly Color ChestReady = new Color(0.55f, 0.42f, 0.12f);
-        private static readonly Color ChestLocked = new Color(0.16f, 0.18f, 0.24f);
-        private static readonly Color ChestTaken = new Color(0.1f, 0.22f, 0.15f);
+        private static readonly Color ChestLocked = UiTone.Lift(new Color(0.16f, 0.18f, 0.24f));
+        private static readonly Color ChestTaken = UiTone.Lift(new Color(0.1f, 0.22f, 0.15f));
 
         private MissionTable Table => metaTable != null ? metaTable.missions : null;
 
@@ -245,7 +245,7 @@ namespace HistoryHeroes.UI
                 chestButtons[i].GetComponent<Image>().color = done ? ChestTaken : ready ? ChestReady : ChestLocked;
                 if (chestGlows != null && i < chestGlows.Length && chestGlows[i] != null) chestGlows[i].gameObject.SetActive(ready);
                 string state = done ? " <color=#7CE38B>[받음]</color>" : ready ? " <color=#FFD966>[받기]</color>" : " <color=#A9B4C2>[잠김]</color>";
-                chestLabels[i].text = $"<b>{c.points}</b>{state}\n<size=70%>{MissionService.RewardText(c, hero)}</size>";
+                chestLabels[i].text = $"<b>{c.points}</b>{state}\n<size=78%>{MissionService.RewardText(c, hero)}</size>"; // 70%는 21px로 작았다
             }
         }
 
@@ -272,6 +272,7 @@ namespace HistoryHeroes.UI
             _message = r == SaveSystem.CommitResult.Saved
                 ? $"<color=#FFD966>{chest.points} 상자: {MissionService.RewardText(chest, hero)}</color>" + (notices.Count > 0 ? "\n" + string.Join(" · ", notices) : string.Empty)
                 : SaveSystem.SaveFailedText;
+            if (r == SaveSystem.CommitResult.Saved) RewardPopup.Show(MissionService.RewardText(chest, hero));
             Render();
         }
 
@@ -283,6 +284,7 @@ namespace HistoryHeroes.UI
             SaveSystem.CommitResult r = SaveSystem.Commit(() => MissionService.ClaimAchievement(save, def, MissionEvents.Context));
             if (r == SaveSystem.CommitResult.Rejected) return;
             _message = r == SaveSystem.CommitResult.Saved ? $"<color=#FFD966>업적 {def.title}: 보석 +{gems}</color>" : SaveSystem.SaveFailedText;
+            if (r == SaveSystem.CommitResult.Saved) RewardPopup.Show($"<sprite name=gem>보석 +{gems}");
             Render();
         }
 

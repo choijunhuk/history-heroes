@@ -9,7 +9,7 @@ namespace HistoryHeroes.EditorTools
     public static partial class SceneBuilder
     {
         private static readonly Color PanelColor = new Color(0.04f, 0.05f, 0.08f, 1f);
-        private static readonly Color RowColor = new Color(0.13f, 0.15f, 0.2f);
+        private static readonly Color RowColor = new Color(0.24f, 0.4f, 0.74f); // UiTone.Row와 같음
         private static readonly Color ButtonGray = new Color(0.3f, 0.32f, 0.38f);
         private static readonly Color ButtonGreen = new Color(0.2f, 0.55f, 0.32f);
         private static readonly Color ButtonBlue = new Color(0.22f, 0.3f, 0.45f);

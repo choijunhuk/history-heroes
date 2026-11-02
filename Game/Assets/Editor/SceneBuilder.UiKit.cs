@@ -48,8 +48,9 @@ namespace HistoryHeroes.EditorTools
         };
 
         // 화면 바탕 · 줄 색 (어두운 남색 계열, 위가 밝다)
-        private static readonly Color ScreenTint = new Color(0.17f, 0.22f, 0.36f);
-        private static readonly Color RowTint = new Color(0.26f, 0.32f, 0.5f);
+        // 2026-11-02 "칙칙하다" → 채도 있는 파랑으로 밝힘 (UI-Research 3장: 칙칙함의 원인 = 채도 낮은 어두운 바탕 + 회색 단추)
+        private static readonly Color ScreenTint = new Color(0.22f, 0.36f, 0.7f);
+        private static readonly Color RowTint = new Color(0.28f, 0.44f, 0.8f);
 
         /// <summary>BuildAll 처음에: 그림 가져오기 설정 → 제목 글꼴 → 불러오기 (글자 재질 포함)</summary>
         private static void SetupUiKit()

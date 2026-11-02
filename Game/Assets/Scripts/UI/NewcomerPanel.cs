@@ -23,9 +23,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button backButton;
 
         private static readonly Color ReadyColor = new Color(0.22f, 0.45f, 0.25f);
-        private static readonly Color OpenColor = new Color(0.22f, 0.26f, 0.34f);
-        private static readonly Color DoneColor = new Color(0.16f, 0.17f, 0.2f);
-        private static readonly Color LockedColor = new Color(0.13f, 0.13f, 0.15f);
+        private static readonly Color OpenColor = UiTone.Lift(new Color(0.22f, 0.26f, 0.34f));
+        private static readonly Color DoneColor = UiTone.Lift(new Color(0.16f, 0.17f, 0.2f));
+        private static readonly Color LockedColor = UiTone.Lift(new Color(0.13f, 0.13f, 0.15f));
 
         private Action _onChanged;
         private Action<string> _notice;
@@ -104,6 +104,7 @@ namespace HistoryHeroes.UI
             string line = null;
             SaveSystem.CommitResult r = SaveSystem.Commit(() => (line = Newcomer.ClaimDay(SaveSystem.Data, day, Clock.Now())) != null);
             _notice?.Invoke(r == SaveSystem.CommitResult.Saved ? line : SaveSystem.SaveFailedText);
+            if (r == SaveSystem.CommitResult.Saved) RewardPopup.Show(RewardPopup.Tail(line));
             Render(scrollToTop: false);
             _onChanged?.Invoke();
         }
@@ -113,6 +114,7 @@ namespace HistoryHeroes.UI
             string line = null;
             SaveSystem.CommitResult r = SaveSystem.Commit(() => (line = Newcomer.ClaimBonus(SaveSystem.Data, Clock.Now())) != null);
             _notice?.Invoke(r == SaveSystem.CommitResult.Saved ? line : SaveSystem.SaveFailedText);
+            if (r == SaveSystem.CommitResult.Saved) RewardPopup.Show(RewardPopup.Tail(line));
             Render(scrollToTop: false);
             _onChanged?.Invoke();
         }

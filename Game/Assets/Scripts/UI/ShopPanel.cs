@@ -76,9 +76,9 @@ namespace HistoryHeroes.UI
         [Tooltip("구매 확인 창 (로비의 고르기 창을 빌린다)")]
         [SerializeField] private ChoicePanel choice;
 
-        private static readonly Color RowNormal = new Color(0.13f, 0.15f, 0.2f);
-        private static readonly Color RowDisabled = new Color(0.1f, 0.1f, 0.12f);
-        private static readonly Color RowStarter = new Color(0.36f, 0.22f, 0.08f);
+        private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
+        private static readonly Color RowDisabled = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
+        private static readonly Color RowStarter = UiTone.Lift(new Color(0.36f, 0.22f, 0.08f));
 
         private bool _exchangeMode;
         private bool _goldShopMode;

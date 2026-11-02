@@ -29,7 +29,10 @@ namespace HistoryHeroes.UI
         }
 
         [SerializeField] private GameObject root;
-        [SerializeField] private Image backdrop;
+        [Tooltip("목록 모양 바탕 (그라데이션 · 무늬, 안전 영역 밖까지)")]
+        [SerializeField] private GameObject screenBackdrop;
+        [Tooltip("팝업 모양 바탕 (뒤 화면을 어둡게만)")]
+        [SerializeField] private GameObject dim;
         [Header("목록 모양")]
         [SerializeField] private GameObject listMode;
         [SerializeField] private TMP_Text titleLabel;
@@ -47,11 +50,9 @@ namespace HistoryHeroes.UI
         [SerializeField] private Button rightButton;
         [SerializeField] private Button dialogLater;
 
-        private static readonly Color Row = new Color(0.32f, 0.24f, 0.1f);
-        private static readonly Color InfoRow = new Color(0.1f, 0.1f, 0.12f);
+        private static readonly Color Row = UiTone.Lift(new Color(0.32f, 0.24f, 0.1f));
+        private static readonly Color InfoRow = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
         private static readonly Color DangerTint = new Color(0.78f, 0.27f, 0.27f);
-        private static readonly Color ListBackdrop = new Color(0.04f, 0.05f, 0.08f, 1f);
-        private static readonly Color DialogBackdrop = new Color(0f, 0f, 0f, 0.72f);
         private const float MinButtonHeight = 150f;
 
         /// <summary>"나중에"를 눌렀을 때 (고르기를 기다리는 쪽이 그만뒀다고 알아야 할 때)</summary>
@@ -115,7 +116,8 @@ namespace HistoryHeroes.UI
             bool dialog = actions.Count >= 1 && actions.Count <= 2;
             listMode.SetActive(!dialog);
             dialogMode.SetActive(dialog);
-            backdrop.color = dialog ? DialogBackdrop : ListBackdrop;
+            screenBackdrop.SetActive(!dialog);
+            dim.SetActive(dialog);
             if (dialog) ShowDialog(title, info, notes, actions, later);
             else ShowList(title, info, options, later);
 

@@ -22,8 +22,8 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text messageLabel;
         [SerializeField] private Button backButton;
 
-        private static readonly Color RowNormal = new Color(0.13f, 0.15f, 0.2f);
-        private static readonly Color RowDisabled = new Color(0.1f, 0.1f, 0.12f);
+        private static readonly Color RowNormal = UiTone.Lift(new Color(0.13f, 0.15f, 0.2f));
+        private static readonly Color RowDisabled = UiTone.Lift(new Color(0.1f, 0.1f, 0.12f));
 
         private System.Action _onClosed;
 

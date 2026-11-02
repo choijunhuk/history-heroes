@@ -14,7 +14,7 @@ namespace HistoryHeroes.EditorTools
     public static partial class SceneBuilder
     {
         private const float SettingsWidth = 1032f, SettingsRowHeight = 120f;
-        private static readonly Color SettingsCardColor = new Color(0.13f, 0.17f, 0.3f, 0.94f);
+        private static readonly Color SettingsCardColor = new Color(0.18f, 0.29f, 0.58f, 0.96f);
         private static readonly Color SettingsRowColor = new Color(0.08f, 0.1f, 0.18f, 1f);
         private static readonly Color Gold = new Color(1f, 0.85f, 0.35f);
 

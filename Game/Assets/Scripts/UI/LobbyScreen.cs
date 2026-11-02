@@ -458,7 +458,10 @@ namespace HistoryHeroes.UI
         // 상점이 열려 있으면 상점 화면이 알린다
         private void OnIapGranted(PurchaseEntry entry)
         {
-            if (shop == null || !shop.IsOpen) ShowNotice("결제한 상품을 받았어요: " + IapLedger.Text(entry));
+            if (shop != null && shop.IsOpen) return;
+            string granted = IapLedger.Text(entry);
+            ShowNotice("결제한 상품을 받았어요: " + granted);
+            RewardPopup.Show(granted);
         }
 
         private void OnIapNotice(string text)
@@ -668,7 +671,11 @@ namespace HistoryHeroes.UI
             int gold = 0;
             SaveSystem.CommitResult r = SaveSystem.Commit(() => (gold = Patrol.Claim(SaveSystem.Data, Clock.UnixSeconds)) > 0);
             if (r == SaveSystem.CommitResult.Saved) Audio.AudioManager.Play("coin");
-            if (r == SaveSystem.CommitResult.Saved) ShowNotice($"순찰 보상  골드 +{Wallet.Format(gold)} (최대 {Patrol.MaxHours}시간까지 쌓여요)");
+            if (r == SaveSystem.CommitResult.Saved)
+            {
+                ShowNotice($"순찰 보상  골드 +{Wallet.Format(gold)} (최대 {Patrol.MaxHours}시간까지 쌓여요)");
+                RewardPopup.Show($"<sprite name=gold>골드 +{Wallet.Format(gold)}");
+            }
             else if (r == SaveSystem.CommitResult.SaveFailed) ShowNotice(SaveSystem.SaveFailedText);
             else ShowNotice($"순찰 중이에요 · 시간당 골드 {Patrol.GoldPerHour(SaveSystem.Data)} (최대 {Patrol.MaxHours}시간)");
             RenderWallet();
