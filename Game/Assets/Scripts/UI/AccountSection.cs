@@ -59,10 +59,12 @@ namespace HistoryHeroes.UI
                 {
                     new ChoicePanel.Option
                     {
-                        Text = "<b>계정과 진행 모두 지우기</b>",
+                        Text = "모두 지우기",
+                        Danger = true,
                         OnChosen = () => _ = AccountService.DeleteAsync(),
                     },
-                });
+                },
+                laterText: "취소");
         }
 
         // ------------------------------------------------------------------ 로비가 끼우는 고르기 · 확인 창
@@ -96,12 +98,14 @@ namespace HistoryHeroes.UI
                 {
                     new ChoicePanel.Option
                     {
-                        Text = $"<b>이 기기 진행 쓰기</b>{(cloudFirst ? "" : " (추천)")}\n{device.Text(Name)}",
+                        Text = $"이 기기 진행{(cloudFirst ? "" : " (추천)")}\n<size=62%>{device.Text(Name).Replace(" · ", "\n")}</size>",
+                        Primary = !cloudFirst,
                         OnChosen = () => picked.TrySetResult(AccountService.Choice.Device),
                     },
                     new ChoicePanel.Option
                     {
-                        Text = $"<b>클라우드 진행 쓰기</b>{(cloudFirst ? " (추천)" : "")}\n{cloud.Text(Name)}",
+                        Text = $"클라우드 진행{(cloudFirst ? " (추천)" : "")}\n<size=62%>{cloud.Text(Name).Replace(" · ", "\n")}</size>",
+                        Primary = cloudFirst,
                         OnChosen = () => picked.TrySetResult(AccountService.Choice.Cloud),
                     },
                 },
@@ -113,8 +117,8 @@ namespace HistoryHeroes.UI
         {
             var answer = new TaskCompletionSource<bool>();
             choice.Open(title, info,
-                new[] { new ChoicePanel.Option { Text = $"<b>{yes}</b>", OnChosen = () => answer.TrySetResult(true) } },
-                () => answer.TrySetResult(false));
+                new[] { new ChoicePanel.Option { Text = yes, OnChosen = () => answer.TrySetResult(true) } },
+                () => answer.TrySetResult(false), "취소");
             return answer.Task;
         }
     }

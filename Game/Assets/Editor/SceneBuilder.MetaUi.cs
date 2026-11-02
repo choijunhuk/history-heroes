@@ -14,7 +14,8 @@ namespace HistoryHeroes.EditorTools
         private static ButtonList BuildButtonList(Transform parent, string name, Vector2 position, Vector2 size, float rowHeight = 96f, float fontSize = 27f)
         {
             RectTransform viewport = Rect(name, parent, Center, Center, Center, position, size);
-            Img(viewport, new Color(0f, 0f, 0f, 0.2f), null).raycastTarget = true;
+            // 배경은 투명 (2026-11-02 개발자: 줄이 적으면 빈 상자만 크게 보여 별로) — 끌어서 밀기는 그대로 받는다
+            Img(viewport, new Color(0f, 0f, 0f, 0f), null).raycastTarget = true;
             viewport.gameObject.AddComponent<RectMask2D>();
 
             RectTransform content = Rect("Content", viewport, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 0f));
@@ -27,8 +28,13 @@ namespace HistoryHeroes.EditorTools
             layout.childForceExpandHeight = false;
             content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            // 줄 글은 34 이상 (2026-11-02 개발자: 글씨가 작다). 칸을 넘는 긴 줄만 그 줄 혼자 줄어든다 (목록은 묶지 않는다 — UX.md)
+            fontSize = Mathf.Max(fontSize, 34f);
             Button template = Btn("RowTemplate", content, "", Vector2.zero, new Vector2(size.x - 16f, rowHeight), RowColor, out TMP_Text label);
             label.fontSize = fontSize;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 22f;
+            label.fontSizeMax = fontSize;
             label.alignment = TextAlignmentOptions.MidlineLeft;
             label.rectTransform.offsetMin = new Vector2(24f, 4f);
             label.rectTransform.offsetMax = new Vector2(-24f, -4f);
@@ -125,6 +131,18 @@ namespace HistoryHeroes.EditorTools
             if (label != null) label.margin = new Vector4(size + 6f, label.margin.y, label.margin.z, label.margin.w);
         }
 
+        /// <summary>좁은 단추용: 그림을 위 가운데에 크게, 글은 그 아래</summary>
+        private static void TopPicture(Button button, string rewardKey, float size)
+        {
+            Sprite sprite = RewardIcon(rewardKey);
+            if (button == null || sprite == null) return;
+            var rt = (RectTransform)button.transform;
+            RectTransform pic = Rect("Picture", rt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(size, size));
+            Img(pic, Color.white, sprite).preserveAspect = true;
+            TMP_Text label = button.GetComponentInChildren<TMP_Text>();
+            if (label != null) label.margin = new Vector4(label.margin.x, size + 4f, label.margin.z, label.margin.w);
+        }
+
         private static ShopPanel BuildShopPanel(Transform parent, GachaTable gacha)
         {
             RectTransform panel = Overlay(parent, "ShopPanel", out GameObject holder);
@@ -135,51 +153,49 @@ namespace HistoryHeroes.EditorTools
             TMP_Text wallet = Label("Wallet", panel, "", 26, TextAlignmentOptions.Center);
             Place(wallet.rectTransform, Center, Center, new Vector2(0f, 775f), new Vector2(1000f, 50f));
 
-            Button equipmentTab = Btn("EquipmentTab", panel, "장비 상자", new Vector2(-335f, 690f), new Vector2(325f, 78f), ButtonBlue, out _);
-            Button relicTab = Btn("RelicTab", panel, "유물 뽑기", new Vector2(0f, 690f), new Vector2(325f, 78f), ButtonBlue, out _);
-            Button gemTab = Btn("GemTab", panel, "보석", new Vector2(335f, 690f), new Vector2(325f, 78f), ButtonBlue, out _);
+            // 2026-11-02 화면 채우기: 위에 작게 몰려 있고 아래 절반이 비던 배치 → 단추를 키워 세로로 고르게
+            Button equipmentTab = Btn("EquipmentTab", panel, "장비 상자", new Vector2(-335f, 690f), new Vector2(325f, 96f), ButtonBlue, out _);
+            Button relicTab = Btn("RelicTab", panel, "유물 뽑기", new Vector2(0f, 690f), new Vector2(325f, 96f), ButtonBlue, out _);
+            Button gemTab = Btn("GemTab", panel, "보석", new Vector2(335f, 690f), new Vector2(325f, 96f), ButtonBlue, out _);
 
             RectTransform equipmentSection = Rect("EquipmentSection", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
-            Button normalBuy = Btn("NormalBuy", equipmentSection, "일반 상자", new Vector2(-252f, 560f), new Vector2(496f, 100f), ButtonBlue, out TMP_Text normalBuyLabel);
-            normalBuyLabel.fontSize = 28;
-            Button normalFree = Btn("NormalFree", equipmentSection, "광고 보고 무료", new Vector2(252f, 560f), new Vector2(496f, 100f), ButtonBlue, out TMP_Text normalFreeLabel);
-            normalFreeLabel.fontSize = 28;
+            Button normalBuy = Btn("NormalBuy", equipmentSection, "일반 상자", new Vector2(-252f, 545f), new Vector2(496f, 150f), ButtonBlue, out TMP_Text normalBuyLabel);
+            normalBuyLabel.fontSize = 32;
+            Button normalFree = Btn("NormalFree", equipmentSection, "광고 보고 무료", new Vector2(252f, 545f), new Vector2(496f, 150f), ButtonBlue, out TMP_Text normalFreeLabel);
+            normalFreeLabel.fontSize = 32;
 
-            TMP_Text premiumInfo = Label("PremiumInfo", equipmentSection, "", 28, TextAlignmentOptions.Center);
-            Place(premiumInfo.rectTransform, Center, Center, new Vector2(0f, 460f), new Vector2(1000f, 60f));
-            Button premium1 = Btn("Premium1", equipmentSection, "1회", new Vector2(-335f, 365f), new Vector2(325f, 112f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium1Label);
-            premium1Label.fontSize = 25;
-            Button premium10 = Btn("Premium10", equipmentSection, "10회", new Vector2(0f, 365f), new Vector2(325f, 112f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium10Label);
-            premium10Label.fontSize = 25;
-            Button ticket = Btn("Ticket", equipmentSection, "소환권", new Vector2(335f, 365f), new Vector2(325f, 112f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text ticketLabel);
-            ticketLabel.fontSize = 25;
-            // 상자 그림 (2026-10-29 개발자: "보상에 그림이 너무 없다") — 단추 왼쪽에
-            LeftPicture(normalBuy, "chest_normal");
-            LeftPicture(normalFree, "chest_normal");
-            LeftPicture(premium1, "chest_premium", 60f);
-            LeftPicture(premium10, "chest_premium", 60f);
-            LeftPicture(ticket, "ticket", 60f);
-            // 확률 줄은 의도한 두 번째 줄에 두고, 그림이 글의 가로 자리를 뺏지 않게 한다.
+            TMP_Text premiumInfo = Label("PremiumInfo", equipmentSection, "", 32, TextAlignmentOptions.Center);
+            Place(premiumInfo.rectTransform, Center, Center, new Vector2(0f, 432f), new Vector2(1000f, 56f));
+            Button premium1 = Btn("Premium1", equipmentSection, "1회", new Vector2(-335f, 295f), new Vector2(325f, 200f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium1Label);
+            Button premium10 = Btn("Premium10", equipmentSection, "10회", new Vector2(0f, 295f), new Vector2(325f, 200f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text premium10Label);
+            Button ticket = Btn("Ticket", equipmentSection, "소환권", new Vector2(335f, 295f), new Vector2(325f, 200f), new Color(0.45f, 0.32f, 0.12f), out TMP_Text ticketLabel);
+            // 상자 그림 (2026-10-29 개발자: "보상에 그림이 너무 없다") — 넓은 단추는 왼쪽, 좁은 3칸은 위에 크게
+            LeftPicture(normalBuy, "chest_normal", 120f);
+            LeftPicture(normalFree, "chest_normal", 120f);
+            TopPicture(premium1, "chest_premium", 88f);
+            TopPicture(premium10, "chest_premium", 88f);
+            TopPicture(ticket, "ticket", 88f);
+            // 확률 줄은 의도한 두 번째 줄에 두고 줄바꿈하지 않는다 (길면 줄인다)
             foreach (TMP_Text purchaseLabel in new[] { premium1Label, premium10Label, ticketLabel })
             {
                 purchaseLabel.textWrappingMode = TextWrappingModes.NoWrap;
                 purchaseLabel.enableAutoSizing = true;
                 purchaseLabel.fontSizeMin = 20f;
-                purchaseLabel.fontSizeMax = 25f;
+                purchaseLabel.fontSizeMax = 30f;
             }
 
-            Button rates = Btn("Rates", equipmentSection, "확률 보기", new Vector2(-335f, 265f), new Vector2(325f, 84f), ButtonGray, out TMP_Text ratesButtonLabel);
-            ratesButtonLabel.fontSize = 28;
-            Button exchange = Btn("Exchange", equipmentSection, "조각 교환소", new Vector2(0f, 265f), new Vector2(325f, 84f), ButtonGray, out TMP_Text exchangeLabel);
-            exchangeLabel.fontSize = 28;
-            Button goldShop = Btn("GoldShop", equipmentSection, "골드 상점", new Vector2(335f, 265f), new Vector2(325f, 84f), ButtonGray, out TMP_Text goldShopLabel);
-            goldShopLabel.fontSize = 28;
+            Button rates = Btn("Rates", equipmentSection, "확률 보기", new Vector2(-335f, 140f), new Vector2(325f, 100f), ButtonGray, out TMP_Text ratesButtonLabel);
+            ratesButtonLabel.fontSize = 32;
+            Button exchange = Btn("Exchange", equipmentSection, "조각 교환소", new Vector2(0f, 140f), new Vector2(325f, 100f), ButtonGray, out TMP_Text exchangeLabel);
+            exchangeLabel.fontSize = 32;
+            Button goldShop = Btn("GoldShop", equipmentSection, "골드 상점", new Vector2(335f, 140f), new Vector2(325f, 100f), ButtonGray, out TMP_Text goldShopLabel);
+            goldShopLabel.fontSize = 32;
 
-            TMP_Text message = Label("Message", equipmentSection, "", 26, TextAlignmentOptions.Center);
-            Place(message.rectTransform, Center, Center, new Vector2(0f, 165f), new Vector2(1000f, 60f));
-            TMP_Text premiumPity = Label("PremiumPity", equipmentSection, "", 26, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
-            Place(premiumPity.rectTransform, Center, Center, new Vector2(0f, 85f), new Vector2(1000f, 60f));
-            ButtonList list = BuildButtonList(equipmentSection, "List", new Vector2(0f, -345f), new Vector2(1000f, 720f), 90f, 26f);
+            TMP_Text message = Label("Message", equipmentSection, "", 30, TextAlignmentOptions.Center);
+            Place(message.rectTransform, Center, Center, new Vector2(0f, 52f), new Vector2(1000f, 50f));
+            TMP_Text premiumPity = Label("PremiumPity", equipmentSection, "", 30, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
+            Place(premiumPity.rectTransform, Center, Center, new Vector2(0f, -4f), new Vector2(1000f, 50f));
+            ButtonList list = BuildButtonList(equipmentSection, "List", new Vector2(0f, -385f), new Vector2(1000f, 690f), 120f, 32f);
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -800f), new Vector2(400f, 100f), ButtonGray, out _);
 
             // 장비 상자와 같은 화면 안에 두어 도감에서도 한 화면만 열면 된다.
@@ -359,14 +375,19 @@ namespace HistoryHeroes.EditorTools
         }
 
         /// <summary>
-        /// 고르기 창 (알림 권한 · 계정 진행 · 구매 확인 · 장비 고르기). 2026-11-01 카드 모양: 제목 리본 · 안내 · 카드 안 줄 목록 · 아래 큰 [나중에].
-        /// 줄은 모두 같은 높이, 글자 크기는 ButtonTextGroup이 맞춘다.
+        /// 고르기 창 (알림 권한 · 이어하기 · 계정 진행 · 구매 확인 · 장비 고르기). 두 모양을 같이 만들고 ChoicePanel이 고른다:
+        /// · ListMode (3개 이상): 제목 리본 · 안내 · 카드 안 줄 목록 · 아래 큰 [나중에]
+        /// · DialogMode (1~2개, 2026-11-02 개발자 요청): 어두운 배경 위 가운데 카드 (내용만큼 높이) · 아래 [왼쪽 | 오른쪽] 단추 · 작은 나중에
         /// </summary>
         private static ChoicePanel BuildChoicePanel(Transform parent)
         {
             RectTransform panel = Overlay(parent, "ChoicePanel", out GameObject holder);
             var screen = holder.AddComponent<ChoicePanel>();
-            RectTransform ribbon = Rect("TitleRibbon", panel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(860f, 130f));
+            Image backdrop = panel.GetComponent<Image>();
+
+            // ---- 목록 모양
+            RectTransform listMode = Rect("ListMode", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            RectTransform ribbon = Rect("TitleRibbon", listMode, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(860f, 130f));
             if (_kit != null)
             {
                 Image ribbonImage = Img(ribbon, new Color(0.86f, 0.26f, 0.24f), _kit.Ribbon);
@@ -378,14 +399,12 @@ namespace HistoryHeroes.EditorTools
             title.enableAutoSizing = true;
             title.fontSizeMin = 36f;
             title.fontSizeMax = 56f;
-            // 안내는 세 줄까지 (계정 삭제 확인 · 진행 고르기 설명)
-            TMP_Text info = Label("Info", panel, "", 32, TextAlignmentOptions.Center);
+            TMP_Text info = Label("Info", listMode, "", 32, TextAlignmentOptions.Center);
             Place(info.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -170f), new Vector2(980f, 170f));
             info.enableAutoSizing = true;
             info.fontSizeMin = 26f;
             info.fontSizeMax = 32f;
-            // 줄 목록 카드: 안내 아래 ~ 아래 큰 단추 위 (세로로 긴 화면이면 늘어난다)
-            RectTransform card = Rect("Card", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            RectTransform card = Rect("Card", listMode, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
             card.offsetMin = new Vector2(24f, 176f);
             card.offsetMax = new Vector2(-24f, -350f);
             Image cardImage = Img(card, SettingsCardColor, _kit != null ? _kit.Panel : null);
@@ -397,15 +416,84 @@ namespace HistoryHeroes.EditorTools
             listRect.offsetMin = new Vector2(16f, 16f);
             listRect.offsetMax = new Vector2(-16f, -16f);
             list.transform.Find("Content").gameObject.AddComponent<ButtonTextGroup>().SetScan(true);
-            Button later = Btn("Later", panel, "나중에", Vector2.zero, new Vector2(SettingsWidth, 130f), ButtonGray, out TMP_Text laterLabel);
+            Button later = Btn("Later", listMode, "나중에", Vector2.zero, new Vector2(SettingsWidth, 130f), ButtonGray, out TMP_Text laterLabel);
             var laterRect = (RectTransform)later.transform;
             laterRect.anchorMin = laterRect.anchorMax = new Vector2(0.5f, 0f);
             laterRect.pivot = new Vector2(0.5f, 0f);
             laterRect.anchoredPosition = new Vector2(0f, 24f);
             laterLabel.fontSize = 44;
+
+            // ---- 팝업 모양: 카드 높이 = 내용 (VerticalLayoutGroup + ContentSizeFitter), 가운데 고정
+            RectTransform dialogMode = Rect("DialogMode", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            RectTransform dialog = Rect("DialogCard", dialogMode, Center, Center, Center, new Vector2(0f, 40f), new Vector2(960f, 600f));
+            Image dialogImage = Img(dialog, new Color(0.16f, 0.2f, 0.34f, 0.98f), _kit != null ? _kit.Panel : null);
+            if (_kit != null) dialogImage.type = Image.Type.Sliced;
+            dialogImage.raycastTarget = true;
+            var shadow = dialog.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+            shadow.effectDistance = new Vector2(0f, -12f);
+            var column = dialog.gameObject.AddComponent<VerticalLayoutGroup>();
+            column.padding = new RectOffset(60, 60, 40, 36);
+            column.spacing = 30f;
+            column.childAlignment = TextAnchor.UpperCenter;
+            column.childControlWidth = column.childControlHeight = true;
+            column.childForceExpandWidth = true;
+            column.childForceExpandHeight = false;
+            dialog.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            RectTransform dialogRibbon = Rect("TitleRibbon", dialog, Center, Center, Center, Vector2.zero, new Vector2(840f, 120f));
+            dialogRibbon.gameObject.AddComponent<LayoutElement>().preferredHeight = 120f;
+            if (_kit != null)
+            {
+                Image ribbonImage = Img(dialogRibbon, new Color(0.86f, 0.26f, 0.24f), _kit.Ribbon);
+                ribbonImage.type = Image.Type.Sliced;
+            }
+
+            TMP_Text dialogTitle = Label("Title", dialogRibbon, "", 54, TextAlignmentOptions.Center);
+            Stretch(dialogTitle.rectTransform);
+            dialogTitle.enableAutoSizing = true;
+            dialogTitle.fontSizeMin = 36f;
+            dialogTitle.fontSizeMax = 54f;
+            TMP_Text dialogInfo = Label("Info", dialog, "", 40, TextAlignmentOptions.Center);
+            dialogInfo.textWrappingMode = TextWrappingModes.Normal;
+            TMP_Text dialogBody = Label("Body", dialog, "", 30, TextAlignmentOptions.Left, new Color(0.8f, 0.85f, 0.92f));
+            dialogBody.textWrappingMode = TextWrappingModes.Normal;
+            dialogBody.paragraphSpacing = 14f;
+
+            RectTransform row = Rect("ButtonRow", dialog, Center, Center, Center, Vector2.zero, new Vector2(840f, 150f));
+            var rowElement = row.gameObject.AddComponent<LayoutElement>();
+            rowElement.preferredHeight = 150f;
+            var rowLayout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.spacing = 24f;
+            rowLayout.childControlWidth = rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = rowLayout.childForceExpandHeight = true;
+            Button left = Btn("Left", row, "", Vector2.zero, new Vector2(408f, 150f), ButtonGray, out TMP_Text leftLabel);
+            Button right = Btn("Right", row, "", Vector2.zero, new Vector2(408f, 150f), ButtonGreen, out TMP_Text rightLabel);
+            foreach (TMP_Text l in new[] { leftLabel, rightLabel })
+            {
+                l.enableAutoSizing = true;
+                l.fontSizeMin = 28f;
+                l.fontSizeMax = 46f;
+                l.textWrappingMode = TextWrappingModes.Normal;
+            }
+
+            // 작은 글 단추 (두 고르기일 때만): 큰 단추 둘과 다투지 않게 배경 없이
+            RectTransform dialogLaterRect = Rect("Later", dialog, Center, Center, Center, Vector2.zero, new Vector2(840f, 80f));
+            dialogLaterRect.gameObject.AddComponent<LayoutElement>().preferredHeight = 80f;
+            Image laterHit = Img(dialogLaterRect, new Color(0f, 0f, 0f, 0f), null);
+            laterHit.raycastTarget = true;
+            var dialogLater = dialogLaterRect.gameObject.AddComponent<Button>();
+            dialogLater.targetGraphic = laterHit;
+            TMP_Text dialogLaterLabel = Label("Label", dialogLaterRect, "나중에", 36, TextAlignmentOptions.Center, new Color(0.72f, 0.77f, 0.86f));
+            Stretch(dialogLaterLabel.rectTransform);
+            dialogMode.gameObject.SetActive(false);
+
             using (var props = new Props(screen))
             {
-                props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("infoLabel", info).Ref("list", list).Ref("laterButton", later);
+                props.Ref("root", panel.gameObject).Ref("backdrop", backdrop)
+                    .Ref("listMode", listMode.gameObject).Ref("titleLabel", title).Ref("infoLabel", info).Ref("list", list).Ref("laterButton", later)
+                    .Ref("dialogMode", dialogMode.gameObject).Ref("dialogCard", dialog).Ref("dialogTitle", dialogTitle).Ref("dialogInfo", dialogInfo)
+                    .Ref("dialogBody", dialogBody).Ref("buttonRow", rowElement).Ref("leftButton", left).Ref("rightButton", right).Ref("dialogLater", dialogLater);
             }
 
             return screen;
@@ -479,7 +567,7 @@ namespace HistoryHeroes.EditorTools
             Place(title.rectTransform, Center, Center, new Vector2(0f, 820f), new Vector2(900f, 80f));
             TMP_Text info = Label("Info", panel, "", 26, TextAlignmentOptions.Center);
             Place(info.rectTransform, Center, Center, new Vector2(0f, 730f), new Vector2(1000f, 80f));
-            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 80f), new Vector2(1000f, 1160f), 150f, 30f);
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 80f), new Vector2(1000f, 1160f), 180f, 34f);
             TMP_Text message = Label("Message", panel, "", 28, TextAlignmentOptions.Center);
             Place(message.rectTransform, Center, Center, new Vector2(0f, -560f), new Vector2(1000f, 60f));
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -700f), new Vector2(400f, 110f), ButtonGray, out _);

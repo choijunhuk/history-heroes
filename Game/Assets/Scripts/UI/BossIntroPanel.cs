@@ -251,9 +251,10 @@ namespace HistoryHeroes.UI
                 slotButtons[i].interactable = record != null;
                 slotBackgrounds[i].color = record != null && record.id == _selectedRecordId ? Selected : Normal;
 
+                slotLabels[i].alignment = record == null ? TextAlignmentOptions.Center : TextAlignmentOptions.MidlineLeft;
                 if (record == null)
                 {
-                    slotLabels[i].text = $"{i + 1}번 칸 · 비어 있음";
+                    slotLabels[i].text = $"{i + 1}번 칸 · 비어 있음\n<size=85%><color=#A9B4C2>던전을 끝내면 기록이 생겨요</color></size>";
                     continue;
                 }
 

@@ -240,7 +240,7 @@ namespace HistoryHeroes.UI
                     // 칸에는 이름과 레벨만 (자세한 것은 위 큰 카드)
                     string state = !unlocked ? "<color=#FFB347>잠김</color>" : h == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"Lv {progress.level} <color=#FFD966>{new string('★', progress.stars)}</color>";
                     string tileName = h.id == "davinci" ? "다빈치" : h.id == "tesla" ? "테슬라" : h.displayName;
-                    heroLabels[i].text = $"<b>{tileName}</b>\n<size=70%>{state}</size>";
+                    heroLabels[i].text = $"<b>{tileName}</b>\n<size=90%>{state}</size>"; // 70%는 17px까지 작아져 못 읽었다 (글자 점검)
                     continue;
                 }
 

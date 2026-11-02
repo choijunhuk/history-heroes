@@ -80,8 +80,9 @@ namespace HistoryHeroes.UI
                 if (!exists) continue;
 
                 RunRecord record = data.RecordInSlot(i);
-                slotTitles[i].text = record != null ? RecordFormat.Title(record, database) : $"{i + 1}번 칸";
-                slotDetails[i].text = record != null ? RecordFormat.Details(record, database, CardSkills) : "비어 있어요. 던전을 끝내면 기록을 남길 수 있어요.";
+                slotTitles[i].text = record != null ? RecordFormat.Title(record, database) : string.Empty;
+                slotDetails[i].text = record != null ? RecordFormat.Details(record, database, CardSkills) : EmptyText($"{i + 1}번 칸", "던전을 끝내면 기록을 남길 수 있어요");
+                slotDetails[i].alignment = record != null ? TextAlignmentOptions.TopLeft : TextAlignmentOptions.Center;
                 deleteButtons[i].gameObject.SetActive(record != null && !record.locked);
                 deleteLabels[i].text = _confirmSlot == i ? "한 번 더 누르면 지워요" : "지우기";
                 if (lockButtons != null && i < lockButtons.Length) lockButtons[i].gameObject.SetActive(record != null);
@@ -89,10 +90,17 @@ namespace HistoryHeroes.UI
             }
 
             RunRecord temp = data.TempRecord;
-            if (tempTitle != null) tempTitle.text = temp != null ? "임시 칸 · " + RecordFormat.Title(temp, database) : "임시 칸 · 비어 있음";
-            if (tempDetails != null) tempDetails.text = temp != null ? RecordFormat.Details(temp, database, CardSkills) : "보관함이 찼을 때 새 기록 하나를 둘 수 있어요.";
+            if (tempTitle != null) tempTitle.text = temp != null ? "임시 칸 · " + RecordFormat.Title(temp, database) : string.Empty;
+            if (tempDetails != null)
+            {
+                tempDetails.text = temp != null ? RecordFormat.Details(temp, database, CardSkills) : EmptyText("임시 칸", "보관함이 찼을 때 새 기록 하나를 둘 수 있어요");
+                tempDetails.alignment = temp != null ? TextAlignmentOptions.TopLeft : TextAlignmentOptions.Center;
+            }
             if (moveTempButton != null) moveTempButton.gameObject.SetActive(temp != null && data.FirstFreeSlot() >= 0);
         }
+
+        /// <summary>빈 칸은 카드 가운데 한 덩어리 (위에 붙은 한 줄 + 빈 상자로 보이지 않게)</summary>
+        private static string EmptyText(string name, string hint) => $"<size=125%>{name} · 비어 있음</size>\n<color=#A9B4C2>{hint}</color>";
 
         private void Delete(int slot)
         {

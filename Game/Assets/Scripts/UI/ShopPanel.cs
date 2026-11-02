@@ -477,13 +477,13 @@ namespace HistoryHeroes.UI
                 : "유료 보석은 구매 후 7일 이내, 사용하지 않았으면 청약철회할 수 있어요. 사용한 보석·뽑기는 철회가 제한돼요.";
             var options = new List<ChoicePanel.Option>
             {
-                new ChoicePanel.Option { Text = $"받는 것: {IapLedger.Text(get)}\n<size=85%><color=#A9B4C2>{split}</color></size>" },
-                new ChoicePanel.Option { Text = $"<size=85%>{withdrawal}</size>" },
-                new ChoicePanel.Option { Text = "<size=85%>미성년자가 법정대리인 동의 없이 결제하면 취소될 수 있어요.</size>" },
+                new ChoicePanel.Option { Text = $"<color=#FFFFFF><size=120%>받는 것: {IapLedger.Text(get)}</size></color>\n{split}" },
+                new ChoicePanel.Option { Text = $"· {withdrawal}" },
+                new ChoicePanel.Option { Text = "· 미성년자가 법정대리인 동의 없이 결제하면 취소될 수 있어요." },
             };
             if (Account.AccountService.State != Account.AccountState.Linked) // LiveOps 3-1: 알리기만 하고 막지 않는다
-                options.Add(new ChoicePanel.Option { Text = "<size=85%><color=#FFB347>게스트는 기기를 잃으면 구매한 보석을 되찾을 수 없어요. 설정 → 계정에서 카카오를 연결해 두세요.</color></size>" });
-            options.Add(new ChoicePanel.Option { Text = $"<b>구매  {price}</b>", OnChosen = () => Purchase(productId, get) });
+                options.Add(new ChoicePanel.Option { Text = "<color=#FFB347>· 게스트는 기기를 잃으면 구매한 보석을 되찾을 수 없어요. 설정 → 계정에서 카카오를 연결해 두세요.</color>" });
+            options.Add(new ChoicePanel.Option { Text = $"구매  {price}", OnChosen = () => Purchase(productId, get) });
             choice.Open("구매 확인", $"<b>{item.Title}</b> · {price}", options, laterText: "취소");
         }
 

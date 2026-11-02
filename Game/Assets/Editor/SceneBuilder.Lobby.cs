@@ -192,12 +192,19 @@ namespace HistoryHeroes.EditorTools
             var screen = holder.AddComponent<ModeInfoPanel>();
             TMP_Text title = Label("Title", panel, "", 60, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 820f), new Vector2(900f, 100f));
-            TMP_Text body = Label("Body", panel, "", 42, TextAlignmentOptions.Top);
-            Place(body.rectTransform, Center, Center, new Vector2(0f, 60f), new Vector2(1000f, 1360f));
-            body.lineSpacing = 10f;
-            body.enableAutoSizing = true; // 글이 길면 줄인다 (읽기 쉬운 크기 우선)
-            body.fontSizeMin = 26f;
-            body.fontSizeMax = 42f;
+            // 안내 카드: 높이 = 글 (제목 아래 ~ 단추 위 가운데). 2026-11-02 개발자: "박스 안에 위로 정렬 = 별로"
+            RectTransform card = Rect("BodyCard", panel, Center, Center, Center, new Vector2(0f, 90f), new Vector2(1000f, 900f));
+            Image cardImage = Img(card, SettingsCardColor, _kit != null ? _kit.Panel : null);
+            if (_kit != null) cardImage.type = Image.Type.Sliced;
+            var column = card.gameObject.AddComponent<VerticalLayoutGroup>();
+            column.padding = new RectOffset(48, 48, 48, 48);
+            column.childControlWidth = column.childControlHeight = true;
+            column.childForceExpandWidth = true;
+            column.childForceExpandHeight = false;
+            card.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            TMP_Text body = Label("Body", card, "", 38, TextAlignmentOptions.Center);
+            body.lineSpacing = 8f;
+            body.textWrappingMode = TextWrappingModes.Normal;
             Button primary = Btn("ModePrimary", panel, "", new Vector2(-250f, -660f), new Vector2(440f, 140f), ButtonGreen, out TMP_Text primaryLabel);
             Half(primaryLabel);
             Button secondary = Btn("ModeSecondary", panel, "", new Vector2(250f, -660f), new Vector2(440f, 140f), new Color(0.3f, 0.2f, 0.55f), out TMP_Text secondaryLabel);
@@ -269,7 +276,7 @@ namespace HistoryHeroes.EditorTools
             {
                 buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 238f - i * 236f), new Vector2(980f, 190f), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
-                label.fontSize = 27;
+                label.fontSize = 30;
                 label.alignment = TextAlignmentOptions.MidlineLeft;
                 label.rectTransform.offsetMin = new Vector2(30f, 10f);
                 label.rectTransform.offsetMax = new Vector2(-30f, -10f);
@@ -321,10 +328,13 @@ namespace HistoryHeroes.EditorTools
             {
                 RectTransform box = Rect($"Slot{i + 1}", panel, Center, Center, Center, new Vector2(0f, 500f - i * 320f), new Vector2(980f, 300f));
                 Img(box, RowColor, null);
-                titles[i] = Label("Title", box, "", 32, TextAlignmentOptions.TopLeft);
+                titles[i] = Label("Title", box, "", 34, TextAlignmentOptions.TopLeft);
                 Place(titles[i].rectTransform, Center, Center, new Vector2(0f, 105f), new Vector2(920f, 50f));
-                details[i] = Label("Details", box, "", 24, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
-                Place(details[i].rectTransform, Center, Center, new Vector2(0f, 0f), new Vector2(920f, 155f));
+                details[i] = Label("Details", box, "", 28, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
+                Place(details[i].rectTransform, Center, Center, new Vector2(0f, -2f), new Vector2(920f, 150f));
+                details[i].enableAutoSizing = true;
+                details[i].fontSizeMin = 22f;
+                details[i].fontSizeMax = 28f;
                 locks[i] = Btn("Lock", box, "잠그기", new Vector2(-320f, -115f), new Vector2(300f, 65f), ButtonBlue, out lockLabels[i]);
                 deletes[i] = Btn("Delete", box, "지우기", new Vector2(320f, -115f), new Vector2(300f, 65f), new Color(0.5f, 0.22f, 0.22f), out deleteLabels[i]);
                 lockLabels[i].fontSize = deleteLabels[i].fontSize = 26;
@@ -332,10 +342,13 @@ namespace HistoryHeroes.EditorTools
 
             RectTransform tempBox = Rect("Temp", panel, Center, Center, Center, new Vector2(0f, -460f), new Vector2(980f, 300f));
             Img(tempBox, RowColor, null);
-            TMP_Text tempTitle = Label("Title", tempBox, "임시 칸", 32, TextAlignmentOptions.TopLeft);
+            TMP_Text tempTitle = Label("Title", tempBox, "임시 칸", 34, TextAlignmentOptions.TopLeft);
             Place(tempTitle.rectTransform, Center, Center, new Vector2(0f, 105f), new Vector2(920f, 50f));
-            TMP_Text tempDetails = Label("Details", tempBox, "", 24, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
-            Place(tempDetails.rectTransform, Center, Center, new Vector2(0f, 0f), new Vector2(920f, 155f));
+            TMP_Text tempDetails = Label("Details", tempBox, "", 28, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
+            Place(tempDetails.rectTransform, Center, Center, new Vector2(0f, -2f), new Vector2(920f, 150f));
+            tempDetails.enableAutoSizing = true;
+            tempDetails.fontSizeMin = 22f;
+            tempDetails.fontSizeMax = 28f;
             Button moveTemp = Btn("MoveTemp", tempBox, "보관함으로 옮기기", new Vector2(0f, -115f), new Vector2(620f, 65f), ButtonBlue, out _);
 
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -790f), new Vector2(400f, 100f), ButtonGray, out _);
@@ -416,7 +429,7 @@ namespace HistoryHeroes.EditorTools
                 backgrounds[i] = buttons[i].GetComponent<Image>();
                 RectTransform lr = label.rectTransform;
                 lr.anchorMin = new Vector2(0f, 0f);
-                lr.anchorMax = new Vector2(1f, 0.30f);
+                lr.anchorMax = new Vector2(1f, 0.40f); // 이름 + 레벨 두 줄이 22px 아래로 줄지 않게
                 lr.offsetMin = new Vector2(6f, 2f);
                 lr.offsetMax = new Vector2(-6f, -2f);
                 label.margin = Vector4.zero;

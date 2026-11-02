@@ -306,6 +306,7 @@ namespace HistoryHeroes.UI
                 new ChoicePanel.Option
                 {
                     Text = "이 기록 포기하기",
+                    Danger = true,
                     OnChosen = () =>
                     {
                         if (RecordSaveScreen.DiscardPending() == SaveSystem.CommitResult.Saved) GameSession.ToLobby();
@@ -396,10 +397,10 @@ namespace HistoryHeroes.UI
                 : $"{ChapterTitle(run.chapter)} 던전 방 {run.room}부터";
             var options = new List<ChoicePanel.Option>
             {
-                new ChoicePanel.Option { Text = $"<b>이어하기</b>  <size=80%>{where}{who}</size>", OnChosen = () => GameSession.StartResume(run) },
+                new ChoicePanel.Option { Text = "<color=#FFD27A>그만두면 이번 판은 사라져요 (보상 없음)</color>" },
                 new ChoicePanel.Option
                 {
-                    Text = "<b>그만두기</b>  <size=80%>이번 판은 사라져요 (보상 없음)</size>",
+                    Text = "그만두기",
                     OnChosen = () =>
                     {
                         SaveSystem.Data.run = new RunSnapshot();
@@ -407,8 +408,9 @@ namespace HistoryHeroes.UI
                         ShowNotice("이번 판을 그만뒀어요");
                     },
                 },
+                new ChoicePanel.Option { Text = "이어하기", Primary = true, OnChosen = () => GameSession.StartResume(run) },
             };
-            choice.Open("끝나지 않은 판이 있어요", "앱이 꺼져서 멈춘 판을 이어할 수 있어요", options);
+            choice.Open("끝나지 않은 판이 있어요", $"앱이 꺼져서 멈춘 판이 있어요\n<b>{where}</b>{who}", options);
             return true;
         }
 
@@ -422,19 +424,10 @@ namespace HistoryHeroes.UI
             if (choice == null || data.settings.notifyAsked || !data.tutorialDone || !playedOnce) return false;
             var options = new List<ChoicePanel.Option>
             {
+                new ChoicePanel.Option { Text = "밤 9시~아침 8시에는 보내지 않아요 · 하루 2번까지\n설정에서 언제든 바꿀 수 있어요" },
                 new ChoicePanel.Option
                 {
-                    Text = "<b>받을게요</b>  <size=80%>하트가 다 차면 · 순찰이 가득 차면</size>",
-                    OnChosen = () =>
-                    {
-                        SaveSystem.Data.settings.notifyAsked = true;
-                        SaveSystem.Save();
-                        Common.LocalNotices.RequestPermission();
-                    },
-                },
-                new ChoicePanel.Option
-                {
-                    Text = "<b>괜찮아요</b>  <size=80%>설정에서 언제든 켤 수 있어요</size>",
+                    Text = "괜찮아요",
                     OnChosen = () =>
                     {
                         GameSettings s = SaveSystem.Data.settings;
@@ -444,8 +437,19 @@ namespace HistoryHeroes.UI
                         SaveSystem.Save();
                     },
                 },
+                new ChoicePanel.Option
+                {
+                    Text = "받을게요",
+                    Primary = true,
+                    OnChosen = () =>
+                    {
+                        SaveSystem.Data.settings.notifyAsked = true;
+                        SaveSystem.Save();
+                        Common.LocalNotices.RequestPermission();
+                    },
+                },
             };
-            choice.Open("알림을 받을까요?", "밤 9시~아침 8시에는 보내지 않아요 · 하루 2번까지", options);
+            choice.Open("알림을 받을까요?", "하트가 다 차거나 순찰 보상이 가득 차면 알려 드려요", options);
             return true;
         }
 
@@ -778,7 +782,7 @@ namespace HistoryHeroes.UI
 
             bool available = DailyRules.OfficialAvailable(data);
             modeInfo.Open("일일 도전", sb.ToString(), available ? "공식 도전" : "공식 도전 (오늘 완료)", available, () => GameSession.TryStartDaily(true),
-                "연습\n<size=60%>기록·보상 없음</size>", true, () => GameSession.TryStartDaily(false), Render);
+                "연습\n<size=70%>기록·보상 없음</size>", true, () => GameSession.TryStartDaily(false), Render);
         }
 
         private void OpenBoss()
