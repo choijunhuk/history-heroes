@@ -367,7 +367,7 @@ namespace HistoryHeroes.EditorTools
                 slotLabels[i] = label;
             }
 
-            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 120f), new Vector2(1000f, 940f), 100f, 27f);
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 120f), new Vector2(1000f, 940f), 130f, 36f);
             TMP_Text detail = Label("Detail", panel, "", 27, TextAlignmentOptions.Center);
             Place(detail.rectTransform, Center, Center, new Vector2(0f, -470f), new Vector2(1000f, 150f));
             detail.lineSpacing = 6f;
@@ -398,9 +398,9 @@ namespace HistoryHeroes.EditorTools
             var screen = holder.AddComponent<NewcomerPanel>();
             TMP_Text title = Label("Title", panel, "신규 7일 미션", 60, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 840f), new Vector2(900f, 90f));
-            TMP_Text attendance = Label("Attendance", panel, "", 32, TextAlignmentOptions.Center);
+            TMP_Text attendance = Label("Attendance", panel, "", 36, TextAlignmentOptions.Center);
             Place(attendance.rectTransform, Center, Center, new Vector2(0f, 730f), new Vector2(1000f, 110f));
-            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, -20f), new Vector2(1000f, 1340f), 150f, 28f);
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, -20f), new Vector2(1000f, 1340f), 200f, 40f);
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -790f), new Vector2(400f, 100f), ButtonGray, out _);
             using (var props = new Props(screen)) props.Ref("root", panel.gameObject).Ref("titleLabel", title).Ref("attendanceLabel", attendance).Ref("list", list).Ref("backButton", back);
             return screen;
@@ -578,7 +578,7 @@ namespace HistoryHeroes.EditorTools
             Place(title.rectTransform, Center, Center, new Vector2(0f, 850f), new Vector2(900f, 80f));
             TMP_Text summary = Label("Summary", panel, "", 26, TextAlignmentOptions.Center);
             Place(summary.rectTransform, Center, Center, new Vector2(0f, 760f), new Vector2(1000f, 100f));
-            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 90f), new Vector2(1000f, 1180f), 100f, 27f);
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, 90f), new Vector2(1000f, 1180f), 130f, 36f);
             TMP_Text detail = Label("Detail", panel, "", 26, TextAlignmentOptions.Center);
             Place(detail.rectTransform, Center, Center, new Vector2(65f, -575f), new Vector2(850f, 110f));
             Image detailIcon = Rect("DetailIcon", panel, Center, Center, Center, new Vector2(-440f, -575f), new Vector2(90f, 90f)).gameObject.AddComponent<Image>();

@@ -52,6 +52,7 @@ namespace HistoryHeroes.EditorTools
             RunePanel runePanel = BuildRunePanel(safe, meta, database);
             PetPanel petPanel = BuildPetPanel(safe, meta);
             MissionPanel missionPanel = BuildMissionPanel(safe, meta, roster);
+            MailPanel mailPanel = BuildMailPanel(safe);
             ChoicePanel choicePanel = BuildChoicePanel(safe);
             // 계정 진행 고르기 · 삭제 확인은 고르기 창을 빌린다 (설정보다 나중에 만들어 위에 덮인다)
             using (var props = new Props(settingsPanel.GetComponentInChildren<AccountSection>(true))) props.Ref("choice", choicePanel);
@@ -83,7 +84,8 @@ namespace HistoryHeroes.EditorTools
                     .Ref("newcomerButton", newcomerButton).Ref("newcomerLabel", newcomerLabel).Ref("newcomerPanel", newcomerPanel)
                     .Ref("heroUpgradeBadge", m.HeroBadge).Ref("newcomerBadge", m.NewcomerBadge)
                     .Ref("patrolButton", patrolButton).Ref("patrolLabel", patrolLabel).Ref("opening", opening)
-                    .Ref("homeMissionButton", m.HomeMission).Ref("homeMissionLabel", m.HomeMissionLabel).Ref("homeMissionFill", m.HomeMissionFill).Ref("goldLabel", m.Gold).Ref("gemLabel", m.Gem).Ref("heartLabel", m.Heart).Ref("levelLabel", m.Level).Ref("diorama", m.Diorama);
+                    .Ref("homeMissionButton", m.HomeMission).Ref("homeMissionLabel", m.HomeMissionLabel).Ref("homeMissionFill", m.HomeMissionFill).Ref("goldLabel", m.Gold).Ref("gemLabel", m.Gem).Ref("heartLabel", m.Heart).Ref("levelLabel", m.Level).Ref("diorama", m.Diorama)
+                    .Ref("mailButton", m.Mail).Ref("mailBadge", m.MailBadge).Ref("mail", mailPanel);
             }
 
             // 안내를 닫고 새 계정으로 진행하면 최신 저장을 잃을 수 있어 닫기 단추를 두지 않는다.
@@ -105,6 +107,7 @@ namespace HistoryHeroes.EditorTools
             BuildRewardPopup(safe).transform.SetAsLastSibling();
 
             ApplyTopBars(safe);
+            BuildPages(safe, main, m, lobby, shopPanel, heroPanel, missionPanel, archivePanel);
             AddUiSounds(root);
             ApplyTypeScale();
             ApplyButtonGroups();
@@ -236,6 +239,54 @@ namespace HistoryHeroes.EditorTools
 
         /// <summary>패널 공통: 컴포넌트를 단 부모(늘 켜짐) + 덮는 판(root, 끄고 켬)</summary>
         /// <param name="color">바탕색. 반투명(알파 0.95 미만)이면 무늬 배경 없이 뒤 화면이 어둡게 비친다</param>
+        /// <summary>
+        /// 아래 탭 5개(상점 · 영웅 · 전투 · 미션 · 기록)를 옆으로 넘기는 화면으로 (2026-11-03 개발자: "팝업처럼 띄우는 느낌 말고
+        /// 각각 창 분리돼서 넘길 수 있게"). 탭 줄은 홈 밖 "Nav"로 빼서 탭 화면 위에 늘 보이고, 탭 창은 탭 줄 위에서 끝난다.
+        /// 탭 창의 뒤로 단추 · 위 화살표는 숨긴다 (LobbyPager가 닫을 때 뒤로 단추를 대신 누른다). 그 밖의 창은 탭 줄까지 덮는다.
+        /// </summary>
+        private static void BuildPages(RectTransform safe, RectTransform main, LobbyMainUi m, LobbyScreen lobby, Component shop, Component hero, Component mission, Component archive)
+        {
+            RectTransform nav = Rect("Nav", safe, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            m.TabBar.SetParent(nav, false);
+            Button[] tabs = { m.Shop, m.Hero, m.HomeTab, m.Missions, m.Archive };
+            foreach (Button tab in tabs) tab.transform.SetParent(nav, false);
+
+            Component[] panels = { shop, hero, null, mission, archive };
+            var pages = new RectTransform[panels.Length];
+            var backs = new Button[panels.Length];
+            int sibling = main.GetSiblingIndex() + 1;
+            for (int i = 0; i < panels.Length; i++)
+            {
+                if (i == LobbyPager.Home)
+                {
+                    pages[i] = main;
+                    continue;
+                }
+
+                var holder = (RectTransform)panels[i].transform;
+                holder.SetSiblingIndex(sibling++); // 홈 바로 뒤 = 탭 줄 아래
+                holder.offsetMin = new Vector2(holder.offsetMin.x, m.TabBar.sizeDelta.y);
+                pages[i] = holder;
+
+                var panel = (RectTransform)holder.Find("Panel");
+                var intro = panel.GetComponent<PanelIntro>();
+                if (intro != null) Object.DestroyImmediate(intro); // 커지며 뜨는 팝업 느낌 대신 옆에서 밀려 들어온다
+                Transform back = panel.Find("Back");
+                backs[i] = back.GetComponent<Button>();
+                back.gameObject.SetActive(false);
+                Transform bar = panel.Find("TopBar");
+                if (bar == null) continue;
+                Transform arrow = bar.Find("TopBack");
+                if (arrow != null) arrow.gameObject.SetActive(false);
+                if (bar.Find("TitleRibbon") is RectTransform ribbon) ribbon.anchoredPosition = new Vector2(-262f, ribbon.anchoredPosition.y); // 화살표 자리까지 왼쪽으로
+            }
+
+            nav.SetSiblingIndex(sibling);
+            var pager = nav.gameObject.AddComponent<LobbyPager>();
+            using (var props = new Props(pager)) props.Refs("pages", pages).Refs("tabs", tabs).Refs("backs", backs);
+            using (var props = new Props(lobby)) props.Ref("pager", pager);
+        }
+
         private static RectTransform Overlay(Transform parent, string name, out GameObject holder, Color? color = null)
         {
             RectTransform h = Rect(name, parent, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
@@ -349,8 +400,9 @@ namespace HistoryHeroes.EditorTools
 
             TMP_Text title = Label("Title", panel, "기록 보관함", 64, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.35f));
             Place(title.rectTransform, Center, Center, new Vector2(0f, 790f), new Vector2(900f, 100f));
-            TMP_Text help = Label("Help", panel, "기록은 보스맵에서 계속 쓸 수 있어요. 잠그면 덮어쓰기와 지우기를 막아요.", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
-            Place(help.rectTransform, Center, Center, new Vector2(0f, 700f), new Vector2(1000f, 70f));
+            // 2026-11-03 개발자 "너무 작게 배치된듯 · 스크롤 해도 되니까 크기 키우면": 칸 300 → 370, 글 34/28 → 42/34, 단추 65 → 92
+            TMP_Text help = Label("Help", panel, "기록은 보스맵에서 계속 쓸 수 있어요. 잠그면 덮어쓰기와 지우기를 막아요.", 32, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.7f));
+            Place(help.rectTransform, Center, Center, new Vector2(0f, 712f), new Vector2(1000f, 90f));
 
             var titles = new TMP_Text[3];
             var details = new TMP_Text[3];
@@ -360,30 +412,31 @@ namespace HistoryHeroes.EditorTools
             var lockLabels = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
             {
-                RectTransform box = Rect($"Slot{i + 1}", panel, Center, Center, Center, new Vector2(0f, 500f - i * 320f), new Vector2(980f, 300f));
+                RectTransform box = Rect($"Slot{i + 1}", panel, Center, Center, Center, new Vector2(0f, 470f - i * 388f), new Vector2(1000f, 370f));
                 Img(box, RowColor, null);
-                titles[i] = Label("Title", box, "", 34, TextAlignmentOptions.TopLeft);
-                Place(titles[i].rectTransform, Center, Center, new Vector2(0f, 105f), new Vector2(920f, 50f));
-                details[i] = Label("Details", box, "", 28, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
-                Place(details[i].rectTransform, Center, Center, new Vector2(0f, -2f), new Vector2(920f, 150f));
+                titles[i] = Label("Title", box, "", 42, TextAlignmentOptions.TopLeft);
+                Place(titles[i].rectTransform, Center, Center, new Vector2(0f, 130f), new Vector2(940f, 64f));
+                details[i] = Label("Details", box, "", 34, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
+                Place(details[i].rectTransform, Center, Center, new Vector2(0f, 5f), new Vector2(940f, 180f));
                 details[i].enableAutoSizing = true;
-                details[i].fontSizeMin = 22f;
-                details[i].fontSizeMax = 28f;
-                locks[i] = Btn("Lock", box, "잠그기", new Vector2(-320f, -115f), new Vector2(300f, 65f), ButtonBlue, out lockLabels[i]);
-                deletes[i] = Btn("Delete", box, "지우기", new Vector2(320f, -115f), new Vector2(300f, 65f), new Color(0.5f, 0.22f, 0.22f), out deleteLabels[i]);
-                lockLabels[i].fontSize = deleteLabels[i].fontSize = 26;
+                details[i].fontSizeMin = 26f;
+                details[i].fontSizeMax = 34f;
+                locks[i] = Btn("Lock", box, "잠그기", new Vector2(-300f, -128f), new Vector2(340f, 92f), ButtonBlue, out lockLabels[i]);
+                deletes[i] = Btn("Delete", box, "지우기", new Vector2(300f, -128f), new Vector2(340f, 92f), new Color(0.5f, 0.22f, 0.22f), out deleteLabels[i]);
+                lockLabels[i].fontSize = deleteLabels[i].fontSize = 34;
             }
 
-            RectTransform tempBox = Rect("Temp", panel, Center, Center, Center, new Vector2(0f, -460f), new Vector2(980f, 300f));
+            RectTransform tempBox = Rect("Temp", panel, Center, Center, Center, new Vector2(0f, 470f - 3 * 388f), new Vector2(1000f, 370f));
             Img(tempBox, RowColor, null);
-            TMP_Text tempTitle = Label("Title", tempBox, "임시 칸", 34, TextAlignmentOptions.TopLeft);
-            Place(tempTitle.rectTransform, Center, Center, new Vector2(0f, 105f), new Vector2(920f, 50f));
-            TMP_Text tempDetails = Label("Details", tempBox, "", 28, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
-            Place(tempDetails.rectTransform, Center, Center, new Vector2(0f, -2f), new Vector2(920f, 150f));
+            TMP_Text tempTitle = Label("Title", tempBox, "임시 칸", 42, TextAlignmentOptions.TopLeft);
+            Place(tempTitle.rectTransform, Center, Center, new Vector2(0f, 130f), new Vector2(940f, 64f));
+            TMP_Text tempDetails = Label("Details", tempBox, "", 34, TextAlignmentOptions.TopLeft, new Color(1f, 1f, 1f, 0.85f));
+            Place(tempDetails.rectTransform, Center, Center, new Vector2(0f, 5f), new Vector2(940f, 180f));
             tempDetails.enableAutoSizing = true;
-            tempDetails.fontSizeMin = 22f;
-            tempDetails.fontSizeMax = 28f;
-            Button moveTemp = Btn("MoveTemp", tempBox, "보관함으로 옮기기", new Vector2(0f, -115f), new Vector2(620f, 65f), ButtonBlue, out _);
+            tempDetails.fontSizeMin = 26f;
+            tempDetails.fontSizeMax = 34f;
+            Button moveTemp = Btn("MoveTemp", tempBox, "보관함으로 옮기기", new Vector2(0f, -128f), new Vector2(640f, 92f), ButtonBlue, out TMP_Text moveTempLabel);
+            moveTempLabel.fontSize = 34;
 
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -790f), new Vector2(400f, 100f), ButtonGray, out _);
 

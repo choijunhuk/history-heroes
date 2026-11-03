@@ -558,6 +558,8 @@ namespace HistoryHeroes.Records
             if (data.schemaVersion < 12) data.consent = new ConsentRecord();
             // 12 → 13: 실제 결제가 없던 저장이다. 빈 장부 = 결제한 적 없음 (첫 구매 2배 · 첫 결제 패키지 모두 남아 있다).
             if (data.schemaVersion < 13) data.purchases = new PurchaseSave();
+            // 13 → 14: 우편함이 생겼다. 빈 우편함으로 시작 (환영 선물은 로비가 EnsureWelcome으로 보낸다).
+            if (data.schemaVersion < 14) data.mail = new MailSave();
             data.schemaVersion = SaveData.CurrentSchemaVersion;
         }
 
@@ -566,6 +568,11 @@ namespace HistoryHeroes.Records
         {
             data.seenFirstUseHints ??= new List<string>();
             data.consent ??= new ConsentRecord();
+            data.mail ??= new MailSave();
+            data.mail.items ??= new List<MailItem>();
+            data.mail.deliveredIds ??= new List<string>();
+            data.mail.items.RemoveAll(m => m == null || string.IsNullOrEmpty(m.id));
+            foreach (MailItem m in data.mail.items) m.rewards ??= new List<MailReward>();
             data.purchases ??= new PurchaseSave();
             data.purchases.ledger ??= new List<PurchaseEntry>();
             data.purchases.ledger.RemoveAll(e => e == null || string.IsNullOrEmpty(e.transactionId));

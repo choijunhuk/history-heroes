@@ -196,7 +196,7 @@ namespace HistoryHeroes.UI
                 int gems = a.gems[Mathf.Min(claimed, a.gems.Length - 1)];
                 string goal = string.Format(a.goal, target.ToString("N0"));
                 string stage = tiers > 1 ? $" {claimed + 1}/{tiers}단계" : string.Empty;
-                text = $"<b>{a.title}</b>{stage}  <size=85%>{a.category}</size>\n<size=88%>{goal}  {Mathf.Min(progress, target):N0}/{target:N0}  ·  보석 {gems}</size>";
+                text = $"<b>{a.title}</b>{stage}  <size=85%>{a.category}</size>\n<size=80%>{goal}  {Mathf.Min(progress, target):N0}/{target:N0}  ·  보석 {gems}</size>";
                 if (can)
                 {
                     AchievementDef def = a;
@@ -226,7 +226,7 @@ namespace HistoryHeroes.UI
         {
             string progress = Progress(m);
             string mark = m.done ? "<color=#7CE38B>[완료]</color> " : string.Empty;
-            return $"{mark}<b>{m.title}</b>\n<size=88%>{progress}  ·  활동 +{m.points}{(m.done ? " (받음)" : string.Empty)}</size>";
+            return $"{mark}<b>{m.title}</b>\n<size=80%>{progress}  ·  활동 +{m.points}{(m.done ? " (받음)" : string.Empty)}</size>";
         }
 
         private void RenderChests(List<ChestDef> chests, Func<ChestDef, bool> canClaim, Func<ChestDef, bool> taken, int points)
@@ -248,7 +248,7 @@ namespace HistoryHeroes.UI
                 chestButtons[i].GetComponent<Image>().color = done ? ChestTaken : ready ? ChestReady : ChestLocked;
                 if (chestGlows != null && i < chestGlows.Length && chestGlows[i] != null) chestGlows[i].gameObject.SetActive(ready);
                 string state = done ? " <color=#7CE38B>[받음]</color>" : ready ? " <color=#FFD966>[받기]</color>" : " <color=#A9B4C2>[잠김]</color>";
-                chestLabels[i].text = $"<b>{c.points}</b>{state}\n<size=78%>{MissionService.RewardText(c, hero)}</size>"; // 70%는 21px로 작았다
+                chestLabels[i].text = $"<b>{c.points}</b>{state}\n<size=76%>{MissionService.RewardText(c, hero)}</size>"; // 70%는 21px로 작았다
             }
         }
 

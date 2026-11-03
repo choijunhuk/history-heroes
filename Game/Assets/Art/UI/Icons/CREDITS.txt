@@ -92,3 +92,4 @@ dav_tank | gears | lorc | https://game-icons.net/1x1/lorc/gears.html
 dav_spiral | wing-cloak | lorc | https://game-icons.net/1x1/lorc/wing-cloak.html
 zhuge_gate | stone-tower | lorc | https://game-icons.net/1x1/lorc/stone-tower.html
 zhuge_sevenstar | tornado | lorc | https://game-icons.net/1x1/lorc/tornado.html
+mail | envelope (직접 그림, Pillow) | History Heroes | —

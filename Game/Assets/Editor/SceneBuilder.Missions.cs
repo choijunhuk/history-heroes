@@ -122,45 +122,46 @@ namespace HistoryHeroes.EditorTools
             string[] names = { "일일", "주간", "업적" };
             for (int i = 0; i < 3; i++)
             {
-                tabs[i] = Btn($"Tab{names[i]}", panel, names[i], new Vector2(-336f + i * 336f, 750f), new Vector2(328f, 96f), RowColor, out tabLabels[i]);
-                tabLabels[i].fontSize = 34;
+                tabs[i] = Btn($"Tab{names[i]}", panel, names[i], new Vector2(-336f + i * 336f, 740f), new Vector2(328f, 120f), RowColor, out tabLabels[i]);
+                tabLabels[i].fontSize = 42; // 탭 글 키움 (실기 피드백: 미션이 작다)
             }
 
-            TMP_Text info = Label("Info", panel, "", 27, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.85f));
-            Place(info.rectTransform, Center, Center, new Vector2(0f, 660f), new Vector2(1000f, 60f));
+            TMP_Text info = Label("Info", panel, "", 34, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.85f));
+            Place(info.rectTransform, Center, Center, new Vector2(0f, 630f), new Vector2(1000f, 56f));
 
             var chests = new Button[5];
             var chestLabels = new TMP_Text[5];
             var chestGlows = new Image[5];
             for (int i = 0; i < 5; i++)
             {
-                chests[i] = Btn($"Chest{i + 1}", panel, "", new Vector2(-404f + i * 202f, 540f), new Vector2(194f, 150f), RowColor, out chestLabels[i]);
+                chests[i] = Btn($"Chest{i + 1}", panel, "", new Vector2(-404f + i * 202f, 480f), new Vector2(194f, 190f), RowColor, out chestLabels[i]);
                 RectTransform glowRect = Rect("ReadyGlow", chests[i].transform, Vector2.zero, Vector2.one, Center, Vector2.zero, new Vector2(20f, 20f));
                 chestGlows[i] = Img(glowRect, new Color(1f, 0.8f, 0.25f, 0.38f), _kit != null ? _kit.Glow : null);
                 chestGlows[i].raycastTarget = false;
                 glowRect.SetAsFirstSibling();
                 glowRect.gameObject.SetActive(false);
-                chestLabels[i].fontSize = 30;
+                chestLabels[i].fontSize = 34;
                 chestLabels[i].enableAutoSizing = true;
-                chestLabels[i].fontSizeMin = 16f;
-                chestLabels[i].fontSizeMax = 30f;
+                chestLabels[i].fontSizeMin = 26f;
+                chestLabels[i].fontSizeMax = 34f;
                 chestLabels[i].rectTransform.offsetMin = new Vector2(6f, 4f);
                 chestLabels[i].rectTransform.offsetMax = new Vector2(-6f, -4f);
             }
 
-            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, -80f), new Vector2(1000f, 1040f), 118f, 30f);
+            ButtonList list = BuildButtonList(panel, "List", new Vector2(0f, -150f), new Vector2(1000f, 1040f), 170f, 40f);
             Transform template = list.transform.Find("Content/RowTemplate");
-            RectTransform track = Rect("ProgressTrack", template, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(-48f, 10f));
+            ((RectTransform)template.GetComponentInChildren<TMP_Text>().transform).offsetMin = new Vector2(24f, 30f); // 굵어진 진행 막대 위로 글을 올린다
+            RectTransform track = Rect("ProgressTrack", template, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 12f), new Vector2(-48f, 16f));
             Img(track, new Color(0f, 0f, 0f, 0.45f), null).raycastTarget = false;
             RectTransform fillRect = Rect("ProgressFill", track, Vector2.zero, new Vector2(0f, 1f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
             Image progressFill = Img(fillRect, new Color(0.95f, 0.77f, 0.32f, 0.94f), null);
             progressFill.raycastTarget = false;
-            TMP_Text message = Label("Message", panel, "", 28, TextAlignmentOptions.Center);
-            Place(message.rectTransform, Center, Center, new Vector2(0f, -650f), new Vector2(1000f, 90f));
+            TMP_Text message = Label("Message", panel, "", 32, TextAlignmentOptions.Center);
+            Place(message.rectTransform, Center, Center, new Vector2(0f, -702f), new Vector2(1000f, 60f));
 
-            Button reroll = Btn("Reroll", panel, "미션 바꾸기", new Vector2(-230f, -790f), new Vector2(500f, 100f), new Color(0.32f, 0.25f, 0.45f), out TMP_Text rerollLabel);
-            rerollLabel.fontSize = 28;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(290f, -790f), new Vector2(380f, 100f), ButtonGray, out _);
+            Button reroll = Btn("Reroll", panel, "미션 바꾸기", new Vector2(0f, -822f), new Vector2(1000f, 110f), new Color(0.32f, 0.25f, 0.45f), out TMP_Text rerollLabel); // 아래 탭 줄 바로 위 (탭 화면, 2026-11-03)
+            rerollLabel.fontSize = 36;
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -860f), new Vector2(380f, 100f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {

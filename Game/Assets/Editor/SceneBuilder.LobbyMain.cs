@@ -19,9 +19,10 @@ namespace HistoryHeroes.EditorTools
         private sealed class LobbyMainUi
         {
             public TMP_Text Wallet, Notice, Gold, Gem, Heart, Level, Chapter, ChapterInfo, HeroName;
-            public Button Prev, Next, Dungeon, Boss, Survival, Rift, Daily, Archive, Codex, Hero, Settings, Shop, Missions, Newcomer, Patrol, HomeMission;
+            public Button Prev, Next, Dungeon, Boss, Survival, Rift, Daily, Archive, Codex, Hero, Settings, Shop, Missions, Newcomer, Patrol, HomeMission, HomeTab, Mail;
             public Image HomeMissionFill;
-            public TMP_Text BossLabel, SurvivalLabel, RiftLabel, DailyLabel, ArchiveLabel, CodexLabel, MissionLabel, NewcomerLabel, PatrolLabel, HomeMissionLabel, HeroBadge, NewcomerBadge;
+            public TMP_Text BossLabel, SurvivalLabel, RiftLabel, DailyLabel, ArchiveLabel, CodexLabel, MissionLabel, NewcomerLabel, PatrolLabel, HomeMissionLabel, HeroBadge, NewcomerBadge, MailBadge;
+            public RectTransform TabBar;
             public LobbyDiorama Diorama;
         }
 
@@ -401,7 +402,12 @@ namespace HistoryHeroes.EditorTools
             Place(ui.NewcomerBadge.rectTransform, Center, Center, new Vector2(68f, 70f), new Vector2(48f, 48f));
             ui.NewcomerBadge.raycastTarget = false;
             ui.Codex = IconButton("Codex", main, "codex", "조합 도감", new Vector2(-430f, 195f), new Vector2(170f, 200f), new Color(0.6f, 0.4f, 0.9f), out ui.CodexLabel);
-            ui.Settings = IconButton("Settings", main, "settings", "설정", new Vector2(430f, 410f), new Vector2(170f, 200f), side, out _);
+            ui.Settings = IconButton("Settings", main, "settings", "설정", new Vector2(430f, 625f), new Vector2(170f, 200f), side, out _);
+            // 우편함 (LiveOps 4장, 2026-11-03): 안 받은 우편이 있으면 빨간 점
+            ui.Mail = IconButton("Mail", main, "mail", "우편", new Vector2(430f, 410f), new Vector2(170f, 200f), side, out _);
+            ui.MailBadge = Label("ReadyBadge", ui.Mail.transform, "", 40, TextAlignmentOptions.Center, new Color(1f, 0.28f, 0.25f));
+            Place(ui.MailBadge.rectTransform, Center, Center, new Vector2(68f, 70f), new Vector2(48f, 48f));
+            ui.MailBadge.raycastTarget = false;
             ui.Patrol = IconButton("Patrol", main, "patrol", "순찰", new Vector2(430f, 195f), new Vector2(170f, 200f), side, out ui.PatrolLabel); // 부가 메뉴는 차분하게 (전체 UI 검토 7번: 던전 시작 단추와 다투지 않게)
 
             // ----- 가운데: 섬 무대 위 영웅 이름표 -----
@@ -466,6 +472,7 @@ namespace HistoryHeroes.EditorTools
 
             // ----- 아래 탭 5개: 상점 · 영웅 · [전투] · 미션 · 기록 -----
             RectTransform bar = Rect("TabBar", main, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 200f));
+            ui.TabBar = bar;
             Img(bar, new Color(0.07f, 0.09f, 0.17f, 0.97f), null);
             if (_kit != null)
             {
@@ -480,16 +487,14 @@ namespace HistoryHeroes.EditorTools
             ui.HeroBadge = Label("UpgradeBadge", ui.Hero.transform, "", 40, TextAlignmentOptions.Center, new Color(1f, 0.28f, 0.25f));
             Place(ui.HeroBadge.rectTransform, Center, Center, new Vector2(80f, 70f), new Vector2(48f, 48f));
             ui.HeroBadge.raycastTarget = false;
-            Button home = IconButton("HomeTab", main, "sword", "전투", new Vector2(0f, tabY + 26f), new Vector2(224f, 206f), LobbyYellow, out _);
-            home.image.color = Vivid(LobbyYellow); // 지금 고른 탭 = 노랑 (단추 역할이 아니라 "고름" 상태 색이라 세 가지 규칙에서 뺀다)
-            home.interactable = false; // 지금 화면 (고른 탭은 높고 노랗게)
-            ColorBlock homeColors = home.colors;
-            homeColors.disabledColor = Color.white;
-            home.colors = homeColors;
+            // 탭 5개는 같은 크기로 만들고 고른 탭만 LobbyPager가 키우고 올린다 (탭을 옆으로 넘기는 화면, 2026-11-03)
+            Button home = IconButton("HomeTab", main, "sword", "전투", new Vector2(0f, tabY), new Vector2(200f, 172f), LobbyYellow, out _);
+            home.image.color = Vivid(LobbyYellow); // 고른 탭 색 = 노랑 (단추 역할이 아니라 "고름" 상태 색이라 세 가지 규칙에서 뺀다). LobbyPager가 이 색을 읽는다
+            ui.HomeTab = home;
             ui.Missions = IconButton("Missions", main, "mission", "미션", new Vector2(214f, tabY), new Vector2(200f, 172f), tab, out ui.MissionLabel);
             ui.Archive = IconButton("Archive", main, "archive", "기록", new Vector2(428f, tabY), new Vector2(200f, 172f), tab, out ui.ArchiveLabel);
             foreach (Button b in new[] { ui.Shop, ui.Hero, ui.Missions, ui.Archive }) Bottom(b, ((RectTransform)b.transform).anchoredPosition.x, tabY);
-            Bottom(home, 0f, tabY + 26f);
+            Bottom(home, 0f, tabY);
             return ui;
         }
     }

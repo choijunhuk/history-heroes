@@ -99,6 +99,12 @@ namespace HistoryHeroes.UI
         [SerializeField] private LobbyGuide firstUseGuide;
         [Tooltip("첫 실행 동의 (LiveOps 19장). 동의 전에는 로비의 나머지 시작 절차를 미룬다")]
         [SerializeField] private ConsentPanel consent;
+        [Header("아래 탭 화면 넘기기 · 우편함 (2026-11-03)")]
+        [Tooltip("있으면 상점 · 영웅 · 미션 · 기록 탭은 팝업 대신 옆으로 넘기는 화면")]
+        [SerializeField] private LobbyPager pager;
+        [SerializeField] private Button mailButton;
+        [SerializeField] private TMP_Text mailBadge;
+        [SerializeField] private MailPanel mail;
 
         private int _chapter = 1;
         private float _nextWallet;
@@ -167,13 +173,23 @@ namespace HistoryHeroes.UI
             dungeonButton.onClick.AddListener(StartDungeon);
             bossButton.onClick.AddListener(OpenBoss);
             if (survivalButton != null) survivalButton.onClick.AddListener(StartSurvival);
-            archiveButton.onClick.AddListener(() => archive.Open(Render));
             codexButton.onClick.AddListener(() => codex.Open());
-            heroButton.onClick.AddListener(() => heroPanel.Open(Render));
             if (settingsButton != null) settingsButton.onClick.AddListener(() => settings.Open());
-            if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
-            if (missionButton != null) missionButton.onClick.AddListener(() => missions.Open(Render));
-            if (homeMissionButton != null) homeMissionButton.onClick.AddListener(() => missions.Open(Render));
+            if (mailButton != null && mail != null) mailButton.onClick.AddListener(() => mail.Open(Render));
+            if (pager != null)
+            {
+                // 탭 단추는 LobbyPager가 받는다 (누르거나 옆으로 밀면 그 화면으로)
+                pager.OpenPage = OpenTabPage;
+                if (homeMissionButton != null) homeMissionButton.onClick.AddListener(() => pager.GoTo(TabMissions));
+            }
+            else
+            {
+                archiveButton.onClick.AddListener(() => archive.Open(Render));
+                heroButton.onClick.AddListener(() => heroPanel.Open(Render));
+                if (shopButton != null) shopButton.onClick.AddListener(() => shop.Open(Render));
+                if (missionButton != null) missionButton.onClick.AddListener(() => missions.Open(Render));
+                if (homeMissionButton != null) homeMissionButton.onClick.AddListener(() => missions.Open(Render));
+            }
             if (newcomerButton != null) newcomerButton.onClick.AddListener(() => newcomerPanel.Open(Render, ShowNotice));
             if (patrolButton != null) patrolButton.onClick.AddListener(ClaimPatrol);
             if (riftButton != null) riftButton.onClick.AddListener(OpenRift);
@@ -191,6 +207,8 @@ namespace HistoryHeroes.UI
             }
 
             if (Patrol.Ensure(data, Clock.UnixSeconds)) SaveSystem.MarkDirty();
+            // 우편함: 환영 선물 (계정마다 한 번, 2026-11-03 개발자 "초반에 다이아나 뽑기권") · 기한 지난 우편 정리
+            if (Meta.MailBox.Refresh(data, Clock.Now())) SaveSystem.MarkDirty();
 
             // 균열 주간 시즌 · 일일 도전 날짜가 바뀌었으면 새로
             if (RiftRules.EnsureWeek(data, Clock.Now())) SaveSystem.MarkDirty();
@@ -300,6 +318,20 @@ namespace HistoryHeroes.UI
             Render();
             if (!string.IsNullOrEmpty(lobbyHero) && heroPanel != null) heroPanel.Open(Render, lobbyHero);
             _readyForGuide = !tutorial;
+        }
+
+        private const int TabShop = 0, TabHero = 1, TabMissions = 3, TabArchive = 4;
+
+        /// <summary>LobbyPager가 넘어갈 탭 창을 연다 (닫히면 로비 글을 새로)</summary>
+        private void OpenTabPage(int index)
+        {
+            switch (index)
+            {
+                case TabShop: shop.Open(Render); break;
+                case TabHero: heroPanel.Open(Render); break;
+                case TabMissions: missions.Open(Render); break;
+                case TabArchive: archive.Open(Render); break;
+            }
         }
 
         /// <summary>결과 화면에서 꺼진 판은 새 판보다 먼저 기록을 저장하거나 명시적으로 포기한다.</summary>
@@ -707,6 +739,7 @@ namespace HistoryHeroes.UI
             codexButtonLabel.text = $"조합 도감\n{found}/{codex.RecipeCount}";
             HeroData hero = HeroUnlock.Selected(data, roster);
             if (heroUpgradeBadge != null) heroUpgradeBadge.text = UpgradeNotice.HasHeroUpgrade(data, metaTable, roster) ? "●" : string.Empty;
+            if (mailBadge != null) mailBadge.text = Meta.MailBox.UnclaimedCount(data, Clock.Now()) > 0 ? "●" : string.Empty;
             heroButtonLabel.text = hero != null ? $"{hero.displayName} · {hero.ClassLabel}" : "영웅"; // 가운데 무대 영웅 이름표
             if (heroButtonPortraits != null && hero != null) heroButtonPortraits.ShowOnly(roster.heroes.IndexOf(hero));
             if (diorama != null) diorama.Show(_chapter, hero); // 고른 구간의 섬 + 지금 영웅

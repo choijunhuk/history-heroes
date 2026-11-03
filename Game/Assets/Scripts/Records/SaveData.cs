@@ -27,7 +27,8 @@ namespace HistoryHeroes.Records
         /// <summary>11: 기능 첫 사용 안내를 본 이력. 옛 저장은 아직 안 본 상태로 시작한다.</summary>
         /// <summary>12: 첫 실행 동의 기록 (약관·개인정보 버전, 동의 시각, 만 14세 확인). 옛 저장은 동의 기록이 없어 다음 로비에서 한 번 묻는다.</summary>
         /// <summary>13: 실제 결제 기록 (거래 번호별 지급 내역 · 첫 구매 2배를 쓴 상품 · 첫 결제 패키지). 옛 저장은 결제한 적 없음으로 시작한다.</summary>
-        public const int CurrentSchemaVersion = 13;
+        /// <summary>14: 우편함 (받은 우편 · 지금까지 도착한 우편 번호). 옛 저장은 빈 우편함으로 시작한다 (환영 선물은 다음 로비에서 도착).</summary>
+        public const int CurrentSchemaVersion = 14;
 
         public int schemaVersion = CurrentSchemaVersion;
 
@@ -144,6 +145,8 @@ namespace HistoryHeroes.Records
         public string tutorialRecordId;
         public AttendanceSave attendance = new AttendanceSave();
         public NewcomerSave newcomer = new NewcomerSave();
+        /// <summary>우편함 (Meta/MailBox가 다룬다)</summary>
+        public MailSave mail = new MailSave();
         public PatrolSave patrol = new PatrolSave();
         /// <summary>사용자 ID (문의용 무작위 번호, 이름·연락처와 연결되지 않음)</summary>
         public string userId;
@@ -890,6 +893,36 @@ namespace HistoryHeroes.Records
     {
         public string id;
         public int value;
+    }
+
+    /// <summary>우편함 저장 (LiveOps 4장). 지금은 기기 안 우편만 — 서버 우편은 나중</summary>
+    [Serializable]
+    public sealed class MailSave
+    {
+        public List<MailItem> items = new List<MailItem>();
+        /// <summary>지금까지 도착한 우편 번호 (정리해도 남겨서 같은 우편이 다시 오지 않는다)</summary>
+        public List<string> deliveredIds = new List<string>();
+    }
+
+    [Serializable]
+    public sealed class MailItem
+    {
+        public string id;
+        public string title;
+        public string body;
+        /// <summary>보낸 시각 · 만료 시각 (UTC 초). 만료 0 = 기한 없음</summary>
+        public long sentAt;
+        public long expiresAt;
+        public List<MailReward> rewards = new List<MailReward>();
+        public bool claimed;
+    }
+
+    /// <summary>우편 보상 한 줄. kind: gold · gem · ticket · gear_shard</summary>
+    [Serializable]
+    public sealed class MailReward
+    {
+        public string kind;
+        public int amount;
     }
 
     /// <summary>순찰 (LiveOps 8장): 마지막으로 받은 때부터 쌓인다 (최대 12시간)</summary>

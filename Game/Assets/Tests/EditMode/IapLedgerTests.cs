@@ -182,7 +182,7 @@ namespace HistoryHeroes.Tests
                 var store = new SaveStore(folder);
                 File.WriteAllText(store.MainPath, SaveStore.Sign("{\"schemaVersion\":12,\"gold\":55,\"gemsFree\":40,\"gemsPaid\":0,\"tutorialDone\":true}"));
                 SaveData save = store.Load();
-                Assert.AreEqual(13, SaveData.CurrentSchemaVersion);
+                Assert.GreaterOrEqual(SaveData.CurrentSchemaVersion, 13, "결제 장부는 저장 구조 13부터 있다 (14 = 우편함, 2026-11-03)");
                 Assert.AreEqual(SaveData.CurrentSchemaVersion, save.schemaVersion);
                 Assert.AreEqual((55, 40), (save.gold, save.gemsFree), "옛 진행은 그대로");
                 Assert.IsNotNull(save.purchases);
