@@ -209,12 +209,12 @@ namespace HistoryHeroes.EditorTools
             column.childForceExpandWidth = true;
             column.childForceExpandHeight = false;
             card.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            TMP_Text body = Label("Body", card, "", 38, TextAlignmentOptions.Center);
+            TMP_Text body = Label("Body", card, "", 44, TextAlignmentOptions.Center); // 2026-11-03 "작게 배치" 전체 점검: 38 → 44
             body.lineSpacing = 8f;
             body.textWrappingMode = TextWrappingModes.Normal;
-            Button primary = Btn("ModePrimary", panel, "", new Vector2(-250f, -660f), new Vector2(440f, 140f), ButtonGreen, out TMP_Text primaryLabel);
+            Button primary = Btn("ModePrimary", panel, "", new Vector2(-255f, -660f), new Vector2(490f, 160f), ButtonGreen, out TMP_Text primaryLabel);
             Half(primaryLabel);
-            Button secondary = Btn("ModeSecondary", panel, "", new Vector2(250f, -660f), new Vector2(440f, 140f), new Color(0.3f, 0.2f, 0.55f), out TMP_Text secondaryLabel);
+            Button secondary = Btn("ModeSecondary", panel, "", new Vector2(255f, -660f), new Vector2(490f, 160f), new Color(0.3f, 0.2f, 0.55f), out TMP_Text secondaryLabel);
             Half(secondaryLabel);
             Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -810f), new Vector2(400f, 100f), ButtonGray, out _);
             using (var props = new Props(screen))
@@ -228,10 +228,10 @@ namespace HistoryHeroes.EditorTools
 
             void Half(TMP_Text label)
             {
-                label.fontSize = 36;
+                label.fontSize = 40;
                 label.enableAutoSizing = true;
-                label.fontSizeMin = 22f;
-                label.fontSizeMax = 36f;
+                label.fontSizeMin = 28f;
+                label.fontSizeMax = 40f;
                 label.rectTransform.offsetMin = new Vector2(12f, 0f);
                 label.rectTransform.offsetMax = new Vector2(-12f, 0f);
             }
@@ -345,13 +345,13 @@ namespace HistoryHeroes.EditorTools
                 trialButtons[i] = Btn(trialNames[i], panel, trialTitles[i], new Vector2(-388f + i * 194f, 780f), new Vector2(184f, 90f), ButtonBlue, out trialLabels[i]);
                 trialLabels[i].fontSize = 22f;
             }
-            TMP_Text tests = Label("Tests", panel, "", 32, TextAlignmentOptions.Center);
+            TMP_Text tests = Label("Tests", panel, "", 36, TextAlignmentOptions.Center); // 2026-11-03 "작게 배치" 전체 점검: 글 32/28/26 → 36/32/30, 칸 글 30 → 36
             Place(tests.rectTransform, Center, Center, new Vector2(0f, 580f), new Vector2(980f, 80f));
-            TMP_Text recommend = Label("Recommend", panel, "", 28, TextAlignmentOptions.Center, new Color(0.7f, 0.9f, 1f));
+            TMP_Text recommend = Label("Recommend", panel, "", 32, TextAlignmentOptions.Center, new Color(0.7f, 0.9f, 1f));
             Place(recommend.rectTransform, Center, Center, new Vector2(0f, 500f), new Vector2(980f, 70f));
             Button weeklyGoal = Btn("ChooseGodGoal", panel, "주간 목표 선택", new Vector2(0f, 420f), new Vector2(920f, 70f), ButtonBlue, out TMP_Text weeklyLabel);
             weeklyLabel.fontSize = 25;
-            TMP_Text pick = Label("Pick", panel, "싸울 기록을 고르세요 (기록은 이겨도 져도 사라지지 않아요)", 26, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
+            TMP_Text pick = Label("Pick", panel, "싸울 기록을 고르세요 (기록은 이겨도 져도 사라지지 않아요)", 30, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f));
             Place(pick.rectTransform, Center, Center, new Vector2(0f, 356f), new Vector2(1000f, 40f)); // 위 줄이 늘 때마다 1번 칸에 가려졌다 → 칸 위 끝(333)보다 위에
 
             var buttons = new Button[3];
@@ -359,27 +359,33 @@ namespace HistoryHeroes.EditorTools
             var labels = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
             {
-                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 238f - i * 236f), new Vector2(980f, 190f), RowColor, out TMP_Text label);
+                buttons[i] = Btn($"Slot{i + 1}", panel, "", new Vector2(0f, 218f - i * 248f), new Vector2(1000f, 230f), RowColor, out TMP_Text label);
                 backgrounds[i] = buttons[i].GetComponent<Image>();
-                label.fontSize = 30;
+                label.fontSize = 36;
+                label.enableAutoSizing = true; // 기록 4줄이 칸에 들어가게만 줄인다
+                label.fontSizeMin = 30f;
+                label.fontSizeMax = 36f;
                 label.alignment = TextAlignmentOptions.MidlineLeft;
                 label.rectTransform.offsetMin = new Vector2(30f, 10f);
                 label.rectTransform.offsetMax = new Vector2(-30f, -10f);
                 labels[i] = label;
             }
 
-            Button temp = Btn("Temp", panel, "", new Vector2(0f, -440f), new Vector2(980f, 210f), ButtonBlue, out TMP_Text tempLabel);
+            Button temp = Btn("Temp", panel, "", new Vector2(0f, -526f), new Vector2(1000f, 230f), ButtonBlue, out TMP_Text tempLabel);
             Image tempBackground = temp.GetComponent<Image>();
-            tempLabel.fontSize = 27;
+            tempLabel.fontSize = 34;
+            tempLabel.enableAutoSizing = true;
+            tempLabel.fontSizeMin = 30f;
+            tempLabel.fontSizeMax = 36f;
             tempLabel.alignment = TextAlignmentOptions.MidlineLeft;
             tempLabel.rectTransform.offsetMin = new Vector2(30f, 10f);
             tempLabel.rectTransform.offsetMax = new Vector2(-30f, -10f);
 
-            Button start = Btn("Start", panel, "도전", new Vector2(-150f, -620f), new Vector2(560f, 125f), ButtonGreen, out TMP_Text startLabel); // 주 행동
+            Button start = Btn("Start", panel, "도전", new Vector2(-150f, -720f), new Vector2(560f, 125f), ButtonGreen, out TMP_Text startLabel); // 주 행동
             startLabel.fontSize = 46;
-            Button practice = Btn("Practice", panel, "연습\n<size=72%>하트·보상 없음</size>", new Vector2(320f, -620f), new Vector2(330f, 125f), ButtonGray, out TMP_Text practiceLabel);
+            Button practice = Btn("Practice", panel, "연습\n<size=72%>하트·보상 없음</size>", new Vector2(320f, -720f), new Vector2(330f, 125f), ButtonGray, out TMP_Text practiceLabel);
             practiceLabel.fontSize = 36;
-            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -780f), new Vector2(400f, 100f), ButtonGray, out _);
+            Button back = Btn("Back", panel, "뒤로", new Vector2(0f, -858f), new Vector2(400f, 100f), ButtonGray, out _);
 
             using (var props = new Props(screen))
             {
