@@ -90,7 +90,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 2
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -115,12 +115,12 @@ TextureImporter:
     buildTarget: Android
     maxTextureSize: 2048
     resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
+    textureFormat: 47
+    textureCompression: 2
+    compressionQuality: 70
     crunchedCompression: 0
     allowsAlphaSplitting: 0
-    overridden: 0
+    overridden: 1
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
@@ -273,12 +273,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      equip_weapon: 4693052961907166921
-      equip_necklace: 3966883049849899952
-      equip_gloves: 4165032561072358247
       equip_armor: 4877242951200819919
       equip_belt: 4484528276118849963
       equip_boots: 474499159363699728
+      equip_gloves: 4165032561072358247
+      equip_necklace: 3966883049849899952
+      equip_weapon: 4693052961907166921
   mipmapLimitGroupName:
   pSDRemoveMatte: 0
   userData:

@@ -17,6 +17,7 @@
 |---|---|---|
 | 뽑기 | 저장 성공 뒤 닫힌 상자 → 실제 열린 상자 → 결과 카드. 1회는 중앙 큰 그림, 10회는 두 열. 실제 이름·등급·보장·중복·승급 표시 | `ShopPanel`, `GachaReveal` |
 | 그림 | 일반·고급 열린 상자와 장비 6슬롯 대표 그림 제작. 유물은 기존 실제 유물 그림 재사용 | `Resources/UI/Gacha`, `Docs/Credits.md` |
+| 모바일 이미지 메모리 | 열린 상자는 1254px 무압축 대신 최대512px/ETC2 RGBA, 장비 atlas는 1536×1024/ETC2 RGBA로 설정. atlas를1024로줄이면높이683이되어압축불가라원래비율/4배수크기를유지. 실제Sprite6개·압축후Play결과확인 | 새 이미지 3개의 `TextureImporter` 설정 |
 | 한글 | 동적 TMP가 기본 폰트 재질을 써 일부 한글이 청록 사각형으로 보이던 문제 수정. 기존 Body 재질과 spriteAsset도 함께 복사 | `GachaReveal.Label`, `GachaRevealTests` |
 | 영웅 선택 | 반복 판의 첫 일반 카드에 습득 가능한 전용기 한 장, 공용/전용 띠 구분, 실제 전용 조합 재료 조건 표시 | `SkillManager`, `SkillCardView`, `HeroPanel`, `CodexPanel` |
 | 설명 읽기 | 요약은 30pt, 상세는 40pt/본문 34pt를 유지하고 줄 높이를 늘림. 다음 일반 선택 목록에서는 원래 크기로 복원. 잠긴 영웅의 무료/보스/신 시련 해금 방법 유지 | `ButtonList`, `HeroPanel`, `HeroReadabilityTests` |

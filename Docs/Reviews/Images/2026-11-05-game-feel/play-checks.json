@@ -783,5 +783,217 @@
     "at": "2026-11-04T22:16:36.396464+00:00",
     "check": "restore-scene",
     "result": "Lobby restored in Edit mode"
+  },
+  {
+    "at": "2026-11-04T22:29:12.149417+00:00",
+    "check": "texture-import-metrics",
+    "result": [
+      {
+        "name": "chest_open",
+        "width": 1254,
+        "height": 1254,
+        "format": "RGBA32",
+        "max": 2048,
+        "compression": "Uncompressed",
+        "androidOverride": false,
+        "androidMax": 2048,
+        "androidFormat": "AutomaticCompressed"
+      },
+      {
+        "name": "chest_normal_open",
+        "width": 1254,
+        "height": 1254,
+        "format": "RGBA32",
+        "max": 2048,
+        "compression": "Uncompressed",
+        "androidOverride": false,
+        "androidMax": 2048,
+        "androidFormat": "AutomaticCompressed"
+      },
+      {
+        "name": "equipment",
+        "width": 1536,
+        "height": 1024,
+        "format": "RGBA32",
+        "max": 2048,
+        "compression": "Uncompressed",
+        "androidOverride": false,
+        "androidMax": 2048,
+        "androidFormat": "AutomaticCompressed"
+      }
+    ]
+  },
+  {
+    "at": "2026-11-04T22:30:18.689029+00:00",
+    "check": "optimize-texture-import",
+    "result": [
+      {
+        "name": "chest_open",
+        "width": 512,
+        "height": 512,
+        "format": "ETC2_RGBA8",
+        "memory": 525248
+      },
+      {
+        "name": "chest_normal_open",
+        "width": 512,
+        "height": 512,
+        "format": "ETC2_RGBA8",
+        "memory": 525248
+      },
+      {
+        "name": "equipment",
+        "width": 1024,
+        "height": 683,
+        "format": "RGBA32",
+        "memory": 5596096
+      }
+    ]
+  },
+  {
+    "at": "2026-11-04T22:31:06.054201+00:00",
+    "check": "atlas-compression",
+    "result": {
+      "width": 1536,
+      "height": 1024,
+      "format": "ETC2_RGBA8",
+      "sprites": 6
+    }
+  },
+  {
+    "at": "2026-11-04T22:32:49.436431+00:00",
+    "check": "compressed-preview-start",
+    "result": "compressed art preview"
+  },
+  {
+    "at": "2026-11-04T22:32:50.171209+00:00",
+    "check": "compressed-preview-setup",
+    "result": "isolated compressed art"
+  },
+  {
+    "at": "2026-11-04T22:32:51.223809+00:00",
+    "check": "compressed-close-choice",
+    "result": "Later 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T22:32:51.356907+00:00",
+    "check": "compressed-shop",
+    "result": "shop"
+  },
+  {
+    "at": "2026-11-04T22:32:51.480969+00:00",
+    "check": "compressed-buy",
+    "result": "compressed icons result"
+  },
+  {
+    "at": "2026-11-04T22:32:52.471060+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 278163,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_compressed_final.png"
+    }
+  },
+  {
+    "at": "2026-11-04T22:32:52.612785+00:00",
+    "check": "compressed-stop",
+    "result": "stop compressed preview"
+  },
+  {
+    "at": "2026-11-04T22:32:54.160559+00:00",
+    "check": "compressed-restore",
+    "result": "Lobby restored"
+  },
+  {
+    "at": "2026-11-04T22:35:08.357537+00:00",
+    "check": "asset-table-after-build",
+    "result": {
+      "name": "GachaTable",
+      "equipment": true,
+      "items": 42,
+      "normal": [
+        0.7,
+        0.27,
+        0.03,
+        0
+      ],
+      "premium": [
+        0.5,
+        0.35,
+        0.13,
+        0.02
+      ],
+      "pity": 50,
+      "can": true
+    }
+  },
+  {
+    "at": "2026-11-04T22:36:01.294487+00:00",
+    "check": "compressed-preview-start",
+    "result": "clean compressed art preview"
+  },
+  {
+    "at": "2026-11-04T22:36:02.611581+00:00",
+    "check": "compressed-preview-setup",
+    "result": "isolated preview"
+  },
+  {
+    "at": "2026-11-04T22:36:03.825244+00:00",
+    "check": "compressed-close-choice",
+    "result": "Later 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T22:36:04.077734+00:00",
+    "check": "compressed-shop",
+    "result": "shop"
+  },
+  {
+    "at": "2026-11-04T22:36:04.208178+00:00",
+    "check": "compressed-table-check",
+    "result": {
+      "can": true,
+      "items": 42,
+      "premium": [
+        0.5,
+        0.35,
+        0.13,
+        0.02
+      ],
+      "pity": 50
+    }
+  },
+  {
+    "at": "2026-11-04T22:36:04.326483+00:00",
+    "check": "compressed-buy",
+    "result": {
+      "IsOpen": true,
+      "VisibleCardCount": 1,
+      "ResultsVisible": true
+    }
+  },
+  {
+    "at": "2026-11-04T22:36:05.346428+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 170794,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_compressed_final.png"
+    }
+  },
+  {
+    "at": "2026-11-04T22:37:11.811133+00:00",
+    "check": "compressed-stop",
+    "result": "compressed art visually verified"
+  },
+  {
+    "at": "2026-11-04T22:37:13.496450+00:00",
+    "check": "compressed-restore",
+    "result": "Lobby restored"
   }
 ]
