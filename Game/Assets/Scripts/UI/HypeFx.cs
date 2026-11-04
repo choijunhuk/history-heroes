@@ -98,14 +98,14 @@ namespace HistoryHeroes.UI
         public static void BossDown(Vector3 position)
         {
             HitStop.Slow(0.2f, 0.9f); // 잠깐 느려진다 (실제 시간 0.9초)
-            CameraShake.Add(0.9f);
+            if (!ReduceFlashes) CameraShake.Add(0.9f);
             Vector2 p = position;
             FxBursts.Explosion(p, 2.4f, new Color(1f, 0.8f, 0.35f));
             FxBursts.Explosion(p + new Vector2(0.8f, 0.5f), 1.4f, new Color(1f, 0.55f, 0.25f));
             FxBursts.Explosion(p + new Vector2(-0.7f, -0.4f), 1.4f, new Color(1f, 0.95f, 0.6f));
             Audio.AudioManager.Play("explode");
             if (_instance == null) return;
-            _instance.Flash(0.65f);
+            if (!ReduceFlashes) _instance.Flash(0.65f);
             _instance.ShowBanner("격파!", new Color(1f, 0.82f, 0.3f), 1.6f);
         }
 
