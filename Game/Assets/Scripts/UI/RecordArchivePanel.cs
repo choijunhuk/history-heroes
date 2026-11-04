@@ -142,7 +142,7 @@ namespace HistoryHeroes.UI
 
                 RecordSkill skill = skills[i];
                 SkillData data = database.Find(skill.id);
-                icon.sprite = data != null ? data.icon : null;
+                icon.sprite = Skills.HeroSkillArt.IconFor(data);
                 icon.enabled = icon.sprite != null;
                 label.text = $"{(data != null ? data.displayName : skill.id)}\nLv{skill.level}";
             }

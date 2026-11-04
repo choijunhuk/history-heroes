@@ -1,0 +1,302 @@
+{
+  "method": "serialized asset GUID and source linkage inspection; Unity execution NOT_RUN",
+  "hero_count": 21,
+  "distinct_exclusive_ids": 21,
+  "errors": [],
+  "heroes": [
+    {
+      "hero_id": "khan",
+      "exclusive_id": "khan_volley",
+      "active_asset": "Game/Assets/Data/Skills/Active_khan_volley.asset",
+      "behaviour": "VolleyBehaviour.cs",
+      "recipe": "Fusion_khan_storm.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "guan",
+      "exclusive_id": "guan_spin",
+      "active_asset": "Game/Assets/Data/Skills/Active_guan_spin.asset",
+      "behaviour": "SpinSlashBehaviour.cs",
+      "recipe": "Fusion_guan_five.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "napoleon",
+      "exclusive_id": "napo_cannon",
+      "active_asset": "Game/Assets/Data/Skills/Active_napo_cannon.asset",
+      "behaviour": "CannonBarrageBehaviour.cs",
+      "recipe": "Fusion_napo_austerlitz.asset",
+      "recipe_type": "1",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "tesla",
+      "exclusive_id": "tesla_coil",
+      "active_asset": "Game/Assets/Data/Skills/Active_tesla_coil.asset",
+      "behaviour": "TeslaCoilBehaviour.cs",
+      "recipe": "Fusion_tesla_tower.asset",
+      "recipe_type": "1",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "yisunsin",
+      "exclusive_id": "yi_turtle",
+      "active_asset": "Game/Assets/Data/Skills/Active_yi_turtle.asset",
+      "behaviour": "TurtleShipBehaviour.cs",
+      "recipe": "Fusion_yi_hakikjin.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "yiseonggye",
+      "exclusive_id": "ysg_pyeonjeon",
+      "active_asset": "Game/Assets/Data/Skills/Active_ysg_pyeonjeon.asset",
+      "behaviour": "PyeonjeonBehaviour.cs",
+      "recipe": "Fusion_ysg_shingung.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "davinci",
+      "exclusive_id": "dav_tank",
+      "active_asset": "Game/Assets/Data/Skills/Active_dav_tank.asset",
+      "behaviour": "ArmoredTankBehaviour.cs",
+      "recipe": "Fusion_dav_spiral.asset",
+      "recipe_type": "1",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "zhuge",
+      "exclusive_id": "zhuge_gate",
+      "active_asset": "Game/Assets/Data/Skills/Active_zhuge_gate.asset",
+      "behaviour": "EightGateBehaviour.cs",
+      "recipe": "Fusion_zhuge_sevenstar.asset",
+      "recipe_type": "1",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "jeanne",
+      "exclusive_id": "jeanne_wave",
+      "active_asset": "Game/Assets/Data/Skills/Active_jeanne_wave.asset",
+      "behaviour": "BannerWaveBehaviour.cs",
+      "recipe": "Fusion_jeanne_orleans.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "seondeok",
+      "exclusive_id": "seondeok_starlight",
+      "active_asset": "Game/Assets/Data/Skills/Active_seondeok_starlight.asset",
+      "behaviour": "ConstellationBehaviour.cs",
+      "recipe": "Fusion_seondeok_constellation.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "boudica",
+      "exclusive_id": "boudica_rally",
+      "active_asset": "Game/Assets/Data/Skills/Active_boudica_rally.asset",
+      "behaviour": "IceniRallyBehaviour.cs",
+      "recipe": "Fusion_boudica_uprising.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "thor",
+      "exclusive_id": "thor_hammer",
+      "active_asset": "Game/Assets/Data/Skills/Active_thor_hammer.asset",
+      "behaviour": "ThorHammerBehaviour.cs",
+      "recipe": "Fusion_thor_return.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "cleopatra",
+      "exclusive_id": "cleopatra_pharos",
+      "active_asset": "Game/Assets/Data/Skills/Active_cleopatra_pharos.asset",
+      "behaviour": "PharosBehaviour.cs",
+      "recipe": "Fusion_cleopatra_library.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "anubis",
+      "exclusive_id": "sand_statue",
+      "active_asset": "Game/Assets/Data/Skills/Active_sand_statue.asset",
+      "behaviour": "SandStatueBehaviour.cs",
+      "recipe": "Fusion_sand_gate.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "susanoo",
+      "exclusive_id": "wind_slash",
+      "active_asset": "Game/Assets/Data/Skills/Active_wind_slash.asset",
+      "behaviour": "WindSlashBehaviour.cs",
+      "recipe": "Fusion_storm_path.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "athena",
+      "exclusive_id": "owl_eye",
+      "active_asset": "Game/Assets/Data/Skills/Active_owl_eye.asset",
+      "behaviour": "OwlEyeBehaviour.cs",
+      "recipe": "Fusion_guardian_gaze.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "tomoe",
+      "exclusive_id": "tomoe_volley",
+      "active_asset": "Game/Assets/Data/Skills/Active_tomoe_volley.asset",
+      "behaviour": "VolleyBehaviour.cs",
+      "recipe": "Fusion_tomoe_crosswind.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "wuzetian",
+      "exclusive_id": "wuzetian_decree",
+      "active_asset": "Game/Assets/Data/Skills/Active_wuzetian_decree.asset",
+      "behaviour": "ConstellationBehaviour.cs",
+      "recipe": "Fusion_wuzetian_order.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "curie",
+      "exclusive_id": "curie_prism",
+      "active_asset": "Game/Assets/Data/Skills/Active_curie_prism.asset",
+      "behaviour": "ConstellationBehaviour.cs",
+      "recipe": "Fusion_curie_spectrum.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "buddha",
+      "exclusive_id": "buddha_rest",
+      "active_asset": "Game/Assets/Data/Skills/Active_buddha_rest.asset",
+      "behaviour": "BuddhaRestBehaviour.cs",
+      "recipe": "Fusion_buddha_breath.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    },
+    {
+      "hero_id": "adam",
+      "exclusive_id": "adam_path",
+      "active_asset": "Game/Assets/Data/Skills/Active_adam_path.asset",
+      "behaviour": "AdamPathBehaviour.cs",
+      "recipe": "Fusion_adam_way.asset",
+      "recipe_type": "0",
+      "checks": {
+        "owner_matches": true,
+        "behaviour_exists": true,
+        "recipe_count_one": true,
+        "active_in_recipe": true
+      }
+    }
+  ]
+}

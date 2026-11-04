@@ -1,0 +1,39 @@
+{
+  "checked_at_utc": "2026-11-04T20:13:10.397343+00:00",
+  "branch": "feature/reward-hero-identity",
+  "compilation": [
+    {
+      "assembly": "HistoryHeroes.Runtime",
+      "sources": 313,
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 9,
+      "seconds": 1.18,
+      "log": "Docs/Reviews/Images/2026-11-05-runtime-recheck/HistoryHeroes.Runtime.log"
+    },
+    {
+      "assembly": "HistoryHeroes.Editor",
+      "sources": 56,
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "seconds": 1.14,
+      "log": "Docs/Reviews/Images/2026-11-05-runtime-recheck/HistoryHeroes.Editor.log"
+    },
+    {
+      "assembly": "HistoryHeroes.Tests.EditMode",
+      "sources": 89,
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "seconds": 0.83,
+      "log": "Docs/Reviews/Images/2026-11-05-runtime-recheck/HistoryHeroes.Tests.EditMode.log"
+    }
+  ],
+  "unity_execution": "NOT_RUN: CLI server unreachable; Computer Use was not approved to use Unity",
+  "test_execution": "NOT_RUN",
+  "pre_existing_assets_preserved": 8,
+  "commit": "NOT_CREATED: Editor execution prerequisite not met",
+  "pending_input": "Unity application access for this conversation",
+  "work_state_write": "DENIED: MCP tool call requires approval, but approval policy is never"
+}

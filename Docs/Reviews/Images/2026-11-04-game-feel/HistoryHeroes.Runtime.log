@@ -1,0 +1,9 @@
+Assets/Scripts/Enemy/Bosses/RiftWardenBoss.cs(82,21): warning CS0108: 'RiftWardenBoss.IsTelegraphing' hides inherited member 'EnemyBase.IsTelegraphing'. Use the new keyword if hiding was intended.
+Assets/Scripts/Enemy/Bosses/RiftWardenBoss.cs(83,21): warning CS0108: 'RiftWardenBoss.IsAttacking' hides inherited member 'EnemyBase.IsAttacking'. Use the new keyword if hiding was intended.
+Assets/Scripts/Dungeon/TrapZone.cs(261,25): warning CS0618: 'Physics2D.OverlapCircleNonAlloc(Vector2, float, Collider2D[], int)' is obsolete: 'OverlapCircleNonAlloc has been deprecated. Please use OverlapCircle.'
+Assets/Scripts/Dungeon/TrapZone.cs(293,75): warning CS0618: 'Physics2D.OverlapBoxNonAlloc(Vector2, Vector2, float, Collider2D[], int)' is obsolete: 'OverlapBoxNonAlloc has been deprecated. Please use OverlapBox.'
+Assets/Scripts/Pets/PetBehaviours.cs(327,25): warning CS0618: 'Physics2D.OverlapCircleNonAlloc(Vector2, float, Collider2D[], int)' is obsolete: 'OverlapCircleNonAlloc has been deprecated. Please use OverlapCircle.'
+Assets/Scripts/Pets/PetBehaviours.cs(356,29): warning CS0618: 'Physics2D.OverlapCircleNonAlloc(Vector2, float, Collider2D[], int)' is obsolete: 'OverlapCircleNonAlloc has been deprecated. Please use OverlapCircle.'
+Assets/Scripts/Dungeon/Devices/IronGate.cs(135,21): warning CS0618: 'Physics2D.OverlapBoxNonAlloc(Vector2, Vector2, float, Collider2D[], int)' is obsolete: 'OverlapBoxNonAlloc has been deprecated. Please use OverlapBox.'
+Assets/Scripts/Dungeon/Devices/PowderKeg.cs(74,21): warning CS0618: 'Physics2D.OverlapCircleNonAlloc(Vector2, float, Collider2D[], int)' is obsolete: 'OverlapCircleNonAlloc has been deprecated. Please use OverlapCircle.'
+Assets/Scripts/Dungeon/Devices/SawGear.cs(88,21): warning CS0618: 'Physics2D.OverlapCircleNonAlloc(Vector2, float, Collider2D[], int)' is obsolete: 'OverlapCircleNonAlloc has been deprecated. Please use OverlapCircle.'

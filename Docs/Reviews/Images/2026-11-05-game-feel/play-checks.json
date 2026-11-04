@@ -1,0 +1,787 @@
+[
+  {
+    "at": "2026-11-04T20:39:58.675127+00:00",
+    "check": "start",
+    "result": "starting empty QA scene"
+  },
+  {
+    "at": "2026-11-04T20:40:18.368554+00:00",
+    "check": "isolate",
+    "result": "local QA store selected; server/store connection held"
+  },
+  {
+    "at": "2026-11-04T20:40:19.575817+00:00",
+    "check": "close-choice",
+    "result": "Later 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T20:40:19.730087+00:00",
+    "check": "shop",
+    "result": "shop"
+  },
+  {
+    "at": "2026-11-04T20:40:19.915491+00:00",
+    "check": "normal-buy",
+    "result": {
+      "before": 45500,
+      "after": 40500,
+      "open": true,
+      "cards": 1
+    }
+  },
+  {
+    "at": "2026-11-04T20:40:20.784618+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 273121,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_normal_fixed.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:41:02.430811+00:00",
+    "check": "result-state",
+    "result": {
+      "IsOpen": true,
+      "ResultsVisible": true,
+      "VisibleCardCount": 1
+    }
+  },
+  {
+    "at": "2026-11-04T20:41:03.034746+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 168902,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_normal_result_fixed.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:41:03.158091+00:00",
+    "check": "close-normal",
+    "result": "Continue 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T20:41:03.311042+00:00",
+    "check": "premium10",
+    "result": {
+      "before": 58900,
+      "after": 56650,
+      "IsOpen": true,
+      "VisibleCardCount": 10
+    }
+  },
+  {
+    "at": "2026-11-04T20:41:03.882747+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 281207,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_premium_open.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:41:17.767771+00:00",
+    "check": "skip10",
+    "result": {
+      "ResultsVisible": true,
+      "VisibleCardCount": 10,
+      "overflow": 0
+    }
+  },
+  {
+    "at": "2026-11-04T20:41:18.366306+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 225020,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_premium10.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:42:07.969747+00:00",
+    "check": "tall",
+    "result": "Game 창 크기: Portrait 1080x2340 (index 19)"
+  },
+  {
+    "at": "2026-11-04T20:42:08.584116+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 1170,
+      "encoding": "png",
+      "bytes": 240294,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_premium10_tall.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:42:08.737171+00:00",
+    "check": "disable-reentry",
+    "result": {
+      "closed": true,
+      "unlocked": true,
+      "reopened": true
+    }
+  },
+  {
+    "at": "2026-11-04T20:42:08.904594+00:00",
+    "check": "save-failure",
+    "result": {
+      "before": 40500,
+      "after": 40500,
+      "noReveal": true
+    }
+  },
+  {
+    "at": "2026-11-04T20:42:09.048083+00:00",
+    "check": "relic-tab",
+    "result": "relic gems mode in isolated save"
+  },
+  {
+    "at": "2026-11-04T20:42:09.211580+00:00",
+    "check": "relic10",
+    "result": {
+      "before": 56650,
+      "after": 55750,
+      "IsOpen": true,
+      "VisibleCardCount": 10
+    }
+  },
+  {
+    "at": "2026-11-04T20:42:21.481997+00:00",
+    "check": "relic-skip",
+    "result": {
+      "IsOpen": true,
+      "ResultsVisible": true,
+      "VisibleCardCount": 10
+    }
+  },
+  {
+    "at": "2026-11-04T20:42:22.091918+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 1170,
+      "encoding": "png",
+      "bytes": 251136,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_relic10_tall.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:42:22.226188+00:00",
+    "check": "relic-close",
+    "result": "Continue 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T20:42:22.384642+00:00",
+    "check": "hero",
+    "result": "hero page"
+  },
+  {
+    "at": "2026-11-04T20:42:22.996683+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 1170,
+      "encoding": "png",
+      "bytes": 382938,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_hero_tall.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:42:39.216946+00:00",
+    "check": "hero-details",
+    "result": {
+      "body": "<color=#FFD966><b>대표 효과 · 기마 속사</b></color>  멈추는 순간 공격 준비 시간 0. 첫 발 피해 +50%\n<color=#9FD8FF><b>전용 기술 · 만궁 연사</b></color>  눌러서 기술·조합 보기",
+      "overflow": false,
+      "dialog": true
+    }
+  },
+  {
+    "at": "2026-11-04T20:42:39.816818+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 1170,
+      "encoding": "png",
+      "bytes": 176607,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_hero_details.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:43:20.497166+00:00",
+    "check": "close-hero-detail",
+    "result": "Later 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T20:43:20.671339+00:00",
+    "check": "hero-long-description",
+    "result": {
+      "index": 17,
+      "body": "<color=#FFD966><b>대표 효과 · 질서의 인장</b></color>  같은 적에 정지 기본 공격 3회 명중하면 주변 다른 일반 적 1명을 잠깐 묶음. 보스만 남으면 약한 둔화, 대상마다 6초 제한\n<color=#9FD8FF><b>전용 기술 · 기록의 칙령</b></color>  눌러서 기술·조합 보기\n<color=#FFB347>보석 2,000개로 열려요 (던전 10판 하면 보석 영웅 한 명은 무료)</color>",
+      "size": 25.3,
+      "overflow": false
+    }
+  },
+  {
+    "at": "2026-11-04T20:43:21.266608+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 1170,
+      "encoding": "png",
+      "bytes": 384850,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_wuzetian.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:44:28.704443+00:00",
+    "check": "wuzetian-details-open",
+    "result": "details"
+  },
+  {
+    "at": "2026-11-04T20:44:28.853114+00:00",
+    "check": "detail-fonts",
+    "result": [
+      {
+        "name": "Title",
+        "font": 56,
+        "min": 36,
+        "max": 56,
+        "rect": 130,
+        "lines": 1,
+        "text": "무측천의 전용 기술",
+        "overflow": false
+      },
+      {
+        "name": "Info",
+        "font": 32,
+        "min": 26,
+        "max": 32,
+        "rect": 170,
+        "lines": 1,
+        "text": "전투 첫 카드 묶음에서 전용 기술을 고를 수 있어요",
+        "overflow": false
+      },
+      {
+        "name": "Label",
+        "font": 28.95,
+        "min": 22,
+        "max": 40,
+        "rect": 162,
+        "lines": 4,
+        "text": "<color=#FFD966><b>대표 효과 · 질서의 인장</b></color>\n<size=85%>같은 적에 정지 기본 공격 3회 명중하면 주변 다른 일반 적 1명을 잠깐 묶음. 보스만 남으면 약한 둔화, 대상마다 6초 제한\n★3 인장 지속 0.8초 · ★5 인장 탐색 반경 3</size>",
+        "overflow": false
+      },
+      {
+        "name": "Label",
+        "font": 28.95,
+        "min": 22,
+        "max": 40,
+        "rect": 162,
+        "lines": 3,
+        "text": "<color=#9FD8FF><b>전용 액티브 · 기록의 칙령</b></color>\n<size=85%>8초마다 가까운 적 자리에 인장의 파동 (반경 1.5, 피해 100%)\n레벨마다 피해 +20%p</size>",
+        "overflow": false
+      },
+      {
+        "name": "Label",
+        "font": 28.95,
+        "min": 22,
+        "max": 40,
+        "rect": 162,
+        "lines": 4,
+        "text": "<color=#E0B5FF><b>전용 진화 · 정연한 서책</b></color>\n<size=85%>기록의 칙령 Lv5 + 방어력 Lv1\n8초마다 가까운 적 자리에 파동 3번 (0.25초 간격, 반경 1.5, 각 65%)\n레벨마다 피해 +15%p</size>",
+        "overflow": false
+      },
+      {
+        "name": "Label",
+        "font": 28.95,
+        "min": 22,
+        "max": 40,
+        "rect": 162,
+        "lines": 2,
+        "text": "체력 900 · 공격 90 · 공속 1.0\n사거리 5.5 · 이동 5",
+        "overflow": false
+      },
+      {
+        "name": "Label",
+        "font": 44,
+        "min": 18,
+        "max": 72,
+        "rect": 130,
+        "lines": 1,
+        "text": "닫기",
+        "overflow": false
+      }
+    ]
+  },
+  {
+    "at": "2026-11-04T20:45:40.882465+00:00",
+    "check": "readable-detail-prototype",
+    "result": "readable rows at 40 / embedded body 34"
+  },
+  {
+    "at": "2026-11-04T20:45:41.495746+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 1170,
+      "encoding": "png",
+      "bytes": 203283,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_wuzetian_details_readable.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:45:41.644069+00:00",
+    "check": "stop",
+    "result": "stopping before source changes"
+  },
+  {
+    "at": "2026-11-04T20:45:50.763948+00:00",
+    "check": "edit-state",
+    "result": {
+      "playing": false,
+      "compiling": false
+    }
+  },
+  {
+    "at": "2026-11-04T20:55:15.136251+00:00",
+    "check": "start",
+    "result": "QA Play start"
+  },
+  {
+    "at": "2026-11-04T20:55:19.839472+00:00",
+    "check": "isolate",
+    "result": "isolated local UI"
+  },
+  {
+    "at": "2026-11-04T20:55:21.426078+00:00",
+    "check": "close-choice",
+    "result": "Later 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T20:55:21.589469+00:00",
+    "check": "hero",
+    "result": "hero"
+  },
+  {
+    "at": "2026-11-04T20:55:21.826831+00:00",
+    "check": "hero-final",
+    "result": {
+      "body": "<color=#FFD966><b>대표 효과 · 질서의 인장</b></color>\n<color=#9FD8FF><b>전용 기술 · 기록의 칙령</b></color>\n기술·조합·해금 자세히 보기 · 잠김",
+      "font": 30,
+      "overflow": false
+    }
+  },
+  {
+    "at": "2026-11-04T20:55:22.954473+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 336674,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_hero_final.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:55:37.989372+00:00",
+    "check": "all-hero-summaries",
+    "result": {
+      "heroes": 21,
+      "bad": []
+    }
+  },
+  {
+    "at": "2026-11-04T20:55:38.127618+00:00",
+    "check": "unlock-info",
+    "result": {
+      "freeUnlockShown": true,
+      "texts": [
+        "무측천의 전용 기술",
+        "전투 첫 카드 묶음에서 전용 기술을 고를 수 있어요",
+        "<color=#FFD966><b>대표 효과 · 질서의 인장</b></color>\n<size=85%>같은 적에 정지 기본 공격 3회 명중하면 주변 다른 일반 적 1명을 잠깐 묶음. 보스만 남으면 약한 둔화, 대상마다 6초 제한\n★3 인장 지속 0.8초 · ★5 인장 탐색 반경 3</size>",
+        "<color=#9FD8FF><b>전용 액티브 · 기록의 칙령</b></color>\n<size=85%>8초마다 가까운 적 자리에 인장의 파동 (반경 1.5, 피해 100%)\n레벨마다 피해 +20%p</size>",
+        "<color=#E0B5FF><b>전용 진화 · 정연한 서책</b></color>\n<size=85%>기록의 칙령 Lv5 + 방어력 Lv1\n8초마다 가까운 적 자리에 파동 3번 (0.25초 간격, 반경 1.5, 각 65%)\n레벨마다 피해 +15%p</size>",
+        "체력 900 · 공격 90 · 공속 1.0\n사거리 5.5 · 이동 5",
+        "<color=#FFCF83><b>해금 방법</b></color>\n<size=85%>보석 2,000개로 열려요 (던전 10판 하면 보석 영웅 한 명은 무료)</size>",
+        "닫기"
+      ]
+    }
+  },
+  {
+    "at": "2026-11-04T20:55:38.880912+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 212206,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_hero_details_final.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:55:55.326165+00:00",
+    "check": "close-details",
+    "result": "Later 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T20:55:55.470365+00:00",
+    "check": "battle",
+    "result": "isolated Curie dungeon started"
+  },
+  {
+    "at": "2026-11-04T20:56:19.718137+00:00",
+    "check": "battle-state",
+    "result": "방 1/15 Lv2 처치2 적1 HP793/915 멈춤=True 끝=False 특수=None 갈림길=False []"
+  },
+  {
+    "at": "2026-11-04T20:56:19.868076+00:00",
+    "check": "first-card",
+    "result": {
+      "IsOpen": true,
+      "cards": [
+        {
+          "id": "guard_shield",
+          "owner": ""
+        },
+        {
+          "id": "pierce",
+          "owner": ""
+        },
+        {
+          "id": "curie_prism",
+          "owner": "curie"
+        }
+      ]
+    }
+  },
+  {
+    "at": "2026-11-04T20:56:20.859162+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 421060,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_curie_first_offer.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:57:19.900975+00:00",
+    "check": "choose-exclusive",
+    "result": "chose Curie exclusive from actual first offer"
+  },
+  {
+    "at": "2026-11-04T20:57:20.028892+00:00",
+    "check": "creek",
+    "result": "c1_creek: 장애물 0 · 함정 1 · 장치 9"
+  },
+  {
+    "at": "2026-11-04T20:57:20.192791+00:00",
+    "check": "creek-measure",
+    "result": "{ creek = True, water = System.Collections.Generic.List`1[System.Object], indicators = System.Collections.Generic.List`1[System.Object] }"
+  },
+  {
+    "at": "2026-11-04T20:57:20.327346+00:00",
+    "check": "curie-scenario",
+    "result": "시작: 분광의 빛 Lv1 (적 12)"
+  },
+  {
+    "at": "2026-11-04T20:57:21.177193+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 637206,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_curie_battle.png"
+    }
+  },
+  {
+    "at": "2026-11-04T20:57:47.259375+00:00",
+    "check": "battle-metrics",
+    "result": {
+      "creek": true,
+      "data": [
+        {
+          "name": "Water",
+          "sx": 1.9,
+          "sy": 1,
+          "a": 0.88
+        },
+        {
+          "name": "Ripple0",
+          "sx": 0.12,
+          "sy": 0.7,
+          "a": 0.5
+        },
+        {
+          "name": "Ripple1",
+          "sx": 0.12,
+          "sy": 0.7,
+          "a": 0.5
+        },
+        {
+          "name": "Ripple2",
+          "sx": 0.12,
+          "sy": 0.7,
+          "a": 0.5
+        },
+        {
+          "name": "Ripple3",
+          "sx": 0.12,
+          "sy": 0.7,
+          "a": 0.5
+        }
+      ],
+      "marks": [
+        {
+          "name": "StopIndicator",
+          "sprite": "Circle",
+          "sx": 1.3,
+          "sy": 1.3,
+          "a": 0.35
+        },
+        {
+          "name": "HeroRing",
+          "sprite": "ui_ring",
+          "sx": 2.816,
+          "sy": 2.816,
+          "a": 0.4
+        },
+        {
+          "name": "PipBack0",
+          "sprite": "",
+          "sx": 0.44,
+          "sy": 0.419774055,
+          "a": 0.6
+        },
+        {
+          "name": "Pip0",
+          "sprite": "",
+          "sx": 0.34,
+          "sy": 0.324370861,
+          "a": 0.3705017
+        }
+      ],
+      "activeDamage": 1124.54626
+    }
+  },
+  {
+    "at": "2026-11-04T20:58:21.878472+00:00",
+    "check": "hud-state",
+    "result": {
+      "text": [
+        "분광의 빛",
+        "자동 발동 · 4초"
+      ],
+      "cooldown": 8,
+      "remaining": 3.78583527,
+      "damage": 1766.81628
+    }
+  },
+  {
+    "at": "2026-11-04T20:58:22.012340+00:00",
+    "check": "boss",
+    "result": "boss practice with existing copied record"
+  },
+  {
+    "at": "2026-11-04T20:58:23.128970+00:00",
+    "check": "boss-start",
+    "result": "Start: 화면에 없음"
+  },
+  {
+    "at": "2026-11-04T20:58:24.192698+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 601020,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_boss_hud.png"
+    }
+  },
+  {
+    "at": "2026-11-04T21:00:35.742553+00:00",
+    "check": "stop",
+    "result": "stop for terrain readability fixes"
+  },
+  {
+    "at": "2026-11-04T21:00:36.570745+00:00",
+    "check": "edit-state",
+    "result": {
+      "playing": false,
+      "compiling": false
+    }
+  },
+  {
+    "at": "2026-11-04T22:10:33.412106+00:00",
+    "check": "material-readback",
+    "result": {
+      "redDelta": -4.470348358154297e-08,
+      "greenDelta": -2.980232238769531e-08,
+      "blueDelta": 0
+    }
+  },
+  {
+    "at": "2026-11-04T22:13:20.152557+00:00",
+    "check": "start",
+    "result": "final Play verification"
+  },
+  {
+    "at": "2026-11-04T22:13:21.580448+00:00",
+    "check": "isolated-battle",
+    "result": "isolated dungeon"
+  },
+  {
+    "at": "2026-11-04T22:13:23.374777+00:00",
+    "check": "creek-after",
+    "result": "c1_creek: 장애물 0 · 함정 1 · 장치 9"
+  },
+  {
+    "at": "2026-11-04T22:13:23.509000+00:00",
+    "check": "curie-after",
+    "result": "시작: 분광의 빛 Lv1 (적 12)"
+  },
+  {
+    "at": "2026-11-04T22:13:24.589188+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 639909,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_battle_after.png"
+    }
+  },
+  {
+    "at": "2026-11-04T22:13:24.827806+00:00",
+    "check": "battle-final-metrics",
+    "result": {
+      "waterAlpha": 0.52,
+      "sharedAlpha": 0.88,
+      "rippleX": 0.5,
+      "rippleY": 0.055,
+      "ringX": 1.5999999,
+      "ringY": 1.5999999,
+      "ringAlpha": 0.24
+    }
+  },
+  {
+    "at": "2026-11-04T22:13:44.863956+00:00",
+    "check": "boss-final",
+    "result": "boss practice"
+  },
+  {
+    "at": "2026-11-04T22:13:45.613176+00:00",
+    "check": "keep-boss-alive",
+    "result": "QA invulnerable for HUD check"
+  },
+  {
+    "at": "2026-11-04T22:14:27.343890+00:00",
+    "check": "boss-hud-final",
+    "result": {
+      "bossBar": true,
+      "separated": true,
+      "texts": [
+        "만궁 연사",
+        "이 기록에 고유 기술 없음"
+      ],
+      "heroTop": 595,
+      "bossBottom": 644
+    }
+  },
+  {
+    "at": "2026-11-04T22:14:28.328940+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 604386,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_boss_final.png"
+    }
+  },
+  {
+    "at": "2026-11-04T22:14:28.458521+00:00",
+    "check": "lobby-return",
+    "result": "return to local QA lobby"
+  },
+  {
+    "at": "2026-11-04T22:14:29.215676+00:00",
+    "check": "close-choice",
+    "result": "Later 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T22:14:29.355134+00:00",
+    "check": "shop-final",
+    "result": "shop final"
+  },
+  {
+    "at": "2026-11-04T22:14:29.491998+00:00",
+    "check": "normal-final",
+    "result": "normal opening"
+  },
+  {
+    "at": "2026-11-04T22:15:18.991468+00:00",
+    "check": "close-normal-final",
+    "result": "Continue 누름 | 장면 Lobby"
+  },
+  {
+    "at": "2026-11-04T22:16:34.217486+00:00",
+    "check": "final-skip",
+    "result": {
+      "IsOpen": true,
+      "ResultsVisible": true,
+      "VisibleCardCount": 1
+    }
+  },
+  {
+    "at": "2026-11-04T22:16:34.942858+00:00",
+    "check": "cap",
+    "result": {
+      "width": 540,
+      "height": 960,
+      "encoding": "png",
+      "bytes": 170305,
+      "source": "screen",
+      "savedPath": "Assets/Temp/qa/identity_normal_source_final.png"
+    }
+  },
+  {
+    "at": "2026-11-04T22:16:35.073801+00:00",
+    "check": "stop",
+    "result": "Play validation done"
+  },
+  {
+    "at": "2026-11-04T22:16:36.396464+00:00",
+    "check": "restore-scene",
+    "result": "Lobby restored in Edit mode"
+  }
+]

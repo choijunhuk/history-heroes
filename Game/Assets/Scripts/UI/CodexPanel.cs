@@ -30,6 +30,7 @@ namespace HistoryHeroes.UI
         [SerializeField] private RelicPanel relics;
 
         public int RecipeCount => database != null ? database.recipes.Count : 0;
+        public SkillDatabase Database => database;
 
         private void Awake()
         {
@@ -93,7 +94,8 @@ namespace HistoryHeroes.UI
                 if (known) found++;
                 if (recipeIcons != null && i < recipeIcons.Length && recipeIcons[i] != null)
                 {
-                    recipeIcons[i].sprite = known && r.result.icon != null ? r.result.icon : lockedIcon;
+                    Sprite icon = known ? HeroSkillArt.IconFor(r.result) : null;
+                    recipeIcons[i].sprite = icon != null ? icon : lockedIcon;
                     recipeIcons[i].color = known ? Color.white : new Color(0.5f, 0.54f, 0.6f);
                 }
 

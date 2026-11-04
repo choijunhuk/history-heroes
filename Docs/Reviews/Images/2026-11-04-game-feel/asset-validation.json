@@ -1,0 +1,202 @@
+{
+  "method": "PNG alpha/dimensions, sprite import metadata, Unity .meta/GUID uniqueness and SHA256 comparison; not a Unity import execution",
+  "images": {
+    "chest_open.png": {
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 1569899,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "sparkle.png": {
+      "dimensions": [
+        96,
+        96
+      ],
+      "bytes": 1583,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "slot.png": {
+      "dimensions": [
+        128,
+        128
+      ],
+      "bytes": 5812,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "equipment.png": {
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "bytes": 2296741,
+      "alpha_extrema": [
+        0,
+        254
+      ]
+    },
+    "glow.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 11263,
+      "alpha_extrema": [
+        0,
+        251
+      ]
+    },
+    "ribbon.png": {
+      "dimensions": [
+        512,
+        128
+      ],
+      "bytes": 7755,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "rays.png": {
+      "dimensions": [
+        512,
+        512
+      ],
+      "bytes": 58773,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "equip_generic.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 13601,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "ring.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 12302,
+      "alpha_extrema": [
+        0,
+        254
+      ]
+    },
+    "frame_gold.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 13377,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "chest_premium.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 113691,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "chest_normal.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 102924,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "equip_boot.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 11643,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "ancient_shard.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 82538,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "chest_normal_open.png": {
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 1424402,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "equip_sword.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 7073,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    "equip_shield.png": {
+      "dimensions": [
+        256,
+        256
+      ],
+      "bytes": 4836,
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    }
+  },
+  "equipment_sprite_names": [
+    "equip_weapon",
+    "equip_necklace",
+    "equip_gloves",
+    "equip_armor",
+    "equip_belt",
+    "equip_boots"
+  ],
+  "existing_assets_preserved": true,
+  "issues": []
+}

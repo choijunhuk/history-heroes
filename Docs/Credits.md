@@ -19,6 +19,9 @@
 
 ## 아이콘
 
+- 개봉 연출의 일반·고급 열린 상자와 장비 슬롯 대표 그림 6종 (`Game/Assets/Resources/UI/Gacha/chest_normal_open.png`, `chest_open.png`, `equipment.png`): 2026-11-04 Codex의 OpenAI 이미지 생성 도구로 제작. 열린 상자는 각각 기존 상자 그림을 바탕으로 한 개봉 상태이며, 장비 그림은 슬롯을 나타내는 대표 이미지다. 생성 도구 출처: https://openai.com/index/image-generation-api/
+- 같은 폴더의 상자·파편·빛·리본은 아래 기존 보상/UI 그림의 런타임 로드용 사본이다. `equip_sword/shield/boot/generic.png`는 아래 game-icons.net 그림의 사본으로 원본 크레딧과 CC BY 3.0을 그대로 따른다.
+
 - 유물 그림 24장 (`Game/Assets/Art/UI/Relics/relic_*.png`): **AI 이미지 생성** (OpenAI 이미지 생성, Codex CLI로 2026-10-29). 생성물은 만든 사람이 쓸 수 있다 (OpenAI 이용약관)
 - 보상 · 재화 컬러 그림 10장 (`Game/Assets/Art/UI/Rewards`: 금화 · 보석 · 영웅 조각 · 장비 조각 · 고대 파편 · 소환권 · 하트 · 경험치 · 일반/고급 상자): **AI 이미지 생성** (OpenAI 이미지 생성, Codex CLI로 2026-10-29). 생성물은 만든 사람이 쓸 수 있다 (OpenAI 이용약관). 글 속 아이콘 묶음 `RewardIcons.asset`은 이 그림으로 빌더가 만든다
 - 스킬 · 메뉴 · 재화 아이콘 85개 (`Game/Assets/Art/UI/Icons`): **game-icons.net**, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). 흰색으로 칠하고 크기만 맞췄다.

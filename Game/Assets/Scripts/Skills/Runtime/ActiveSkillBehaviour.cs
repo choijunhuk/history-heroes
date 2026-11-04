@@ -1,3 +1,4 @@
+using System;
 using HistoryHeroes.Combat;
 using HistoryHeroes.Common;
 using HistoryHeroes.Player;
@@ -21,6 +22,9 @@ namespace HistoryHeroes.Skills
         protected LayerMask enemyMask;
         private float _cooldownLeft;
         private Transform _effectRoot;
+
+        /// <summary>실제 발동 뒤 확정된 쿨다운. 표적이 없어 재시도할 때는 알리지 않는다.</summary>
+        public event Action<float> Activated;
 
         public void Bind(PlayerController owner, ActiveSkillData skill, int startLevel, LayerMask enemies)
         {
@@ -82,6 +86,7 @@ namespace HistoryHeroes.Skills
 
             float cdr = player.Stats.Get(StatType.CooldownReduction, StatTarget.Active);
             _cooldownLeft = data.cooldown * (1f - cdr);
+            Activated?.Invoke(_cooldownLeft);
         }
 
         /// <returns>실제로 발동했으면 true. 표적이 없어 못 쏘았으면 false (쿨다운을 쓰지 않음).</returns>

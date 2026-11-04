@@ -46,8 +46,7 @@ namespace HistoryHeroes.Skills
         public string HeroId => player.Hero != null ? player.Hero.id : string.Empty;
         public Heroes.HeroClass HeroClass => player.Hero != null ? player.Hero.heroClass : Heroes.HeroClass.Archer;
 
-        /// <summary>첫 레벨업에 영웅 전용 액티브가 나올 확률을 조금 높인다 (Skills.md 3장: 영웅 개성을 빨리 느끼게)</summary>
-        [SerializeField, Range(0f, 1f)] private float firstOfferExclusiveChance = 0.5f;
+        /// <summary>첫 일반 카드 묶음에 전용 액티브 선택지를 보장한다 (Skills.md 3장).</summary>
         private int _offersMade;
 
         /// <summary>다음 카드 묶음에 희귀 이상을 이만큼 보장 (확장 1차 3-4장 저주받은 엘리트). 전설 확률은 그대로 — 일반 카드만 희귀로 바꾼다</summary>
@@ -96,7 +95,7 @@ namespace HistoryHeroes.Skills
             }
 
             offer.AddRange(SkillPicker.PickSkills(candidates, cardsPerLevel - offer.Count, floor, rarityTable, WeightModifier, Loadout));
-            if (_offersMade++ == 0) BoostExclusive(offer, candidates);
+            if (_offersMade++ == 0 && TutorialCards == null && !Common.GameSession.Tutorial) BoostExclusive(offer, candidates);
             if (MinRareNext > 0) GuaranteeRare(offer, candidates, MinRareNext);
             MinRareNext = 0;
             ApplyRiftBoosts(offer);
@@ -119,22 +118,18 @@ namespace HistoryHeroes.Skills
             }
         }
 
-        /// <summary>첫 카드 묶음에 전용 액티브가 없으면 확률적으로 마지막 일반 카드와 바꾼다</summary>
+        /// <summary>첫 카드 묶음에 전용 액티브가 없으면 마지막 일반 카드를 전용기로 바꾼다.</summary>
         private void BoostExclusive(List<SkillCard> offer, List<SkillCard> candidates)
         {
             SkillData exclusive = player.Hero != null ? player.Hero.exclusiveActive : null;
-            if (exclusive == null || offer.Exists(c => c.Skill == exclusive)) return;
+            if (exclusive == null || Loadout.Find(exclusive) != null || offer.Exists(c => c.Skill == exclusive)) return;
             SkillCard card = candidates.Find(c => c.Skill == exclusive);
-            // 이 영웅의 첫 판이면 확정 (전체 검토 3번: 새 영웅의 손맛을 첫 판에 바로)
-            bool firstRun = Records.SaveSystem.Data != null && !string.IsNullOrEmpty(HeroId) && Records.SaveSystem.Data.Hero(HeroId).runs == 0;
-            if (card == null || (!firstRun && Common.RunRandom.Card01() > firstOfferExclusiveChance)) return;
+            if (card == null) return;
 
-            for (int i = offer.Count - 1; i >= 0; i--)
-            {
-                if (offer[i].Type == CardType.Fusion) continue;
-                offer[i] = card;
-                return;
-            }
+            int replace = offer.FindLastIndex(c => c.Type == CardType.Fallback || c.Skill != null && c.Skill.rarity == Rarity.Common);
+            if (replace < 0) replace = offer.FindLastIndex(c => c.Type != CardType.Fusion && c.Skill != null && c.Skill.rarity != Rarity.Legendary);
+            if (replace < 0) replace = offer.FindLastIndex(c => c.Type != CardType.Fusion);
+            if (replace >= 0) offer[replace] = card;
         }
 
         /// <summary>리롤: 조합 카드는 고정하고 나머지만 다시 뽑는다 (GameDesign 6-7).</summary>

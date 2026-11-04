@@ -50,6 +50,15 @@ namespace HistoryHeroes.Combat
             fx.transform.position = new Vector3(p.x, p.y, -BodyHeight);
         }
 
+        /// <summary>피해 판정과 별개인 작은 중심 문양. 기존 효과 풀을 쓰고 감소 효과 설정을 따른다.</summary>
+        public static void Glyph(Vector2 center, float radius, Sprite sprite, Color color, float duration)
+        {
+            if (sprite == null) return;
+            color.a = Records.SaveSystem.Data.settings.reduceFlashes ? 0.35f : 0.8f;
+            Pool.Get(center, Quaternion.identity).Play(sprite, center, 0f, Vector2.one * Mathf.Min(radius, 0.9f) * 2f,
+                color, duration, 8, Pool.Release, 1.12f);
+        }
+
         /// <summary>이 반지름 이상 폭발은 화면을 크게 덮는 섬광으로 본다 (번쩍임 줄이기 대상)</summary>
         public const float BigBurstRadius = 2.5f;
         private const int MaxBigBurstsPerSecond = 3;

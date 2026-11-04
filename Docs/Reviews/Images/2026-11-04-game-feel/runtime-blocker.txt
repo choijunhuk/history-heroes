@@ -1,0 +1,7 @@
+Unity isolated snapshot EditMode run: NOT_RUN. No test result XML was produced.
+[Licensing::IpcConnector] Error: Failed to connect to LicenseClient-choi channel (error code: 0x80000000) .
+[Licensing::IpcConnector] Error: Connection to channel: "LicenseClient-choi" failed; code: "0x80000000"
+[Licensing::IpcConnector] Error: Failed to connect to LicenseClient-choi channel (error code: 0x80000000) .
+Failed to start primary listening socket at (0.0.0.0:55504-55512).
+##utp:{"type":"LogEntry","version":2,"phase":"Immediate","time":1793764292222,"processId":83797,"severity":"Error","message":"Failed to start primary listening socket at (0.0.0.0:55504-55512).","stacktrace":"","line":79,"file":"./Runtime/Network/PlayerCommunicator/EditorConnection.cpp"}
+  Error: listen EPERM: operation not permitted /tmp/Unity-Upm-83797.sock

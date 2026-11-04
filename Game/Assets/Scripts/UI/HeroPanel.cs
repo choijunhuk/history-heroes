@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using HistoryHeroes.Common;
 using HistoryHeroes.Economy;
 using HistoryHeroes.Heroes;
 using HistoryHeroes.Modes;
 using HistoryHeroes.Records;
+using HistoryHeroes.Skills;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -66,11 +68,28 @@ namespace HistoryHeroes.UI
         private int _focus;
         private Action _onChanged;
         private HeroPortraits _portraits;
+        private ChoicePanel _skillDetails;
+        private ButtonList _skillDetailList;
+        private SkillDatabase _skillDatabase;
 
         private void Awake()
         {
             root.SetActive(false);
             _portraits = root.GetComponent<HeroPortraits>(); // 3D 초상 (Art3D-Plan 7번, 없으면 글만)
+            Canvas canvas = root.GetComponentInParent<Canvas>();
+            if (canvas != null)
+            {
+                _skillDetails = canvas.GetComponentInChildren<ChoicePanel>(true);
+                if (_skillDetails != null) _skillDetailList = _skillDetails.GetComponentInChildren<ButtonList>(true);
+                _skillDatabase = canvas.GetComponentInChildren<CodexPanel>(true)?.Database;
+            }
+            if (detailBody != null)
+            {
+                Button detailsButton = detailBody.gameObject.AddComponent<Button>();
+                detailsButton.targetGraphic = detailBody;
+                detailBody.raycastTarget = true;
+                detailsButton.onClick.AddListener(ShowSkillDetails);
+            }
             for (int i = 0; i < heroButtons.Length; i++)
             {
                 int index = i;
@@ -140,6 +159,46 @@ namespace HistoryHeroes.UI
         }
 
         private HeroData FocusHero => roster.heroes[Mathf.Clamp(_focus, 0, roster.heroes.Count - 1)];
+
+        private void ShowSkillDetails()
+        {
+            if (_skillDetails == null || _skillDetails.IsOpen) return;
+            HeroData hero = FocusHero;
+            List<ChoicePanel.Option> rows = SkillDetails(hero, _skillDatabase);
+            if (!HeroUnlock.IsUnlocked(SaveSystem.Data, hero))
+            {
+                string how = GodTrialRules.IsGod(hero.id)
+                    ? $"{hero.displayName} 조각 {Meta.HeroGrowth.Shards(SaveSystem.Data, hero.id)}/{GodTrialRules.UnlockShards}\n신의 시련 첫 격파 10개 + 주간 목표 5개씩 · 약 3~4주"
+                    : HeroUnlock.LockText(hero);
+                rows.Add(new ChoicePanel.Option { Text = $"<color=#FFCF83><b>해금 방법</b></color>\n<size=85%>{how}</size>" });
+            }
+            _skillDetails.Open(hero.displayName + "의 전용 기술", "전투 첫 카드 묶음에서 전용 기술을 고를 수 있어요", rows, laterText: "닫기");
+            _skillDetailList?.FitReadOnlyRows(40f);
+        }
+
+        private static List<ChoicePanel.Option> SkillDetails(HeroData hero, SkillDatabase database)
+        {
+            var rows = new List<ChoicePanel.Option>
+            {
+                new ChoicePanel.Option { Text = $"<color=#FFD966><b>대표 효과 · {hero.signatureName}</b></color>\n<size=85%>{hero.signatureDescription}\n{Heroes.HeroSignature.StarText(hero)}</size>" }
+            };
+            if (hero.exclusiveActive != null)
+            {
+                rows.Add(new ChoicePanel.Option { Text = $"<color=#9FD8FF><b>전용 액티브 · {hero.exclusiveActive.displayName}</b></color>\n<size=85%>{hero.exclusiveActive.DescriptionFor(hero.heroClass)}</size>" });
+                if (database != null)
+                {
+                    foreach (FusionRecipe recipe in database.recipes)
+                    {
+                        if (recipe == null || recipe.heroOnlyId != hero.id || recipe.materialA != hero.exclusiveActive || recipe.result == null) continue;
+                        string kind = recipe.type == FusionType.Evolution ? "진화" : "합체";
+                        rows.Add(new ChoicePanel.Option { Text = $"<color=#E0B5FF><b>전용 {kind} · {recipe.result.displayName}</b></color>\n<size=85%>{recipe.materialA.displayName} Lv{recipe.requiredLevelA} + {recipe.materialB?.displayName} Lv{recipe.requiredLevelB}\n{recipe.result.DescriptionFor(hero.heroClass)}</size>" });
+                    }
+                }
+            }
+
+            rows.Add(new ChoicePanel.Option { Text = $"체력 {hero.maxHp:0} · 공격 {hero.attack:0} · 공속 {hero.attackSpeed:0.0}\n사거리 {hero.range:0.#} · 이동 {hero.moveSpeed:0.#}" });
+            return rows;
+        }
 
         private void LevelUpFocused()
         {
@@ -261,12 +320,14 @@ namespace HistoryHeroes.UI
                 string state = !focusUnlocked ? "<color=#FFB347>잠김</color>" : focus == selected ? "<color=#7CFC9A>지금 영웅</color>" : $"<color=#9FD8FF>Lv {fp.level}</color> <color=#FFD966>{new string('★', fp.stars)}{new string('☆', 5 - fp.stars)}</color>";
                 if (detailName != null) detailName.text = $"{focus.displayName}  <size=55%>{focus.ClassLabel} · {state}</size>";
                 string lockText = focusUnlocked ? string.Empty : GodTrialRules.IsGod(focus.id)
-                    ? $"\n<color=#FFB347>{focus.displayName} 조각 {Meta.HeroGrowth.Shards(d, focus.id)}/{GodTrialRules.UnlockShards} · 신의 시련 첫 격파 10 + 주간 목표 5씩 (약 3~4주)</color>" // 2026-10-31 결정: 횟수 기준 안내
-                    : $"\n<color=#FFB347>{HeroUnlock.LockText(focus)}</color>";
+                    ? $" · 신 조각 {Meta.HeroGrowth.Shards(d, focus.id)}/{GodTrialRules.UnlockShards}"
+                    : " · 잠김";
+                detailBody.enableAutoSizing = false;
+                detailBody.fontSize = detailBody.fontSizeMin = detailBody.fontSizeMax = 30f;
                 detailBody.text =
-                    $"<color=#FFD966><b>{focus.signatureName}</b></color>  {focus.signatureDescription}\n" +
-                    $"<size=80%><color=#A9B4C2>{Heroes.HeroSignature.StarText(focus)}</color></size>\n" +
-                    $"<size=80%>체력 {focus.maxHp:0} · 공격 {focus.attack:0} · 공속 {focus.attackSpeed:0.0} · 사거리 {focus.range:0.#} · 이동 {focus.moveSpeed:0.#}</size>" + lockText;
+                    $"<color=#FFD966><b>대표 효과 · {focus.signatureName}</b></color>\n" +
+                    $"<color=#9FD8FF><b>전용 기술 · {focus.exclusiveActive?.displayName ?? "준비 중"}</b></color>\n" +
+                    $"기술·조합{(focusUnlocked ? string.Empty : "·해금")} 자세히 보기{lockText}";
                 if (bigPortrait != null && _portraits != null)
                 {
                     bigPortrait.texture = _portraits.TextureOf(_focus);

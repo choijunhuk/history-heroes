@@ -1,5 +1,6 @@
 using HistoryHeroes.Player;
 using HistoryHeroes.Progress;
+using HistoryHeroes.Skills;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,6 +33,13 @@ namespace HistoryHeroes.UI
         private static readonly Color CellPast = new Color(0.55f, 0.75f, 0.55f, 0.9f);
         private static readonly Color CellNext = new Color(1f, 1f, 1f, 0.18f);
         private static readonly Color CellElite = new Color(1f, 0.8f, 0.25f, 0.95f);
+
+        private void Start()
+        {
+            SkillManager skills = FindAnyObjectByType<SkillManager>();
+            if (player != null && skills != null && killLabel != null)
+                HeroSkillHud.Create((RectTransform)transform, player, skills, killLabel);
+        }
 
         /// <summary>
         /// 방 칸: 지난 방은 채움, 지금 방은 크게, 엘리트 방은 금색 + ★ (Archero 2처럼 다음 엘리트까지 계획할 수 있게).

@@ -101,13 +101,13 @@ namespace HistoryHeroes.UI
             {
                 case CardType.Fusion:
                     FusionRecipe r = card.Recipe;
-                    kindLabel.text = r.type == FusionType.Evolution ? "조합 · 진화" : "조합 · 합체";
+                    kindLabel.text = !string.IsNullOrEmpty(r.heroOnlyId) ? r.type == FusionType.Evolution ? "고유 진화" : "고유 합체" : r.type == FusionType.Evolution ? "조합 · 진화" : "조합 · 합체";
                     kindBand.color = FusionBand;
                     nameLabel.text = r.result.displayName;
                     levelLabel.text = "NEW";
                     descriptionLabel.text = $"{r.materialA.displayName} + {r.materialB.displayName}\n\n{r.result.description}";
                     hint = skills.BlockedWarning(r);
-                    Paint(FusionBand, 0.8f, r.result.icon);
+                    Paint(FusionBand, 0.8f, HeroSkillArt.IconFor(r.result));
                     break;
 
                 case CardType.RiftBoost:
@@ -131,7 +131,7 @@ namespace HistoryHeroes.UI
                 default:
                     SkillData s = card.Skill;
                     bool passive = s.Kind == SkillKind.Passive;
-                    kindLabel.text = (passive ? "패시브" : "액티브") + (card.RuneBoosted ? " · <color=#E8D27A>룬</color>" : string.Empty); // 룬이 일하고 있다는 표시 (Runes 8장)
+                    kindLabel.text = (!string.IsNullOrEmpty(s.heroOnlyId) ? "고유 " : string.Empty) + (passive ? "패시브" : "액티브") + (card.RuneBoosted ? " · <color=#E8D27A>룬</color>" : string.Empty); // 룬이 일하고 있다는 표시 (Runes 8장)
                     kindBand.color = passive ? PassiveBand : ActiveBand;
                     nameLabel.text = s.displayName;
                     levelLabel.text = card.Type == CardType.NewSkill ? "NEW" : $"Lv{card.NextLevel - 1} → {card.NextLevel}";
@@ -139,7 +139,7 @@ namespace HistoryHeroes.UI
                     bool melee = skills.HeroClass == Heroes.HeroClass.Warrior;
                     string upgrade = card.Type == CardType.LevelUp ? UpgradeLine(s, card.NextLevel - 1, card.NextLevel, melee) : string.Empty;
                     descriptionLabel.text = upgrade.Length > 0 ? $"<color=#FFE27A>{upgrade}</color>" : s.DescriptionFor(skills.HeroClass);
-                    Paint(RarityColor(s.rarity), GlowFor(s.rarity), s.icon);
+                    Paint(RarityColor(s.rarity), GlowFor(s.rarity), HeroSkillArt.IconFor(s));
                     hint = skills.CardHint(card);
                     if (legendaryWarning && s.rarity == Rarity.Legendary)
                     {

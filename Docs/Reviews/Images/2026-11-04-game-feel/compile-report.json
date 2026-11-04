@@ -1,0 +1,29 @@
+[
+  {
+    "assembly": "HistoryHeroes.Runtime",
+    "sources": 313,
+    "exit_code": 0,
+    "errors": 0,
+    "warnings": 9,
+    "seconds": 1.6,
+    "log": "Docs/Reviews/Images/2026-11-04-game-feel/HistoryHeroes.Runtime.log"
+  },
+  {
+    "assembly": "HistoryHeroes.Editor",
+    "sources": 56,
+    "exit_code": 0,
+    "errors": 0,
+    "warnings": 0,
+    "seconds": 1.23,
+    "log": "Docs/Reviews/Images/2026-11-04-game-feel/HistoryHeroes.Editor.log"
+  },
+  {
+    "assembly": "HistoryHeroes.Tests.EditMode",
+    "sources": 89,
+    "exit_code": 0,
+    "errors": 0,
+    "warnings": 0,
+    "seconds": 0.84,
+    "log": "Docs/Reviews/Images/2026-11-04-game-feel/HistoryHeroes.Tests.EditMode.log"
+  }
+]

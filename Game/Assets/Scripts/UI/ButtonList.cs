@@ -37,6 +37,8 @@ namespace HistoryHeroes.UI
 
         private readonly List<Button> _rows = new List<Button>();
         private readonly List<Action> _actions = new List<Action>();
+        private bool _readOnlyFit;
+        private ButtonTextGroup _readOnlyTextGroup;
 
         public int Count { get; private set; }
 
@@ -100,6 +102,7 @@ namespace HistoryHeroes.UI
 
         public void Show(IReadOnlyList<Row> rows, bool scrollToTop = false)
         {
+            RestoreReadOnlyRows();
             Count = rows.Count;
             for (int i = 0; i < rows.Count; i++)
             {
@@ -125,6 +128,52 @@ namespace HistoryHeroes.UI
             for (int i = rows.Count; i < _rows.Count; i++) _rows[i].gameObject.SetActive(false);
             if (scrollToTop && scroll != null) scroll.verticalNormalizedPosition = 1f;
             if (!_introDone && isActiveAndEnabled) Intro();
+        }
+
+        /// <summary>설명만 있는 목록의 글씨와 줄 높이를 내용에 맞춘다. 다음 Show에서 원래 단추 모양으로 돌아간다.</summary>
+        public void FitReadOnlyRows(float fontSize)
+        {
+            if (Count == 0) return;
+            for (int i = 0; i < Count; i++) if (_actions[i] != null || _rows[i].interactable) return;
+
+            _readOnlyFit = true;
+            _readOnlyTextGroup = content.GetComponent<ButtonTextGroup>();
+            if (_readOnlyTextGroup != null) _readOnlyTextGroup.enabled = false;
+            Canvas.ForceUpdateCanvases();
+            for (int i = 0; i < Count; i++)
+            {
+                Button row = _rows[i];
+                TMP_Text label = row.GetComponentInChildren<TMP_Text>(true);
+                label.enableAutoSizing = true;
+                label.fontSize = fontSize;
+                label.fontSizeMin = label.fontSizeMax = fontSize;
+                float width = Mathf.Max(1f, label.rectTransform.rect.width);
+                row.GetComponent<LayoutElement>().preferredHeight = Mathf.Max(198f, label.GetPreferredValues(label.text, width, 0f).y + 48f);
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(content);
+            if (scroll != null) scroll.verticalNormalizedPosition = 1f;
+        }
+
+        private void RestoreReadOnlyRows()
+        {
+            if (!_readOnlyFit) return;
+            TMP_Text original = template.GetComponentInChildren<TMP_Text>(true);
+            float height = template.GetComponent<LayoutElement>().preferredHeight;
+            foreach (Button row in _rows)
+            {
+                if (row == null) continue;
+                TMP_Text label = row.GetComponentInChildren<TMP_Text>(true);
+                label.enableAutoSizing = original.enableAutoSizing;
+                label.fontSize = original.fontSize;
+                label.fontSizeMin = original.fontSizeMin;
+                label.fontSizeMax = original.fontSizeMax;
+                row.GetComponent<LayoutElement>().preferredHeight = height;
+            }
+
+            _readOnlyFit = false;
+            if (_readOnlyTextGroup != null) _readOnlyTextGroup.enabled = true;
+            _readOnlyTextGroup = null;
         }
 
         private Button Get(int index)

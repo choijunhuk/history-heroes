@@ -45,6 +45,7 @@ namespace HistoryHeroes.Skills
                 Vector2 point = StarPosition(center, direction, i, count, starSpacing);
                 if (i > 0) AttackFx.Line(previous, point, 0.06f, lineColor, starInterval);
                 AttackFx.Burst(point, radius, starColor, starInterval);
+                AttackFx.Glyph(point, radius * 0.55f, HeroSkillArt.IconFor(data), lineColor, 0.35f);
                 CombatQuery.EnemiesWithin(point, radius, _hits);
                 foreach (EnemyBase enemy in _hits) enemy.Health.TryTakeDamage(RollDamage(coefficient));
                 previous = point;
