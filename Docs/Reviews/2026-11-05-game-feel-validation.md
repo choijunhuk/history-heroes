@@ -17,7 +17,7 @@
 |---|---|---|
 | 뽑기 | 저장 성공 뒤 닫힌 상자 → 실제 열린 상자 → 결과 카드. 1회는 중앙 큰 그림, 10회는 두 열. 실제 이름·등급·보장·중복·승급 표시 | `ShopPanel`, `GachaReveal` |
 | 그림 | 일반·고급 열린 상자와 장비 6슬롯 대표 그림 제작. 유물은 기존 실제 유물 그림 재사용 | `Resources/UI/Gacha`, `Docs/Credits.md` |
-| 모바일 이미지 메모리 | 열린 상자는 1254px 무압축 대신 최대512px/ETC2 RGBA, 장비 atlas는 1536×1024/ETC2 RGBA로 설정. atlas를1024로줄이면높이683이되어압축불가라원래비율/4배수크기를유지. 실제Sprite6개·압축후Play결과확인 | 새 이미지 3개의 `TextureImporter` 설정 |
+| 모바일 이미지 메모리 | 열린 상자는 1254px 무압축 대신 최대 512px/ETC2 RGBA, 장비 atlas는 1536×1024/ETC2 RGBA로 설정. atlas를 1024px로 줄이면 높이 683이 되어 압축되지 않으므로 원래 비율과 4픽셀 배수 크기를 유지. 스프라이트 6개와 압축 후 Play 결과 확인 | 새 이미지 3개의 `TextureImporter` 설정 |
 | 한글 | 동적 TMP가 기본 폰트 재질을 써 일부 한글이 청록 사각형으로 보이던 문제 수정. 기존 Body 재질과 spriteAsset도 함께 복사 | `GachaReveal.Label`, `GachaRevealTests` |
 | 영웅 선택 | 반복 판의 첫 일반 카드에 습득 가능한 전용기 한 장, 공용/전용 띠 구분, 실제 전용 조합 재료 조건 표시 | `SkillManager`, `SkillCardView`, `HeroPanel`, `CodexPanel` |
 | 설명 읽기 | 요약은 30pt, 상세는 40pt/본문 34pt를 유지하고 줄 높이를 늘림. 다음 일반 선택 목록에서는 원래 크기로 복원. 잠긴 영웅의 무료/보스/신 시련 해금 방법 유지 | `ButtonList`, `HeroPanel`, `HeroReadabilityTests` |
@@ -70,4 +70,10 @@
 
 ## 전달 상태
 
-실행 검증을 통과한 소스를 기능 브랜치에 커밋하고 기존 출시 서명으로 로컬 설치용 APK를 생성한다. APK 서명·패키지/버전·16KB 정렬 검증 결과는 빌드 폴더의 별도 보고서로 남긴다. GitHub release 게시나 Play Console 배포는 이번 범위에 포함하지 않는다.
+- 구현 커밋 `50ec4ca`, 이미지 임포트 보정 커밋 `83c828b`를 [기능 브랜치](https://github.com/choijunhuk/history-heroes/tree/feature/reward-hero-identity)에 push했다.
+- 로컬 설치용 APK: `Game/Builds/Android/1.0.0-beta.12/HistoryHeroes.apk` — **1.0.0-beta.12 (360), 86.7 MiB**, 소스 `83c828bc098d72188162c82ad41a9567dad787f1`.
+- 첫 무압축 패키지 94.3 MiB에서 이미지 임포트를 보정해 86.7 MiB로 줄였다. 그림·알파·6개 장비 연결을 실제 Play와 전체 검사에서 재확인했다.
+- 기존 beta.11과 출시 인증서 동일, 패키지 `com.choijunhuk.historyheroes`, ARM64, `debuggable=false`, ZIP/ELF 네이티브 라이브러리 8개 16KB 정렬·CRC·SHA256 확인 모두 **PASS**.
+- APK SHA256: `22af68082af412fc89648ee894dbff4f2dcc82c02759991616698d73026bfd56`.
+- 빌드 보고서와 `SHA256SUMS.txt`는 같은 APK 폴더에 있다. GitHub release·Play Console에는 게시하지 않았다. Android 기기 설치·실행은 **NOT_RUN**이다.
+- 빌드의 자동 직렬화로 바뀐 폰트·재질 키워드·설정만 원래 상태로 되돌렸다. [최종 보존 검사](Images/2026-11-05-game-feel/preservation-final.json)에서 작업 전 에셋/설정 11개와 원본 저장 5개의 바이트 동일을 확인했다.

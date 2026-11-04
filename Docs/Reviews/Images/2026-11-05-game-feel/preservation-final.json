@@ -1,0 +1,14 @@
+{
+  "restored_build_side_effects": [
+    "Game/Assets/Fonts/BlackHanSans SDF.asset",
+    "Game/Assets/Fonts/NanumGothic-Bold SDF.asset",
+    "Game/ProjectSettings/ProjectSettings.asset",
+    "Game/Assets/Art/3D/Materials/M_Fx_Starlight.mat",
+    "Game/Assets/Art/3D/Materials/M_Fx_Starlight_Gold.mat",
+    "Game/ProjectSettings/EditorBuildSettings.asset"
+  ],
+  "baseline11_byte_identical": true,
+  "baseline_differences": [],
+  "original_save5_byte_identical": true,
+  "original_save_differences": []
+}

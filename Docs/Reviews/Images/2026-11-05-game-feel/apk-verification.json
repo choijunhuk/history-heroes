@@ -1,0 +1,110 @@
+{
+  "verified_at_utc": "2026-11-04T22:39:50.413935+00:00",
+  "source_commit": "83c828bc098d72188162c82ad41a9567dad787f1",
+  "package": {
+    "package": "com.choijunhuk.historyheroes",
+    "version": "1.0.0-beta.12",
+    "code": 360,
+    "debuggable": false,
+    "arm64": true
+  },
+  "bytes": 90872996,
+  "sha256": "22af68082af412fc89648ee894dbff4f2dcc82c02759991616698d73026bfd56",
+  "certificate_sha256": "a7aea32a2d1872635a62ea6f8a3f4c542e8ba2e920a140e68188368ef2198ad6",
+  "same_release_certificate_as_beta11": true,
+  "zipalign_16kb": "PASS",
+  "native_elf_16kb": "PASS",
+  "zip_crc": "PASS",
+  "native_libraries": [
+    {
+      "name": "lib/arm64-v8a/libAppUITextMateLib.so",
+      "load_alignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "zip_payload_offset": 4593403,
+      "uncompressed": false
+    },
+    {
+      "name": "lib/arm64-v8a/lib_burst_generated.so",
+      "load_alignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "zip_payload_offset": 5260843,
+      "uncompressed": false
+    },
+    {
+      "name": "lib/arm64-v8a/libc++_shared.so",
+      "load_alignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "zip_payload_offset": 5432134,
+      "uncompressed": false
+    },
+    {
+      "name": "lib/arm64-v8a/libgame.so",
+      "load_alignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "zip_payload_offset": 5838751,
+      "uncompressed": false
+    },
+    {
+      "name": "lib/arm64-v8a/libil2cpp.so",
+      "load_alignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "zip_payload_offset": 5895667,
+      "uncompressed": false
+    },
+    {
+      "name": "lib/arm64-v8a/libmain.so",
+      "load_alignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "zip_payload_offset": 30336213,
+      "uncompressed": false
+    },
+    {
+      "name": "lib/arm64-v8a/libswappywrapper.so",
+      "load_alignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "zip_payload_offset": 30338854,
+      "uncompressed": false
+    },
+    {
+      "name": "lib/arm64-v8a/libunity.so",
+      "load_alignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "zip_payload_offset": 30418771,
+      "uncompressed": false
+    }
+  ],
+  "unity_tests": "883/883 PASS",
+  "editor_play": "PASS (see Docs/Reviews/2026-11-05-game-feel-validation.md)",
+  "device_install_launch_touch_performance": "NOT_RUN",
+  "publication": "NOT_REQUESTED; local artifact only",
+  "artifact_path": "Game/Builds/Android/1.0.0-beta.12/HistoryHeroes.apk"
+}
