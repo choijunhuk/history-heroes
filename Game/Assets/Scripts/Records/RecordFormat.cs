@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using HistoryHeroes.Skills;
 
@@ -67,27 +68,36 @@ namespace HistoryHeroes.Records
             return actives;
         }
 
+        /// <summary>현재 데이터로 검사한 뒤 카드에 표시할 스킬을 레벨 높은 순서로 고른다.</summary>
+        public static List<RecordSkill> RepresentativeSkills(RunRecord record, SkillDatabase database, int count = 4)
+        {
+            if (count <= 0) return new List<RecordSkill>();
+            return TopSkills(RecordValidator.Validate(record, database).Skills, count);
+        }
+
+        private static List<RecordSkill> TopSkills(IEnumerable<RecordSkill> skills, int count) =>
+            skills.OrderByDescending(skill => skill.level).Take(count).ToList();
+
         /// <summary>보관함 칸에 쓰는 여러 줄 설명</summary>
         /// <param name="maxSkills">스킬 줄을 이만큼만 (레벨 높은 순) + "외 N개". 보관함 카드처럼 좁은 곳용 (전체 UI 검토 9번)</param>
-        public static string Details(RunRecord record, SkillDatabase database, int maxSkills = int.MaxValue)
+        public static string Details(RunRecord record, SkillDatabase database, int maxSkills = int.MaxValue, bool includeSkillNames = true)
         {
             if (record == null) return "비어 있어요";
             RecordValidator.Result checkedBuild = RecordValidator.Validate(record, database);
             var sb = new StringBuilder();
-            var shown = new List<RecordSkill>(checkedBuild.Skills);
-            int hidden = 0;
-            if (shown.Count > maxSkills)
-            {
-                shown.Sort((a, b) => b.level.CompareTo(a.level));
-                hidden = shown.Count - maxSkills;
-                shown.RemoveRange(maxSkills, hidden);
-            }
+            int visible = Math.Max(0, maxSkills);
+            int hidden = Math.Max(0, checkedBuild.Skills.Count - visible);
+            var shown = hidden > 0 ? TopSkills(checkedBuild.Skills, visible) : new List<RecordSkill>(checkedBuild.Skills);
 
-            List<string> lines = SkillLines(shown, database);
-            if (hidden > 0) lines.Add($"외 {hidden}개");
             sb.AppendLine(RecordStrength.Of(checkedBuild.Skills, database).Bar()); // 강점 막대 (조사 A8)
-            sb.AppendLine(lines.Count > 0 ? string.Join(" · ", lines) : "스킬 없음 (기본 공격만)");
+            if (includeSkillNames)
+            {
+                List<string> lines = SkillLines(shown, database);
+                if (hidden > 0) lines.Add($"외 {hidden}개");
+                sb.AppendLine(lines.Count > 0 ? string.Join(" · ", lines) : "스킬 없음 (기본 공격만)");
+            }
             sb.Append($"비용 {checkedBuild.Cost} / {record.capacity}pt");
+            if (!includeSkillNames && hidden > 0) sb.Append($" · 외 {hidden}개");
             if (checkedBuild.OverCapacity) sb.Append("  (패치로 비용이 올라 다시 골라야 해요)");
             for (int i = 0; i < checkedBuild.Notes.Count && i < 2; i++) sb.Append($"\n<color=#FFB347>바뀐 점: {checkedBuild.Notes[i]}</color>");
             if (checkedBuild.Notes.Count > 2) sb.Append($"<color=#FFB347> 외 {checkedBuild.Notes.Count - 2}개</color>");

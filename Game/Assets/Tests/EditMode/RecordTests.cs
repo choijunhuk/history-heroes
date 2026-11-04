@@ -340,6 +340,76 @@ namespace HistoryHeroes.Tests
         }
 
         [Test]
+        public void RepresentativeSkills_SortsStableTiesAndDoesNotChangeSavedOrder()
+        {
+            RunRecord record = NewRecord("icons");
+            record.skills.AddRange(new[]
+            {
+                new RecordSkill("spin_blade", 1, false),
+                new RecordSkill("atk_up", 4, false),
+                new RecordSkill("def_up", 4, false),
+                new RecordSkill("flame_field", 2, false),
+                new RecordSkill("lightning", 5, false),
+                new RecordSkill("deleted_skill", 3, false),
+            });
+
+            List<RecordSkill> shown = RecordFormat.RepresentativeSkills(record, _db);
+
+            CollectionAssert.AreEqual(new[] { "lightning", "atk_up", "def_up", "flame_field" },
+                shown.ConvertAll(s => s.id));
+            Assert.AreEqual("spin_blade", record.skills[0].id);
+            Assert.AreEqual("deleted_skill", record.skills[5].id);
+            Assert.IsEmpty(RecordFormat.RepresentativeSkills(record, _db, 0));
+            Assert.IsEmpty(RecordFormat.RepresentativeSkills(record, _db, -1));
+        }
+
+        [Test]
+        public void RepresentativeSkills_UsesPatchedLevelsAndOmitsRemovedSkills()
+        {
+            RunRecord record = NewRecord("patched");
+            record.skills.AddRange(new[]
+            {
+                new RecordSkill("lightning", 2, false),
+                new RecordSkill("deleted_skill", 8, false),
+                new RecordSkill("atk_up", 9, false),
+            });
+
+            List<RecordSkill> shown = RecordFormat.RepresentativeSkills(record, _db);
+
+            CollectionAssert.AreEqual(new[] { "atk_up", "lightning" }, shown.ConvertAll(s => s.id));
+            Assert.AreEqual(5, shown[0].level);
+            Assert.AreEqual(9, record.skills[2].level);
+        }
+
+        [Test]
+        public void Details_WithoutNamesKeepsStrengthCostPatchNotesAndExtraCount()
+        {
+            RunRecord record = NewRecord("compact");
+            record.capacity = 1;
+            record.bossesDefeated.Add("boss_1");
+            record.skills.AddRange(new[]
+            {
+                new RecordSkill("lightning", 3, false),
+                new RecordSkill("spin_blade", 2, false),
+                new RecordSkill("atk_up", 2, false),
+                new RecordSkill("deleted_skill", 2, false),
+            });
+
+            string compact = RecordFormat.Details(record, _db, 2, includeSkillNames: false);
+            string original = RecordFormat.Details(record, _db, 2);
+
+            StringAssert.Contains("비용 ", compact);
+            StringAssert.Contains(" · 외 1개", compact);
+            StringAssert.Contains("바뀐 점:", compact);
+            StringAssert.Contains("보스 1마리 격파", compact);
+            StringAssert.Contains("패치로 비용이 올라", compact);
+            StringAssert.DoesNotContain("lightning Lv", compact);
+            StringAssert.DoesNotContain("spin_blade Lv", compact);
+            StringAssert.Contains("lightning Lv3", original);
+            StringAssert.Contains("외 1개", original);
+        }
+
+        [Test]
         public void Load_OldJsonWithoutTempOrLock_KeepsNumberedRecordUnlocked()
         {
             var store = new SaveStore(_folder);

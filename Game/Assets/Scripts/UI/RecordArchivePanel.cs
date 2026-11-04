@@ -26,6 +26,12 @@ namespace HistoryHeroes.UI
         [SerializeField] private TMP_Text statusLabel;
         [SerializeField] private Button backButton;
         [SerializeField] private SkillDatabase database;
+        [Header("대표 스킬 그림 (슬롯마다 4개)")]
+        [SerializeField] private Image[] slotSkillIcons = new Image[0];
+        [SerializeField] private TMP_Text[] slotSkillLabels = new TMP_Text[0];
+        [SerializeField] private Image[] tempSkillIcons = new Image[0];
+        [SerializeField] private TMP_Text[] tempSkillLabels = new TMP_Text[0];
+        [SerializeField] private ScrollRect scroll;
 
         private const float ConfirmSeconds = 3f;
         private const string HelpText = "기록은 보스맵에서 계속 쓸 수 있어요. 잠그면 덮어쓰기와 지우기를 막아요.";
@@ -56,6 +62,7 @@ namespace HistoryHeroes.UI
             if (statusLabel != null) statusLabel.text = HelpText;
             root.SetActive(true);
             Render();
+            if (scroll != null) scroll.verticalNormalizedPosition = 1f;
         }
 
         private void Update()
@@ -80,23 +87,65 @@ namespace HistoryHeroes.UI
                 if (!exists) continue;
 
                 RunRecord record = data.RecordInSlot(i);
+                bool preview = slotSkillIcons.Length >= (i + 1) * CardSkills && slotSkillLabels.Length >= (i + 1) * CardSkills;
+                slotTitles[i].gameObject.SetActive(record != null);
                 slotTitles[i].text = record != null ? RecordFormat.Title(record, database) : string.Empty;
-                slotDetails[i].text = record != null ? RecordFormat.Details(record, database, CardSkills) : EmptyText($"{i + 1}번 칸", "던전을 끝내면 기록을 남길 수 있어요");
+                slotDetails[i].text = record != null ? RecordFormat.Details(record, database, CardSkills, !preview) : EmptyText($"{i + 1}번 칸", "던전을 끝내면 기록을 남길 수 있어요");
                 slotDetails[i].alignment = record != null ? TextAlignmentOptions.TopLeft : TextAlignmentOptions.Center;
                 deleteButtons[i].gameObject.SetActive(record != null && !record.locked);
                 deleteLabels[i].text = _confirmSlot == i ? "한 번 더 누르면 지워요" : "지우기";
                 if (lockButtons != null && i < lockButtons.Length) lockButtons[i].gameObject.SetActive(record != null);
                 if (lockLabels != null && i < lockLabels.Length && record != null) lockLabels[i].text = record.locked ? "잠금 풀기" : "잠그기";
+                if (preview)
+                {
+                    RenderSkills(record, slotSkillIcons, slotSkillLabels, i * CardSkills);
+                    deleteButtons[i].transform.parent.gameObject.SetActive(record != null);
+                }
             }
 
             RunRecord temp = data.TempRecord;
-            if (tempTitle != null) tempTitle.text = temp != null ? "임시 칸 · " + RecordFormat.Title(temp, database) : string.Empty;
+            bool tempPreview = tempSkillIcons.Length >= CardSkills && tempSkillLabels.Length >= CardSkills;
+            if (tempTitle != null)
+            {
+                tempTitle.gameObject.SetActive(temp != null);
+                tempTitle.text = temp != null ? "임시 칸 · " + RecordFormat.Title(temp, database) : string.Empty;
+            }
             if (tempDetails != null)
             {
-                tempDetails.text = temp != null ? RecordFormat.Details(temp, database, CardSkills) : EmptyText("임시 칸", "보관함이 찼을 때 새 기록 하나를 둘 수 있어요");
+                tempDetails.text = temp != null ? RecordFormat.Details(temp, database, CardSkills, !tempPreview) : EmptyText("임시 칸", "보관함이 찼을 때 새 기록 하나를 둘 수 있어요");
                 tempDetails.alignment = temp != null ? TextAlignmentOptions.TopLeft : TextAlignmentOptions.Center;
             }
             if (moveTempButton != null) moveTempButton.gameObject.SetActive(temp != null && data.FirstFreeSlot() >= 0);
+            if (tempPreview)
+            {
+                RenderSkills(temp, tempSkillIcons, tempSkillLabels, 0);
+                if (moveTempButton != null) moveTempButton.transform.parent.gameObject.SetActive(moveTempButton.gameObject.activeSelf);
+            }
+        }
+
+        private void RenderSkills(RunRecord record, Image[] icons, TMP_Text[] labels, int offset)
+        {
+            var skills = RecordFormat.RepresentativeSkills(record, database, CardSkills);
+            icons[offset].transform.parent.parent.gameObject.SetActive(skills.Count > 0);
+            for (int i = 0; i < CardSkills; i++)
+            {
+                Image icon = icons[offset + i];
+                TMP_Text label = labels[offset + i];
+                bool shown = i < skills.Count;
+                icon.transform.parent.gameObject.SetActive(shown);
+                if (!shown)
+                {
+                    icon.sprite = null;
+                    label.text = string.Empty;
+                    continue;
+                }
+
+                RecordSkill skill = skills[i];
+                SkillData data = database.Find(skill.id);
+                icon.sprite = data != null ? data.icon : null;
+                icon.enabled = icon.sprite != null;
+                label.text = $"{(data != null ? data.displayName : skill.id)}\nLv{skill.level}";
+            }
         }
 
         /// <summary>빈 칸은 카드 가운데 한 덩어리 (위에 붙은 한 줄 + 빈 상자로 보이지 않게)</summary>

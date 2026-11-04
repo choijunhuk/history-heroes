@@ -454,6 +454,7 @@ namespace HistoryHeroes.EditorTools
                     .Ref("statusLabel", help).Ref("backButton", back).Ref("database", database);
             }
 
+            ApplyArchiveLayout(panel, screen);
             return screen;
         }
 
