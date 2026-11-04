@@ -17,6 +17,7 @@ namespace HistoryHeroes.UI
 
         private Selectable _selectable;
         private Vector3 _baseScale = Vector3.one;
+        private Vector3 _lastAppliedScale = Vector3.one;
         private float _scale = 1f;
         private float _velocity;
         private float _target = 1f;
@@ -25,14 +26,17 @@ namespace HistoryHeroes.UI
         {
             _selectable = GetComponent<Selectable>();
             _baseScale = transform.localScale;
+            _lastAppliedScale = _baseScale;
         }
 
         private void OnDisable()
         {
+            CaptureExternalScale();
             _target = 1f;
             _scale = 1f;
             _velocity = 0f;
             transform.localScale = _baseScale;
+            _lastAppliedScale = _baseScale;
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -54,12 +58,22 @@ namespace HistoryHeroes.UI
 
         private void Update()
         {
+            CaptureExternalScale();
             if (Mathf.Abs(_scale - _target) < 0.0005f && Mathf.Abs(_velocity) < 0.0005f) return;
             float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
             // 용수철: 목표 크기로 당기고 속도를 줄인다
             _velocity += ((_target - _scale) * Stiffness - _velocity * Damping) * dt;
             _scale += _velocity * dt;
             transform.localScale = _baseScale * _scale;
+            _lastAppliedScale = transform.localScale;
+        }
+
+        private void CaptureExternalScale()
+        {
+            // 탭 강조·목록 등장 연출이 크기를 바꾸면 그 크기를 복원 기준으로 삼는다.
+            if (transform.localScale == _lastAppliedScale) return;
+            _baseScale = transform.localScale;
+            _lastAppliedScale = _baseScale;
         }
     }
 }

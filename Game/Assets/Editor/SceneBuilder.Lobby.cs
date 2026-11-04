@@ -506,7 +506,7 @@ namespace HistoryHeroes.EditorTools
             Img(viewport, new Color(0f, 0f, 0f, 0.001f), null).raycastTarget = true;
             viewport.gameObject.AddComponent<RectMask2D>();
             RectTransform content = Rect("HeroScrollContent", viewport, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(contentWidth, 210f));
-            ScrollRect heroScroll = viewport.gameObject.AddComponent<ScrollRect>();
+            ScrollRect heroScroll = viewport.gameObject.AddComponent<HeroRosterScroll>();
             heroScroll.viewport = viewport;
             heroScroll.content = content;
             heroScroll.horizontal = true;
@@ -616,7 +616,46 @@ namespace HistoryHeroes.EditorTools
                     .Refs("gearSlots", gearSlots).Refs("gearLabels", gearLabels).Ref("relicButton", relicButton).Ref("relicLabel", relicLabel).Ref("powerLabel", power);
             }
 
+            ApplyHeroGrowthLayout(panel);
             return screen;
+        }
+
+        /// <summary>성장 행동과 영웅 목록이 탭·안전 영역 높이에 따라 서로 겹치지 않게 같은 스크롤에 묶는다.</summary>
+        private static void ApplyHeroGrowthLayout(RectTransform panel)
+        {
+            RectTransform view = Rect("GrowthViewport", panel, Vector2.zero, Vector2.one, Center, Vector2.zero, Vector2.zero);
+            view.offsetMin = new Vector2(0f, 8f);
+            view.offsetMax = new Vector2(0f, -1006f);
+            Img(view, new Color(0f, 0f, 0f, 0.001f), null).raycastTarget = true;
+            view.gameObject.AddComponent<RectMask2D>();
+            RectTransform content = Rect("GrowthContent", view, new Vector2(0f, 1f), Vector2.one, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 716f));
+            ScrollRect scroll = view.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = view;
+            scroll.content = content;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+
+            void Move(string name, float x, float y, float width, float height)
+            {
+                var item = (RectTransform)panel.Find(name);
+                item.SetParent(content, false);
+                Place(item, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(x, -y), new Vector2(width, height));
+                item.pivot = Center;
+            }
+
+            Move("Power", 0f, 35f, 1000f, 70f);
+            Move("HeroPet", -340f, 130f, 300f, 96f);
+            Move("HeroRunes", 0f, 130f, 300f, 96f);
+            Move("HeroRelics", 340f, 130f, 300f, 96f);
+            Move("HeroLevelUp", -200f, 250f, 580f, 120f);
+            Move("HeroAwaken", 300f, 250f, 380f, 120f);
+            Move("HeroTrial", -200f, 250f, 580f, 120f);
+            Move("UnlockHero", 300f, 250f, 380f, 120f);
+            Move("Training", -250f, 370f, 480f, 96f);
+            Move("SelectHero", 250f, 370f, 480f, 96f);
+            Move("HeroScrollViewport", 0f, 537.5f, 1040f, 215f);
+            Move("HeroMessage", 0f, 682f, 900f, 50f);
         }
 
         private static HeartPanel BuildHeartPanel(Transform parent)

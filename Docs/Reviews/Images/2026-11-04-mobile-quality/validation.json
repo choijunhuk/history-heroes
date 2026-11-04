@@ -1,0 +1,38 @@
+{
+  "recorded_at": "2026-11-04T00:14:10.941575+00:00",
+  "edit_mode": {
+    "total": 846,
+    "passed": 846,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "runner_regression": {
+    "passed": 4,
+    "failed": 0
+  },
+  "probability_export": {
+    "passed": 4,
+    "failed": 0
+  },
+  "server": {
+    "passed": 96,
+    "failed": 0
+  },
+  "editor_console_errors": 0,
+  "editor_compile_errors": 0,
+  "input": {
+    "availableHeight": 1600.0,
+    "verticalMoved": 130.0,
+    "horizontalMoved": -160.0,
+    "pass": true
+  },
+  "motion": {
+    "scale": "(1.05, 1.16, 1.00)",
+    "pass": true
+  },
+  "independent_review": "PASS_STATIC",
+  "android_device": "NOT_RUN",
+  "result_screen": "QA_FORCE_FINISH_NOT_NORMAL_CLEAR",
+  "scope": "영웅 배치·중첩 스크롤·탭 누름 모션·검사 실행기의 1차 수정; 전체 아트/출시 승인 아님"
+}
