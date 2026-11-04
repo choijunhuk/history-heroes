@@ -3,12 +3,21 @@
 source "$(dirname "$0")/_env.sh"
 cd "$GAME" || exit 1
 rm -f Temp/pipeline_test_status.json
-$U test run --mode EditMode --async_tests true >/dev/null 2>&1
+if ! $U test run --mode EditMode --async_tests true >/dev/null 2>&1; then
+  echo "EditMode 테스트 실행 명령 실패" >&2
+  exit 1
+fi
 for i in $(seq 1 120); do sleep 5; [ -f Temp/pipeline_test_status.json ] && grep -q '"status": "completed"' Temp/pipeline_test_status.json && break; done
 "$PY" -I -c "
 import json
 d = json.load(open('Temp/pipeline_test_status.json', encoding='utf-8'))
+if d.get('status') != 'completed':
+    raise SystemExit('EditMode 테스트가 완료되지 않았습니다: ' + d.get('status', '상태 없음'))
 print(d['summary'])
 for r in d['results']:
     if r['Status'] != 'Passed': print(r['FullName'], (r['Message'] or '')[:300])
+summary = d['summary']
+if (summary['total'] <= 0 or summary['passed'] != summary['total'] or summary['failed'] != 0 or
+        any(r['Status'] != 'Passed' for r in d['results'])):
+    raise SystemExit('EditMode 테스트가 모두 통과하지 않았습니다')
 "
