@@ -1,0 +1,48 @@
+{
+  "edit_mode": {
+    "total": 859,
+    "passed": 859,
+    "failed": 0
+  },
+  "modes": [
+    "Dungeon forced victory",
+    "Boss forced victory with an existing record",
+    "Survival forced defeat"
+  ],
+  "tmp_overflow": {
+    "Dungeon": false,
+    "Boss": false,
+    "Survival": false
+  },
+  "font_size_1080": {
+    "Dungeon": 36.95,
+    "Boss": 37.65,
+    "Survival": 38
+  },
+  "skip_final_state": {
+    "open": true,
+    "buttons": true,
+    "finalCounts": [
+      "+1,500"
+    ]
+  },
+  "survival_end": {
+    "beforeOpening": true,
+    "uiInstance": 1167142,
+    "enabledAfter": false,
+    "openAfter": false,
+    "pendingAfter": 0,
+    "finished": true,
+    "pass": true
+  },
+  "survival_retry": {
+    "newInstance": true,
+    "enabledOnRetry": true,
+    "offerOpening": true,
+    "finished": false,
+    "pass": true
+  },
+  "normal_run_clear": "NOT_RUN",
+  "android_device": "NOT_RUN",
+  "independent_static_review": "PASS"
+}

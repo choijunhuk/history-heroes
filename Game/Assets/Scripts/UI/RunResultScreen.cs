@@ -183,8 +183,26 @@ namespace HistoryHeroes.UI
             ShowCards(cards);
             if (rest.Count == 0) return;
             sb.AppendLine();
-            sb.AppendLine(cards.Count > 0 ? "<color=#FFD966>그리고</color>" : "<color=#FFD966>받은 것</color>");
-            foreach (string line in rest) sb.AppendLine(IsBigLine(line) ? "  " + BigOpen + line + BigClose : "  " + line);
+            sb.AppendLine(cards.Count > 0 ? "<color=#FFD966>추가 보상</color>" : "<color=#FFD966>받은 것</color>");
+            foreach (string line in rest)
+            {
+                if (AppendLevelReward(sb, line)) continue;
+                sb.AppendLine(IsBigLine(line) ? "  " + BigOpen + line + BigClose : "  " + line);
+            }
+        }
+
+        private static bool AppendLevelReward(StringBuilder sb, string line)
+        {
+            if (line == null || !line.StartsWith("<sprite name=exp>계정 경험치 +", StringComparison.Ordinal)) return false;
+            int level = line.IndexOf(" · Lv ", StringComparison.Ordinal);
+            int reward = line.IndexOf(" (", level < 0 ? 0 : level, StringComparison.Ordinal);
+            const string heart = ") · 하트 가득";
+            if (level < 0 || reward < 0 || !line.EndsWith(heart, StringComparison.Ordinal)) return false;
+            sb.Append("  ").AppendLine(line.Substring(0, level));
+            sb.Append("  ").Append(BigOpen).Append(line.Substring(level + 3, reward - level - 3)).Append(BigClose).AppendLine();
+            sb.Append("  ").AppendLine(line.Substring(reward + 2, line.Length - heart.Length - reward - 2));
+            sb.AppendLine("  하트 가득");
+            return true;
         }
 
         // 큰 보상 줄 (새 유물 · 펫 · 장비 · 계정 레벨업 · 별 상자 · 새 별 · 구간 해금): 금색 큰 글로, 숫자가 다 오른 뒤 하나씩 나타난다
